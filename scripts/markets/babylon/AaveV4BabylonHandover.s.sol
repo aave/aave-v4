@@ -73,7 +73,9 @@ contract AaveV4BabylonHandover is Script {
       admin: admin
     });
 
-    _transferProxyAdmin(deployment.hub, deployer, admin);
+    for (uint256 i; i < deployment.hubs.length; ++i) {
+      _transferProxyAdmin(deployment.hubs[i], deployer, admin);
+    }
     _transferProxyAdmin(deployment.babylonSpoke, deployer, admin);
     _transferProxyAdmin(deployment.treasurySpoke, deployer, admin);
     Ownable2StepUpgradeable(deployment.treasurySpoke).transferOwnership(admin);
@@ -102,7 +104,9 @@ contract AaveV4BabylonHandover is Script {
       require(!hasRole, 'deployer holds a role');
     }
 
-    require(_proxyAdmin(deployment.hub).owner() == admin, 'hub proxy admin owner');
+    for (uint256 i; i < deployment.hubs.length; ++i) {
+      require(_proxyAdmin(deployment.hubs[i]).owner() == admin, 'hub proxy admin owner');
+    }
     require(
       _proxyAdmin(deployment.babylonSpoke).owner() == admin,
       'babylon spoke proxy admin owner'

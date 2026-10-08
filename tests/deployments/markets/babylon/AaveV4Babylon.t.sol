@@ -61,9 +61,12 @@ contract AaveV4BabylonTest is Create2TestHelper {
 
   function setUp() public {
     _etchCreate2Factory();
+    string[] memory hubLabels = new string[](2);
+    hubLabels[0] = 'babylon-btc';
+    hubLabels[1] = 'babylon-stables';
     _config = AaveV4BabylonConfig.Config({
       salt: keccak256('aave-v4-babylon'),
-      hubLabel: 'babylon',
+      hubLabels: hubLabels,
       babylonSpokeLabel: 'babylon',
       liquidationManager: _liquidationManager,
       managedCollateralReserveId: 0,
@@ -76,7 +79,9 @@ contract AaveV4BabylonTest is Create2TestHelper {
     vm.chainId(AaveV4BabylonConfig.SEPOLIA_CHAIN_ID);
     AaveV4BabylonConfig.Config memory config = AaveV4BabylonConfig.read();
     assertEq(config.salt, keccak256('aave-v4-babylon'));
-    assertEq(config.hubLabel, 'babylon');
+    assertEq(config.hubLabels.length, 2);
+    assertEq(config.hubLabels[0], 'babylon-btc');
+    assertEq(config.hubLabels[1], 'babylon-stables');
     assertEq(config.babylonSpokeLabel, 'babylon');
     assertEq(config.managedCollateralReserveId, 0);
   }
@@ -107,8 +112,9 @@ contract AaveV4BabylonTest is Create2TestHelper {
     assertFalse(inputs.grantRoles);
     assertEq(inputs.proxyAdminOwner, _deployer);
     assertEq(inputs.treasurySpokeOwner, _deployer);
-    assertEq(inputs.hubLabels.length, 1);
-    assertEq(inputs.hubLabels[0], 'babylon');
+    assertEq(inputs.hubLabels.length, 2);
+    assertEq(inputs.hubLabels[0], 'babylon-btc');
+    assertEq(inputs.hubLabels[1], 'babylon-stables');
     assertEq(inputs.spokeLabels.length, 0);
     assertEq(inputs.babylonSpokeLabels.length, 1);
     assertEq(inputs.babylonSpokeLabels[0], 'babylon');
@@ -125,7 +131,17 @@ contract AaveV4BabylonTest is Create2TestHelper {
       new AaveV4DeployBabylonHarness(_config).sanitizedDeployInputs(_deployer)
     );
 
-    assertEq(report.hubInstanceBatchReports.length, 1);
+    assertEq(report.hubInstanceBatchReports.length, 2);
+    assertEq(report.hubInstanceBatchReports[0].label, 'babylon-btc');
+    assertEq(report.hubInstanceBatchReports[1].label, 'babylon-stables');
+    assertNotEq(
+      report.hubInstanceBatchReports[0].report.hubProxy,
+      report.hubInstanceBatchReports[1].report.hubProxy
+    );
+    assertNotEq(
+      report.hubInstanceBatchReports[0].report.irStrategy,
+      report.hubInstanceBatchReports[1].report.irStrategy
+    );
     assertEq(report.spokeInstanceBatchReports.length, 0);
     assertEq(report.babylonSpokeInstanceBatchReports.length, 1);
     assertEq(report.gatewaysBatchReport.signatureGateway, address(0));
@@ -137,6 +153,7 @@ contract AaveV4BabylonTest is Create2TestHelper {
     assertEq(IBabylonSpoke(babylonSpoke).MANAGED_COLLATERAL_RESERVE_ID(), 0);
 
     assertEq(_proxyAdmin(report.hubInstanceBatchReports[0].report.hubProxy).owner(), _deployer);
+    assertEq(_proxyAdmin(report.hubInstanceBatchReports[1].report.hubProxy).owner(), _deployer);
     assertEq(_proxyAdmin(babylonSpoke).owner(), _deployer);
     assertEq(_proxyAdmin(report.treasurySpokeBatchReport.treasurySpoke).owner(), _deployer);
     assertEq(
@@ -166,6 +183,7 @@ contract AaveV4BabylonTest is Create2TestHelper {
 
     address treasurySpoke = report.treasurySpokeBatchReport.treasurySpoke;
     assertEq(_proxyAdmin(report.hubInstanceBatchReports[0].report.hubProxy).owner(), _admin);
+    assertEq(_proxyAdmin(report.hubInstanceBatchReports[1].report.hubProxy).owner(), _admin);
     assertEq(
       _proxyAdmin(report.babylonSpokeInstanceBatchReports[0].report.spokeProxy).owner(),
       _admin

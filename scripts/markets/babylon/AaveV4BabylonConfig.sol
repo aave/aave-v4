@@ -13,7 +13,7 @@ library AaveV4BabylonConfig {
   uint256 internal constant SEPOLIA_CHAIN_ID = 11155111;
 
   /// @dev salt The user-provided deploy salt.
-  /// @dev hubLabel The label of the Babylon Hub.
+  /// @dev hubLabels The labels of the Babylon Hubs.
   /// @dev babylonSpokeLabel The label of the BabylonSpoke.
   /// @dev liquidationManager The only address allowed to liquidate on the BabylonSpoke.
   /// @dev managedCollateralReserveId The identifier of the only reserve usable as collateral.
@@ -21,7 +21,7 @@ library AaveV4BabylonConfig {
   /// @dev report The deployment report written by the deploy script.
   struct Config {
     bytes32 salt;
-    string hubLabel;
+    string[] hubLabels;
     string babylonSpokeLabel;
     address liquidationManager;
     uint256 managedCollateralReserveId;
@@ -35,7 +35,7 @@ library AaveV4BabylonConfig {
     address hubConfigurator;
     address spokeConfigurator;
     address treasurySpoke;
-    address hub;
+    address[] hubs;
     address babylonSpoke;
   }
 
@@ -58,7 +58,7 @@ library AaveV4BabylonConfig {
     return
       Config({
         salt: vm.parseJsonBytes32(json, '.salt'),
-        hubLabel: vm.parseJsonString(json, '.hubLabel'),
+        hubLabels: vm.parseJsonStringArray(json, '.hubLabels'),
         babylonSpokeLabel: vm.parseJsonString(json, '.babylonSpokeLabel'),
         liquidationManager: vm.parseJsonAddress(json, '.liquidationManager'),
         managedCollateralReserveId: vm.parseJsonUint(json, '.managedCollateralReserveId'),
@@ -67,13 +67,11 @@ library AaveV4BabylonConfig {
       });
   }
 
-  /// @notice Builds the deploy inputs: one Hub and one BabylonSpoke, roles deferred to the handover.
+  /// @notice Builds the deploy inputs: the Hubs and one BabylonSpoke, roles deferred to the handover.
   /// @param config The Babylon market config.
   function deployInputs(
     Config memory config
   ) internal pure returns (InputUtils.FullDeployInputs memory) {
-    string[] memory hubLabels = new string[](1);
-    hubLabels[0] = config.hubLabel;
     string[] memory babylonSpokeLabels = new string[](1);
     babylonSpokeLabels[0] = config.babylonSpokeLabel;
     address[] memory babylonLiquidationManagers = new address[](1);
@@ -97,7 +95,7 @@ library AaveV4BabylonConfig {
         deploySignatureGateway: false,
         deployPositionManagers: false,
         grantRoles: false,
-        hubLabels: hubLabels,
+        hubLabels: config.hubLabels,
         spokeLabels: new string[](0),
         spokeMaxReservesLimits: new uint16[](0),
         babylonSpokeLabels: babylonSpokeLabels,
@@ -111,13 +109,17 @@ library AaveV4BabylonConfig {
   /// @param config The Babylon market config.
   function readDeployment(Config memory config) internal view returns (Deployment memory) {
     string memory json = vm.readFile(config.report);
+    address[] memory hubs = new address[](config.hubLabels.length);
+    for (uint256 i; i < hubs.length; ++i) {
+      hubs[i] = vm.parseJsonAddress(json, string.concat('.hub.', config.hubLabels[i]));
+    }
     return
       Deployment({
         accessManager: vm.parseJsonAddress(json, '.accessManager'),
         hubConfigurator: vm.parseJsonAddress(json, '.hubConfigurator'),
         spokeConfigurator: vm.parseJsonAddress(json, '.spokeConfigurator'),
         treasurySpoke: vm.parseJsonAddress(json, '.treasurySpoke'),
-        hub: vm.parseJsonAddress(json, string.concat('.hub.', config.hubLabel)),
+        hubs: hubs,
         babylonSpoke: vm.parseJsonAddress(
           json,
           string.concat('.babylonSpoke.', config.babylonSpokeLabel)

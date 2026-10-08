@@ -1,15 +1,16 @@
 # Babylon market
 
-One Hub and one BabylonSpoke, deployed with `grantRoles = false`. The deployer keeps every role and ownership until the handover. Config per chain lives in `<chain>.json` next to this file. Only Sepolia is supported for now.
+Two Hubs, `babylon-btc` for vaultBTC and `babylon-stables` for the borrowed stables, and one BabylonSpoke, deployed with `grantRoles = false`. The deployer keeps every role and ownership until the handover. Config per chain lives in `<chain>.json` next to this file. Only Sepolia is supported for now.
 
-| Field                           | Meaning                                                                                              |
-| ------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `salt`                          | Deploy salt, `keccak256("aave-v4-babylon")`                                                          |
-| `hubLabel`, `babylonSpokeLabel` | Instance labels, both `babylon`                                                                      |
-| `liquidationManager`            | The only address allowed to liquidate on the BabylonSpoke. Immutable.                                |
-| `managedCollateralReserveId`    | The only reserve usable as collateral. Immutable, so the collateral must be the first reserve added. |
-| `admin`                         | Receives every role and ownership at handover                                                        |
-| `report`                        | Deployment report written by step 2, read by step 4                                                  |
+| Field                        | Meaning                                                                                              |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `salt`                       | Deploy salt, `keccak256("aave-v4-babylon")`                                                          |
+| `hubLabels`                  | Hub labels, `babylon-btc` and `babylon-stables`                                                      |
+| `babylonSpokeLabel`          | BabylonSpoke label, `babylon`                                                                        |
+| `liquidationManager`         | The only address allowed to liquidate on the BabylonSpoke. Immutable.                                |
+| `managedCollateralReserveId` | The only reserve usable as collateral. Immutable, so the collateral must be the first reserve added. |
+| `admin`                      | Receives every role and ownership at handover                                                        |
+| `report`                     | Deployment report written by step 2, read by step 4                                                  |
 
 `liquidationManager` and `admin` are zero placeholders in the checked-in config. Deployment reverts while `liquidationManager` is unset, and the handover reverts while `admin` is unset.
 
