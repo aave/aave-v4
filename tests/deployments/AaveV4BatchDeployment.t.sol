@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import 'tests/utils/BatchTestProcedures.sol';
+import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 
 contract AaveV4BatchDeploymentTest is BatchTestProcedures {
   function setUp() public override {
@@ -31,6 +32,27 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
 
   function testAaveV4BatchDeployment() public {
     checkedV4Deployment();
+  }
+
+  /// @dev Same inputs and salt must produce the same AaveOracle, Spoke implementation and Spoke
+  ///      proxy addresses regardless of the deployer's nonce.
+  function testAaveV4BatchDeployment_spokeAddressesIndependentOfDeployerNonce() public {
+    uint256 snapshotId = vm.snapshotState();
+    OrchestrationReports.FullDeploymentReport memory first = _deployV4();
+
+    vm.revertToState(snapshotId);
+    vm.setNonce(_deployer, vm.getNonce(_deployer) + 7);
+    vm.setNonce(address(this), vm.getNonce(address(this)) + 7);
+    OrchestrationReports.FullDeploymentReport memory second = _deployV4();
+
+    assertGt(first.spokeInstanceBatchReports.length, 0);
+    for (uint256 i; i < first.spokeInstanceBatchReports.length; ++i) {
+      BatchReports.SpokeInstanceBatchReport memory a = first.spokeInstanceBatchReports[i].report;
+      BatchReports.SpokeInstanceBatchReport memory b = second.spokeInstanceBatchReports[i].report;
+      assertEq(a.aaveOracle, b.aaveOracle, 'aave oracle');
+      assertEq(a.spokeImplementation, b.spokeImplementation, 'spoke implementation');
+      assertEq(a.spokeProxy, b.spokeProxy, 'spoke proxy');
+    }
   }
 
   function testAaveV4BatchDeployment_withoutRoles() public {
@@ -443,6 +465,20 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
 
     _inputs = deployInputs;
     checkedV4Deployment();
+  }
+
+  function _deployV4() internal returns (OrchestrationReports.FullDeploymentReport memory report) {
+    bytes memory hubBytecode = BytecodeHelper.getHubBytecode();
+    bytes memory spokeBytecode = BytecodeHelper.getSpokeBytecode();
+    vm.startPrank(_deployer);
+    report = AaveV4DeployOrchestration.deployAaveV4(
+      _logger,
+      _deployer,
+      _inputs,
+      hubBytecode,
+      spokeBytecode
+    );
+    vm.stopPrank();
   }
 
   /// @dev Predicts the first revert error based on execution order in deployAaveV4:

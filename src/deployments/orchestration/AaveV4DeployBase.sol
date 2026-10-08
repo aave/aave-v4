@@ -11,6 +11,7 @@ import {AaveV4PositionManagerBatch} from 'src/deployments/batches/AaveV4Position
 import {AaveV4SpokeInstanceBatch} from 'src/deployments/batches/AaveV4SpokeInstanceBatch.sol';
 import {AaveV4TokenizationSpokeBatch} from 'src/deployments/batches/AaveV4TokenizationSpokeBatch.sol';
 import {AaveV4TreasurySpokeBatch} from 'src/deployments/batches/AaveV4TreasurySpokeBatch.sol';
+import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 
 /// @title AaveV4DeployBase Library
 /// @author Aave Labs
@@ -98,15 +99,27 @@ library AaveV4DeployBase {
     uint16 maxUserReservesLimit,
     bytes32 salt
   ) internal returns (BatchReports.SpokeInstanceBatchReport memory) {
-    AaveV4SpokeInstanceBatch spokeInstanceBatch = new AaveV4SpokeInstanceBatch({
-      proxyAdminOwner_: proxyAdminOwner,
-      authority_: authority,
-      spokeBytecode_: spokeBytecode,
-      oracleDecimals_: oracleDecimals,
-      maxUserReservesLimit_: maxUserReservesLimit,
-      salt_: salt
+    // the CREATE2 factory drops revert reasons, so repeat the batch's input checks here
+    require(oracleDecimals > 0, 'invalid oracle decimals');
+    require(proxyAdminOwner != address(0), 'invalid proxy admin owner');
+    require(authority != address(0), 'invalid authority');
+    require(maxUserReservesLimit > 0, 'invalid max user reserves limit');
+    // the batch deploys the AaveOracle, so its address must not depend on the deployer's nonce
+    address spokeInstanceBatch = Create2Utils.create2Deploy({
+      salt: salt,
+      bytecode: abi.encodePacked(
+        type(AaveV4SpokeInstanceBatch).creationCode,
+        abi.encode(
+          proxyAdminOwner,
+          authority,
+          spokeBytecode,
+          oracleDecimals,
+          maxUserReservesLimit,
+          salt
+        )
+      )
     });
-    return spokeInstanceBatch.getReport();
+    return AaveV4SpokeInstanceBatch(spokeInstanceBatch).getReport();
   }
 
   /// @notice Deploys the position manager batch containing all three position manager contracts.
