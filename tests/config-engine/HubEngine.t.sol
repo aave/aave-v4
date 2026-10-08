@@ -42,6 +42,23 @@ contract HubEngineTest is BaseConfigEngineTest {
     engine.executeHubAssetListings(_toAssetListingArray(listing));
   }
 
+  function test_executeHubAssetListings_revertsWith_KeepCurrentInListing() public {
+    for (uint256 field; field < 7; ++field) {
+      IAaveV4ConfigEngine.AssetListing memory listing = _defaultAssetListing();
+      listing.underlying = address(newToken);
+      if (field == 0) listing.feeReceiver = EngineFlags.KEEP_CURRENT_ADDRESS;
+      else if (field == 1) listing.irStrategy = EngineFlags.KEEP_CURRENT_ADDRESS;
+      else if (field == 2) listing.liquidityFee = EngineFlags.KEEP_CURRENT;
+      else if (field == 3) listing.irData.optimalUsageRatio = EngineFlags.KEEP_CURRENT_UINT16;
+      else if (field == 4) listing.irData.baseDrawnRate = EngineFlags.KEEP_CURRENT_UINT32;
+      else if (field == 5) listing.irData.rateGrowthBeforeOptimal = EngineFlags.KEEP_CURRENT_UINT32;
+      else listing.irData.rateGrowthAfterOptimal = EngineFlags.KEEP_CURRENT_UINT32;
+
+      vm.expectRevert(HubEngine.KeepCurrentInListing.selector);
+      engine.executeHubAssetListings(_toAssetListingArray(listing));
+    }
+  }
+
   function test_executeHubAssetConfigUpdates_feeBoth() public {
     uint256 assetId = _getAssetId(0, 0);
     IHub.AssetConfig memory configBefore = hub1().getAssetConfig(assetId);

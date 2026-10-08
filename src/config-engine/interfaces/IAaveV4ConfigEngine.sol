@@ -20,6 +20,9 @@ import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateS
 /// execution delay. The engine cannot schedule operations, so a delayed role routes the call through
 /// `consumeScheduledOp`, which reverts with `AccessManagerNotScheduled`.
 interface IAaveV4ConfigEngine {
+  /// @notice Thrown when an engine entry point is called directly instead of via delegatecall.
+  error OnlyDelegateCall();
+
   /// @notice Parameters for tokenization of an asset on a Hub when listing the asset.
   /// @dev Tokenization is skipped only when all fields are unset. Otherwise `name`, `symbol` and
   /// `proxyAdminOwner` are all required; a partially set config reverts.

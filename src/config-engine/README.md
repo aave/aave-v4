@@ -123,6 +123,8 @@ The `EngineFlags` library defines sentinel values for each width that needs a "s
 
 When a struct field is set to its corresponding sentinel, the engine **skips** updating that field and leaves the on-chain value unchanged. This lets a single struct express partial updates — for example, changing the liquidity fee without touching the fee receiver or IR strategy.
 
+Listing structs (`AssetListing`, `ReserveListing`) have no current value to keep, so a listing field set to its sentinel reverts with `KeepCurrentInListing` instead of being forwarded.
+
 `EngineFlags` also provides boolean convenience constants (`ENABLED = 1`, `DISABLED = 0`) and conversion helpers `toBool(uint256)` / `fromBool(bool)`.
 
 ### Smart partial updates
@@ -149,6 +151,8 @@ When a payload calls `execute()`, `AaveV4Payload` delegate-calls into `AaveV4Con
 
 - Neither the config engine nor the sub-engines hold any storage, permissions, or admin keys.
 - All HubConfigurator, SpokeConfigurator, AccessManager, and PositionManager calls originate from the governance executor's address.
+
+Every engine entry point is `onlyDelegateCall`: a direct call to the engine's own address reverts with `OnlyDelegateCall`. A role granted to the engine address by mistake therefore cannot be exercised through it.
 
 ### Execution context
 

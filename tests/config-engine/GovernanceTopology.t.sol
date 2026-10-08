@@ -18,7 +18,7 @@ contract ConfigEngineGovernanceTopologyTest is BaseConfigEngineTest {
     super.setUp();
 
     payload = new MockTokenizationListingPayload({
-      configEngine: IAaveV4ConfigEngine(address(engine)),
+      configEngine: IAaveV4ConfigEngine(address(engineImplementation)),
       hubConfigurator: hubConfigurator,
       hub: address(hub1()),
       underlying: address(newToken),

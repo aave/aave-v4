@@ -10,7 +10,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
   function setUp() public override {
     super.setUp();
-    payload = new AaveV4PayloadWrapper(IAaveV4ConfigEngine(address(engine)));
+    payload = new AaveV4PayloadWrapper(IAaveV4ConfigEngine(address(engineImplementation)));
 
     // Grant same roles to payload (since delegatecall makes msg.sender = payload)
     vm.startPrank(ADMIN);
@@ -183,7 +183,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
   }
 
   function test_configEngine_immutable() public view {
-    assertEq(address(payload.CONFIG_ENGINE()), address(engine));
+    assertEq(address(payload.CONFIG_ENGINE()), address(engineImplementation));
   }
 
   function test_execute_hubAssetListings() public {
@@ -599,7 +599,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     payload.setHubAssetHalts(halts);
     payload.execute();
 
-    payload = new AaveV4PayloadWrapper(IAaveV4ConfigEngine(address(engine)));
+    payload = new AaveV4PayloadWrapper(IAaveV4ConfigEngine(address(engineImplementation)));
     vm.prank(ADMIN);
     accessManager.grantRole(Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE, address(payload), 0);
 
@@ -845,7 +845,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     (bool isMember, ) = accessManager.hasRole(Roles.HUB_CONFIGURATOR_ROLE, ACCOUNT);
     assertTrue(isMember);
 
-    payload = new AaveV4PayloadWrapper(IAaveV4ConfigEngine(address(engine)));
+    payload = new AaveV4PayloadWrapper(IAaveV4ConfigEngine(address(engineImplementation)));
     vm.startPrank(ADMIN);
     accessManager.grantRole(Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE, address(payload), 0);
     accessManager.grantRole(Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE, address(payload), 0);
@@ -1115,7 +1115,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
   function test_execute_reverts_hubAction_withoutHubConfiguratorRole() public {
     AaveV4PayloadWrapper freshPayload = new AaveV4PayloadWrapper(
-      IAaveV4ConfigEngine(address(engine))
+      IAaveV4ConfigEngine(address(engineImplementation))
     );
 
     vm.startPrank(ADMIN);
@@ -1142,7 +1142,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
   function test_execute_reverts_spokeAction_withoutSpokeConfiguratorRole() public {
     AaveV4PayloadWrapper freshPayload = new AaveV4PayloadWrapper(
-      IAaveV4ConfigEngine(address(engine))
+      IAaveV4ConfigEngine(address(engineImplementation))
     );
 
     vm.startPrank(ADMIN);
@@ -1167,7 +1167,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
   function test_execute_reverts_accessManagerAction_withoutDefaultAdminRole() public {
     AaveV4PayloadWrapper freshPayload = new AaveV4PayloadWrapper(
-      IAaveV4ConfigEngine(address(engine))
+      IAaveV4ConfigEngine(address(engineImplementation))
     );
 
     vm.startPrank(ADMIN);
@@ -1198,7 +1198,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
   function test_execute_reverts_positionManagerAction_withoutOwnership() public {
     AaveV4PayloadWrapper freshPayload = new AaveV4PayloadWrapper(
-      IAaveV4ConfigEngine(address(engine))
+      IAaveV4ConfigEngine(address(engineImplementation))
     );
 
     vm.startPrank(ADMIN);
