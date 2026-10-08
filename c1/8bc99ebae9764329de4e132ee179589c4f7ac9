@@ -1,0 +1,19 @@
+snapshots/Hub.Operations.json
+  s_4f5261c6e21dbb::t_956bdac1947196 14
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c18bc99ebae9764329de4e132ee179589c4f7ac9",
+  "prompts": {},
+  "sessions": {
+    "s_4f5261c6e21dbb": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "af35560e-00c7-4b1d-9586-dde333921e50",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "DhairyaSethi <55102840+DhairyaSethi@users.noreply.github.com>"
+    }
+  }
+}

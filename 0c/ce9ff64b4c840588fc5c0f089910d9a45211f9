@@ -1,0 +1,24 @@
+src/config-engine/libraries/SpokeEngine.sol
+  s_b3156abe964aba::t_a79a4ebb071244 35-36,212,214,216-224
+tests/config-engine/SpokeEngine.t.sol
+  s_b3156abe964aba::t_f36d8a9101777e 334-353,360-374,376-398
+  s_b3156abe964aba::t_6f0471eea6cbd8 354-359,375
+src/config-engine/README.md
+  s_b3156abe964aba::t_a79a4ebb071244 132
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "0cce9ff64b4c840588fc5c0f089910d9a45211f9",
+  "prompts": {},
+  "sessions": {
+    "s_b3156abe964aba": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6546e81d-cda2-4205-a961-bc35c12e7458",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "DhairyaSethi <55102840+DhairyaSethi@users.noreply.github.com>"
+    }
+  }
+}

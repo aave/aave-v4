@@ -1,0 +1,24 @@
+snapshots/ConfigPositionManager.Operations.json
+  h_739c25e72c37fb 2-10
+snapshots/TakerPositionManager.Operations.json
+  h_739c25e72c37fb 2-8
+src/position-manager/TakerPositionManager.sol
+  h_739c25e72c37fb 193,320,331
+src/position-manager/interfaces/ITakerPositionManager.sol
+  h_739c25e72c37fb 46,48,54,56,60,62,68,70,112,125,135,148
+tests/contracts/position-manager/TakerPositionManager/TakerPositionManager.Permit.t.sol
+  h_739c25e72c37fb 88,179
+tests/contracts/position-manager/TakerPositionManager/TakerPositionManager.t.sol
+  h_739c25e72c37fb 13,34,102,186,448,469,812-813,815-816,837-838,840-841
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f0c897761e99950fc52d09333fa4470ee76e1a93",
+  "prompts": {},
+  "humans": {
+    "h_739c25e72c37fb": {
+      "author": "DhairyaSethi <55102840+DhairyaSethi@users.noreply.github.com>"
+    }
+  }
+}
