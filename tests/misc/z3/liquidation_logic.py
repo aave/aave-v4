@@ -4,46 +4,46 @@ from commons import *
 s = Solver()
 
 # Pricing of collateral asset
-addedShares = Int("addedShares")
+addedShares = Int('addedShares')
 s.add(0 <= addedShares, addedShares <= MAX_SUPPLY_AMOUNT)
-totalAddedAssets = Int("totalAddedAssets")
+totalAddedAssets = Int('totalAddedAssets')
 s.add(
     (addedShares + VIRTUAL_SHARES) <= (totalAddedAssets + VIRTUAL_ASSETS),
     (totalAddedAssets + VIRTUAL_ASSETS)
     <= MAX_SUPPLY_PRICE * (addedShares + VIRTUAL_SHARES),
 )
-collateralAssetPrice = Int("collateralAssetPrice")
+collateralAssetPrice = Int('collateralAssetPrice')
 s.add(1 <= collateralAssetPrice, collateralAssetPrice <= MAX_PRICE)
-collateralAssetDecimals = Int("collateralAssetDecimals")
+collateralAssetDecimals = Int('collateralAssetDecimals')
 s.add(MIN_DECIMALS <= collateralAssetDecimals, collateralAssetDecimals <= MAX_DECIMALS)
 collateralAssetUnit = ToInt(10**collateralAssetDecimals)
 
 # Pricing of debt asset
-drawnIndex = Int("drawnIndex")
+drawnIndex = Int('drawnIndex')
 s.add(MIN_DRAWN_INDEX <= drawnIndex, drawnIndex <= MAX_DRAWN_INDEX)
-debtAssetPrice = Int("debtAssetPrice")
+debtAssetPrice = Int('debtAssetPrice')
 s.add(1 <= debtAssetPrice, debtAssetPrice <= MAX_PRICE)
-debtAssetDecimals = Int("debtAssetDecimals")
+debtAssetDecimals = Int('debtAssetDecimals')
 s.add(MIN_DECIMALS <= debtAssetDecimals, debtAssetDecimals <= MAX_DECIMALS)
 debtAssetUnit = ToInt(10**debtAssetDecimals)
 
 # Liquidatable user position
-suppliedShares = Int("suppliedShares")
+suppliedShares = Int('suppliedShares')
 s.add(1 <= suppliedShares, suppliedShares <= addedShares)
-drawnShares = Int("drawnShares")
+drawnShares = Int('drawnShares')
 s.add(1 <= drawnShares, drawnShares <= MAX_SUPPLY_AMOUNT)
-premiumDebtRay = Int("premiumDebtRay")
+premiumDebtRay = Int('premiumDebtRay')
 s.add(0 <= premiumDebtRay, premiumDebtRay <= MAX_SUPPLY_AMOUNT)
 
 # Liquidation parameters
-liquidationBonus = Int("liquidationBonus")
+liquidationBonus = Int('liquidationBonus')
 s.add(
     MIN_LIQUIDATION_BONUS <= liquidationBonus,
     liquidationBonus <= MAX_LIQUIDATION_BONUS,
 )
-premiumDebtRayToLiquidate = Int("premiumDebtRayToLiquidate")
+premiumDebtRayToLiquidate = Int('premiumDebtRayToLiquidate')
 s.add(0 <= premiumDebtRayToLiquidate, premiumDebtRayToLiquidate <= premiumDebtRay)
-rawDrawnSharesToLiquidate = Int("rawDrawnSharesToLiquidate")
+rawDrawnSharesToLiquidate = Int('rawDrawnSharesToLiquidate')
 s.add(0 <= rawDrawnSharesToLiquidate, rawDrawnSharesToLiquidate <= drawnShares)
 s.add(Or(rawDrawnSharesToLiquidate == 0, premiumDebtRayToLiquidate == premiumDebtRay))
 
@@ -62,7 +62,7 @@ leavesDebtDust = And(
     )
     < DUST_LIQUIDATION_THRESHOLD * RAY,
 )
-drawnSharesToLiquidate = Int("drawnSharesToLiquidate")
+drawnSharesToLiquidate = Int('drawnSharesToLiquidate')
 s.add(
     Or(
         And(Not(leavesDebtDust), drawnSharesToLiquidate == rawDrawnSharesToLiquidate),

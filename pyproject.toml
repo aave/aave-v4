@@ -1,0 +1,12 @@
+[project]
+name = "aave-v4"
+version = "0.1.0"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = ["z3-solver>=4.15.7.0"]
+
+[dependency-groups]
+dev = ["ruff>=0.15.0"]
+
+[tool.ruff.format]
+quote-style = "single"
