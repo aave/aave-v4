@@ -53,6 +53,7 @@ contract AaveV4BabylonTest is Create2TestHelper {
     0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103;
   string internal constant OUTPUT_DIR = 'output/reports/deployments/';
   string internal constant REPORT_NAME = 'babylon-handover-test';
+  address internal constant SEPOLIA_AAVE_ADAPTER = 0x6A785E8fdF251E2aA758a6E1841e1470074f46BF;
 
   address internal _deployer = DEFAULT_SENDER;
   address internal _admin = makeAddr('admin');
@@ -83,7 +84,9 @@ contract AaveV4BabylonTest is Create2TestHelper {
     assertEq(config.hubLabels[0], 'babylon-btc');
     assertEq(config.hubLabels[1], 'babylon-stables');
     assertEq(config.babylonSpokeLabel, 'babylon');
+    assertEq(config.liquidationManager, SEPOLIA_AAVE_ADAPTER);
     assertEq(config.managedCollateralReserveId, 0);
+    assertEq(config.admin, address(0));
   }
 
   function test_unsupportedChain_reverts() public {
@@ -92,17 +95,17 @@ contract AaveV4BabylonTest is Create2TestHelper {
     this.readConfig();
   }
 
-  /// @dev The checked-in config still has placeholders, so it cannot deploy.
-  function test_sepoliaConfig_placeholdersBlockDeployment() public {
+  function test_sepoliaConfig_deploy() public {
     vm.chainId(AaveV4BabylonConfig.SEPOLIA_CHAIN_ID);
-    AaveV4BabylonConfig.Config memory config = AaveV4BabylonConfig.read();
-    assertEq(config.liquidationManager, address(0));
-    assertEq(config.admin, address(0));
+    OrchestrationReports.FullDeploymentReport memory report = this.deploy(
+      new AaveV4DeployBabylonHarness(AaveV4BabylonConfig.read()).sanitizedDeployInputs(_deployer)
+    );
 
-    InputUtils.FullDeployInputs memory inputs = new AaveV4DeployBabylonHarness(config)
-      .sanitizedDeployInputs(_deployer);
-    vm.expectRevert('invalid liquidation manager');
-    this.deploy(inputs);
+    IBabylonSpoke babylonSpoke = IBabylonSpoke(
+      report.babylonSpokeInstanceBatchReports[0].report.spokeProxy
+    );
+    assertEq(babylonSpoke.LIQUIDATION_MANAGER(), SEPOLIA_AAVE_ADAPTER);
+    assertEq(babylonSpoke.MANAGED_COLLATERAL_RESERVE_ID(), 0);
   }
 
   function test_deployInputs() public {

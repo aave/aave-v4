@@ -12,7 +12,7 @@ Two Hubs, `babylon-btc` for vaultBTC and `babylon-stables` for the borrowed stab
 | `admin`                      | Receives every role and ownership at handover                                                        |
 | `report`                     | Deployment report written by step 2, read by step 4                                                  |
 
-`liquidationManager` and `admin` are zero placeholders in the checked-in config. Deployment reverts while `liquidationManager` is unset, and the handover reverts while `admin` is unset.
+On Sepolia, `liquidationManager` is the AaveAdapter at its precomputed address `0x6A785E8fdF251E2aA758a6E1841e1470074f46BF`. `admin` is a zero placeholder, and the handover reverts while it is unset.
 
 ## Steps
 

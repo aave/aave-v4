@@ -2,7 +2,7 @@
   "salt": "0x894075935527788dcca90ad5e59f77ad3121f0ad6823f8f0a87e5f60e6e86ed9",
   "hubLabels": ["babylon-btc", "babylon-stables"],
   "babylonSpokeLabel": "babylon",
-  "liquidationManager": "0x0000000000000000000000000000000000000000",
+  "liquidationManager": "0x6A785E8fdF251E2aA758a6E1841e1470074f46BF",
   "managedCollateralReserveId": 0,
   "admin": "0x0000000000000000000000000000000000000000",
   "report": ""
