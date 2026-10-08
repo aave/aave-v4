@@ -1,0 +1,19 @@
+snapshots/BabylonSpoke.Operations.json
+  s_477c0d90c4846f::t_330eb352400876 9,12-13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "12f5e2675572cfcfc80a7f0fa8494ebae8b58782",
+  "prompts": {},
+  "sessions": {
+    "s_477c0d90c4846f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9de15bb6-ef2d-4870-b4ab-7a2a27701508",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}
