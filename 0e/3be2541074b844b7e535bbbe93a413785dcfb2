@@ -1,0 +1,33 @@
+scripts/deploy/AaveV4DeployBatchBase.s.sol
+  s_477c0d90c4846f::t_5a66ab7eed4b39 94-99
+src/deployments/orchestration/AaveV4DeployOrchestration.sol
+  s_477c0d90c4846f::t_cc7459b98ec41e 79-84
+src/deployments/utils/MetadataLogger.sol
+  s_477c0d90c4846f::t_e37953375b840e 51-54,72,86,93
+src/deployments/utils/libraries/InputUtils.sol
+  s_477c0d90c4846f::t_378e217847a066 71-89
+tests/deployments/AaveV4BatchDeployment.t.sol
+  s_477c0d90c4846f::t_d53ae0994395e3 414,417-421
+tests/deployments/fork/PostDeploymentVerificationBase.t.sol
+  s_477c0d90c4846f::t_476ea9b3be78f0 124
+tests/deployments/utils/MetadataLogger.t.sol
+  s_477c0d90c4846f::t_bdc65494fa4dd0 130,133
+tests/scripts/AaveV4DeployBatchBaseScript.t.sol
+  s_477c0d90c4846f::t_cc2d712520d6e4 355-363
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "0e3be2541074b844b7e535bbbe93a413785dcfb2",
+  "prompts": {},
+  "sessions": {
+    "s_477c0d90c4846f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9de15bb6-ef2d-4870-b4ab-7a2a27701508",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}
