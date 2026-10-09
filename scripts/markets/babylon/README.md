@@ -4,7 +4,7 @@ Two Hubs, `babylon-btc` for vaultBTC and `babylon-stables` for the borrowed stab
 
 | Field                        | Meaning                                                                                              |
 | ---------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `salt`                       | Deploy salt, `keccak256("aave-v4-babylon")`                                                          |
+| `salt`                       | Deploy salt, `keccak256("aave-v4-babylon-v2")`                                                       |
 | `hubLabels`                  | Hub labels, `babylon-btc` and `babylon-stables`                                                      |
 | `babylonSpokeLabel`          | BabylonSpoke label, `babylon`                                                                        |
 | `liquidationManager`         | The only address allowed to liquidate on the BabylonSpoke. Immutable.                                |

@@ -66,7 +66,7 @@ contract AaveV4BabylonTest is Create2TestHelper {
     hubLabels[0] = 'babylon-btc';
     hubLabels[1] = 'babylon-stables';
     _config = AaveV4BabylonConfig.Config({
-      salt: keccak256('aave-v4-babylon'),
+      salt: keccak256('aave-v4-babylon-v2'),
       hubLabels: hubLabels,
       babylonSpokeLabel: 'babylon',
       liquidationManager: _liquidationManager,
@@ -79,7 +79,7 @@ contract AaveV4BabylonTest is Create2TestHelper {
   function test_sepoliaConfig() public {
     vm.chainId(AaveV4BabylonConfig.SEPOLIA_CHAIN_ID);
     AaveV4BabylonConfig.Config memory config = AaveV4BabylonConfig.read();
-    assertEq(config.salt, keccak256('aave-v4-babylon'));
+    assertEq(config.salt, keccak256('aave-v4-babylon-v2'));
     assertEq(config.hubLabels.length, 2);
     assertEq(config.hubLabels[0], 'babylon-btc');
     assertEq(config.hubLabels[1], 'babylon-stables');
@@ -126,7 +126,7 @@ contract AaveV4BabylonTest is Create2TestHelper {
     assertFalse(inputs.deployNativeTokenGateway);
     assertFalse(inputs.deploySignatureGateway);
     assertFalse(inputs.deployPositionManagers);
-    assertEq(inputs.salt, keccak256('aave-v4-babylon'));
+    assertEq(inputs.salt, keccak256('aave-v4-babylon-v2'));
   }
 
   function test_deploy() public {
