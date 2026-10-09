@@ -13,8 +13,22 @@ import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 library SpokeDeployUtils {
   Vm internal constant vm = Vm(address(uint160(uint256(keccak256('hevm cheat code')))));
 
+  /// @notice The CREATE2 salt the live V4 markets deployed LiquidationLogic with.
+  /// @dev Reusing it puts the library at `0x88dF535473C5adf1f57789734A05E555F7Deb8DB` on every
+  /// chain, which is where Ethereum and Avalanche already have it and what every Spoke on both
+  /// links against. The salt is not derived from anything: it was read back off the Ethereum
+  /// deployment transaction, whose calldata to the Safe Singleton Factory is the salt followed by
+  /// the creation code.
+  ///
+  /// A salt of zero lands on `0x818E84198224535FAeaEc1b583d3Ff6b812A5AF3` instead, which is what
+  /// Arc runs and what this deployed before. Same bytecode either way — only the address differs.
+  bytes32 internal constant LIQUIDATION_LOGIC_SALT = bytes32(uint256(0x2bdf));
+
   /// @notice Deploys LiquidationLogic via CREATE2.
-  /// @dev The CREATE2 factory must already be deployed on the target chain.
+  /// @dev The CREATE2 factory must already be deployed on the target chain. The creation code is
+  /// address-independent, so a given salt yields the same address on every chain as long as the
+  /// compiler settings are unchanged: LiquidationLogic is not in `compilation_restrictions`, so it
+  /// builds under the default profile rather than the Spoke's via-ir one.
   /// @param salt The CREATE2 salt for deterministic deployment.
   /// @return The deployed library address.
   function deployLiquidationLogic(bytes32 salt) internal returns (address) {
