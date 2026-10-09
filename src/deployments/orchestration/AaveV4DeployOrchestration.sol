@@ -76,6 +76,12 @@ library AaveV4DeployOrchestration {
     InputUtils.validateUniqueLabels(deployInputs.hubLabels, 'hub');
     InputUtils.validateUniqueLabels(deployInputs.spokeLabels, 'spoke');
     InputUtils.validateUniqueLabels(deployInputs.babylonSpokeLabels, 'babylonSpoke');
+    // Spokes and BabylonSpokes share the oracle report group
+    InputUtils.validateDisjointLabels({
+      labels: deployInputs.spokeLabels,
+      otherLabels: deployInputs.babylonSpokeLabels,
+      kind: 'spoke/babylonSpoke'
+    });
 
     // Deploy Hub Batches
     report.hubInstanceBatchReports = _deployHubs({

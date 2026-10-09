@@ -137,6 +137,11 @@ abstract contract BabylonSpoke is IBabylonSpoke, Spoke {
     super.setUsingAsCollateral(reserveId, usingAsCollateral, onBehalfOf);
   }
 
+  /// @inheritdoc IBabylonSpoke
+  function getBabylonLiquidationLogic() external pure returns (address) {
+    return address(BabylonLiquidationLogic);
+  }
+
   /// @dev Reverts with `UnsupportedBorrowableCollateral` if the reserve is the managed collateral reserve and is borrowable.
   /// @dev A reserve that is not listed yet has no flags set, so it passes the check.
   /// @param reserveId The identifier of the reserve to validate.

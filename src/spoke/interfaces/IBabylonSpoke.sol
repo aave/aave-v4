@@ -72,4 +72,7 @@ interface IBabylonSpoke is ISpoke {
 
   /// @notice Returns the identifier of the only reserve usable as collateral.
   function MANAGED_COLLATERAL_RESERVE_ID() external view returns (uint256);
+
+  /// @notice Returns the address of the external `BabylonLiquidationLogic` library.
+  function getBabylonLiquidationLogic() external pure returns (address);
 }

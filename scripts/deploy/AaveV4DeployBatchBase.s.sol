@@ -91,6 +91,12 @@ abstract contract AaveV4DeployBatchBaseScript is Script {
     InputUtils.validateUniqueLabels(inputs.hubLabels, 'hub');
     InputUtils.validateUniqueLabels(inputs.spokeLabels, 'spoke');
     InputUtils.validateUniqueLabels(inputs.babylonSpokeLabels, 'babylonSpoke');
+    // Spokes and BabylonSpokes share the oracle report group
+    InputUtils.validateDisjointLabels({
+      labels: inputs.spokeLabels,
+      otherLabels: inputs.babylonSpokeLabels,
+      kind: 'spoke/babylonSpoke'
+    });
     require(
       inputs.babylonLiquidationManagers.length == inputs.babylonSpokeLabels.length &&
         inputs.babylonManagedCollateralReserveIds.length == inputs.babylonSpokeLabels.length,

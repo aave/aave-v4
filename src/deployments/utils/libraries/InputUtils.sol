@@ -68,4 +68,23 @@ library InputUtils {
       }
     }
   }
+
+  /// @notice Reverts if any label appears in both arrays.
+  /// @param labels The first array of labels.
+  /// @param otherLabels The second array of labels.
+  /// @param kind A descriptor used in the revert message (e.g. "spoke/babylonSpoke").
+  function validateDisjointLabels(
+    string[] memory labels,
+    string[] memory otherLabels,
+    string memory kind
+  ) internal pure {
+    for (uint256 i; i < labels.length; i++) {
+      for (uint256 j; j < otherLabels.length; j++) {
+        require(
+          keccak256(bytes(labels[i])) != keccak256(bytes(otherLabels[j])),
+          string.concat('duplicate ', kind, ' label: ', labels[i])
+        );
+      }
+    }
+  }
 }

@@ -48,7 +48,10 @@ contract MetadataLogger is Logger {
     uint256 spokeLen = report.spokeInstanceBatchReports.length;
     Logger.AddressEntry[] memory spokeEntries = new Logger.AddressEntry[](spokeLen);
     Logger.AddressEntry[] memory spokeImplEntries = new Logger.AddressEntry[](spokeLen);
-    Logger.AddressEntry[] memory oracleEntries = new Logger.AddressEntry[](spokeLen);
+    uint256 babylonSpokeLen = report.babylonSpokeInstanceBatchReports.length;
+    Logger.AddressEntry[] memory oracleEntries = new Logger.AddressEntry[](
+      spokeLen + babylonSpokeLen
+    );
     for (uint256 i; i < spokeLen; i++) {
       spokeEntries[i] = Logger.AddressEntry({
         label: report.spokeInstanceBatchReports[i].label,
@@ -65,15 +68,12 @@ contract MetadataLogger is Logger {
     }
     _writeGroup('spoke', spokeEntries);
     _writeGroup('spokeImplementation', spokeImplEntries);
-    _writeGroup('oracle', oracleEntries);
 
-    // Group babylon spokes by property type
-    uint256 babylonSpokeLen = report.babylonSpokeInstanceBatchReports.length;
+    // Group babylon spokes by property type, their oracles join the spoke oracles
     Logger.AddressEntry[] memory babylonSpokeEntries = new Logger.AddressEntry[](babylonSpokeLen);
     Logger.AddressEntry[] memory babylonSpokeImplEntries = new Logger.AddressEntry[](
       babylonSpokeLen
     );
-    Logger.AddressEntry[] memory babylonOracleEntries = new Logger.AddressEntry[](babylonSpokeLen);
     for (uint256 i; i < babylonSpokeLen; i++) {
       babylonSpokeEntries[i] = Logger.AddressEntry({
         label: report.babylonSpokeInstanceBatchReports[i].label,
@@ -83,14 +83,14 @@ contract MetadataLogger is Logger {
         label: report.babylonSpokeInstanceBatchReports[i].label,
         value: report.babylonSpokeInstanceBatchReports[i].report.spokeImplementation
       });
-      babylonOracleEntries[i] = Logger.AddressEntry({
+      oracleEntries[spokeLen + i] = Logger.AddressEntry({
         label: report.babylonSpokeInstanceBatchReports[i].label,
         value: report.babylonSpokeInstanceBatchReports[i].report.aaveOracle
       });
     }
     _writeGroup('babylonSpoke', babylonSpokeEntries);
     _writeGroup('babylonSpokeImplementation', babylonSpokeImplEntries);
-    _writeGroup('babylonOracle', babylonOracleEntries);
+    _writeGroup('oracle', oracleEntries);
 
     if (report.gatewaysBatchReport.signatureGateway != address(0)) {
       _write('signatureGateway', report.gatewaysBatchReport.signatureGateway);

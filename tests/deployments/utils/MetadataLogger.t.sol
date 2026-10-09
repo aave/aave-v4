@@ -127,9 +127,10 @@ contract MetadataLoggerTest is Test {
       report.babylonSpokeInstanceBatchReports[0].report.spokeImplementation
     );
     assertEq(
-      vm.parseJsonAddress(json, '$.babylonOracle.babylon'),
+      vm.parseJsonAddress(json, '$.oracle.babylon'),
       report.babylonSpokeInstanceBatchReports[0].report.aaveOracle
     );
+    assertFalse(vm.keyExistsJson(json, '$.babylonOracle'));
 
     // Gateways
     assertEq(

@@ -154,6 +154,11 @@ library BabylonLiquidationLogic {
       });
   }
 
+  /// @notice Returns the address of the external `LiquidationLogic` library.
+  function getLiquidationLogic() external pure returns (address) {
+    return address(LiquidationLogic);
+  }
+
   /// @dev Repays the debt reserve and removes the priced collateral, bounded by the removal cap.
   /// @dev The repayment runs even when no collateral can be removed, so debt is liquidatable when the collateral to receive rounds to zero.
   /// @param collateralUserPosition User's collateral position.

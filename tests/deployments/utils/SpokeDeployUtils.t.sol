@@ -48,6 +48,11 @@ contract SpokeDeployUtilsTest is Create2TestHelper {
       })
     );
     assertGt(babylonLiquidationLogic.code.length, 0);
+    (bool success, bytes memory linked) = babylonLiquidationLogic.staticcall(
+      abi.encodeWithSignature('getLiquidationLogic()')
+    );
+    assertTrue(success);
+    assertEq(abi.decode(linked, (address)), liquidationLogic);
 
     uint256[] memory starts = _liquidationLogicLinkStarts();
     assertGt(starts.length, 0);

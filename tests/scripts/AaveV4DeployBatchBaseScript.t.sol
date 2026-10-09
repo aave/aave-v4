@@ -352,6 +352,15 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     _harness.loadWarningsAndSanitizeInputs(_inputs, _deployer);
   }
 
+  function test_loadWarningsAndSanitizeInputs_revertsWith_sharedSpokeAndBabylonSpokeLabel() public {
+    _inputs.spokeLabels = ['spoke1'];
+    _inputs.spokeMaxReservesLimits = _defaultSpokeMaxReservesLimits(1);
+    _inputs.babylonSpokeLabels = ['spoke1'];
+
+    vm.expectRevert('duplicate spoke/babylonSpoke label: spoke1');
+    _harness.loadWarningsAndSanitizeInputs(_inputs, _deployer);
+  }
+
   function test_loadWarningsAndSanitizeInputs_revertsWith_babylonInputsLengthMismatch() public {
     _inputs.babylonManagedCollateralReserveIds = new uint256[](1);
 

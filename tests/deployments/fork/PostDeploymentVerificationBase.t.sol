@@ -121,7 +121,7 @@ abstract contract PostDeploymentVerificationBase is BatchTestProcedures {
       );
       report.babylonSpokeInstanceBatchReports[i].report.aaveOracle = vm.parseJsonAddress(
         json,
-        string.concat('$.babylonOracle.', label)
+        string.concat('$.oracle.', label)
       );
     }
   }

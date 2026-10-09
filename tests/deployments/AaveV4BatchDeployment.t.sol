@@ -411,10 +411,14 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     this.checkedV4Deployment();
   }
 
-  function testAaveV4BatchDeployment_withSharedSpokeAndBabylonSpokeLabel() public {
+  function testAaveV4BatchDeployment_withSharedSpokeAndBabylonSpokeLabel_reverts() public {
     _inputs.babylonSpokeLabels = new string[](1);
     _inputs.babylonSpokeLabels[0] = _inputs.spokeLabels[0];
-    checkedV4Deployment();
+
+    vm.expectRevert(
+      bytes(string.concat('duplicate spoke/babylonSpoke label: ', _inputs.spokeLabels[0]))
+    );
+    this.checkedV4Deployment();
   }
 
   function testAaveV4BatchDeployment_revert_babylonInputsLengthMismatch() public {
