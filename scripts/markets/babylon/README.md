@@ -17,7 +17,7 @@ On Sepolia, `liquidationManager` is the AaveAdapter at its precomputed address `
 ## Steps
 
 1. `make babylon-precompile chain=sepolia account=<keystore>` deploys `LiquidationLogic` at `0x88dF535473C5adf1f57789734A05E555F7Deb8DB` if missing, then `BabylonLiquidationLogic` linked against it, and writes `FOUNDRY_LIBRARIES` to `.env`.
-2. `make babylon-deploy chain=sepolia account=<keystore>` deploys the market and writes the report to `output/reports/deployments/`. Set `report` in the config to that file.
+2. `make babylon-deploy chain=sepolia account=<keystore>` deploys the market and writes the report to `output/reports/deployments/`. Copy it to `reports/<chain>.json` and set `report` in the config to that path.
 3. Configure the market from the deployer, which holds the AccessManager admin role.
 4. `make babylon-handover chain=sepolia account=<keystore>` grants `admin` the roles `grantRoles = true` would have granted, transfers every ProxyAdmin, nominates `admin` as TreasurySpoke owner and removes every role the deployer holds. It reverts unless the deployer ends with nothing.
 5. `admin` calls `acceptOwnership()` on the TreasurySpoke.
