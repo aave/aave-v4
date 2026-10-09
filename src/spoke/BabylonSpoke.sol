@@ -97,6 +97,11 @@ abstract contract BabylonSpoke is IBabylonSpoke, Spoke {
     revert UnsupportedLiquidationCall();
   }
 
+  /// @inheritdoc IBabylonSpoke
+  function getBabylonLiquidationLogic() external pure returns (address) {
+    return address(BabylonLiquidationLogic);
+  }
+
   /// @dev Overrides Spoke `addReserve` function to reject listing the managed collateral reserve as borrowable.
   function addReserve(
     address hub,
@@ -135,11 +140,6 @@ abstract contract BabylonSpoke is IBabylonSpoke, Spoke {
       require(reserveId == MANAGED_COLLATERAL_RESERVE_ID, UnsupportedCollateralReserve());
     }
     super.setUsingAsCollateral(reserveId, usingAsCollateral, onBehalfOf);
-  }
-
-  /// @inheritdoc IBabylonSpoke
-  function getBabylonLiquidationLogic() external pure returns (address) {
-    return address(BabylonLiquidationLogic);
   }
 
   /// @dev Reverts with `UnsupportedBorrowableCollateral` if the reserve is the managed collateral reserve and is borrowable.
