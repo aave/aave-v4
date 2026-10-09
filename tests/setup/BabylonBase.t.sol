@@ -1,0 +1,215 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import 'tests/setup/Base.t.sol';
+import {IBabylonSpoke} from 'src/spoke/interfaces/IBabylonSpoke.sol';
+
+/// @dev Extends the base environment with a fourth spoke running the Babylon spoke instance.
+/// The spoke mirrors spoke1's reserves and liquidation config, with the managed collateral
+/// reserve (wbtc by default) non-borrowable, every reserve fee-free and users limited to one
+/// collateral and one debt reserve, as in production. The liquidation manager and the managed
+/// collateral reserve are constructor arguments, overridable through the two hooks.
+abstract contract BabylonBase is Base {
+  IBabylonSpoke internal babylonSpoke;
+  ISpoke internal spoke4;
+  IAaveOracle internal oracle4;
+  address internal liquidationManager = makeAddr('liquidationManager');
+
+  /// @dev Positions of the reserves in `_getBabylonReserveParams`, hence their reserve ids.
+  uint256 internal constant BABYLON_WETH_RESERVE_INDEX = 0;
+  uint256 internal constant BABYLON_WBTC_RESERVE_INDEX = 1;
+  uint256 internal constant BABYLON_USDX_RESERVE_INDEX = 3;
+
+  function setUp() public virtual override {
+    super.setUp();
+    _deployBabylonSpoke();
+    _configureBabylonSpoke();
+  }
+
+  /// @dev The liquidation manager baked into the babylon spoke.
+  function _babylonLiquidationManager() internal view virtual returns (address) {
+    return liquidationManager;
+  }
+
+  /// @dev The managed collateral reserve baked into the babylon spoke, wbtc by default.
+  function _babylonManagedCollateralReserveId() internal view virtual returns (uint256) {
+    return BABYLON_WBTC_RESERVE_INDEX;
+  }
+
+  /// @dev Supplies liquidity from a fresh user without registering it as collateral: only the
+  /// managed collateral reserve can be registered on the babylon spoke.
+  function _openSupplyPositionNoCollateral(
+    ISpoke spoke,
+    uint256 reserveId,
+    uint256 amount
+  ) internal {
+    address user = _makeUser();
+    _deal(spoke, reserveId, user, amount);
+    SpokeActions.approve({spoke: spoke, reserveId: reserveId, owner: user, amount: UINT256_MAX});
+    SpokeActions.supply({
+      spoke: spoke,
+      reserveId: reserveId,
+      caller: user,
+      amount: amount,
+      onBehalfOf: user
+    });
+  }
+
+  /// @dev Mirrors `_increaseReserveDebt` without registering the seeded liquidity as collateral.
+  function _increaseReserveDebtNoCollateral(
+    ISpoke spoke,
+    uint256 reserveId,
+    uint256 amount,
+    address user
+  ) internal {
+    _openSupplyPositionNoCollateral(
+      spoke,
+      reserveId,
+      _max(_hub(spoke, reserveId).previewAddByShares(_reserveAssetId(spoke, reserveId), 1), amount)
+    );
+    SpokeActions.borrow({
+      spoke: spoke,
+      reserveId: reserveId,
+      caller: user,
+      amount: amount,
+      onBehalfOf: user
+    });
+  }
+
+  function _deployBabylonSpoke() internal {
+    vm.startPrank(ADMIN);
+    TestTypes.TestSpokeReport memory report = AaveV4TestOrchestration.deployTestBabylonSpoke({
+      proxyAdminOwner: ADMIN,
+      accessManager: address(accessManager),
+      liquidationManager: _babylonLiquidationManager(),
+      managedCollateralReserveId: _babylonManagedCollateralReserveId(),
+      babylonSpokeBytecode: BytecodeHelper.getBabylonSpokeBytecode(),
+      // deterministic salt: the spoke address enters signed payloads measured by the gas suite
+      salt: keccak256('babylon-spoke')
+    });
+    AaveV4SpokeRolesProcedure.setupSpokeAllRoles(address(accessManager), report.spoke);
+    vm.stopPrank();
+
+    spoke4 = ISpoke(report.spoke);
+    oracle4 = IAaveOracle(report.aaveOracle);
+    babylonSpoke = IBabylonSpoke(report.spoke);
+    _spokes.push(spoke4);
+    _oracles.push(oracle4);
+    vm.label(report.spoke, 'spoke4');
+    vm.label(report.aaveOracle, 'oracle4');
+
+    _approveTokenListForBabylonSpoke();
+  }
+
+  function _configureBabylonSpoke() internal {
+    vm.startPrank(ADMIN);
+    accessManager.grantRole(Roles.HUB_CONFIGURATOR_ROLE, address(this), 0);
+    accessManager.grantRole(Roles.SPOKE_CONFIGURATOR_ROLE, address(this), 0);
+    vm.stopPrank();
+
+    AaveV4TestOrchestration.configureHubsSpokes(_getBabylonAddSpokeParams());
+    _loadSpokeInfo(
+      AaveV4TestOrchestration.configureSpokes(
+        _getBabylonLiquidationConfigParams(),
+        _getBabylonReserveParams()
+      )
+    );
+
+    accessManager.renounceRole(Roles.HUB_CONFIGURATOR_ROLE, address(this));
+    accessManager.renounceRole(Roles.SPOKE_CONFIGURATOR_ROLE, address(this));
+  }
+
+  function _approveTokenListForBabylonSpoke() internal {
+    address[7] memory users = [
+      alice,
+      bob,
+      carol,
+      derl,
+      LIQUIDATOR,
+      TREASURY_ADMIN,
+      POSITION_MANAGER
+    ];
+    for (uint256 i; i < users.length; ++i) {
+      vm.startPrank(users[i]);
+      tokenList.weth.approve(address(spoke4), UINT256_MAX);
+      tokenList.usdx.approve(address(spoke4), UINT256_MAX);
+      tokenList.dai.approve(address(spoke4), UINT256_MAX);
+      tokenList.wbtc.approve(address(spoke4), UINT256_MAX);
+      tokenList.usdy.approve(address(spoke4), UINT256_MAX);
+      tokenList.usdz.approve(address(spoke4), UINT256_MAX);
+      vm.stopPrank();
+    }
+  }
+
+  function _getBabylonAddSpokeParams()
+    internal
+    view
+    returns (ConfigData.AddSpokeParams[] memory paramsList)
+  {
+    IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
+      active: true,
+      halted: false,
+      addCap: MAX_ALLOWED_SPOKE_CAP,
+      drawCap: MAX_ALLOWED_SPOKE_CAP,
+      riskPremiumThreshold: MAX_ALLOWED_COLLATERAL_RISK
+    });
+    uint256[5] memory assetIds = [wethAssetId, wbtcAssetId, daiAssetId, usdxAssetId, usdyAssetId];
+    paramsList = new ConfigData.AddSpokeParams[](assetIds.length);
+    for (uint256 i; i < assetIds.length; ++i) {
+      paramsList[i] = ConfigData.AddSpokeParams({
+        spoke: address(spoke4),
+        hub: address(hub1),
+        assetId: assetIds[i],
+        config: spokeConfig
+      });
+    }
+  }
+
+  function _getBabylonLiquidationConfigParams()
+    internal
+    view
+    returns (ConfigData.UpdateLiquidationConfigParams[] memory paramsList)
+  {
+    paramsList = new ConfigData.UpdateLiquidationConfigParams[](1);
+    paramsList[0] = ConfigData.UpdateLiquidationConfigParams({
+      spoke: address(spoke4),
+      config: ISpoke.LiquidationConfig({
+        targetHealthFactor: 1.05e18,
+        healthFactorForMaxBonus: 0.7e18,
+        liquidationBonusFactor: 20_00
+      })
+    });
+  }
+
+  function _getBabylonReserveParams()
+    internal
+    returns (ConfigData.AddReserveParams[] memory paramsList)
+  {
+    // every reserve is fee-free: BabylonSpoke rejects a liquidation fee, which its liquidations never charge
+    uint256[5] memory assetIds = [wethAssetId, wbtcAssetId, daiAssetId, usdxAssetId, usdyAssetId];
+    uint256[5] memory prices = [uint256(2000e8), 50_000e8, 1e8, 1e8, 1e8];
+    uint24[5] memory collateralRisks = [uint24(15_00), 15_00, 20_00, 50_00, 50_00];
+    uint16[5] memory collateralFactors = [uint16(80_00), 75_00, 78_00, 78_00, 78_00];
+    uint32[5] memory maxLiquidationBonuses = [uint32(105_00), 103_00, 102_00, 101_00, 101_50];
+    paramsList = new ConfigData.AddReserveParams[](assetIds.length);
+    for (uint256 i; i < assetIds.length; ++i) {
+      ISpoke.ReserveConfig memory config = _getDefaultReserveConfig(collateralRisks[i]);
+      // the managed collateral reserve is never borrowable, keeping its supply share price at one
+      if (i == _babylonManagedCollateralReserveId()) {
+        config.borrowable = false;
+      }
+      paramsList[i] = ConfigData.AddReserveParams({
+        spoke: address(spoke4),
+        hub: address(hub1),
+        assetId: assetIds[i],
+        priceSource: _deployMockPriceFeed(spoke4, prices[i]),
+        config: config,
+        dynamicConfig: ISpoke.DynamicReserveConfig({
+          collateralFactor: collateralFactors[i],
+          maxLiquidationBonus: maxLiquidationBonuses[i],
+          liquidationFee: 0
+        })
+      });
+    }
+  }
+}
