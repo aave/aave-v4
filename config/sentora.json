@@ -1,0 +1,23 @@
+{
+  "accessManagerAdmin": "0x187AAE17d4931310B3fc75743e7F16Bdc9eD77e9",
+  "proxyAdminOwner": "0x187AAE17d4931310B3fc75743e7F16Bdc9eD77e9",
+  "treasurySpokeOwner": "0x1111111111111111111111111111111111111111",
+  "gatewayOwner": "0x1111111111111111111111111111111111111111",
+  "positionManagerOwner": "0x1111111111111111111111111111111111111111",
+  "hubConfiguratorAdmin": "0x0000000000000000000000000000000000000000",
+  "spokeConfiguratorAdmin": "0x0000000000000000000000000000000000000000",
+  "hubAdmin": "0x0000000000000000000000000000000000000000",
+  "spokeAdmin": "0x0000000000000000000000000000000000000000",
+  "sentoraExecutor": "0x1111111111111111111111111111111111111111",
+  "riskSteward": "0x2222222222222222222222222222222222222222",
+  "emergencyOperator": "0x37409c868BA42B91ff7E7b64D5BC020897444fAf",
+  "nativeWrapper": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+  "deployNativeTokenGateway": true,
+  "deploySignatureGateway": true,
+  "deployPositionManagers": true,
+  "grantRoles": false,
+  "hubLabels": ["sentora"],
+  "spokeLabels": ["rlusdYield", "ousdYield", "bluechip"],
+  "spokeMaxReservesLimits": [],
+  "salt": "0xab208b3c8102ae53f237714ed7d4b1d3ffb9c211e8fb485ed1e901e188da560c"
+}

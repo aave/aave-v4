@@ -67,3 +67,13 @@ deploy-config-engine :;
 	FOUNDRY_PROFILE=${chain} forge script scripts/config/${script}.s.sol:${script} \
 	--rpc-url ${chain} --account ${account} --slow \
 	$(if ${dry},, --broadcast --verify) \
+
+# Sentora market on Ethereum, chain id 1. Every target takes the cast wallet keystore account to
+# broadcast from, and `dry=true` to simulate instead: `make sentora-deploy account=<keystore-name>`.
+# Run them in order; see docs/sentora-deploy.md for what goes between the steps.
+sentora-account :; cast wallet address --account ${account}
+
+sentora-deploy :; make deploy-contracts chain=mainnet account=${account} script=AaveV4DeploySentora dry=${dry}
+sentora-configure :; make configure-market chain=mainnet account=${account} script=AaveV4ConfigureSentora dry=${dry}
+sentora-relinquish :; make relinquish-market chain=mainnet account=${account} script=AaveV4RelinquishSentora dry=${dry}
+sentora-config-engine :; make deploy-config-engine chain=mainnet account=${account} script=DeploySentoraConfigEngine dry=${dry}
