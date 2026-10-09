@@ -1,0 +1,25 @@
+snapshots/BabylonSpoke.Operations.json
+  s_477c0d90c4846f::t_c1c2adccb64710 2-3,8-11,14-17,19-21
+src/spoke/BabylonSpoke.sol
+  s_477c0d90c4846f::t_f6c58260d105f4 140-144
+src/spoke/interfaces/IBabylonSpoke.sol
+  s_477c0d90c4846f::t_8ca7e4d783f20d 75-77
+tests/contracts/spoke/configuration/BabylonSpoke.Config.t.sol
+  s_477c0d90c4846f::t_b4e2b8bcd72f4e 30-35
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "4cd323fe9f527ff850e32d0e6b1de91e189f7390",
+  "prompts": {},
+  "sessions": {
+    "s_477c0d90c4846f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9de15bb6-ef2d-4870-b4ab-7a2a27701508",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}
