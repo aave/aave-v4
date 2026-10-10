@@ -16,7 +16,7 @@ contract AaveV4TakerPositionManagerDeployProcedure is AaveV4DeployProcedureBase 
   function _deployTakerPositionManager(address owner, bytes32 salt) internal returns (address) {
     require(owner != address(0), 'invalid owner');
     return
-      Create2Utils.create2Deploy({
+      Create2Utils.create2DeployIdempotent({
         salt: salt,
         bytecode: abi.encodePacked(type(TakerPositionManager).creationCode, abi.encode(owner))
       });

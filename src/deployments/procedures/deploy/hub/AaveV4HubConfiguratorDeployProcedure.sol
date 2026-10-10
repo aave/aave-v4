@@ -16,7 +16,7 @@ contract AaveV4HubConfiguratorDeployProcedure is AaveV4DeployProcedureBase {
   function _deployHubConfigurator(address authority, bytes32 salt) internal returns (address) {
     require(authority != address(0), 'invalid authority');
     return
-      Create2Utils.create2Deploy(
+      Create2Utils.create2DeployIdempotent(
         salt,
         abi.encodePacked(type(HubConfigurator).creationCode, abi.encode(authority))
       );

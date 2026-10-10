@@ -24,7 +24,7 @@ contract AaveV4HubDeployProcedure is AaveV4DeployProcedureBase {
   ) internal returns (address hubProxy, address hubImplementation) {
     require(proxyAdminOwner != address(0), 'invalid proxy admin owner');
     require(authority != address(0), 'invalid authority');
-    hubImplementation = Create2Utils.create2Deploy({salt: salt, bytecode: hubBytecode});
+    hubImplementation = Create2Utils.create2DeployIdempotent({salt: salt, bytecode: hubBytecode});
     hubProxy = Create2Utils.proxify({
       salt: salt,
       logic: hubImplementation,
