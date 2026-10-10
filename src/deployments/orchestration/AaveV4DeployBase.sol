@@ -11,6 +11,7 @@ import {AaveV4PositionManagerBatch} from 'src/deployments/batches/AaveV4Position
 import {AaveV4SpokeInstanceBatch} from 'src/deployments/batches/AaveV4SpokeInstanceBatch.sol';
 import {AaveV4TokenizationSpokeBatch} from 'src/deployments/batches/AaveV4TokenizationSpokeBatch.sol';
 import {AaveV4TreasurySpokeBatch} from 'src/deployments/batches/AaveV4TreasurySpokeBatch.sol';
+import {AaveV4FeeSharesMinterBatch} from 'src/deployments/batches/AaveV4FeeSharesMinterBatch.sol';
 
 /// @title AaveV4DeployBase Library
 /// @author Aave Labs
@@ -59,6 +60,21 @@ library AaveV4DeployBase {
       salt_: salt
     });
     return treasurySpokeBatch.getReport();
+  }
+
+  /// @notice Deploys the FeeSharesMinter batch containing the FeeSharesMinter contract.
+  /// @param owner The owner of the FeeSharesMinter.
+  /// @param salt The CREATE2 salt for deterministic deployment.
+  /// @return The FeeSharesMinter batch report.
+  function deployFeeSharesMinterBatch(
+    address owner,
+    bytes32 salt
+  ) internal returns (BatchReports.FeeSharesMinterBatchReport memory) {
+    AaveV4FeeSharesMinterBatch feeSharesMinterBatch = new AaveV4FeeSharesMinterBatch({
+      owner_: owner,
+      salt_: salt
+    });
+    return feeSharesMinterBatch.getReport();
   }
 
   /// @notice Deploys the Hub instance batch containing the Hub proxy, implementation, and IR strategy.

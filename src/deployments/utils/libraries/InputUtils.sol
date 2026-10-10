@@ -12,6 +12,8 @@ library InputUtils {
   /// @dev hubConfiguratorAdmin The admin granted all hub configurator roles. Only used when grantRoles is true.
   /// @dev treasurySpokeOwner The owner of the TreasurySpoke (Ownable). Required at deploy time (constructor arg).
   ///      When grantRoles is `false`, defaults to the deployer; ownership can be transferred post-deployment.
+  /// @dev feeSharesMinterOwner The owner of the FeeSharesMinter (Ownable). Required at deploy time (constructor arg).
+  ///      When grantRoles is `false`, defaults to the deployer; ownership can be transferred post-deployment.
   /// @dev spokeAdmin The spoke admin. Only used when grantRoles is true.
   /// @dev spokeConfiguratorAdmin The admin granted all spoke configurator roles. Only used when grantRoles is true.
   /// @dev gatewayOwner The owner of the native token and signature gateways.
@@ -34,6 +36,7 @@ library InputUtils {
     address hubAdmin;
     address hubConfiguratorAdmin;
     address treasurySpokeOwner;
+    address feeSharesMinterOwner;
     address spokeAdmin;
     address spokeConfiguratorAdmin;
     address gatewayOwner;

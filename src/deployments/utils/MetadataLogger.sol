@@ -20,6 +20,7 @@ contract MetadataLogger is Logger {
     _write('hubConfigurator', report.configuratorBatchReport.hubConfigurator);
     _write('spokeConfigurator', report.configuratorBatchReport.spokeConfigurator);
     _write('treasurySpoke', report.treasurySpokeBatchReport.treasurySpoke);
+    _write('feeSharesMinter', report.feeSharesMinterBatchReport.feeSharesMinter);
 
     // Group hubs by property type
     uint256 hubLen = report.hubInstanceBatchReports.length;

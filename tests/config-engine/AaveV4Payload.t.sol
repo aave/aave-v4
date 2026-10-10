@@ -5,8 +5,12 @@ import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 import 'tests/config-engine/BaseConfigEngine.t.sol';
 
 contract AaveV4PayloadTest is BaseConfigEngineTest {
+  bytes32 internal constant WORKFLOW_ID = keccak256('fee-minter:payload-test');
+  bytes10 internal constant WORKFLOW_NAME = bytes10('fee-minter');
+
   AaveV4PayloadWrapper public payload;
   PositionManagerBaseWrapper public payloadPositionManager;
+  FeeSharesMinter public payloadMinter;
 
   function setUp() public override {
     super.setUp();
@@ -22,6 +26,8 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     payloadPositionManager = new PositionManagerBaseWrapper(address(payload));
 
     _seedFullEnvironment();
+
+    payloadMinter = _deployFeeSharesMinter(address(payload));
   }
 
   function test_execute_emptyPayload_noReverts() public {
@@ -1450,5 +1456,123 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     );
     assertEq(sc2.addCap, 2000);
     assertEq(sc2.drawCap, 1000);
+  }
+
+  function test_execute_feeSharesMinterConfigs() public {
+    uint256 assetId = _getAssetId(0, TOKEN_WETH);
+
+    IAaveV4ConfigEngine.FeeSharesMinterConfig[]
+      memory configs = new IAaveV4ConfigEngine.FeeSharesMinterConfig[](1);
+    configs[0] = IAaveV4ConfigEngine.FeeSharesMinterConfig({
+      feeSharesMinter: address(payloadMinter),
+      hub: address(hub1()),
+      assetId: assetId,
+      minAccruedFeesPercent: 3_50
+    });
+    payload.setFeeSharesMinterConfigs(configs);
+
+    payload.execute();
+
+    assertEq(payloadMinter.getConfig(address(hub1()), assetId), 3_50);
+  }
+
+  function test_execute_feeSharesMinterHubConfigs_setsAllAssets() public {
+    IAaveV4ConfigEngine.FeeSharesMinterHubConfig[]
+      memory configs = new IAaveV4ConfigEngine.FeeSharesMinterHubConfig[](1);
+    configs[0] = IAaveV4ConfigEngine.FeeSharesMinterHubConfig({
+      feeSharesMinter: address(payloadMinter),
+      hub: address(hub1()),
+      minAccruedFeesPercent: 6_25
+    });
+    payload.setFeeSharesMinterHubConfigs(configs);
+
+    payload.execute();
+
+    uint256 assetCount = hub1().getAssetCount();
+    for (uint256 i; i < assetCount; ++i) {
+      assertEq(payloadMinter.getConfig(address(hub1()), i), 6_25);
+    }
+  }
+
+  function test_execute_feeSharesMinterWorkflowConfigs() public {
+    IFeeSharesMinter.WorkflowConfig memory cfg = IFeeSharesMinter.WorkflowConfig({
+      forwarder: makeAddr('payload-forwarder'),
+      owner: makeAddr('payload-workflow-owner'),
+      name: WORKFLOW_NAME,
+      isActive: true
+    });
+
+    IAaveV4ConfigEngine.FeeSharesMinterWorkflowConfig[]
+      memory configs = new IAaveV4ConfigEngine.FeeSharesMinterWorkflowConfig[](1);
+    configs[0] = IAaveV4ConfigEngine.FeeSharesMinterWorkflowConfig({
+      feeSharesMinter: address(payloadMinter),
+      workflowId: WORKFLOW_ID,
+      config: cfg
+    });
+    payload.setFeeSharesMinterWorkflowConfigs(configs);
+
+    payload.execute();
+
+    IFeeSharesMinter.WorkflowConfig memory stored = payloadMinter.getWorkflowConfig(WORKFLOW_ID);
+    assertEq(stored.forwarder, cfg.forwarder);
+    assertEq(stored.owner, cfg.owner);
+    assertEq(stored.name, cfg.name);
+    assertTrue(stored.isActive);
+  }
+
+  function test_execute_feeSharesMinter_workflowThenConfigs_combined() public {
+    IFeeSharesMinter.WorkflowConfig memory cfg = IFeeSharesMinter.WorkflowConfig({
+      forwarder: makeAddr('payload-forwarder-combined'),
+      owner: makeAddr('payload-workflow-owner-combined'),
+      name: WORKFLOW_NAME,
+      isActive: true
+    });
+
+    IAaveV4ConfigEngine.FeeSharesMinterWorkflowConfig[]
+      memory workflowConfigs = new IAaveV4ConfigEngine.FeeSharesMinterWorkflowConfig[](1);
+    workflowConfigs[0] = IAaveV4ConfigEngine.FeeSharesMinterWorkflowConfig({
+      feeSharesMinter: address(payloadMinter),
+      workflowId: WORKFLOW_ID,
+      config: cfg
+    });
+    payload.setFeeSharesMinterWorkflowConfigs(workflowConfigs);
+
+    IAaveV4ConfigEngine.FeeSharesMinterHubConfig[]
+      memory hubConfigs = new IAaveV4ConfigEngine.FeeSharesMinterHubConfig[](1);
+    hubConfigs[0] = IAaveV4ConfigEngine.FeeSharesMinterHubConfig({
+      feeSharesMinter: address(payloadMinter),
+      hub: address(hub1()),
+      minAccruedFeesPercent: 1_00
+    });
+    payload.setFeeSharesMinterHubConfigs(hubConfigs);
+
+    payload.execute();
+
+    IFeeSharesMinter.WorkflowConfig memory stored = payloadMinter.getWorkflowConfig(WORKFLOW_ID);
+    assertEq(stored.forwarder, cfg.forwarder);
+
+    uint256 assetCount = hub1().getAssetCount();
+    for (uint256 i; i < assetCount; ++i) {
+      assertEq(payloadMinter.getConfig(address(hub1()), i), 1_00);
+    }
+  }
+
+  function test_execute_feeSharesMinter_revertsWith_unauthorized() public {
+    FeeSharesMinter externalMinter = new FeeSharesMinter(ADMIN);
+
+    IAaveV4ConfigEngine.FeeSharesMinterConfig[]
+      memory configs = new IAaveV4ConfigEngine.FeeSharesMinterConfig[](1);
+    configs[0] = IAaveV4ConfigEngine.FeeSharesMinterConfig({
+      feeSharesMinter: address(externalMinter),
+      hub: address(hub1()),
+      assetId: _getAssetId(0, TOKEN_WETH),
+      minAccruedFeesPercent: 1_00
+    });
+    payload.setFeeSharesMinterConfigs(configs);
+
+    vm.expectRevert(
+      abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, address(payload))
+    );
+    payload.execute();
   }
 }

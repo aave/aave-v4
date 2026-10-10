@@ -70,6 +70,13 @@ library AaveV4DeployOrchestration {
       salt: salt
     });
 
+    // Deploy FeeSharesMinter Batch (single instance for all hubs)
+    report.feeSharesMinterBatchReport = _deployFeeSharesMinterBatch({
+      logger: logger,
+      feeSharesMinterOwner: deployInputs.feeSharesMinterOwner,
+      salt: salt
+    });
+
     // Validate label uniqueness (duplicate labels produce identical CREATE2 salts)
     InputUtils.validateUniqueLabels(deployInputs.hubLabels, 'hub');
     InputUtils.validateUniqueLabels(deployInputs.spokeLabels, 'spoke');
@@ -340,6 +347,18 @@ library AaveV4DeployOrchestration {
     return report;
   }
 
+  function _deployFeeSharesMinterBatch(
+    Logger logger,
+    address feeSharesMinterOwner,
+    bytes32 salt
+  ) internal returns (BatchReports.FeeSharesMinterBatchReport memory report) {
+    logger.logHeader1('deploying FeeSharesMinterBatch');
+    report = AaveV4DeployBase.deployFeeSharesMinterBatch({owner: feeSharesMinterOwner, salt: salt});
+    logger.log('FeeSharesMinter', report.feeSharesMinter);
+    logger.logNewLine();
+    return report;
+  }
+
   function _deployGatewayBatch(
     Logger logger,
     address gatewayOwner,
@@ -436,6 +455,16 @@ library AaveV4DeployOrchestration {
       accessManager: accessManager,
       role: Roles.HUB_CONFIGURATOR_ROLE,
       admin: report.configuratorBatchReport.hubConfigurator
+    });
+
+    logger.logHeader1(
+      'granting HUB_FEE_MINTER_ROLE to',
+      report.feeSharesMinterBatchReport.feeSharesMinter
+    );
+    AaveV4HubRolesProcedure.grantHubRole({
+      accessManager: accessManager,
+      role: Roles.HUB_FEE_MINTER_ROLE,
+      admin: report.feeSharesMinterBatchReport.feeSharesMinter
     });
 
     logger.logHeader1('granting HubConfigurator Admin roles to', hubConfiguratorAdmin);

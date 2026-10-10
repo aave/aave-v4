@@ -5,6 +5,7 @@ import {HubEngine} from 'src/config-engine/libraries/HubEngine.sol';
 import {SpokeEngine} from 'src/config-engine/libraries/SpokeEngine.sol';
 import {AccessManagerEngine} from 'src/config-engine/libraries/AccessManagerEngine.sol';
 import {PositionManagerEngine} from 'src/config-engine/libraries/PositionManagerEngine.sol';
+import {FeeSharesMinterEngine} from 'src/config-engine/libraries/FeeSharesMinterEngine.sol';
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
 
 /// @title AaveV4ConfigEngine
@@ -125,5 +126,22 @@ contract AaveV4ConfigEngine is IAaveV4ConfigEngine {
   /// @inheritdoc IAaveV4ConfigEngine
   function executeTargetAdminDelayUpdates(TargetAdminDelayUpdate[] calldata updates) external {
     AccessManagerEngine.executeTargetAdminDelayUpdates(updates);
+  }
+
+  /// @inheritdoc IAaveV4ConfigEngine
+  function executeFeeSharesMinterConfigs(FeeSharesMinterConfig[] calldata configs) external {
+    FeeSharesMinterEngine.executeFeeSharesMinterConfigs(configs);
+  }
+
+  /// @inheritdoc IAaveV4ConfigEngine
+  function executeFeeSharesMinterHubConfigs(FeeSharesMinterHubConfig[] calldata configs) external {
+    FeeSharesMinterEngine.executeFeeSharesMinterHubConfigs(configs);
+  }
+
+  /// @inheritdoc IAaveV4ConfigEngine
+  function executeFeeSharesMinterWorkflowConfigs(
+    FeeSharesMinterWorkflowConfig[] calldata configs
+  ) external {
+    FeeSharesMinterEngine.executeFeeSharesMinterWorkflowConfigs(configs);
   }
 }

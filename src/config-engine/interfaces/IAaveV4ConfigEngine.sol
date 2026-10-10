@@ -6,6 +6,7 @@ import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
+import {IFeeSharesMinter} from 'src/utils/IFeeSharesMinter.sol';
 
 /// @title IAaveV4ConfigEngine
 /// @author Aave Labs
@@ -342,6 +343,39 @@ interface IAaveV4ConfigEngine {
     uint32 newDelay;
   }
 
+  /// @notice Parameters for setting the FeeSharesMinter per-asset minimum accrued fees percent.
+  /// @dev feeSharesMinter The FeeSharesMinter address.
+  /// @dev hub The address of the Hub.
+  /// @dev assetId The identifier of the asset.
+  /// @dev minAccruedFeesPercent The minimum ratio of accrued fees to total added assets, in BPS.
+  struct FeeSharesMinterConfig {
+    address feeSharesMinter;
+    address hub;
+    uint256 assetId;
+    uint16 minAccruedFeesPercent;
+  }
+
+  /// @notice Parameters for setting the FeeSharesMinter minimum accrued fees percent for every
+  /// asset currently listed on a Hub.
+  /// @dev feeSharesMinter The FeeSharesMinter address.
+  /// @dev hub The address of the Hub.
+  /// @dev minAccruedFeesPercent The minimum ratio of accrued fees to total added assets, in BPS.
+  struct FeeSharesMinterHubConfig {
+    address feeSharesMinter;
+    address hub;
+    uint16 minAccruedFeesPercent;
+  }
+
+  /// @notice Parameters for setting a FeeSharesMinter workflow authorization.
+  /// @dev feeSharesMinter The FeeSharesMinter address.
+  /// @dev workflowId The CRE workflow identifier.
+  /// @dev config The workflow configuration.
+  struct FeeSharesMinterWorkflowConfig {
+    address feeSharesMinter;
+    bytes32 workflowId;
+    IFeeSharesMinter.WorkflowConfig config;
+  }
+
   /// @notice Lists new assets on Hubs via the HubConfigurator.
   /// @param listings The asset listings to execute.
   function executeHubAssetListings(AssetListing[] calldata listings) external;
@@ -438,4 +472,19 @@ interface IAaveV4ConfigEngine {
   /// @notice Updates target admin delays via AccessManager.
   /// @param updates The target admin delay updates to execute.
   function executeTargetAdminDelayUpdates(TargetAdminDelayUpdate[] calldata updates) external;
+
+  /// @notice Sets per-asset minimum accrued fees percent on FeeSharesMinters.
+  /// @param configs The per-asset FeeSharesMinter configs to execute.
+  function executeFeeSharesMinterConfigs(FeeSharesMinterConfig[] calldata configs) external;
+
+  /// @notice Sets the minimum accrued fees percent on FeeSharesMinters for every asset currently
+  /// listed on each Hub.
+  /// @param configs The hub-wide FeeSharesMinter configs to execute.
+  function executeFeeSharesMinterHubConfigs(FeeSharesMinterHubConfig[] calldata configs) external;
+
+  /// @notice Registers or updates workflow authorizations on FeeSharesMinters.
+  /// @param configs The FeeSharesMinter workflow configs to execute.
+  function executeFeeSharesMinterWorkflowConfigs(
+    FeeSharesMinterWorkflowConfig[] calldata configs
+  ) external;
 }

@@ -45,6 +45,7 @@ contract AaveV4DeployAnvil is AaveV4DeployBatchBaseScript {
       hubAdmin: address(0),
       hubConfiguratorAdmin: address(0),
       treasurySpokeOwner: address(0),
+      feeSharesMinterOwner: address(0),
       spokeAdmin: address(0),
       spokeConfiguratorAdmin: address(1),
       gatewayOwner: address(2),

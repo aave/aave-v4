@@ -117,6 +117,10 @@ abstract contract AaveV4DeployBatchBaseScript is Script {
         _logWarning(string.concat('treasury spoke owner', message, outcome));
         sanitizedInputs.treasurySpokeOwner = deployer;
       }
+      if (inputs.feeSharesMinterOwner == address(0)) {
+        _logWarning(string.concat('fee shares minter owner', message, outcome));
+        sanitizedInputs.feeSharesMinterOwner = deployer;
+      }
       if (inputs.spokeAdmin == address(0)) {
         _logWarning(string.concat('spoke admin', message, outcome));
         sanitizedInputs.spokeAdmin = deployer;
@@ -132,6 +136,9 @@ abstract contract AaveV4DeployBatchBaseScript is Script {
       _logWarning('roles: deferred (not granted during deployment)');
       _logWarning(string.concat('treasury spoke owner', message, outcome));
       sanitizedInputs.treasurySpokeOwner = deployer;
+
+      _logWarning(string.concat('fee shares minter owner', message, outcome));
+      sanitizedInputs.feeSharesMinterOwner = deployer;
 
       _logWarning(string.concat('proxy admin owner', message, outcome));
       sanitizedInputs.proxyAdminOwner = deployer;
