@@ -2,7 +2,9 @@
 pragma solidity 0.8.28;
 
 import {Ownable2StepUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/Ownable2StepUpgradeable.sol';
+import {OwnableUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/OwnableUpgradeable.sol';
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
+import {IOwnable} from 'src/interfaces/IOwnable.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {ITreasurySpoke} from 'src/spoke/interfaces/ITreasurySpoke.sol';
@@ -17,6 +19,11 @@ abstract contract TreasurySpoke is ITreasurySpoke, Ownable2StepUpgradeable {
 
   /// @dev To be overridden by the inheriting TreasurySpoke instance contract.
   function initialize(address owner) external virtual;
+
+  /// @inheritdoc IOwnable
+  function owner() public view virtual override(IOwnable, OwnableUpgradeable) returns (address) {
+    return super.owner();
+  }
 
   /// @inheritdoc ITreasurySpoke
   function supply(
