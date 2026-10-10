@@ -64,6 +64,15 @@ abstract contract Spoke is
   /// @dev The number of decimals used by the oracle.
   uint8 internal constant ORACLE_DECIMALS = SpokeUtils.ORACLE_DECIMALS;
 
+  /// @dev Account data calculation mode that uses each user's stored dynamic config keys.
+  uint256 internal constant DYNAMIC_CONFIG_MODE_CURRENT = 0;
+
+  /// @dev Account data calculation mode that uses latest dynamic config keys and stores them.
+  uint256 internal constant DYNAMIC_CONFIG_MODE_REFRESH = 1;
+
+  /// @dev Account data calculation mode that uses latest dynamic config keys without storing them.
+  uint256 internal constant DYNAMIC_CONFIG_MODE_PREVIEW_REFRESH = 2;
+
   /// @dev The maximum allowed value for an asset identifier (inclusive).
   uint256 internal constant MAX_ALLOWED_ASSET_ID = type(uint16).max;
 
@@ -631,8 +640,16 @@ abstract contract Spoke is
 
   /// @inheritdoc ISpoke
   function getUserAccountData(address user) external view returns (UserAccountData memory) {
-    // SAFETY: function does not modify state when `refreshConfig` is false.
-    return _castToView(_processUserAccountData)(user, false);
+    // SAFETY: function does not modify state with `DYNAMIC_CONFIG_MODE_CURRENT`.
+    return _castToView(_processUserAccountData)(user, DYNAMIC_CONFIG_MODE_CURRENT);
+  }
+
+  /// @inheritdoc ISpoke
+  function getUserAccountDataAfterDynamicConfigRefresh(
+    address user
+  ) external view returns (UserAccountData memory) {
+    // SAFETY: function does not modify state with `DYNAMIC_CONFIG_MODE_PREVIEW_REFRESH`.
+    return _castToView(_processUserAccountData)(user, DYNAMIC_CONFIG_MODE_PREVIEW_REFRESH);
   }
 
   /// @inheritdoc ISpoke
@@ -686,7 +703,7 @@ abstract contract Spoke is
   function _refreshAndValidateUserAccountData(
     address user
   ) internal returns (UserAccountData memory) {
-    UserAccountData memory accountData = _processUserAccountData(user, true);
+    UserAccountData memory accountData = _processUserAccountData(user, DYNAMIC_CONFIG_MODE_REFRESH);
     emit RefreshAllUserDynamicConfig(user);
     require(
       accountData.healthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
@@ -697,15 +714,15 @@ abstract contract Spoke is
 
   /// @notice Calculates the user account data with the current user dynamic config.
   function _calculateUserAccountData(address user) internal returns (UserAccountData memory) {
-    return _processUserAccountData(user, false); // does not modify state
+    return _processUserAccountData(user, DYNAMIC_CONFIG_MODE_CURRENT); // does not modify state
   }
 
-  /// @notice Process the user account data and updates dynamic config of the user if `refreshConfig` is true.
+  /// @notice Process the user account data according to the selected dynamic config mode.
   /// @dev Collateral is rounded against the user, while debt is calculated with full precision.
   /// @dev If user has no debt, it returns health factor of `type(uint256).max` and risk premium of 0.
   function _processUserAccountData(
     address user,
-    bool refreshConfig
+    uint256 dynamicConfigMode
   ) internal returns (UserAccountData memory accountData) {
     PositionStatus storage positionStatus = _positionStatus[user];
 
@@ -726,10 +743,13 @@ abstract contract Spoke is
       uint256 assetDecimals = reserve.decimals;
 
       if (collateral) {
+        if (dynamicConfigMode == DYNAMIC_CONFIG_MODE_REFRESH) {
+          userPosition.dynamicConfigKey = reserve.dynamicConfigKey;
+        }
         uint256 collateralFactor = _dynamicConfig[reserveId][
-          refreshConfig
-            ? (userPosition.dynamicConfigKey = reserve.dynamicConfigKey)
-            : userPosition.dynamicConfigKey
+          dynamicConfigMode == DYNAMIC_CONFIG_MODE_CURRENT
+            ? userPosition.dynamicConfigKey
+            : reserve.dynamicConfigKey
         ].collateralFactor;
         if (collateralFactor > 0) {
           uint256 suppliedShares = userPosition.suppliedShares;
@@ -934,11 +954,11 @@ abstract contract Spoke is
   }
 
   function _castToView(
-    function(address, bool) internal returns (UserAccountData memory) fnIn
+    function(address, uint256) internal returns (UserAccountData memory) fnIn
   )
     internal
     pure
-    returns (function(address, bool) internal view returns (UserAccountData memory) fnOut)
+    returns (function(address, uint256) internal view returns (UserAccountData memory) fnOut)
   {
     assembly ('memory-safe') {
       fnOut := fnIn

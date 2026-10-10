@@ -55,8 +55,10 @@ contract MockSpoke is Spoke, Test {
       positionStatus.setBorrowing(reserveId, true);
     }
 
-    uint256 newRiskPremium = _processUserAccountData({user: onBehalfOf, refreshConfig: true})
-      .riskPremium;
+    uint256 newRiskPremium = _processUserAccountData({
+      user: onBehalfOf,
+      dynamicConfigMode: DYNAMIC_CONFIG_MODE_REFRESH
+    }).riskPremium;
     emit RefreshAllUserDynamicConfig(onBehalfOf);
     _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
 
@@ -115,7 +117,11 @@ contract MockSpoke is Spoke, Test {
     address user,
     bool refreshConfig
   ) external returns (UserAccountData memory) {
-    return _processUserAccountData(user, refreshConfig);
+    return
+      _processUserAccountData(
+        user,
+        refreshConfig ? DYNAMIC_CONFIG_MODE_REFRESH : DYNAMIC_CONFIG_MODE_CURRENT
+      );
   }
 
   function getRiskPremium(address user) external view returns (uint24) {
