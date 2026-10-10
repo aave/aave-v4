@@ -1,0 +1,104 @@
+name: Certora Prover Fast Rules only
+
+env:
+  CONFIGS: |
+    certora/conf/libs/LibBit.conf
+    certora/conf/libs/LiquidationLogic_Bonus.conf
+    certora/conf/libs/LiquidationLogic_debtToLiquidate.conf
+    certora/conf/libs/LiquidationLogic.conf --exclude_rule collateralToLiquidateValueLessThanDebtToLiquidate collateralToLiquidateValueLessThanDebtToLiquidate_general
+    certora/conf/libs/Math.conf
+    certora/conf/libs/Premium.conf
+    certora/conf/libs/SpokeUtils_toValue.conf
+    certora/conf/libs/PositionStatus.conf
+    certora/conf/libs/VerifySymbolicPositionStatus.conf
+    certora/conf/Hub.conf --exclude_rule noChangeToOtherSpoke supplyExchangeRateIsMonotonic supplyExchangeRateIsMonotonic_eliminateDeficit_simplified totalAssetsCompareToSuppliedAmount_noVirtual
+    certora/conf/Hub.conf --rule noChangeToOtherSpoke
+    certora/conf/HubAccrueIntegrity.conf 
+    certora/conf/HubAccrueUnrealizedFee.conf
+    certora/conf/HubAccrueSupplyRate.conf --exclude_rule previewRemoveByShares_withoutAccrue_time_monotonic  previewRemoveByAssets_withoutAccrue_time_monotonic
+    certora/conf/HubIntegrity.conf
+    certora/conf/HubValidState.conf --exclude_rule totalAssetsVsShares_eliminateDeficit totalAssetsVsShares
+    certora/conf/LiquidationIntegrity.conf
+    certora/conf/LiquidationUserIntegrity.conf
+    certora/conf/Spoke.conf --rule drawnSharesZero 
+    certora/conf/Spoke.conf --exclude_rule drawnSharesZero noCollateralNoDebt increaseCollateralOrReduceDebtFunctions collateralFactorNotZero realizedPremiumRayConsistency   
+    certora/conf/Spoke.conf --rule increaseCollateralOrReduceDebtFunctions
+    certora/conf/Spoke.conf --rule collateralFactorNotZero
+    certora/conf/SpokeHealthCheck.conf 
+    certora/conf/SpokeHealthFactor.conf --exclude_rule userHealthAboveThreshold userHealthBelowThresholdCanOnlyIncreaseHealthFactor
+    certora/conf/SpokeIntegrity.conf
+    certora/conf/SpokeUserIntegrity.conf
+    certora/conf/SpokeWithHub.conf --rule userDrawnShareConsistency 
+    certora/conf/SpokeWithHub.conf --rule userPremiumShareConsistency 
+    certora/conf/SpokeWithHub.conf --rule userPremiumOffsetConsistency 
+    certora/conf/SpokeWithHub.conf --rule userSuppliedShareConsistency
+    certora/conf/SpokeWithHub.conf --exclude_rule userDrawnShareConsistency userPremiumShareConsistency userPremiumOffsetConsistency  userSuppliedShareConsistency
+    #########                                                           #########
+    ######### rules that are too long/flaky to run in ci, run manually  #########
+    #########                                                           #########
+    # certora/conf/HubValidState_totalAssets.conf --exclude_method remove # https://prover.certora.com/output/3706259/715f05cb0bdf4c55843a0b6b2867b651/?anonymousKey=0e88c093cc53489c9b4e667cbc7dc772446e22fc
+    # certora/conf/HubValidState_totalAssets.conf --method remove # https://prover.certora.com/output/3706259/76b8a1fe2cae472aa1e103ecb36201ef/?anonymousKey=d7c7e2e5d2048d504201bac0f66076c573e47134 # timed out
+    # certora/conf/Spoke_noCollateralNoDebt.conf --exclude_method borrow # https://prover.certora.com/output/3706259/a7718e0c2835464b8c59b193e11a3d7c/?anonymousKey=34a0ac0061f42fae882955fa6723d53ba7578baf # timed out (borrow)
+    # certora/conf/Spoke_noCollateralNoDebt.conf --method borrow # https://prover.certora.com/output/3706259/a7718e0c2835464b8c59b193e11a3d7c/?anonymousKey=34a0ac0061f42fae882955fa6723d53ba7578baf # timed out
+    # certora/conf/Spoke.conf --rule realizedPremiumRayConsistency # https://prover.certora.com/output/3706259/8fdb1a6ad5814123950221127818af57/?anonymousKey=badc6cf23c0d436c21ec49d4c6556570525b02f9 # timed out (borrow)
+    # certora/conf/Hub.conf --rule supplyExchangeRateIsMonotonic # https://prover.certora.com/output/3706259/d00f59fdaea2444298ed4869491889c4/?anonymousKey=9e986f7239f65674b1a25587e16f82949643620d
+    # certora/conf/Hub.conf --rule supplyExchangeRateIsMonotonic_eliminateDeficit_simplified # https://prover.certora.com/output/3706259/3f2ad2590f524030a1f2fda1a2e2e7df?anonymousKey=6eeace14f2b9da5128d6b07d1fd164a5df85ee7b # timed out
+    # certora/conf/Hub.conf --rule totalAssetsCompareToSuppliedAmount_noVirtual # https://prover.certora.com/output/3706259/e05517a2740a4505bc9e57c2071ddd45/?anonymousKey=13e4e230fce28bcdad30f948f722551a4ae86ca4 
+    # certora/conf/HubAdditivity.conf --rule drawAdditivity # https://prover.certora.com/output/3706259/704cfccf6943462b97d8512710dafd7e/?anonymousKey=6f19c03f7f6801367691f4df83f9111a34c9bb8b
+    # certora/conf/HubAdditivity.conf --rule restoreAdditivity # https://prover.certora.com/output/3706259/f80dd5d21c0e4d1a98e880a51b076ffc/?anonymousKey=65cbddb77a7d447e8ef33f9a24a6281e8fa212ed
+    # certora/conf/HubAdditivity.conf --rule reportDeficitAdditivity # https://prover.certora.com/output/3706259/952ddd6d0a974b239ddd9af2e64c1a49?anonymousKey=0bbcb4f8e6e43c9a8ffe8bede77e2e2824aea725 
+    # certora/conf/HubAdditivity.conf --exclude_rule drawAdditivity restoreAdditivity reportDeficitAdditivity # https://prover.certora.com/output/3706259/1a00d9db46d341b4bef50f55d807f10e/?anonymousKey=bbec3f005f2227e5342f08c96f3118cc4c1697fc timed out
+    # certora/conf/SpokeHealthFactor.conf --rule userHealthAboveThreshold # https://prover.certora.com/output/3706259/cdf48e7647964f4283e454d004afd7cc/?anonymousKey=a195a320155d3ca3a110b73b8b967bcafd62ecd9 # timed out
+    # https://prover.certora.com/output/3706259/5792df3b5b9c49f3be296c70dbb33477/?anonymousKey=cadd297ef8e27aa37ae6131630d1e9e528a76aa2 # timed out (repay, updateUserRiskPremium)
+    # https://prover.certora.com/output/3706259/550373c41a5d4c0483551d085c033340/?anonymousKey=b8410096da6b663486b6f3b05be533cc44d7de78 (repay rule)
+    # https://prover.certora.com/output/3706259/de1672dd18ce4c62b2cadfe947ed977c/?anonymousKey=632a58996aa03f1b6c739d08e7400ec0cec209b9 (updateUserRiskPremium rule)
+    # certora/conf/SpokeHealthFactor.conf --rule userHealthBelowThresholdCanOnlyIncreaseHealthFactor 
+    # certora/conf/HubAccrueSupplyRate.conf --rule previewRemoveByShares_withoutAccrue_time_monotonic # https://prover.certora.com/output/3706259/d58df7e6fb504be9a5d7208c3536af1d/?anonymousKey=4bbf8fc17b007c0eeda71e379577d3a0d6d74edd
+    # certora/conf/HubAccrueSupplyRate.conf --rule previewRemoveByAssets_withoutAccrue_time_monotonic # https://prover.certora.com/output/3706259/0c0bdf583b2449ac931e41f8b139fe19/?anonymousKey=fedddb719f01098204bb33e1867677aae1cdce2a
+    # certora/conf/libs/LiquidationLogic.conf --rule collateralToLiquidateValueLessThanDebtToLiquidate # https://prover.certora.com/output/3706259/db5ecfd9efb44a839ff68bba823093cf?anonymousKey=f3a2ccdbf8fe2c9678dfde723a0dde9cf8aab35f
+    # certora/conf/HubValidState.conf --rule totalAssetsVsShares_eliminateDeficit # https://prover.certora.com/output/3706259/f7642f8a9520422f865d8191ec7f265c?anonymousKey=7f6a16574eeabed24ce9ef55c21bcf390014a3f8
+    # certora/conf/LiquidationReportDeficit.conf --rule moreThanOneCollateral_noReportDeficit # https://prover.certora.com/output/3706259/b784cd5d6cc7473685b4a54b1af38765/?anonymousKey=8055de02dae063508c46d2fcdc1b049f70de89ac
+    # certora/conf/LiquidationReportDeficit.conf --rule moreCollateralThenDebt_noReportDeficit  # https://prover.certora.com/output/3706259/169d92be05f2453192ff11cb03f6a8b2?anonymousKey=ad12f1e0c51f78a00b2796029a432fa8ab68b651
+    # certora/conf/Liquidation.conf # https://prover.certora.com/output/3706259/7b3df2fc28d141f59b06fb1ece96cbce?anonymousKey=fe6933e3751769629de929455c2c00f1443432c0
+    # certora/conf/libs/SharesMath.conf # https://prover.certora.com/output/3706259/37b7d416cb3f4cd9b5a7855bfed6314e/?anonymousKey=71b8c65617ef7c1c8fece837c4d9890555b77d25
+
+on:
+  pull_request:
+    branches:
+      - main
+      - certora
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      statuses: write
+      pull-requests: write
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      # (Optional) Add installation steps for your project
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+      - name: Install dependencies
+        run: npm install
+
+      # Run Certora Prover
+      - uses: Certora/certora-run-action@v2
+        with:
+          # Add your configurations as lines, each line is separated.
+          # Specify additional options for each configuration by adding them after the configuration.
+          configurations: ${{ env.CONFIGS }}
+          solc-versions: 0.8.28
+          job-name: "Verified Rules"
+          certora-key: ${{ secrets.CERTORAKEY }}
+          gh-review: always # Always post GH review
+          gh-review-jobs: failed # (optional) All successful jobs are hidden in a dropdown
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
