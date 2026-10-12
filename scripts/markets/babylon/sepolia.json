@@ -4,7 +4,7 @@
   "babylonSpokeLabel": "babylon",
   "liquidationManager": "0x6A785E8fdF251E2aA758a6E1841e1470074f46BF",
   "managedCollateralReserveId": 0,
-  "admin": "0x0000000000000000000000000000000000000000",
+  "admin": "0x66501C33b8fA9DD06348469bA34d96D3dE7F2239",
   "report": "scripts/markets/babylon/reports/sepolia.json",
   "reserves": [
     {
