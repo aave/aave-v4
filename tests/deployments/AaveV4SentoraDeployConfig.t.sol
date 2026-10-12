@@ -23,6 +23,8 @@ contract AaveV4SentoraDeployConfigTest is PostDeploymentVerificationBase, AaveV4
   /// @dev Sentora's Emergency Operator, which holds the emergency role alongside the Security
   ///      Council.
   address internal constant EMERGENCY_OPERATOR = 0x37409c868BA42B91ff7E7b64D5BC020897444fAf;
+  /// @dev The Sentora Fee Admin, which owns the TreasurySpoke and so withdraws the market's fees.
+  address internal constant SENTORA_FEE_ADMIN = 0x769C952ac9Bbb45524790B658fd70938a8A5d19E;
 
   function setUp() public override(PostDeploymentVerificationBase) {
     _etchCreate2Factory();
@@ -33,15 +35,15 @@ contract AaveV4SentoraDeployConfigTest is PostDeploymentVerificationBase, AaveV4
     assertEq(_expectedChainId(), ETHEREUM_CHAIN_ID);
   }
 
-  /// @notice The Security Council admins the AccessManager and owns the ProxyAdmins, and the
-  ///         Sentora Executor owns every other contract.
+  /// @notice The Security Council admins the AccessManager and owns the ProxyAdmins, the Sentora
+  ///         Fee Admin owns the TreasurySpoke, and the Sentora Executor owns every other contract.
   function test_deployInputs() public view {
     InputUtils.FullDeployInputs memory inputs = _getDeployInputs();
     address sentoraExecutor = AaveV4SentoraConfigInputs.SENTORA_EXECUTOR_PLACEHOLDER;
 
     assertEq(inputs.accessManagerAdmin, SECURITY_COUNCIL, 'accessManagerAdmin');
     assertEq(inputs.proxyAdminOwner, SECURITY_COUNCIL, 'proxyAdminOwner');
-    assertEq(inputs.treasurySpokeOwner, sentoraExecutor, 'treasurySpokeOwner');
+    assertEq(inputs.treasurySpokeOwner, SENTORA_FEE_ADMIN, 'treasurySpokeOwner');
     assertEq(inputs.gatewayOwner, sentoraExecutor, 'gatewayOwner');
     assertEq(inputs.positionManagerOwner, sentoraExecutor, 'positionManagerOwner');
 
@@ -78,7 +80,7 @@ contract AaveV4SentoraDeployConfigTest is PostDeploymentVerificationBase, AaveV4
 
     assertEq(targets.admin, SECURITY_COUNCIL, 'admin');
     assertEq(targets.proxyAdminOwner, SECURITY_COUNCIL, 'proxyAdminOwner');
-    assertEq(targets.treasurySpokeOwner, sentoraExecutor, 'treasurySpokeOwner');
+    assertEq(targets.treasurySpokeOwner, SENTORA_FEE_ADMIN, 'treasurySpokeOwner');
     assertEq(targets.gatewayOwner, sentoraExecutor, 'gatewayOwner');
     assertEq(targets.positionManagerOwner, sentoraExecutor, 'positionManagerOwner');
     assertEq(targets.sentoraExecutor, sentoraExecutor, 'sentoraExecutor');
@@ -90,36 +92,18 @@ contract AaveV4SentoraDeployConfigTest is PostDeploymentVerificationBase, AaveV4
     assertEq(targets.emergencyOperator, EMERGENCY_OPERATOR, 'emergencyOperator');
   }
 
-  /// @notice The Hub assets and rate curves of the ARFC, OUSD being Open USD. No price source is an
-  ///         SVR feed: Aave's capped adapters for RLUSD and PYUSD, the capped USDT/USD the V4
-  ///         Ethena Spokes price USDe with, Chainlink MWIN NAV and Chainlink BTC/USD. OUSD, PRIME and
-  ///         PST carry no price source until their adapters are deployed, which blocks configuration.
+  /// @notice The Hub assets and rate curves of the ARFC, OUSD being Open USD. mWIN and kBTC read
+  ///         Chainlink MWIN NAV and BTC/USD directly. Every other asset carries no price source until
+  ///         Sentora's own adapters, governed by the Sentora ACL Manager, are deployed, which blocks
+  ///         configuration.
   function test_launchAssets() public view {
     AaveV4SentoraConfigInputs.Asset[] memory assets = AaveV4SentoraConfigInputs.readAssets();
     assertEq(assets.length, 8, 'asset count');
 
-    _assertAsset(
-      assets[0],
-      'RLUSD',
-      0x8292Bb45bf1Ee4d140127049757C2E0fF06317eD,
-      0xf0eaC18E908B34770FDEe46d069c846bDa866759,
-      true
-    );
-    _assertAsset(
-      assets[1],
-      'PYUSD',
-      0x6c3ea9036406852006290770BEdFcAbA0e23A0e8,
-      0x36964C0579D02E0a5AaAb89E24Cf8d7CDF3549EE,
-      true
-    );
+    _assertAsset(assets[0], 'RLUSD', 0x8292Bb45bf1Ee4d140127049757C2E0fF06317eD, address(0), true);
+    _assertAsset(assets[1], 'PYUSD', 0x6c3ea9036406852006290770BEdFcAbA0e23A0e8, address(0), true);
     _assertAsset(assets[2], 'OUSD', 0x9f6F3991D525015a6F8CaF062C83b62fD3AC4436, address(0), true);
-    _assertAsset(
-      assets[3],
-      'USDe',
-      0x4c9EDD5852cd905f086C759E8383e09bff1E68B3,
-      0xC26D4a1c46d884cfF6dE9800B6aE7A8Cf48B4Ff8,
-      false
-    );
+    _assertAsset(assets[3], 'USDe', 0x4c9EDD5852cd905f086C759E8383e09bff1E68B3, address(0), false);
     _assertAsset(assets[4], 'PRIME', 0x19ebb35279A16207Ec4ba82799CC64715065F7F6, address(0), false);
     _assertAsset(
       assets[5],
@@ -257,10 +241,7 @@ contract AaveV4SentoraDeployConfigTest is PostDeploymentVerificationBase, AaveV4
     vm.chainId(ETHEREUM_CHAIN_ID);
 
     vm.expectRevert(
-      abi.encodeWithSelector(
-        AaveV4SentoraConfigInputs.PlaceholderAddress.selector,
-        'treasurySpokeOwner'
-      )
+      abi.encodeWithSelector(AaveV4SentoraConfigInputs.PlaceholderAddress.selector, 'gatewayOwner')
     );
     this.readDeployInputs();
   }

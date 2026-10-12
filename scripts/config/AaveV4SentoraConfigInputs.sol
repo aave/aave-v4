@@ -19,8 +19,8 @@ library AaveV4SentoraConfigInputs {
   string internal constant DEPLOY_CONFIG_PATH = 'config/sentora.json';
   /// @dev Configuration inputs.
   string internal constant CONFIG_PATH = 'config/sentora-config.json';
-  /// @dev Stands in for the Sentora Executor, the timelocked contract that owns the market's
-  /// contracts and holds the configurator admin roles, until it is known.
+  /// @dev Stands in for the Sentora Executor, the timelocked contract that owns the position
+  /// managers and gateways and holds the configurator admin roles, until it is known.
   address internal constant SENTORA_EXECUTOR_PLACEHOLDER =
     0x1111111111111111111111111111111111111111;
   /// @dev Stands in for the Sentora Risk Steward, which is not deployed yet.

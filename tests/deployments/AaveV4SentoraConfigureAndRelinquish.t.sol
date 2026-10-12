@@ -575,8 +575,8 @@ contract AaveV4SentoraConfigureAndRelinquishTest is Test, Create2TestHelper, Aav
   }
 
   /// @notice The Security Council owns the Hub and Spoke ProxyAdmins throughout and takes the
-  ///         treasury spoke's at handover, and the Sentora Executor takes the treasury spoke, the
-  ///         managers and the gateways over with one `acceptOwnership` each.
+  ///         treasury spoke's at handover, the Sentora Fee Admin takes the treasury spoke over, and
+  ///         the Sentora Executor the managers and the gateways, with one `acceptOwnership` each.
   function test_ownershipReachesItsHolders() public {
     _assertProxyAdminOwners(_deployer);
     _configure();
@@ -590,8 +590,16 @@ contract AaveV4SentoraConfigureAndRelinquishTest is Test, Create2TestHelper, Aav
     _relinquish();
     _assertProxyAdminOwners(_targets.proxyAdminOwner);
 
-    address[6] memory owned = [
-      _market.treasurySpoke,
+    assertEq(
+      Ownable2Step(_market.treasurySpoke).pendingOwner(),
+      _targets.treasurySpokeOwner,
+      'pending treasury owner'
+    );
+    vm.prank(_targets.treasurySpokeOwner);
+    Ownable2Step(_market.treasurySpoke).acceptOwnership();
+    assertEq(Ownable(_market.treasurySpoke).owner(), _targets.treasurySpokeOwner, 'treasury owner');
+
+    address[5] memory owned = [
       _market.giverPositionManager,
       _market.takerPositionManager,
       _market.configPositionManager,

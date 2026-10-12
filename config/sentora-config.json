@@ -4,7 +4,7 @@
     {
       "symbol": "RLUSD",
       "underlying": "0x8292Bb45bf1Ee4d140127049757C2E0fF06317eD",
-      "priceSource": "0xf0eaC18E908B34770FDEe46d069c846bDa866759",
+      "priceSource": "0x0000000000000000000000000000000000000000",
       "liquidityFee": 2000,
       "optimalUsageRatio": 9000,
       "baseDrawnRate": 50,
@@ -16,7 +16,7 @@
     {
       "symbol": "PYUSD",
       "underlying": "0x6c3ea9036406852006290770BEdFcAbA0e23A0e8",
-      "priceSource": "0x36964C0579D02E0a5AaAb89E24Cf8d7CDF3549EE",
+      "priceSource": "0x0000000000000000000000000000000000000000",
       "liquidityFee": 2000,
       "optimalUsageRatio": 9000,
       "baseDrawnRate": 50,
@@ -40,7 +40,7 @@
     {
       "symbol": "USDe",
       "underlying": "0x4c9EDD5852cd905f086C759E8383e09bff1E68B3",
-      "priceSource": "0xC26D4a1c46d884cfF6dE9800B6aE7A8Cf48B4Ff8",
+      "priceSource": "0x0000000000000000000000000000000000000000",
       "liquidityFee": 0,
       "optimalUsageRatio": 9000,
       "baseDrawnRate": 0,
