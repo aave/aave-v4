@@ -19,10 +19,6 @@ library AaveV4SentoraConfigInputs {
   string internal constant DEPLOY_CONFIG_PATH = 'config/sentora.json';
   /// @dev Configuration inputs.
   string internal constant CONFIG_PATH = 'config/sentora-config.json';
-  /// @dev Stands in for the Sentora Executor, the timelocked contract that owns the position
-  /// managers and gateways and holds the configurator admin roles, until it is known.
-  address internal constant SENTORA_EXECUTOR_PLACEHOLDER =
-    0x1111111111111111111111111111111111111111;
   /// @dev Stands in for the Sentora Risk Steward, which is not deployed yet.
   address internal constant RISK_STEWARD_PLACEHOLDER = 0x2222222222222222222222222222222222222222;
   /// @dev Ethereum, the only chain the placeholders are rejected on.
@@ -284,10 +280,7 @@ library AaveV4SentoraConfigInputs {
     target = vm.parseJsonAddress(json, string.concat('.', field));
 
     if (block.chainid == ETHEREUM_CHAIN_ID) {
-      require(
-        target != SENTORA_EXECUTOR_PLACEHOLDER && target != RISK_STEWARD_PLACEHOLDER,
-        PlaceholderAddress(field)
-      );
+      require(target != RISK_STEWARD_PLACEHOLDER, PlaceholderAddress(field));
     }
   }
 

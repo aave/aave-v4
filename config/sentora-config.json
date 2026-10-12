@@ -4,7 +4,7 @@
     {
       "symbol": "RLUSD",
       "underlying": "0x8292Bb45bf1Ee4d140127049757C2E0fF06317eD",
-      "priceSource": "0x0000000000000000000000000000000000000000",
+      "priceSource": "0x5120deb18Ca5545B056D9eb2fB368811162F737a",
       "liquidityFee": 2000,
       "optimalUsageRatio": 9000,
       "baseDrawnRate": 50,
@@ -16,7 +16,7 @@
     {
       "symbol": "PYUSD",
       "underlying": "0x6c3ea9036406852006290770BEdFcAbA0e23A0e8",
-      "priceSource": "0x0000000000000000000000000000000000000000",
+      "priceSource": "0xA592516A46203fd4Ece5b81f651d12A9d0cA92F1",
       "liquidityFee": 2000,
       "optimalUsageRatio": 9000,
       "baseDrawnRate": 50,
@@ -28,7 +28,7 @@
     {
       "symbol": "OUSD",
       "underlying": "0x9f6F3991D525015a6F8CaF062C83b62fD3AC4436",
-      "priceSource": "0x0000000000000000000000000000000000000000",
+      "priceSource": "0x6f7bd8F596E66317D6323A6D61460f00d325823E",
       "liquidityFee": 2000,
       "optimalUsageRatio": 9000,
       "baseDrawnRate": 50,
@@ -40,7 +40,7 @@
     {
       "symbol": "USDe",
       "underlying": "0x4c9EDD5852cd905f086C759E8383e09bff1E68B3",
-      "priceSource": "0x0000000000000000000000000000000000000000",
+      "priceSource": "0x40DB5Fc54e3E47295Bd013f202edb66E60C0ECFb",
       "liquidityFee": 0,
       "optimalUsageRatio": 9000,
       "baseDrawnRate": 0,
@@ -52,7 +52,7 @@
     {
       "symbol": "PRIME",
       "underlying": "0x19ebb35279A16207Ec4ba82799CC64715065F7F6",
-      "priceSource": "0x0000000000000000000000000000000000000000",
+      "priceSource": "0x0abD10103b878d8D6Ac9708a0B8798459199174B",
       "liquidityFee": 0,
       "optimalUsageRatio": 9000,
       "baseDrawnRate": 0,
@@ -76,7 +76,7 @@
     {
       "symbol": "PST",
       "underlying": "0x22aE3D9a738471f405169Af055d31c687087d4c7",
-      "priceSource": "0x0000000000000000000000000000000000000000",
+      "priceSource": "0x5a3a7705484c5aD672237edE966b0a4564eeD763",
       "liquidityFee": 0,
       "optimalUsageRatio": 9000,
       "baseDrawnRate": 0,

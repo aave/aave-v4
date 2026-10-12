@@ -25,6 +25,8 @@ contract AaveV4SentoraDeployConfigTest is PostDeploymentVerificationBase, AaveV4
   address internal constant EMERGENCY_OPERATOR = 0x37409c868BA42B91ff7E7b64D5BC020897444fAf;
   /// @dev The Sentora Fee Admin, which owns the TreasurySpoke and so withdraws the market's fees.
   address internal constant SENTORA_FEE_ADMIN = 0x769C952ac9Bbb45524790B658fd70938a8A5d19E;
+  /// @dev The Sentora Executor, behind the Sentora payloads controller's 2-day delay.
+  address internal constant SENTORA_EXECUTOR = 0x59D15D3f4e86499d64f68ad7096a8D0939dA8343;
 
   function setUp() public override(PostDeploymentVerificationBase) {
     _etchCreate2Factory();
@@ -39,13 +41,12 @@ contract AaveV4SentoraDeployConfigTest is PostDeploymentVerificationBase, AaveV4
   ///         Fee Admin owns the TreasurySpoke, and the Sentora Executor owns every other contract.
   function test_deployInputs() public view {
     InputUtils.FullDeployInputs memory inputs = _getDeployInputs();
-    address sentoraExecutor = AaveV4SentoraConfigInputs.SENTORA_EXECUTOR_PLACEHOLDER;
 
     assertEq(inputs.accessManagerAdmin, SECURITY_COUNCIL, 'accessManagerAdmin');
     assertEq(inputs.proxyAdminOwner, SECURITY_COUNCIL, 'proxyAdminOwner');
     assertEq(inputs.treasurySpokeOwner, SENTORA_FEE_ADMIN, 'treasurySpokeOwner');
-    assertEq(inputs.gatewayOwner, sentoraExecutor, 'gatewayOwner');
-    assertEq(inputs.positionManagerOwner, sentoraExecutor, 'positionManagerOwner');
+    assertEq(inputs.gatewayOwner, SENTORA_EXECUTOR, 'gatewayOwner');
+    assertEq(inputs.positionManagerOwner, SENTORA_EXECUTOR, 'positionManagerOwner');
 
     // roles 100-103 and 300-302 are left unheld, as on the live Ethereum and Avalanche markets, and
     // roles 200 and 400 are granted at handover
@@ -72,18 +73,17 @@ contract AaveV4SentoraDeployConfigTest is PostDeploymentVerificationBase, AaveV4
   }
 
   /// @notice The handover targets are read off the same file the deploy is driven by.
-  /// @dev The Sentora Executor and Risk Steward are placeholders until they are known: replace the
-  ///      assertions and config/sentora.json together.
+  /// @dev The Risk Steward is a placeholder until it is deployed: replace the assertion and
+  ///      config/sentora.json together.
   function test_handoverTargets() public view {
     AaveV4SentoraConfigInputs.Handover memory targets = AaveV4SentoraConfigInputs.readHandover();
-    address sentoraExecutor = AaveV4SentoraConfigInputs.SENTORA_EXECUTOR_PLACEHOLDER;
 
     assertEq(targets.admin, SECURITY_COUNCIL, 'admin');
     assertEq(targets.proxyAdminOwner, SECURITY_COUNCIL, 'proxyAdminOwner');
     assertEq(targets.treasurySpokeOwner, SENTORA_FEE_ADMIN, 'treasurySpokeOwner');
-    assertEq(targets.gatewayOwner, sentoraExecutor, 'gatewayOwner');
-    assertEq(targets.positionManagerOwner, sentoraExecutor, 'positionManagerOwner');
-    assertEq(targets.sentoraExecutor, sentoraExecutor, 'sentoraExecutor');
+    assertEq(targets.gatewayOwner, SENTORA_EXECUTOR, 'gatewayOwner');
+    assertEq(targets.positionManagerOwner, SENTORA_EXECUTOR, 'positionManagerOwner');
+    assertEq(targets.sentoraExecutor, SENTORA_EXECUTOR, 'sentoraExecutor');
     assertEq(
       targets.riskSteward,
       AaveV4SentoraConfigInputs.RISK_STEWARD_PLACEHOLDER,
@@ -93,18 +93,48 @@ contract AaveV4SentoraDeployConfigTest is PostDeploymentVerificationBase, AaveV4
   }
 
   /// @notice The Hub assets and rate curves of the ARFC, OUSD being Open USD. mWIN and kBTC read
-  ///         Chainlink MWIN NAV and BTC/USD directly. Every other asset carries no price source until
-  ///         Sentora's own adapters, governed by the Sentora ACL Manager, are deployed, which blocks
-  ///         configuration.
+  ///         Chainlink MWIN NAV and BTC/USD directly. Every other asset reads Sentora's own adapter,
+  ///         governed by the Sentora ACL Manager and deployed from aave-price-feeds
+  ///         `DeployEthereumSentora`.
   function test_launchAssets() public view {
     AaveV4SentoraConfigInputs.Asset[] memory assets = AaveV4SentoraConfigInputs.readAssets();
     assertEq(assets.length, 8, 'asset count');
 
-    _assertAsset(assets[0], 'RLUSD', 0x8292Bb45bf1Ee4d140127049757C2E0fF06317eD, address(0), true);
-    _assertAsset(assets[1], 'PYUSD', 0x6c3ea9036406852006290770BEdFcAbA0e23A0e8, address(0), true);
-    _assertAsset(assets[2], 'OUSD', 0x9f6F3991D525015a6F8CaF062C83b62fD3AC4436, address(0), true);
-    _assertAsset(assets[3], 'USDe', 0x4c9EDD5852cd905f086C759E8383e09bff1E68B3, address(0), false);
-    _assertAsset(assets[4], 'PRIME', 0x19ebb35279A16207Ec4ba82799CC64715065F7F6, address(0), false);
+    _assertAsset(
+      assets[0],
+      'RLUSD',
+      0x8292Bb45bf1Ee4d140127049757C2E0fF06317eD,
+      0x5120deb18Ca5545B056D9eb2fB368811162F737a,
+      true
+    );
+    _assertAsset(
+      assets[1],
+      'PYUSD',
+      0x6c3ea9036406852006290770BEdFcAbA0e23A0e8,
+      0xA592516A46203fd4Ece5b81f651d12A9d0cA92F1,
+      true
+    );
+    _assertAsset(
+      assets[2],
+      'OUSD',
+      0x9f6F3991D525015a6F8CaF062C83b62fD3AC4436,
+      0x6f7bd8F596E66317D6323A6D61460f00d325823E,
+      true
+    );
+    _assertAsset(
+      assets[3],
+      'USDe',
+      0x4c9EDD5852cd905f086C759E8383e09bff1E68B3,
+      0x40DB5Fc54e3E47295Bd013f202edb66E60C0ECFb,
+      false
+    );
+    _assertAsset(
+      assets[4],
+      'PRIME',
+      0x19ebb35279A16207Ec4ba82799CC64715065F7F6,
+      0x0abD10103b878d8D6Ac9708a0B8798459199174B,
+      false
+    );
     _assertAsset(
       assets[5],
       'mWIN',
@@ -112,7 +142,13 @@ contract AaveV4SentoraDeployConfigTest is PostDeploymentVerificationBase, AaveV4
       0x3EC0233530c548Ab984eb06BEE8a2E404aeA7557,
       false
     );
-    _assertAsset(assets[6], 'PST', 0x22aE3D9a738471f405169Af055d31c687087d4c7, address(0), false);
+    _assertAsset(
+      assets[6],
+      'PST',
+      0x22aE3D9a738471f405169Af055d31c687087d4c7,
+      0x5a3a7705484c5aD672237edE966b0a4564eeD763,
+      false
+    );
     _assertAsset(
       assets[7],
       'kBTC',
@@ -236,12 +272,12 @@ contract AaveV4SentoraDeployConfigTest is PostDeploymentVerificationBase, AaveV4
   }
 
   /// @notice A deploy on Ethereum refuses to run while any handover target is still a
-  ///         placeholder, starting with the first one read.
+  ///         placeholder, which only the Risk Steward still is.
   function test_deployInputsRejectPlaceholderOnEthereum() public {
     vm.chainId(ETHEREUM_CHAIN_ID);
 
     vm.expectRevert(
-      abi.encodeWithSelector(AaveV4SentoraConfigInputs.PlaceholderAddress.selector, 'gatewayOwner')
+      abi.encodeWithSelector(AaveV4SentoraConfigInputs.PlaceholderAddress.selector, 'riskSteward')
     );
     this.readDeployInputs();
   }
