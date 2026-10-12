@@ -5,6 +5,7 @@ import {Script} from 'forge-std/Script.sol';
 import {console2 as console} from 'forge-std/console2.sol';
 
 import {AaveV4BabylonConfig} from 'scripts/markets/babylon/AaveV4BabylonConfig.sol';
+import {AaveV4BabylonVerification} from 'scripts/markets/babylon/AaveV4BabylonVerification.sol';
 import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 import {AaveV4AccessManagerRolesProcedure} from 'src/deployments/procedures/roles/AaveV4AccessManagerRolesProcedure.sol';
 import {AaveV4HubRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
@@ -18,9 +19,10 @@ import {Ownable2StepUpgradeable} from 'src/dependencies/openzeppelin-upgradeable
 /// @title AaveV4BabylonHandover
 /// @author Aave Labs
 /// @notice Hands the Babylon market from the deployer over to the configured admin.
-/// @dev Grants the roles `grantRoles = true` would have granted, transfers every ProxyAdmin, nominates
-/// the admin as TreasurySpoke owner and removes every role the deployer holds. The admin must then
-/// call `acceptOwnership` on the TreasurySpoke.
+/// @dev Grants the admin the configurator domain admin roles and the configurators their Hub and
+/// Spoke roles, transfers every ProxyAdmin, nominates the admin as TreasurySpoke owner and removes
+/// every role the deployer holds. The admin must then call `acceptOwnership` on the TreasurySpoke.
+/// The role end state is in `AaveV4BabylonVerification`.
 contract AaveV4BabylonHandover is Script {
   /// @dev ERC-1967 admin slot, `bytes32(uint256(keccak256('eip1967.proxy.admin')) - 1)`.
   bytes32 internal constant ADMIN_SLOT =
@@ -30,12 +32,20 @@ contract AaveV4BabylonHandover is Script {
     AaveV4BabylonConfig.Config memory config = _config();
     AaveV4BabylonConfig.Deployment memory deployment = AaveV4BabylonConfig.readDeployment(config);
 
+    AaveV4BabylonVerification.verifyDeployment(config, deployment);
+
     vm.startBroadcast();
     (, address deployer, ) = vm.readCallers();
     _handover({deployment: deployment, deployer: deployer, admin: config.admin});
     vm.stopBroadcast();
 
-    _verify({deployment: deployment, deployer: deployer, admin: config.admin});
+    AaveV4BabylonVerification.verifyRoles(deployment, config.admin);
+    AaveV4BabylonVerification.verifyProxyAdmins(deployment, config.admin);
+    AaveV4BabylonVerification.verifyTreasurySpokeOwner({
+      deployment: deployment,
+      owner: config.admin,
+      allowPending: true
+    });
     console.log('AaveV4BabylonHandover: admin must accept TreasurySpoke ownership', config.admin);
   }
 
@@ -52,7 +62,6 @@ contract AaveV4BabylonHandover is Script {
     require(admin != deployer, 'admin is deployer');
     address accessManager = deployment.accessManager;
 
-    AaveV4HubRolesProcedure.grantHubAllRoles({accessManager: accessManager, admin: admin});
     AaveV4HubRolesProcedure.grantHubRole({
       accessManager: accessManager,
       role: Roles.HUB_CONFIGURATOR_ROLE,
@@ -62,7 +71,6 @@ contract AaveV4BabylonHandover is Script {
       accessManager: accessManager,
       admin: admin
     });
-    AaveV4SpokeRolesProcedure.grantSpokeAllRoles({accessManager: accessManager, admin: admin});
     AaveV4SpokeRolesProcedure.grantSpokeRole({
       accessManager: accessManager,
       role: Roles.SPOKE_CONFIGURATOR_ROLE,
@@ -86,40 +94,6 @@ contract AaveV4BabylonHandover is Script {
       adminToAdd: admin,
       adminToRemove: deployer
     });
-  }
-
-  function _verify(
-    AaveV4BabylonConfig.Deployment memory deployment,
-    address deployer,
-    address admin
-  ) internal view {
-    IAccessManagerEnumerable accessManager = IAccessManagerEnumerable(deployment.accessManager);
-    (bool adminIsAdmin, ) = accessManager.hasRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, admin);
-    require(adminIsAdmin, 'admin is not AccessManager admin');
-    (bool deployerIsAdmin, ) = accessManager.hasRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, deployer);
-    require(!deployerIsAdmin, 'deployer is AccessManager admin');
-    uint256 roleCount = accessManager.getRoleCount();
-    for (uint256 i; i < roleCount; ++i) {
-      (bool hasRole, ) = accessManager.hasRole(accessManager.getRole(i), deployer);
-      require(!hasRole, 'deployer holds a role');
-    }
-
-    for (uint256 i; i < deployment.hubs.length; ++i) {
-      require(_proxyAdmin(deployment.hubs[i]).owner() == admin, 'hub proxy admin owner');
-    }
-    require(
-      _proxyAdmin(deployment.babylonSpoke).owner() == admin,
-      'babylon spoke proxy admin owner'
-    );
-    require(
-      _proxyAdmin(deployment.treasurySpoke).owner() == admin,
-      'treasury spoke proxy admin owner'
-    );
-    Ownable2StepUpgradeable treasurySpoke = Ownable2StepUpgradeable(deployment.treasurySpoke);
-    require(
-      treasurySpoke.owner() == admin || treasurySpoke.pendingOwner() == admin,
-      'treasury spoke owner'
-    );
   }
 
   function _transferProxyAdmin(address proxy, address deployer, address admin) internal {

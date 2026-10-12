@@ -7,7 +7,7 @@ import {InputUtils} from 'src/deployments/utils/libraries/InputUtils.sol';
 
 /// @title AaveV4DeployBabylon
 /// @author Aave Labs
-/// @notice Deploys the Babylon market: one Hub and one BabylonSpoke, with roles and ownership kept
+/// @notice Deploys the Babylon market: the Hubs and one BabylonSpoke, with roles and ownership kept
 /// by the deployer until `AaveV4BabylonHandover`.
 contract AaveV4DeployBabylon is AaveV4DeployBatchBaseScript {
   constructor() AaveV4DeployBatchBaseScript('babylon') {}
