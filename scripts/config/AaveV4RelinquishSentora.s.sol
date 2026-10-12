@@ -22,6 +22,7 @@ contract AaveV4RelinquishSentora is Script {
   function run() external {
     AaveV4SentoraConfigInputs.Market memory market = AaveV4SentoraConfigInputs.readMarket();
     AaveV4SentoraConfigInputs.Handover memory targets = AaveV4SentoraConfigInputs.readHandover();
+    AaveV4SentoraConfigInputs.requireRiskSteward(targets);
 
     vm.startBroadcast();
     (, address deployer, ) = vm.readCallers();

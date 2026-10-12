@@ -31,11 +31,11 @@ import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 /// deployer therefore takes the two configurator domain admin roles and passes the configurators
 /// the roles they call the Hub and Spokes with, before configuring.
 ///
-/// Each asset is listed with the rate curve carried in config/sentora-config.json, and each reserve
-/// only on the Spoke it names, with that Spoke's caps and risk parameters. Every asset is then
+/// Each asset is listed with the rate curve carried in scripts/config/sentora-config.json, and each
+/// reserve only on the Spoke it names, with that Spoke's caps and risk parameters. Every asset is then
 /// halted on the Hub, which is what keeps the market closed until it is opened. An empty asset list
 /// configures the market — roles, liquidation configs and manager wiring — and lists nothing. See
-/// `AaveV4SentoraParameters` and docs/sentora-deploy.md.
+/// `AaveV4SentoraParameters`.
 library AaveV4SentoraConfiguration {
   /// @notice Thrown when the AccessManager carries a non-zero delay, which would defer the
   /// deployer's self-granted roles and revert every configuration call that follows.

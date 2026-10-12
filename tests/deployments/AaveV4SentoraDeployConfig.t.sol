@@ -11,9 +11,9 @@ import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 
 /// @title AaveV4SentoraDeployConfigTest
 /// @author Aave Labs
-/// @notice Checks that config/sentora.json and config/sentora-config.json parse into the inputs the
-///         ARFC sets out, and that a full deployment driven by those inputs sets every ownership as
-///         configured.
+/// @notice Checks that scripts/config/sentora.json and scripts/config/sentora-config.json parse into
+///         the inputs the ARFC sets out, and that a full deployment driven by those inputs sets every
+///         ownership as configured.
 contract AaveV4SentoraDeployConfigTest is PostDeploymentVerificationBase, AaveV4DeploySentora {
   address internal constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
   uint256 internal constant ETHEREUM_CHAIN_ID = 1;
@@ -74,7 +74,7 @@ contract AaveV4SentoraDeployConfigTest is PostDeploymentVerificationBase, AaveV4
 
   /// @notice The handover targets are read off the same file the deploy is driven by.
   /// @dev The Risk Steward is a placeholder until it is deployed: replace the assertion and
-  ///      config/sentora.json together.
+  ///      scripts/config/sentora.json together.
   function test_handoverTargets() public view {
     AaveV4SentoraConfigInputs.Handover memory targets = AaveV4SentoraConfigInputs.readHandover();
 
@@ -271,20 +271,28 @@ contract AaveV4SentoraDeployConfigTest is PostDeploymentVerificationBase, AaveV4
     assertEq(config.liquidationBonusFactor, 90_00, 'liquidation bonus factor');
   }
 
-  /// @notice A deploy on Ethereum refuses to run while any handover target is still a
-  ///         placeholder, which only the Risk Steward still is.
-  function test_deployInputsRejectPlaceholderOnEthereum() public {
+  /// @notice The deploy and the configuration read their inputs on Ethereum before the Risk
+  ///         Steward exists, since it is deployed against the configurators they create.
+  function test_inputsReadWithoutRiskStewardOnEthereum() public {
+    vm.chainId(ETHEREUM_CHAIN_ID);
+
+    _getDeployInputs();
+    AaveV4SentoraConfigInputs.readHandover();
+  }
+
+  /// @notice The handover refuses to run on Ethereum while the Risk Steward is still a placeholder.
+  function test_handoverRejectsRiskStewardPlaceholderOnEthereum() public {
     vm.chainId(ETHEREUM_CHAIN_ID);
 
     vm.expectRevert(
       abi.encodeWithSelector(AaveV4SentoraConfigInputs.PlaceholderAddress.selector, 'riskSteward')
     );
-    this.readDeployInputs();
+    this.requireRiskSteward();
   }
 
-  /// @dev Exposes the deploy inputs externally, so that `vm.expectRevert` sees a nested call.
-  function readDeployInputs() external view returns (InputUtils.FullDeployInputs memory) {
-    return _getDeployInputs();
+  /// @dev Exposes the Risk Steward check externally, so that `vm.expectRevert` sees a nested call.
+  function requireRiskSteward() external view {
+    AaveV4SentoraConfigInputs.requireRiskSteward(AaveV4SentoraConfigInputs.readHandover());
   }
 
   /// @notice The config engine lands on the address `predictedAddress` computes for it.

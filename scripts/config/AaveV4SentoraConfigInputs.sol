@@ -16,12 +16,12 @@ library AaveV4SentoraConfigInputs {
   Vm internal constant vm = Vm(address(uint160(uint256(keccak256('hevm cheat code')))));
 
   /// @dev Deploy inputs, which also carry the handover targets.
-  string internal constant DEPLOY_CONFIG_PATH = 'config/sentora.json';
+  string internal constant DEPLOY_CONFIG_PATH = 'scripts/config/sentora.json';
   /// @dev Configuration inputs.
-  string internal constant CONFIG_PATH = 'config/sentora-config.json';
+  string internal constant CONFIG_PATH = 'scripts/config/sentora-config.json';
   /// @dev Stands in for the Sentora Risk Steward, which is not deployed yet.
   address internal constant RISK_STEWARD_PLACEHOLDER = 0x2222222222222222222222222222222222222222;
-  /// @dev Ethereum, the only chain the placeholders are rejected on.
+  /// @dev Ethereum, the only chain the placeholder is rejected on.
   uint256 internal constant ETHEREUM_CHAIN_ID = 1;
   /// @dev ERC-1967 admin slot, holding the ProxyAdmin address of a transparent proxy.
   bytes32 internal constant ERC1967_ADMIN_SLOT =
@@ -162,21 +162,29 @@ library AaveV4SentoraConfigInputs {
   /// @dev `hubAdmin`, `spokeAdmin`, `hubConfiguratorAdmin` and `spokeConfiguratorAdmin` are
   /// deliberately not read: the Hub and Spoke roles are left unheld as on the live Ethereum and
   /// Avalanche markets, and the configurator roles go to the handover targets read here.
-  ///
-  /// Reverts on Ethereum while any target is still a placeholder. Local runs are exempt, which is
-  /// what lets the tests hand over from the unresolved config.
   /// @return handover The addresses to hand the market over to.
   function readHandover() internal view returns (Handover memory handover) {
     string memory json = vm.readFile(DEPLOY_CONFIG_PATH);
 
-    handover.admin = _target(json, 'accessManagerAdmin');
-    handover.proxyAdminOwner = _target(json, 'proxyAdminOwner');
-    handover.treasurySpokeOwner = _target(json, 'treasurySpokeOwner');
-    handover.gatewayOwner = _target(json, 'gatewayOwner');
-    handover.positionManagerOwner = _target(json, 'positionManagerOwner');
-    handover.sentoraExecutor = _target(json, 'sentoraExecutor');
-    handover.riskSteward = _target(json, 'riskSteward');
-    handover.emergencyOperator = _target(json, 'emergencyOperator');
+    handover.admin = vm.parseJsonAddress(json, '.accessManagerAdmin');
+    handover.proxyAdminOwner = vm.parseJsonAddress(json, '.proxyAdminOwner');
+    handover.treasurySpokeOwner = vm.parseJsonAddress(json, '.treasurySpokeOwner');
+    handover.gatewayOwner = vm.parseJsonAddress(json, '.gatewayOwner');
+    handover.positionManagerOwner = vm.parseJsonAddress(json, '.positionManagerOwner');
+    handover.sentoraExecutor = vm.parseJsonAddress(json, '.sentoraExecutor');
+    handover.riskSteward = vm.parseJsonAddress(json, '.riskSteward');
+    handover.emergencyOperator = vm.parseJsonAddress(json, '.emergencyOperator');
+  }
+
+  /// @notice Reverts on Ethereum while the Risk Steward is still a placeholder.
+  /// @dev Only the handover needs it: the steward is deployed against the configurators the deploy
+  /// creates, so the deploy and the configuration run before it exists. Local runs are exempt, which
+  /// is what lets the tests hand over from the unresolved config.
+  /// @param handover The addresses to hand the market over to.
+  function requireRiskSteward(Handover memory handover) internal view {
+    if (block.chainid == ETHEREUM_CHAIN_ID) {
+      require(handover.riskSteward != RISK_STEWARD_PLACEHOLDER, PlaceholderAddress('riskSteward'));
+    }
   }
 
   /// @notice Reads the assets to list on the Hub, with their rate curves.
@@ -273,15 +281,6 @@ library AaveV4SentoraConfigInputs {
     reserve.liquidationFee = _uint(json, path, 'liquidationFee').toUint16();
     reserve.borrowable = _bool(json, path, 'borrowable');
     reserve.receiveSharesEnabled = _bool(json, path, 'receiveSharesEnabled');
-  }
-
-  /// @dev Reads a handover target, rejecting any placeholder on Ethereum.
-  function _target(string memory json, string memory field) private view returns (address target) {
-    target = vm.parseJsonAddress(json, string.concat('.', field));
-
-    if (block.chainid == ETHEREUM_CHAIN_ID) {
-      require(target != RISK_STEWARD_PLACEHOLDER, PlaceholderAddress(field));
-    }
   }
 
   function _spokeIndex(

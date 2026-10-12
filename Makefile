@@ -70,7 +70,7 @@ deploy-config-engine :;
 
 # Sentora market on Ethereum, chain id 1. Every target takes the cast wallet keystore account to
 # broadcast from, and `dry=true` to simulate instead: `make sentora-deploy account=<keystore-name>`.
-# Run them in order; see docs/sentora-deploy.md for what goes between the steps.
+# Run them in order.
 sentora-account :; cast wallet address --account ${account}
 
 sentora-deploy :; make deploy-contracts chain=mainnet account=${account} script=AaveV4DeploySentora dry=${dry}

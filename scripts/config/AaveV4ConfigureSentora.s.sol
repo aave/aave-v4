@@ -9,11 +9,11 @@ import {console2 as console} from 'forge-std/console2.sol';
 
 /// @title AaveV4ConfigureSentora
 /// @author Aave Labs
-/// @notice Configures the Sentora market from config/sentora-config.json, then halts every asset it
-/// listed on the Hub.
+/// @notice Configures the Sentora market from scripts/config/sentora-config.json, then halts every
+/// asset it listed on the Hub.
 /// @dev Run after the deploy script and before `AaveV4RelinquishSentora`. An empty asset list grants
 /// the roles, applies the liquidation configs and wires the position managers without listing
-/// anything. See `AaveV4SentoraParameters` and docs/sentora-deploy.md.
+/// anything. See `AaveV4SentoraParameters`.
 contract AaveV4ConfigureSentora is Script {
   /// @notice Reads the inputs and configures the market as the broadcasting deployer.
   function run() external {

@@ -6,14 +6,14 @@ import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 /// @title AaveV4SentoraParameters
 /// @author Aave Labs
 /// @notice The launch parameters of the Sentora market that are not per-asset.
-/// @dev The per-asset and per-reserve risk parameters live in config/sentora-config.json. What is
-/// here is what the launch set does not vary: the liquidation curve a Spoke applies to every one of
-/// its reserves, and the tokenization spoke share naming.
+/// @dev The per-asset and per-reserve risk parameters live in scripts/config/sentora-config.json.
+/// What is here is what the launch set does not vary: the liquidation curve a Spoke applies to every
+/// one of its reserves, and the tokenization spoke share naming.
 ///
 /// The ARFC does not set the liquidation curve, so it mirrors the Base market until Sentora does.
 ///
 /// The market is listed with these parameters and then halted on the Hub, so nothing can be supplied
-/// or borrowed until each asset-spoke pair is unhalted. See docs/sentora-deploy.md.
+/// or borrowed until each asset-spoke pair is unhalted.
 library AaveV4SentoraParameters {
   /// @dev The health factor a liquidation restores a position to, expressed in WAD.
   uint128 internal constant TARGET_HEALTH_FACTOR = 1.24e18;

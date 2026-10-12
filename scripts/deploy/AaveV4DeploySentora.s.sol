@@ -2,16 +2,15 @@
 pragma solidity ^0.8.0;
 
 import {AaveV4DeployEthereum} from 'scripts/deploy/AaveV4DeployEthereum.s.sol';
-import {AaveV4SentoraConfigInputs} from 'scripts/config/AaveV4SentoraConfigInputs.sol';
 import {InputUtils} from 'src/deployments/utils/libraries/InputUtils.sol';
 
 /// @title AaveV4DeploySentora
 /// @author Aave Labs
 /// @notice Sentora market deploy script on Ethereum (chain id 1): one Hub and its Spokes. Deploy
-/// inputs are read from config/sentora.json.
+/// inputs are read from scripts/config/sentora.json.
 contract AaveV4DeploySentora is AaveV4DeployEthereum {
   /// @dev Path to the Sentora deploy inputs, relative to the project root.
-  string internal constant DEPLOY_CONFIG_PATH = 'config/sentora.json';
+  string internal constant DEPLOY_CONFIG_PATH = 'scripts/config/sentora.json';
 
   /// @dev Gives the deployer initial ownership of the position managers, the gateways and the
   /// TreasurySpoke. The configured values are the end-state targets, applied by
@@ -41,15 +40,12 @@ contract AaveV4DeploySentora is AaveV4DeployEthereum {
     return sanitizedInputs;
   }
 
-  /// @dev Reads the FullDeployInputs from config/sentora.json.
+  /// @dev Reads the FullDeployInputs from scripts/config/sentora.json.
   ///
   /// `hubAdmin`, `spokeAdmin`, `hubConfiguratorAdmin` and `spokeConfiguratorAdmin` are zero on
   /// purpose: the Hub and Spoke roles are left unheld, as on the live Ethereum and Avalanche
   /// markets, and the configurator roles are granted to their holders at handover. `grantRoles` is
   /// false, so the deploy reads none of them.
-  ///
-  /// The handover targets are read here too, so that a deploy on Ethereum refuses to run while any
-  /// of them is still a placeholder.
   function _getDeployInputs()
     internal
     view
@@ -85,7 +81,5 @@ contract AaveV4DeploySentora is AaveV4DeployEthereum {
       spokeMaxReservesLimits: spokeMaxReservesLimits,
       salt: vm.parseJsonBytes32(json, '.salt')
     });
-
-    AaveV4SentoraConfigInputs.readHandover();
   }
 }

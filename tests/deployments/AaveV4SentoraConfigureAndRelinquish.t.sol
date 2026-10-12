@@ -34,8 +34,8 @@ import {Test} from 'forge-std/Test.sol';
 /// @title AaveV4SentoraConfigureAndRelinquishTest
 /// @author Aave Labs
 /// @notice Runs the whole Sentora operator path on a local deployment: deploy from
-///         config/sentora.json with roles deferred, list a launch set, halt, then hand over to the
-///         Security Council, the Sentora Executor, the Risk Steward and the Emergency Operator.
+///         scripts/config/sentora.json with roles deferred, list a launch set, halt, then hand over
+///         to the Security Council, the Sentora Executor, the Risk Steward and the Emergency Operator.
 /// @dev The listing paths are driven by a local fixture of one collateral asset, listed on two of
 ///      the three Spokes, and one borrowable, tokenized asset listed on all three, with mock token
 ///      and feed code etched at their addresses. `test_configureAndRelinquishWithConfigFile` runs
