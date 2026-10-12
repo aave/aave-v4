@@ -6,7 +6,7 @@ import {AaveV4SentoraConfigInputs} from 'scripts/config/AaveV4SentoraConfigInput
 import {AaveV4SentoraConfiguration} from 'scripts/config/AaveV4SentoraConfiguration.sol';
 import {AaveV4SentoraHandover} from 'scripts/config/AaveV4SentoraHandover.sol';
 import {AaveV4SentoraParameters} from 'scripts/config/AaveV4SentoraParameters.sol';
-import {AaveV4SentoraRoles} from 'scripts/config/AaveV4SentoraRoles.sol';
+import {RolesSentora} from 'src/deployments/utils/libraries/RolesSentora.sol';
 
 import {AaveV4DeployOrchestration} from 'src/deployments/orchestration/AaveV4DeployOrchestration.sol';
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
@@ -99,8 +99,8 @@ contract AaveV4SentoraConfigureAndRelinquishTest is Test, Create2TestHelper, Aav
     _assertHasRole(Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE, _deployer, false);
     _assertHasRole(Roles.HUB_CONFIGURATOR_ROLE, _market.hubConfigurator, false);
     _assertHasRole(Roles.SPOKE_CONFIGURATOR_ROLE, _market.spokeConfigurator, false);
-    _assertHasRole(AaveV4SentoraRoles.SENTORA_RISK_ROLE, _targets.riskSteward, false);
-    _assertHasRole(AaveV4SentoraRoles.SENTORA_EMERGENCY_ROLE, _targets.emergencyOperator, false);
+    _assertHasRole(RolesSentora.SENTORA_RISK_ROLE, _targets.riskSteward, false);
+    _assertHasRole(RolesSentora.SENTORA_EMERGENCY_ROLE, _targets.emergencyOperator, false);
   }
 
   /// @notice Without the self-granted roles the deployer cannot configure anything.
@@ -299,12 +299,12 @@ contract AaveV4SentoraConfigureAndRelinquishTest is Test, Create2TestHelper, Aav
     _assertRoleMemberCount(Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE, 1);
     _assertRoleDelay(Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE, _targets.sentoraExecutor, 0);
     _assertRoleMemberCount(Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE, 1);
-    _assertRoleDelay(AaveV4SentoraRoles.SENTORA_RISK_ROLE, _targets.sentoraExecutor, 0);
-    _assertRoleDelay(AaveV4SentoraRoles.SENTORA_RISK_ROLE, _targets.riskSteward, 0);
-    _assertRoleMemberCount(AaveV4SentoraRoles.SENTORA_RISK_ROLE, 2);
-    _assertRoleDelay(AaveV4SentoraRoles.SENTORA_EMERGENCY_ROLE, _targets.emergencyOperator, 0);
-    _assertRoleDelay(AaveV4SentoraRoles.SENTORA_EMERGENCY_ROLE, _targets.admin, 0);
-    _assertRoleMemberCount(AaveV4SentoraRoles.SENTORA_EMERGENCY_ROLE, 2);
+    _assertRoleDelay(RolesSentora.SENTORA_RISK_ROLE, _targets.sentoraExecutor, 0);
+    _assertRoleDelay(RolesSentora.SENTORA_RISK_ROLE, _targets.riskSteward, 0);
+    _assertRoleMemberCount(RolesSentora.SENTORA_RISK_ROLE, 2);
+    _assertRoleDelay(RolesSentora.SENTORA_EMERGENCY_ROLE, _targets.emergencyOperator, 0);
+    _assertRoleDelay(RolesSentora.SENTORA_EMERGENCY_ROLE, _targets.admin, 0);
+    _assertRoleMemberCount(RolesSentora.SENTORA_EMERGENCY_ROLE, 2);
 
     // the roles that reach the Hub and Spokes directly are left unheld
     _assertRoleEmpty(Roles.HUB_DOMAIN_ADMIN_ROLE);
@@ -482,7 +482,7 @@ contract AaveV4SentoraConfigureAndRelinquishTest is Test, Create2TestHelper, Aav
 
     vm.prank(_targets.admin);
     IAccessManager(_market.accessManager).grantRole(
-      AaveV4SentoraRoles.SENTORA_RISK_ROLE,
+      RolesSentora.SENTORA_RISK_ROLE,
       makeAddr('intruder'),
       0
     );
@@ -490,7 +490,7 @@ contract AaveV4SentoraConfigureAndRelinquishTest is Test, Create2TestHelper, Aav
     vm.expectRevert(
       abi.encodeWithSelector(
         AaveV4SentoraHandover.UnexpectedRoleMemberCount.selector,
-        AaveV4SentoraRoles.SENTORA_RISK_ROLE,
+        RolesSentora.SENTORA_RISK_ROLE,
         3,
         2
       )
@@ -509,7 +509,7 @@ contract AaveV4SentoraConfigureAndRelinquishTest is Test, Create2TestHelper, Aav
     IAccessManager(_market.accessManager).setTargetFunctionRole(
       _market.hubConfigurator,
       selectors,
-      AaveV4SentoraRoles.SENTORA_EMERGENCY_ROLE
+      RolesSentora.SENTORA_EMERGENCY_ROLE
     );
 
     vm.expectRevert(
@@ -517,7 +517,7 @@ contract AaveV4SentoraConfigureAndRelinquishTest is Test, Create2TestHelper, Aav
         AaveV4SentoraHandover.UnexpectedSelectorRole.selector,
         _market.hubConfigurator,
         IHubConfigurator.updateSpokeCaps.selector,
-        AaveV4SentoraRoles.SENTORA_EMERGENCY_ROLE
+        RolesSentora.SENTORA_EMERGENCY_ROLE
       )
     );
     this.verifyHandover();
@@ -535,13 +535,13 @@ contract AaveV4SentoraConfigureAndRelinquishTest is Test, Create2TestHelper, Aav
     IAccessManager(_market.accessManager).setTargetFunctionRole(
       _market.hubConfigurator,
       selectors,
-      AaveV4SentoraRoles.SENTORA_RISK_ROLE
+      RolesSentora.SENTORA_RISK_ROLE
     );
 
     vm.expectRevert(
       abi.encodeWithSelector(
         AaveV4SentoraHandover.UnexpectedSelectorCount.selector,
-        AaveV4SentoraRoles.SENTORA_RISK_ROLE,
+        RolesSentora.SENTORA_RISK_ROLE,
         _market.hubConfigurator,
         4,
         3

@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {AaveV4SentoraConfigInputs} from 'scripts/config/AaveV4SentoraConfigInputs.sol';
-import {AaveV4SentoraRoles} from 'scripts/config/AaveV4SentoraRoles.sol';
+import {RolesSentora} from 'src/deployments/utils/libraries/RolesSentora.sol';
 import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 import {AaveV4AccessManagerRolesProcedure} from 'src/deployments/procedures/roles/AaveV4AccessManagerRolesProcedure.sol';
 import {IAccessManagerEnumerable} from 'src/access/interfaces/IAccessManagerEnumerable.sol';
@@ -35,7 +35,7 @@ import {IHub} from 'src/hub/interfaces/IHub.sol';
 /// configurator, and are left unheld as on the live Ethereum and Avalanche markets: nothing at
 /// launch calls `mintFeeShares`, `eliminateDeficit` or the user position updaters, and role 0 can
 /// grant them when something does. Roles 200 and 400 lose the risk and emergency selectors to the
-/// Sentora roles and keep every other one, see `AaveV4SentoraRoles`.
+/// Sentora roles and keep every other one, see `RolesSentora`.
 library AaveV4SentoraHandover {
   /// @notice Thrown when the deployer still holds a role after the handover.
   error RoleNotRelinquished(uint64 role);
@@ -109,23 +109,23 @@ library AaveV4SentoraHandover {
 
     accessManager.setTargetFunctionRole(
       market.hubConfigurator,
-      AaveV4SentoraRoles.hubRiskSelectors(),
-      AaveV4SentoraRoles.SENTORA_RISK_ROLE
+      RolesSentora.getHubConfiguratorRiskRoleSelectors(),
+      RolesSentora.SENTORA_RISK_ROLE
     );
     accessManager.setTargetFunctionRole(
       market.hubConfigurator,
-      AaveV4SentoraRoles.hubEmergencySelectors(),
-      AaveV4SentoraRoles.SENTORA_EMERGENCY_ROLE
+      RolesSentora.getHubConfiguratorEmergencyRoleSelectors(),
+      RolesSentora.SENTORA_EMERGENCY_ROLE
     );
     accessManager.setTargetFunctionRole(
       market.spokeConfigurator,
-      AaveV4SentoraRoles.spokeRiskSelectors(),
-      AaveV4SentoraRoles.SENTORA_RISK_ROLE
+      RolesSentora.getSpokeConfiguratorRiskRoleSelectors(),
+      RolesSentora.SENTORA_RISK_ROLE
     );
     accessManager.setTargetFunctionRole(
       market.spokeConfigurator,
-      AaveV4SentoraRoles.spokeEmergencySelectors(),
-      AaveV4SentoraRoles.SENTORA_EMERGENCY_ROLE
+      RolesSentora.getSpokeConfiguratorEmergencyRoleSelectors(),
+      RolesSentora.SENTORA_EMERGENCY_ROLE
     );
   }
 
@@ -144,14 +144,10 @@ library AaveV4SentoraHandover {
 
     accessManager.grantRole(Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE, targets.sentoraExecutor, 0);
     accessManager.grantRole(Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE, targets.sentoraExecutor, 0);
-    accessManager.grantRole(AaveV4SentoraRoles.SENTORA_RISK_ROLE, targets.sentoraExecutor, 0);
-    accessManager.grantRole(AaveV4SentoraRoles.SENTORA_RISK_ROLE, targets.riskSteward, 0);
-    accessManager.grantRole(
-      AaveV4SentoraRoles.SENTORA_EMERGENCY_ROLE,
-      targets.emergencyOperator,
-      0
-    );
-    accessManager.grantRole(AaveV4SentoraRoles.SENTORA_EMERGENCY_ROLE, targets.admin, 0);
+    accessManager.grantRole(RolesSentora.SENTORA_RISK_ROLE, targets.sentoraExecutor, 0);
+    accessManager.grantRole(RolesSentora.SENTORA_RISK_ROLE, targets.riskSteward, 0);
+    accessManager.grantRole(RolesSentora.SENTORA_EMERGENCY_ROLE, targets.emergencyOperator, 0);
+    accessManager.grantRole(RolesSentora.SENTORA_EMERGENCY_ROLE, targets.admin, 0);
   }
 
   /// @notice Starts the ownership transfer of every position manager and gateway to their end-state
@@ -223,8 +219,7 @@ library AaveV4SentoraHandover {
     });
   }
 
-  /// @notice Reverts if the deployer still holds any role defined in `Roles` or
-  /// `AaveV4SentoraRoles`.
+  /// @notice Reverts if the deployer still holds any role defined in `Roles` or `RolesSentora`.
   /// @param market The deployed Sentora market.
   /// @param deployer The address that ran the deployment and configuration.
   function verifyDeployerHoldsNoRole(
@@ -242,8 +237,8 @@ library AaveV4SentoraHandover {
       Roles.SPOKE_CONFIGURATOR_ROLE,
       Roles.SPOKE_USER_POSITION_UPDATER_ROLE,
       Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE,
-      AaveV4SentoraRoles.SENTORA_RISK_ROLE,
-      AaveV4SentoraRoles.SENTORA_EMERGENCY_ROLE
+      RolesSentora.SENTORA_RISK_ROLE,
+      RolesSentora.SENTORA_EMERGENCY_ROLE
     ];
 
     for (uint256 i; i < roles.length; ++i) {
@@ -278,18 +273,18 @@ library AaveV4SentoraHandover {
     );
     _requireRoleMemberCount(market, Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE, 1);
 
-    _requireRoleWithDelay(market, AaveV4SentoraRoles.SENTORA_RISK_ROLE, targets.sentoraExecutor, 0);
-    _requireRoleWithDelay(market, AaveV4SentoraRoles.SENTORA_RISK_ROLE, targets.riskSteward, 0);
-    _requireRoleMemberCount(market, AaveV4SentoraRoles.SENTORA_RISK_ROLE, 2);
+    _requireRoleWithDelay(market, RolesSentora.SENTORA_RISK_ROLE, targets.sentoraExecutor, 0);
+    _requireRoleWithDelay(market, RolesSentora.SENTORA_RISK_ROLE, targets.riskSteward, 0);
+    _requireRoleMemberCount(market, RolesSentora.SENTORA_RISK_ROLE, 2);
 
     _requireRoleWithDelay(
       market,
-      AaveV4SentoraRoles.SENTORA_EMERGENCY_ROLE,
+      RolesSentora.SENTORA_EMERGENCY_ROLE,
       targets.emergencyOperator,
       0
     );
-    _requireRoleWithDelay(market, AaveV4SentoraRoles.SENTORA_EMERGENCY_ROLE, targets.admin, 0);
-    _requireRoleMemberCount(market, AaveV4SentoraRoles.SENTORA_EMERGENCY_ROLE, 2);
+    _requireRoleWithDelay(market, RolesSentora.SENTORA_EMERGENCY_ROLE, targets.admin, 0);
+    _requireRoleMemberCount(market, RolesSentora.SENTORA_EMERGENCY_ROLE, 2);
 
     // the configurators keep calling the Hub and Spokes on the admins' behalf
     _requireRole(market, Roles.HUB_CONFIGURATOR_ROLE, market.hubConfigurator);
@@ -311,37 +306,37 @@ library AaveV4SentoraHandover {
     _requireSelectors(
       market,
       market.hubConfigurator,
-      AaveV4SentoraRoles.hubRiskSelectors(),
-      AaveV4SentoraRoles.SENTORA_RISK_ROLE
+      RolesSentora.getHubConfiguratorRiskRoleSelectors(),
+      RolesSentora.SENTORA_RISK_ROLE
     );
     _requireSelectors(
       market,
       market.hubConfigurator,
-      AaveV4SentoraRoles.hubEmergencySelectors(),
-      AaveV4SentoraRoles.SENTORA_EMERGENCY_ROLE
+      RolesSentora.getHubConfiguratorEmergencyRoleSelectors(),
+      RolesSentora.SENTORA_EMERGENCY_ROLE
     );
     _requireSelectors(
       market,
       market.hubConfigurator,
-      AaveV4SentoraRoles.hubAdminSelectors(),
+      RolesSentora.getHubConfiguratorDomainAdminRoleSelectors(),
       Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE
     );
     _requireSelectors(
       market,
       market.spokeConfigurator,
-      AaveV4SentoraRoles.spokeRiskSelectors(),
-      AaveV4SentoraRoles.SENTORA_RISK_ROLE
+      RolesSentora.getSpokeConfiguratorRiskRoleSelectors(),
+      RolesSentora.SENTORA_RISK_ROLE
     );
     _requireSelectors(
       market,
       market.spokeConfigurator,
-      AaveV4SentoraRoles.spokeEmergencySelectors(),
-      AaveV4SentoraRoles.SENTORA_EMERGENCY_ROLE
+      RolesSentora.getSpokeConfiguratorEmergencyRoleSelectors(),
+      RolesSentora.SENTORA_EMERGENCY_ROLE
     );
     _requireSelectors(
       market,
       market.spokeConfigurator,
-      AaveV4SentoraRoles.spokeAdminSelectors(),
+      RolesSentora.getSpokeConfiguratorDomainAdminRoleSelectors(),
       Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE
     );
   }

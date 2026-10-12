@@ -51,7 +51,7 @@ library AaveV4SentoraConfigInputs {
   /// @notice The addresses the deployer hands the market over to.
   /// @dev `admin` admins the AccessManager. `sentoraExecutor`, `riskSteward` and
   /// `emergencyOperator` hold the roles that reach the configurators, as set out in
-  /// `AaveV4SentoraRoles`, and `admin` also holds the emergency role.
+  /// `RolesSentora`, and `admin` also holds the emergency role.
   struct Handover {
     address admin;
     address proxyAdminOwner;
