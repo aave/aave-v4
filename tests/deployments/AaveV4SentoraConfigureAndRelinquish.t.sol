@@ -115,6 +115,29 @@ contract AaveV4SentoraConfigureAndRelinquishTest is Test, Create2TestHelper, Aav
     AaveV4SentoraConfiguration.requireNoDelays(_market);
   }
 
+  /// @notice Configuration labels the Sentora roles, which the deploy leaves unlabelled.
+  function test_configureLabelsSentoraRoles() public {
+    IAccessManagerEnumerable accessManager = IAccessManagerEnumerable(_market.accessManager);
+    assertFalse(accessManager.isRoleLabeled(RolesSentora.SENTORA_RISK_ROLE), 'risk labelled early');
+    assertFalse(
+      accessManager.isRoleLabeled(RolesSentora.SENTORA_EMERGENCY_ROLE),
+      'emergency labelled early'
+    );
+
+    _configure();
+
+    assertEq(
+      accessManager.getLabelOfRole(RolesSentora.SENTORA_RISK_ROLE),
+      'SENTORA_RISK_ROLE',
+      'risk label'
+    );
+    assertEq(
+      accessManager.getLabelOfRole(RolesSentora.SENTORA_EMERGENCY_ROLE),
+      'SENTORA_EMERGENCY_ROLE',
+      'emergency label'
+    );
+  }
+
   /// @notice Configuration lists every asset on the Hub and each reserve on its Spoke, and leaves
   ///         every asset halted on every Spoke.
   function test_configureListsAndHalts() public {

@@ -44,7 +44,7 @@ echo 'FOUNDRY_LIBRARIES=src/spoke/libraries/LiquidationLogic.sol:LiquidationLogi
 # 2. AccessManager, configurators, treasury spoke, hub, spoke, gateways, managers
 make sentora-deploy account=<keystore-name>
 
-# 3. roles, liquidation config, manager wiring, listings, then halt each asset
+# 3. roles and Sentora role labels, liquidation config, manager wiring, listings, then halt each asset
 make sentora-configure account=<keystore-name>
 
 # 4. hand the market over and prove the deployer holds nothing

@@ -5,6 +5,7 @@ import {AaveV4SentoraConfigInputs} from 'scripts/config/AaveV4SentoraConfigInput
 import {AaveV4SentoraParameters} from 'scripts/config/AaveV4SentoraParameters.sol';
 import {AaveV4TokenizationSpokeBatch} from 'src/deployments/batches/AaveV4TokenizationSpokeBatch.sol';
 import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
+import {RolesSentora} from 'src/deployments/utils/libraries/RolesSentora.sol';
 import {AaveV4HubRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
 import {AaveV4SpokeRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol';
 import {AaveV4HubConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubConfiguratorRolesProcedure.sol';
@@ -21,9 +22,10 @@ import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 
 /// @title AaveV4SentoraConfiguration
 /// @author Aave Labs
-/// @notice Configures a Sentora market as the deployer: grants the roles configuration needs, wires
-/// every position manager and gateway to every Spoke, lists the configured assets on the Hub and
-/// each configured reserve on its Spoke, and halts every asset on the Hub.
+/// @notice Configures a Sentora market as the deployer: grants the roles configuration needs,
+/// labels the Sentora roles, wires every position manager and gateway to every Spoke, lists the
+/// configured assets on the Hub and each configured reserve on its Spoke, and halts every asset on
+/// the Hub.
 /// @dev Runs against a deployment made with `grantRoles` false, which leaves the deployer holding
 /// the AccessManager admin role and every selector wired to a role that nobody holds yet. The
 /// deployer therefore takes the two configurator domain admin roles and passes the configurators
@@ -44,10 +46,10 @@ library AaveV4SentoraConfiguration {
   /// would revert. The Sentora deploy script is what arranges that ownership.
   error ManagerNotOwnedByDeployer(address manager, address owner);
 
-  /// @notice Grants the roles configuration needs, applies the per-Spoke liquidation configs, wires
-  /// the position managers and gateways, lists every configured asset on the Hub and every
-  /// configured reserve on its Spoke, deploys the tokenization spokes, and halts each asset on the
-  /// Hub.
+  /// @notice Grants the roles configuration needs, labels the Sentora roles, applies the per-Spoke
+  /// liquidation configs, wires the position managers and gateways, lists every configured asset on
+  /// the Hub and every configured reserve on its Spoke, deploys the tokenization spokes, and halts
+  /// each asset on the Hub.
   /// @dev The halts come last so they also reach every Spoke and tokenization spoke of an asset,
   /// which `haltAsset` only sees once they are registered on the Hub.
   /// @param market The deployed Sentora market.
@@ -67,6 +69,7 @@ library AaveV4SentoraConfiguration {
 
     requireNoDelays(market);
     grantConfigurationRoles(market, deployer);
+    labelSentoraRoles(market);
     setLiquidationConfigs(market);
     wirePositionManagers(market, deployer);
 
@@ -141,6 +144,15 @@ library AaveV4SentoraConfiguration {
       role: Roles.SPOKE_CONFIGURATOR_ROLE,
       admin: market.spokeConfigurator
     });
+  }
+
+  /// @notice Labels the `RolesSentora` roles on the AccessManager.
+  /// @dev The deploy labels every `Roles` role but not these.
+  /// @param market The deployed Sentora market.
+  function labelSentoraRoles(AaveV4SentoraConfigInputs.Market memory market) internal {
+    IAccessManager accessManager = IAccessManager(market.accessManager);
+    accessManager.labelRole(RolesSentora.SENTORA_RISK_ROLE, 'SENTORA_RISK_ROLE');
+    accessManager.labelRole(RolesSentora.SENTORA_EMERGENCY_ROLE, 'SENTORA_EMERGENCY_ROLE');
   }
 
   /// @notice Applies the launch liquidation config to every Spoke.
