@@ -28,7 +28,7 @@ contract AaveV4SpokeInstanceBatch is AaveV4SpokeDeployProcedure, AaveV4AaveOracl
     uint16 maxUserReservesLimit_,
     bytes32 salt_
   ) {
-    address aaveOracle = _deployAaveOracle(oracleDecimals_);
+    address aaveOracle = _deployAaveOracle(oracleDecimals_, salt_);
     (address spokeProxy, address spokeImplementation) = _deployUpgradeableSpokeInstance({
       proxyAdminOwner: proxyAdminOwner_,
       authority: authority_,
