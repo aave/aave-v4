@@ -1,0 +1,42 @@
+tests/olympix/OpixAaveOracleTest.t.sol
+  h_0f977de3f043fc 1-65
+tests/olympix/OpixAccessManagerEnumerableTest.t.sol
+  h_0f977de3f043fc 1-58
+tests/olympix/OpixAssetInterestRateStrategyTest.t.sol
+  h_0f977de3f043fc 1-55
+tests/olympix/OpixBabylonSpokeInstanceTest.t.sol
+  h_0f977de3f043fc 1-108
+tests/olympix/OpixHubInstanceTest.t.sol
+  h_0f977de3f043fc 1-55
+tests/olympix/OpixNativeTokenGatewayTest.t.sol
+  h_0f977de3f043fc 1-61
+tests/olympix/OpixSignatureGatewayTest.t.sol
+  h_0f977de3f043fc 1-91
+tests/olympix/OpixSpokeInstanceTest.t.sol
+  h_0f977de3f043fc 1-62
+tests/olympix/OpixTokenizationSpokeInstanceTest.t.sol
+  h_0f977de3f043fc 1-64
+tests/olympix/OpixTreasurySpokeInstanceTest.t.sol
+  h_0f977de3f043fc 1-42
+tests/olympix/OpixUnitTests.sol
+  h_0f977de3f043fc 1-9
+tests/olympix/generated/OpixGenAaveOracle.t.sol
+  h_0f977de3f043fc 1-416
+tests/olympix/generated/OpixGenAccessManagerEnumerable.t.sol
+  h_0f977de3f043fc 1-2690
+tests/olympix/generated/OpixGenAssetInterestRateStrategy.t.sol
+  h_0f977de3f043fc 1-641
+tests/olympix/generated/OpixGenNativeTokenGateway.t.sol
+  h_0f977de3f043fc 1-1920
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "b757e1eb4dd09edae32f3db537c7803e32fafeaa",
+  "prompts": {},
+  "humans": {
+    "h_0f977de3f043fc": {
+      "author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}

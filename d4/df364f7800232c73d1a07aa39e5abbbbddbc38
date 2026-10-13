@@ -1,0 +1,36 @@
+scripts/markets/babylon/sepolia.json
+  s_477c0d90c4846f::t_4ed9ab2d4991fd 1-9
+scripts/markets/babylon/AaveV4BabylonHandover.s.sol
+  s_477c0d90c4846f::t_326f379014c431 1-143
+scripts/markets/babylon/AaveV4DeployBabylon.s.sol
+  s_477c0d90c4846f::t_74ac3804902b25 1-28
+tests/deployments/markets/babylon/AaveV4Babylon.t.sol
+  s_477c0d90c4846f::t_26df6c340d4eec 1-316
+  s_477c0d90c4846f::t_67dbe45c9701b3 317-319
+scripts/markets/babylon/AaveV4BabylonConfig.sol
+  s_477c0d90c4846f::t_6c0728abfebd6d 1-127
+scripts/markets/babylon/README.md
+  s_477c0d90c4846f::t_fec51bc5dd8637 1-24
+.env.example
+  s_477c0d90c4846f::t_48399a7c711396 20,34
+Makefile
+  s_477c0d90c4846f::t_683ff68e9a9ee8 47-60
+foundry.toml
+  s_477c0d90c4846f::t_7e5f67522abf82 9,80,96
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d4df364f7800232c73d1a07aa39e5abbbbddbc38",
+  "prompts": {},
+  "sessions": {
+    "s_477c0d90c4846f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9de15bb6-ef2d-4870-b4ab-7a2a27701508",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}

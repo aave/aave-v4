@@ -1,0 +1,26 @@
+tests/deployments/utils/SpokeDeployUtils.t.sol
+  s_477c0d90c4846f::t_ddf0bcef59acd1 1-109
+  s_477c0d90c4846f::t_92a1ca1622cb4a 110-118
+scripts/LibraryPreCompile.s.sol
+  s_477c0d90c4846f::t_96921853b19c18 41
+scripts/utils/SpokeDeployUtils.sol
+  s_477c0d90c4846f::t_988d89b3692faf 16-28,31,33,36-39,41-59,61-77,96,100,179-187
+src/deployments/README.md
+  s_477c0d90c4846f::t_86e279d06e964c 53
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "9150e880233a0cc0fb649b980e7fb0fb68ba66d6",
+  "prompts": {},
+  "sessions": {
+    "s_477c0d90c4846f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9de15bb6-ef2d-4870-b4ab-7a2a27701508",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}
