@@ -25,7 +25,7 @@ library HubEngine {
 
   /// @dev Thrown when an asset listing field carries a KEEP_CURRENT sentinel. A listing has no
   /// current value to keep, so a sentinel there is always a drafting mistake.
-  error KeepCurrentInListing();
+  error KeepCurrentNotAllowed();
 
   /// @notice Lists new assets on Hubs via the HubConfigurator.
   /// @dev When tokenization data is set, also deploys a TokenizationSpoke (impl + proxy) via
@@ -34,7 +34,7 @@ library HubEngine {
   function executeHubAssetListings(IAaveV4ConfigEngine.AssetListing[] calldata listings) external {
     uint256 length = listings.length;
     for (uint256 i; i < length; ++i) {
-      require(!_hasKeepCurrent(listings[i]), KeepCurrentInListing());
+      require(!_hasKeepCurrent(listings[i]), KeepCurrentNotAllowed());
       bytes memory irData = abi.encode(listings[i].irData);
       listings[i].hubConfigurator.addAsset(
         listings[i].hub,
@@ -235,7 +235,8 @@ library HubEngine {
       listing.irData.optimalUsageRatio == EngineFlags.KEEP_CURRENT_UINT16 ||
       listing.irData.baseDrawnRate == EngineFlags.KEEP_CURRENT_UINT32 ||
       listing.irData.rateGrowthBeforeOptimal == EngineFlags.KEEP_CURRENT_UINT32 ||
-      listing.irData.rateGrowthAfterOptimal == EngineFlags.KEEP_CURRENT_UINT32;
+      listing.irData.rateGrowthAfterOptimal == EngineFlags.KEEP_CURRENT_UINT32 ||
+      listing.tokenization.proxyAdminOwner == EngineFlags.KEEP_CURRENT_ADDRESS;
   }
 
   /// @dev Deploys a TokenizationSpoke (impl + proxy) via CREATE2 and registers it on the Hub.
