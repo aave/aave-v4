@@ -13,6 +13,11 @@ import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEng
 library SpokeEngine {
   using SafeCast for uint256;
 
+  /// @dev Thrown when a reserve listing or dynamic reserve config addition field carries a
+  /// KEEP_CURRENT sentinel. Both write new values with nothing current to keep, so a sentinel there
+  /// is always a drafting mistake.
+  error KeepCurrentNotAllowed();
+
   /// @notice Lists new reserves on Spokes.
   /// @param listings The reserve listings to execute.
   function executeSpokeReserveListings(
@@ -20,6 +25,7 @@ library SpokeEngine {
   ) external {
     uint256 length = listings.length;
     for (uint256 i; i < length; ++i) {
+      require(!_hasKeepCurrent(listings[i]), KeepCurrentNotAllowed());
       uint256 assetId = IHubBase(listings[i].hub).getAssetId(listings[i].underlying);
       listings[i].spokeConfigurator.addReserve(
         listings[i].spoke,
@@ -143,6 +149,7 @@ library SpokeEngine {
   ) external {
     uint256 length = additions.length;
     for (uint256 i; i < length; ++i) {
+      require(!_hasKeepCurrent(additions[i].dynamicConfig), KeepCurrentNotAllowed());
       uint256 reserveId = _resolveReserveId(
         additions[i].spoke,
         additions[i].hub,
@@ -214,6 +221,25 @@ library SpokeEngine {
         updates[i].active
       );
     }
+  }
+
+  /// @dev Returns true if any reserve listing field carries the KEEP_CURRENT sentinel of its width.
+  function _hasKeepCurrent(
+    IAaveV4ConfigEngine.ReserveListing calldata listing
+  ) private pure returns (bool) {
+    return
+      listing.priceSource == EngineFlags.KEEP_CURRENT_ADDRESS ||
+      _hasKeepCurrent(listing.dynamicConfig);
+  }
+
+  /// @dev Returns true if any dynamic reserve config field carries the KEEP_CURRENT sentinel of its width.
+  function _hasKeepCurrent(
+    ISpoke.DynamicReserveConfig calldata config
+  ) private pure returns (bool) {
+    return
+      config.collateralFactor == EngineFlags.KEEP_CURRENT_UINT16 ||
+      config.maxLiquidationBonus == EngineFlags.KEEP_CURRENT_UINT32 ||
+      config.liquidationFee == EngineFlags.KEEP_CURRENT_UINT16;
   }
 
   /// @dev Resolves the reserve ID from spoke, hub, and underlying addresses.
