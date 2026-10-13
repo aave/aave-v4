@@ -1,0 +1,22 @@
+tests/helpers/mocks/deployments/AaveV4DeployBaseWrapper.sol
+  s_4f5261c6e21dbb::t_8dbc11e3a9d8d9 1-28
+tests/deployments/batches/AaveV4SpokeInstanceBatch.t.sol
+  s_4f5261c6e21dbb::t_b99ebf034fe945 5,95-147
+  s_4f5261c6e21dbb::t_715aac3eccd320 148
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "cff9ac8a65754e96abb82778c61b1ee9f5fe66e7",
+  "prompts": {},
+  "sessions": {
+    "s_4f5261c6e21dbb": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "af35560e-00c7-4b1d-9586-dde333921e50",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "DhairyaSethi <55102840+DhairyaSethi@users.noreply.github.com>"
+    }
+  }
+}
