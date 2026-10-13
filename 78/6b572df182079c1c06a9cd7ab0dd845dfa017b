@@ -1,0 +1,22 @@
+tests/scripts/AaveV4DeployAvalancheEthenaEcosystemSpoke.t.sol
+  s_477c0d90c4846f::t_37623f03ab56b7 1-105,107-136
+  s_477c0d90c4846f::t_deaaf6a44a8aa4 106
+scripts/deploy/AaveV4DeployCorrelatedSpoke.s.sol
+  s_477c0d90c4846f::t_3d7c96d2416dee 1-132
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "786b572df182079c1c06a9cd7ab0dd845dfa017b",
+  "prompts": {},
+  "sessions": {
+    "s_477c0d90c4846f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9de15bb6-ef2d-4870-b4ab-7a2a27701508",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}
