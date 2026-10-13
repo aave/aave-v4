@@ -1,8 +1,6 @@
-/*
- * Property 1 in certora/ppties.md; assumes Spoke reserve validity.
- * Real BabylonSpoke entry points, bitmap operations, counts and reserve guards.
- * Bounded to <= 4 listed reserves and <= 4 signed manager updates per call.
- */
+// Property 1 assumes Spoke reserve validity.
+// Real BabylonSpoke entry points, bitmap operations, counts and reserve guards.
+// Bounded to <= 4 listed reserves and <= 4 signed manager updates per call.
 import "./helpers/BitMath.spec";
 
 using BabylonSpokeHarness as spoke;
@@ -55,6 +53,7 @@ methods {
     // Over-approximate accounting arithmetic only.
     function MathUtils.uncheckedExp(uint256,uint256) internal returns (uint256) => NONDET;
     function WadRayMath.rayMulUp(uint256,uint256) internal returns (uint256) => NONDET;
+    
     // View-only raw readers are not invariant transitions and inhibit storage splitting.
     function _.extSload(bytes32) external => NONDET DELETE;
     function _.extSloads(bytes32[]) external => NONDET DELETE;
@@ -106,6 +105,19 @@ function setup() {
     require MAX_USER_RESERVES_LIMIT() == 1, "Set by the BabylonSpoke constructor.";
 }
 
+// Unlisted reserves have no hub or position flags.
+invariant unlistedReserveIsEmpty(address user, uint256 reserveId)
+    reserveId >= getReserveCount() =>
+        spoke._reserves[reserveId].hub == 0 &&
+        !harnessIsCollateral(user, reserveId) &&
+        !harnessIsBorrowing(user, reserveId)
+    filtered { f -> f.selector != sig:multicall(bytes[]).selector }
+{
+    preserved {
+        setup();
+    }
+}
+        
 // Only the managed reserve can be enabled as collateral among listed reserves.
 invariant onlyManagedCollateral(address user, uint256 reserveId)
     reserveId < getReserveCount() => (harnessIsCollateral(user, reserveId) => reserveId == MANAGED_COLLATERAL_RESERVE_ID())

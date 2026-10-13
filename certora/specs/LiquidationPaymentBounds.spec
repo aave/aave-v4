@@ -1,7 +1,7 @@
 import "./helpers/MulDiv.spec";
 
 // Property 2: a successful liquidation pulls at most debtToCover, and at most the user's debt.
-// The collateral removed is worth at most the pulled debt times the liquidation bonus.
+// The collateral value bound is in LiquidationCollateralBound.spec.
 methods {
     function MANAGED_COLLATERAL_RESERVE_ID() external returns (uint256) envfree;
 
@@ -163,27 +163,4 @@ rule liquidationPaymentWithinUserDebt(env e, uint256 debtReserveId, uint256 debt
 
     // Liquidator payment does not exceed the user's pre-liquidation debt
     assert amountPulled <= drawnDebt + premiumDebt;
-}
-
-// Prove that the collateral removed is worth at most the pulled debt times the liquidation bonus
-rule collateralWithinBonusPricedRepayment(env e, uint256 debtReserveId, uint256 debtToCover, address user, uint256 maxCollateralToRemove) {
-    // Get the prices and asset units used by the liquidation
-    uint256 collateralReserveId = MANAGED_COLLATERAL_RESERVE_ID();
-    mathint collateralPrice = oraclePrice(collateralReserveId);
-    mathint debtPrice = oraclePrice(debtReserveId);
-    mathint collateralUnit = assetUnit(currentContract._reserves[collateralReserveId].decimals);
-    mathint debtUnit = assetUnit(currentContract._reserves[debtReserveId].decimals);
-
-    // Initialize the liquidator and the amount pulled
-    liquidator = e.msg.sender;
-    amountPulled = 0;
-
-    // Run the liquidation
-    uint256 liquidationBonus;
-    uint256 collateralAmountRemoved;
-    liquidationBonus, collateralAmountRemoved = liquidationCall(e, debtReserveId, debtToCover, user, maxCollateralToRemove);
-
-    // Collateral value removed does not exceed the pulled debt value times the bonus
-    assert collateralAmountRemoved * collateralPrice * debtUnit * 10000
-        <= amountPulled * debtPrice * collateralUnit * liquidationBonus;
 }

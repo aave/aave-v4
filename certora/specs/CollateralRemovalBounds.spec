@@ -1,4 +1,4 @@
-// Property 3: removed collateral respects maxCollateralToRemove and the user's supply; shares drop accordingly.
+// Property 3: removed collateral respects maxCollateralToRemove and the user's supply and shares drop accordingly.
 // Assumes the collateral reserve's hub is the Aave Hub (its added-asset share conversion is modeled below).
 
 methods {
@@ -85,7 +85,7 @@ function hubRemoveByShares(address hub, uint256 assetId, uint256 shares) returns
     return require_uint256(shares * (hubAssets[hub][assetId] + VIRTUAL()) / (hubShares[hub][assetId] + VIRTUAL()));
 }
 
-// Removed collateral respects maxCollateralToRemove and the user's supply, and shares drop accordingly.
+// Removed collateral respects maxCollateralToRemove and the user's supply.
 rule collateralRemovalBounds(env e, uint256 debtReserveId, uint256 debtToCover, address user, uint256 maxCollateralToRemove) {
     uint256 collateralId = MANAGED_COLLATERAL_RESERVE_ID();
     address hub = currentContract._reserves[collateralId].hub;
