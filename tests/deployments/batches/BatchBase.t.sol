@@ -13,6 +13,7 @@ import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 import {AaveV4AuthorityBatch} from 'src/deployments/batches/AaveV4AuthorityBatch.sol';
 import {AaveV4SpokeInstanceBatch} from 'src/deployments/batches/AaveV4SpokeInstanceBatch.sol';
+import {AaveV4BabylonSpokeInstanceBatch} from 'src/deployments/batches/AaveV4BabylonSpokeInstanceBatch.sol';
 import {AaveV4HubInstanceBatch} from 'src/deployments/batches/AaveV4HubInstanceBatch.sol';
 import {AaveV4ConfiguratorBatch} from 'src/deployments/batches/AaveV4ConfiguratorBatch.sol';
 import {AaveV4TokenizationSpokeBatch} from 'src/deployments/batches/AaveV4TokenizationSpokeBatch.sol';
@@ -40,6 +41,7 @@ contract BatchBaseTest is Create2TestHelper {
   address public nativeWrapper;
   bytes internal hubBytecode;
   bytes internal spokeBytecode;
+  bytes internal babylonSpokeBytecode;
 
   function setUp() public virtual {
     salt = keccak256('testSalt');
@@ -47,6 +49,9 @@ contract BatchBaseTest is Create2TestHelper {
 
     hubBytecode = vm.getCode('src/hub/instances/HubInstance.sol:HubInstance');
     spokeBytecode = vm.getCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance');
+    babylonSpokeBytecode = vm.getCode(
+      'src/spoke/instances/BabylonSpokeInstance.sol:BabylonSpokeInstance'
+    );
 
     // used Hub, Spoke, Configurator batches
     AaveV4AuthorityBatch authorityBatch = new AaveV4AuthorityBatch({admin_: admin, salt_: salt});

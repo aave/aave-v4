@@ -9,6 +9,7 @@ import {AaveV4GatewayBatch} from 'src/deployments/batches/AaveV4GatewayBatch.sol
 import {AaveV4HubInstanceBatch} from 'src/deployments/batches/AaveV4HubInstanceBatch.sol';
 import {AaveV4PositionManagerBatch} from 'src/deployments/batches/AaveV4PositionManagerBatch.sol';
 import {AaveV4SpokeInstanceBatch} from 'src/deployments/batches/AaveV4SpokeInstanceBatch.sol';
+import {AaveV4BabylonSpokeInstanceBatch} from 'src/deployments/batches/AaveV4BabylonSpokeInstanceBatch.sol';
 import {AaveV4TokenizationSpokeBatch} from 'src/deployments/batches/AaveV4TokenizationSpokeBatch.sol';
 import {AaveV4TreasurySpokeBatch} from 'src/deployments/batches/AaveV4TreasurySpokeBatch.sol';
 import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
@@ -120,6 +121,48 @@ library AaveV4DeployBase {
       )
     });
     return AaveV4SpokeInstanceBatch(spokeInstanceBatch).getReport();
+  }
+
+  /// @notice Deploys the BabylonSpoke instance batch containing the proxy, implementation, and AaveOracle.
+  /// @param proxyAdminOwner The owner of the proxy admin.
+  /// @param authority The access-control authority for the BabylonSpoke.
+  /// @param liquidationManager The only address allowed to perform liquidations on the BabylonSpoke.
+  /// @param managedCollateralReserveId The identifier of the only reserve usable as collateral.
+  /// @param babylonSpokeBytecode The creation bytecode of the BabylonSpokeInstance contract.
+  /// @param oracleDecimals The decimal precision for the AaveOracle.
+  /// @param salt The CREATE2 salt for deterministic deployment.
+  /// @return The BabylonSpoke instance batch report.
+  function deployBabylonSpokeInstanceBatch(
+    address proxyAdminOwner,
+    address authority,
+    address liquidationManager,
+    uint256 managedCollateralReserveId,
+    bytes memory babylonSpokeBytecode,
+    uint8 oracleDecimals,
+    bytes32 salt
+  ) internal returns (BatchReports.SpokeInstanceBatchReport memory) {
+    // the CREATE2 factory drops revert reasons, so repeat the batch's input checks here
+    require(oracleDecimals > 0, 'invalid oracle decimals');
+    require(proxyAdminOwner != address(0), 'invalid proxy admin owner');
+    require(authority != address(0), 'invalid authority');
+    require(liquidationManager != address(0), 'invalid liquidation manager');
+    // the batch deploys the AaveOracle, so its address must not depend on the deployer's nonce
+    address babylonSpokeInstanceBatch = Create2Utils.create2Deploy({
+      salt: salt,
+      bytecode: abi.encodePacked(
+        type(AaveV4BabylonSpokeInstanceBatch).creationCode,
+        abi.encode(
+          proxyAdminOwner,
+          authority,
+          liquidationManager,
+          managedCollateralReserveId,
+          babylonSpokeBytecode,
+          oracleDecimals,
+          salt
+        )
+      )
+    });
+    return AaveV4BabylonSpokeInstanceBatch(babylonSpokeInstanceBatch).getReport();
   }
 
   /// @notice Deploys the position manager batch containing all three position manager contracts.
