@@ -5,10 +5,8 @@ methods {
     function mulDivUp(uint256,uint256,uint256) external returns (uint256) envfree;
 }
 
-// exactMulDiv matches Math.mulDiv, including its reverts, whenever x * y fits in 256 bits.
-// Neither prover mode can check larger products: integer mode over-approximates the 512-bit
-// bitwise code, and precise_bitwise_ops bounds mathint near 2^256. That branch relies on
-// OpenZeppelin's correctness.
+// Check Math.mulDiv's result and revert condition against the floor/ceil formula for x * y <= max_uint256.
+// Larger products are excluded. The formula is repeated here; exactMulDiv itself is not called.
 rule exactMulDivMatchesSolidity(uint256 x, uint256 y, uint256 denominator, bool up) {
     require x * y <= max_uint256, "512-bit products are outside what the prover can check";
     uint256 result;

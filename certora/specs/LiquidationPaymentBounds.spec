@@ -1,11 +1,12 @@
 import "./helpers/MulDiv.spec";
 
-// Property 2: a successful liquidation pulls at most debtToCover, and at most the user's debt.
+// Property 2: successful liquidation requests at most debtToCover and the user's pre-call reserve debt.
 // The collateral value bound is in LiquidationCollateralBound.spec.
+
 methods {
     function MANAGED_COLLATERAL_RESERVE_ID() external returns (uint256) envfree;
 
-    // Replace the mulDiv functions with CVL exactMulDiv function.
+    // Model mulDiv rounding exactly; use galoisLemma for inverse pricing and share conversions.
     function _.mulDiv(uint256 x, uint256 y, uint256 denominator) internal
         => exactMulDiv(x, y, denominator, false) expect uint256;
     function Math.mulDiv(uint256 x, uint256 y, uint256 denominator, Math.Rounding rounding) internal returns (uint256)
@@ -15,36 +16,37 @@ methods {
     function _.previewAddByShares(uint256 assetId, uint256 shares) external
         => previewAddBySharesWithGalois(calledContract, assetId, shares) expect uint256;
 
-    // The bounds hold for any bonus, and for any asset unit and price fixed per decimals and reserve.
+    // Use an arbitrary bonus, asset units keyed by decimals and prices keyed by reserve.
     function _.calculateLiquidationBonus(uint256,uint256,uint256,uint256) external => NONDET;
     function LiquidationLogic.calculateLiquidationBonus(uint256,uint256,uint256,uint256) internal returns (uint256) => NONDET;
     function MathUtils.uncheckedExp(uint256, uint256 exponent) internal returns (uint256) => assetUnit(exponent);
     function _.getReservePrice(uint256 reserveId) external => oraclePrice(reserveId) expect uint256;
 
-    // These raw readers are outside the rule and prevent storage splitting.
+    // Remove raw storage readers from the scene to allow storage splitting.
     function _.extSload(bytes32) external => NONDET DELETE;
     function _.extSloads(bytes32[]) external => NONDET DELETE;
 
-    // Post-payment bookkeeping: no direct pulls.
+    // After payment, omit premium refresh effects and havoc deficit-reporting effects.
     function Spoke._notifyRiskPremiumUpdate(address,uint256) internal => NONDET;
     function LiquidationLogic.notifyReportDeficit(mapping(uint256 => ISpoke.Reserve) storage, mapping(address => mapping(uint256 => ISpoke.UserPosition)) storage, mapping(address => ISpoke.PositionStatus) storage, uint256, address) external => HAVOC_ALL;
 
-    // Hub views as in Hub.sol: one drawn index and one (addedAssets, addedShares) pair per asset,
-    // with SharesMath rounding. The cap-resized sizing is only bounded if both previews share that pair.
+    // Model the Hub index and rounded-down share value per (hub, asset).
+    // All three conversion previews use the same asset and share totals before any HAVOC_ALL call.
     function _.getAssetDrawnIndex(uint256 assetId) external => hubDrawnIndex(calledContract, assetId) expect uint256;
     function _.previewRemoveByShares(uint256 assetId, uint256 shares) external
         => exactMulDiv(shares, hubAddedAssets(calledContract, assetId) + VIRTUAL(), hubAddedShares(calledContract, assetId) + VIRTUAL(), false) expect uint256;
 
-    // These do not feed the sizing; arbitrary effects.
+    // Havoc storage and non-persistent ghosts after sizing.
     function _.remove(uint256,uint256,address) external => HAVOC_ALL;
     function _.restore(uint256,uint256,IHubBase.PremiumDelta) external => HAVOC_ALL;
     function _.reportDeficit(uint256,uint256,IHubBase.PremiumDelta) external => HAVOC_ALL;
     function _.refreshPremium(uint256,IHubBase.PremiumDelta) external => HAVOC_ALL;
 
-    // This helper reads state and calls only view functions; its result is unconstrained.
+    // Return arbitrary account data without changing storage.
     function Spoke._calculateUserAccountData(address) internal returns (ISpoke.UserAccountData memory)
         => arbitraryAccountData();
 
+    // Record requested transfers from the liquidator; omit token execution and callbacks.
     function _.safeTransferFrom(address token, address from, address to, uint256 amount) internal
         => recordLiquidatorPull(from, amount) expect void;
 
@@ -53,21 +55,21 @@ methods {
 
 definition VIRTUAL() returns mathint = 10^6;
 
-// Rounding down x*k/q to at least n means rounding up n*q/k is at most x. Proved by galoisLemma.
+// For x,n >= 0 and k,q > 0: floor(x*k/q) >= n implies ceil(n*q/k) <= x.
+// Asserted separately by galoisLemma.
 definition galois(mathint x, mathint k, mathint q, mathint n) returns bool =
     (x >= 0 && n >= 0 && k > 0 && q > 0) => (x * k / q >= n => (n * q + k - 1) / k <= x);
 
-// Hub views.
+// Hub values stay fixed until a HAVOC_ALL call.
 ghost hubDrawnIndex(address, uint256) returns uint256;
 ghost hubAddedAssets(address, uint256) returns uint256;
 ghost hubAddedShares(address, uint256) returns uint256;
 
-// Oracle price per reserve and asset unit per decimals.
+// Arbitrary oracle prices per reserve and asset units per decimals value.
 ghost oraclePrice(uint256) returns uint256;
 ghost assetUnit(uint256) returns uint256;
 
-// Inputs of the last Floor mulDiv and the last previewAddByAssets: the forward pricing of the
-// liquidated debt, which the cap resize inverts. Any recorded values keep the galois facts true.
+// Save the last round-down mulDiv and asset-to-share inputs for the inverse-conversion lemma.
 ghost uint256 floorX;
 ghost uint256 floorY;
 ghost uint256 floorDen;
@@ -75,24 +77,23 @@ ghost address addHub;
 ghost uint256 addAssetId;
 ghost uint256 addAssets;
 
-// Tracked state.
+// Accumulate requested transfers from the liquidator across HAVOC_ALL calls.
 persistent ghost address liquidator;
 persistent ghost mathint amountPulled;
 
-// Arbitrary account data.
 function arbitraryAccountData() returns ISpoke.UserAccountData {
     ISpoke.UserAccountData result;
     return result;
 }
 
-// Record a pull operation.
+// Sum transfer amounts whose sender is the liquidator.
 function recordLiquidatorPull(address from, uint256 amount) {
     if (from == liquidator) {
         amountPulled = amountPulled + amount;
     }
 }
 
-// Floor calls are recorded; a Ceil call inverting the last Floor call gets the galois fact.
+// Record round-down inputs; apply galoisLemma when a round-up call swaps the multiplier and denominator.
 function mulDivWithGalois(uint256 x, uint256 y, uint256 denominator, bool up) returns uint256 {
     if (up) {
         require (y == floorDen && denominator == floorY) => galois(floorX, floorY, floorDen, x), "galoisLemma";
@@ -104,7 +105,7 @@ function mulDivWithGalois(uint256 x, uint256 y, uint256 denominator, bool up) re
     return exactMulDiv(x, y, denominator, up);
 }
 
-// Record the values for the galois lemma
+// Record the asset-to-share input and return the rounded-down share amount.
 function previewAddByAssetsRecorded(address hub, uint256 assetId, uint256 assets) returns uint256 {
     addHub = hub;
     addAssetId = assetId;
@@ -113,54 +114,44 @@ function previewAddByAssetsRecorded(address hub, uint256 assetId, uint256 assets
     return exactMulDiv(assets, hubAddedShares(hub, assetId) + VIRTUAL(), hubAddedAssets(hub, assetId) + VIRTUAL(), false);
 }
 
-// The inverse conversion on the same Hub pair gets the galois fact against the last previewAddByAssets.
+// Convert shares to assets, rounding up; apply galoisLemma for the last matching (hub, asset).
 function previewAddBySharesWithGalois(address hub, uint256 assetId, uint256 shares) returns uint256 {
     mathint addedAssets = hubAddedAssets(hub, assetId) + VIRTUAL();
     mathint addedShares = hubAddedShares(hub, assetId) + VIRTUAL();
 
-    // Apply galois lemma
     require (hub == addHub && assetId == addAssetId) => galois(addAssets, addedShares, addedAssets, shares), "galoisLemma";
 
     return exactMulDiv(shares, addedAssets, addedShares, true);
 }
 
 
-// Prove that rounding down x*k/q to at least n means rounding up n*q/k is at most x
+// Check the rounding implication for arbitrary integers; its definition includes the domain conditions.
 rule galoisLemma {
-    // Get the values for the galois lemma
     mathint x; mathint k; mathint q; mathint n;
 
-    // Prove the galois lemma
     assert galois(x, k, q, n);
 }
 
-// Prove that the liquidator payment does not exceed debtToCover
+// Bound the total requested transfers from the liquidator by debtToCover.
 rule liquidationPaymentWithinDebtToCover(env e, uint256 debtReserveId, uint256 debtToCover, address user, uint256 maxCollateralToRemove) {
-    // Initialize the liquidator and the amount pulled
     liquidator = e.msg.sender;
     amountPulled = 0;
 
-    // Run the liquidation
     liquidationCall(e, debtReserveId, debtToCover, user, maxCollateralToRemove);
 
-    // Liquidator payment does not exceed debtToCover
     assert amountPulled <= debtToCover;
 }
 
-// Prove that the liquidator payment does not exceed the user's pre-liquidation debt
+// Bound the total requested transfers by the user's pre-call drawn and premium debt in debtReserveId.
 rule liquidationPaymentWithinUserDebt(env e, uint256 debtReserveId, uint256 debtToCover, address user, uint256 maxCollateralToRemove) {
-    // Get the user's pre-liquidation debt
     uint256 drawnDebt;
     uint256 premiumDebt;
     drawnDebt, premiumDebt = getUserDebt(e, debtReserveId, user);
 
-    // Initialize the liquidator and the amount pulled
     liquidator = e.msg.sender;
     amountPulled = 0;
 
-    // Run the liquidation
     liquidationCall(e, debtReserveId, debtToCover, user, maxCollateralToRemove);
 
-    // Liquidator payment does not exceed the user's pre-liquidation debt
     assert amountPulled <= drawnDebt + premiumDebt;
 }
