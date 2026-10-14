@@ -41,7 +41,7 @@ deploy-precompile :;
 # Step 2: Deploy contracts + grant roles to deployer
 # `make deploy-contracts script=AaveV4DeployBase`
 deploy-contracts :;
-	FOUNDRY_PROFILE=${chain} forge clean && forge script scripts/deploy/${script}.s.sol:${script} \
+	$(if ${dry},,FOUNDRY_PROFILE=$(or ${profile},${chain}) forge clean && )FOUNDRY_PROFILE=$(or ${profile},${chain}) forge script scripts/deploy/${script}.s.sol:${script} \
 	--rpc-url ${chain} --account ${account} --slow \
 	$(if ${dry},, --broadcast --verify) \
 
@@ -49,14 +49,14 @@ deploy-contracts :;
 # Verifies as well, because listing a tokenized asset deploys its TokenizationSpoke here.
 # `make configure-market chain=base account=<keystore-name> script=AaveV4ConfigureBase`
 configure-market :;
-	FOUNDRY_PROFILE=${chain} forge script scripts/config/${script}.s.sol:${script} \
+	FOUNDRY_PROFILE=$(or ${profile},${chain}) forge script scripts/config/${script}.s.sol:${script} \
 	--rpc-url ${chain} --account ${account} --slow \
 	$(if ${dry},, --broadcast --verify) \
 
 # Step 4: Hand the market over and verify the deployer holds nothing
 # `make relinquish-market chain=base account=<keystore-name> script=AaveV4RelinquishBase`
 relinquish-market :;
-	FOUNDRY_PROFILE=${chain} forge script scripts/config/${script}.s.sol:${script} \
+	FOUNDRY_PROFILE=$(or ${profile},${chain}) forge script scripts/config/${script}.s.sol:${script} \
 	--rpc-url ${chain} --account ${account} --slow \
 	$(if ${dry},, --broadcast) \
 
@@ -64,7 +64,7 @@ relinquish-market :;
 # above: the engine is stateless and sits at a deterministic address.
 # `make deploy-config-engine chain=base account=<keystore-name> script=DeployBaseConfigEngine`
 deploy-config-engine :;
-	FOUNDRY_PROFILE=${chain} forge script scripts/config/${script}.s.sol:${script} \
+	FOUNDRY_PROFILE=$(or ${profile},${chain}) forge script scripts/config/${script}.s.sol:${script} \
 	--rpc-url ${chain} --account ${account} --slow \
 	$(if ${dry},, --broadcast --verify) \
 
@@ -73,7 +73,7 @@ deploy-config-engine :;
 # Run them in order.
 sentora-account :; cast wallet address --account ${account}
 
-sentora-deploy :; make deploy-contracts chain=mainnet account=${account} script=AaveV4DeploySentora dry=${dry}
-sentora-configure :; make configure-market chain=mainnet account=${account} script=AaveV4ConfigureSentora dry=${dry}
-sentora-relinquish :; make relinquish-market chain=mainnet account=${account} script=AaveV4RelinquishSentora dry=${dry}
-sentora-config-engine :; make deploy-config-engine chain=mainnet account=${account} script=DeploySentoraConfigEngine dry=${dry}
+sentora-deploy :; make deploy-contracts chain=mainnet account=${account} script=AaveV4DeploySentora profile=default dry=${dry}
+sentora-configure :; make configure-market chain=mainnet account=${account} script=AaveV4ConfigureSentora profile=default dry=${dry}
+sentora-relinquish :; make relinquish-market chain=mainnet account=${account} script=AaveV4RelinquishSentora profile=default dry=${dry}
+sentora-config-engine :; make deploy-config-engine chain=mainnet account=${account} script=DeploySentoraConfigEngine profile=default dry=${dry}

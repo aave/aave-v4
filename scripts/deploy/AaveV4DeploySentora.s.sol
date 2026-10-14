@@ -28,6 +28,11 @@ contract AaveV4DeploySentora is AaveV4DeployEthereum {
     InputUtils.FullDeployInputs memory inputs,
     address deployer
   ) internal virtual override returns (InputUtils.FullDeployInputs memory) {
+    // Logged before super so the operator acknowledges the deployer ownership at the prompt.
+    _logDeployerOwnership('gateway owner', deployer, inputs.gatewayOwner);
+    _logDeployerOwnership('position manager owner', deployer, inputs.positionManagerOwner);
+    _logDeployerOwnership('treasury spoke owner', deployer, inputs.treasurySpokeOwner);
+
     InputUtils.FullDeployInputs memory sanitizedInputs = super._loadWarningsAndSanitizeInputs(
       inputs,
       deployer
@@ -38,6 +43,19 @@ contract AaveV4DeploySentora is AaveV4DeployEthereum {
     sanitizedInputs.treasurySpokeOwner = deployer;
 
     return sanitizedInputs;
+  }
+
+  function _logDeployerOwnership(string memory role, address deployer, address target) internal {
+    _logWarning(
+      string.concat(
+        role,
+        ': deployer [',
+        vm.toString(deployer),
+        '] until relinquish, then [',
+        vm.toString(target),
+        ']'
+      )
+    );
   }
 
   /// @dev Reads the FullDeployInputs from scripts/config/sentora.json.
