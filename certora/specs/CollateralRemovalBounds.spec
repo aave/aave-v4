@@ -4,7 +4,7 @@
 methods {
     function MANAGED_COLLATERAL_RESERVE_ID() external returns (uint256) envfree;
 
-    // Remove raw storage readers from the scene to allow storage splitting.
+    // Remove raw read-only storage accessors from the scene to allow storage splitting.
     function _.extSload(bytes32) external => NONDET DELETE;
     function _.extSloads(bytes32[]) external => NONDET DELETE;
 
@@ -140,6 +140,6 @@ rule collateralValueDrop(env e, uint256 debtReserveId, uint256 debtToCover, addr
 
     // The collateral share hook must have recorded a write.
     assert sharesWritten;
-    // Compare the two rounded balances, rather than rounding the share debit.
+    // The collateral value drops by at most maxCollateralToRemove when both balances use the pre-call Hub rate.
     assert sharesBefore * rateAssets / rateShares - sharesAfter * rateAssets / rateShares <= maxCollateralToRemove;
 }

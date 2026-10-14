@@ -4,7 +4,7 @@
 methods {
     function MANAGED_COLLATERAL_RESERVE_ID() external returns (uint256) envfree;
 
-    // Remove raw storage readers from the scene to allow storage splitting.
+    // Remove raw read-only storage accessors from the scene to allow storage splitting.
     function _.extSload(bytes32) external => NONDET DELETE;
     function _.extSloads(bytes32[]) external => NONDET DELETE;
 
@@ -211,13 +211,13 @@ rule repaymentSettlesOnlyDebtReserve(env e, uint256 debtReserveId, uint256 debtT
 
     liquidationCall(e, debtReserveId, debtToCover, user, maxCollateralToRemove);
 
-    // Request one transfer of the debt underlying from the liquidator to the debt Hub.
+    // Exactly one transfer is requested from the liquidator to the debt Hub, using the debt reserve's token.
     assert pullCount == 1 && pullFrom == e.msg.sender && pullToken == debtUnderlying && pullTo == debtHub;
-    // Call restore once for the debt Hub and asset.
+    // restore is called exactly once for the debt reserve's Hub and asset.
     assert restoreCount == 1 && restoreHub == debtHub && restoreAsset == debtAssetId;
-    // The tracked drawnShares field must be written.
+    // The user's drawn shares in the debt reserve must be written.
     assert debtWritten;
-    // No drawnShares, premiumShares or premiumOffsetRay writes outside the tracked debt position.
+    // Drawn shares and premium fields are written only in the user's debt reserve position.
     assert !otherDebtWrite;
 }
 
@@ -237,16 +237,16 @@ rule collateralDebitSentToLiquidator(env e, uint256 debtReserveId, uint256 debtT
     mathint debited = sharesBefore - currentContract._userPositions[user][collateralId].suppliedShares;
     uint256 debitValue = removeByShares(hub, assetId, assert_uint256(debited));
 
-    // The tracked suppliedShares field must be written.
+    // The user's supplied shares in the collateral reserve must be written.
     assert collateralWritten;
     // No payFeeShares call occurs.
     assert !feeCharged;
-    // No suppliedShares writes outside the user's collateral position, including liquidator credits.
+    // Supplied shares are written only in the user's collateral position.
     assert !otherSupplyWrite;
-    // A positive debit produces one remove call for its full converted value, sent to the liquidator.
+    // A positive share debit requests one removal of its full asset value from the collateral Hub to the liquidator.
     assert debited > 0 => (removeCount == 1 && removeHub == hub && removeAsset == assetId
         && removeTo == e.msg.sender && removeAmount == debitValue);
-    // A zero debit produces no remove call.
+    // No collateral removal is requested when no shares are debited.
     assert debited == 0 => removeCount == 0;
     // The returned asset amount equals the converted share debit.
     assert collateralAmountRemoved == debitValue;

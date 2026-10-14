@@ -7,5 +7,6 @@ methods {
 
 // Zero returns 256; nonzero words return the zero-based index of their highest set bit.
 rule exactHighestBit(uint256 word) {
+    // The Solidity bit search returns the same result as the CVL model.
     assert getFls(word) == exactFls(word);
 }

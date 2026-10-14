@@ -18,7 +18,7 @@ methods {
     function MathUtils.uncheckedExp(uint256, uint256 exponent) internal returns (uint256) => assetUnit(exponent);
     function _.getReservePrice(uint256 reserveId) external => oraclePrice(reserveId) expect uint256;
 
-    // Remove raw storage readers from the scene to allow storage splitting.
+    // Remove raw read-only storage accessors from the scene to allow storage splitting.
     function _.extSload(bytes32) external => NONDET DELETE;
     function _.extSloads(bytes32[]) external => NONDET DELETE;
 
@@ -79,8 +79,10 @@ persistent ghost mathint inverseDebtRay;
 function checkedMulDiv(mathint x, mathint y, mathint denominator, bool up) returns uint256 {
     uint256 result = exactMulDiv(x, y, denominator, up);
     if (up) {
+        // The rounded-up result is at least the exact quotient.
         assert x * y <= result * denominator, "Ceil conversion covers its input";
     } else {
+        // The rounded-down result is at most the exact quotient.
         assert result * denominator <= x * y, "Floor conversion does not exceed its input";
     }
     return result;
@@ -139,24 +141,24 @@ rule collateralWithinBonusPricedRepayment(env e, uint256 debtReserveId, uint256 
     mathint ray = 10^27;
 
     if (capResized) {
-        // Removed assets fit within the rounded-up asset value used to resize the debt.
+        // The removed collateral amount does not exceed the amount used to resize the debt.
         assert collateralAmountRemoved <= inverseCollateralAssets;
-        // Inverse pricing rounds the required ray debt up.
+        // The resized debt value, multiplied by the bonus / 10000, covers the collateral value used for resizing.
         assert inverseCollateralAssets * collateralFactor * ray <= inverseDebtRay * debtFactor;
-        // The recorded payment covers that ray debt.
+        // The recorded payment covers the resized debt.
         assert inverseDebtRay <= amountPulled * ray;
     } else {
-        // Converting the priced collateral through shares cannot increase its asset amount.
+        // The removed collateral amount does not exceed the amount initially priced from the debt.
         assert collateralAmountRemoved <= forwardCollateralAssets;
-        // Forward pricing rounds the collateral amount down.
+        // The initially priced collateral value is at most the debt value times the bonus / 10000.
         assert forwardCollateralAssets * collateralFactor * ray <= forwardDebtRay * debtFactor;
         // The recorded payment covers the ray debt used for pricing.
         assert forwardDebtRay <= amountPulled * ray;
     }
 
-    // Compose the collateral conversion, pricing and payment bounds.
+    // In ray units, the removed collateral value is at most the recorded payment value times the bonus / 10000.
     assert collateralAmountRemoved * collateralFactor * ray <= amountPulled * ray * debtFactor;
 
-    // Remove the common RAY factor to express the bound in asset units and oracle prices.
+    // The removed collateral is worth at most the recorded payment value times liquidationBonus / 10000.
     assert collateralAmountRemoved * collateralPrice * debtUnit * 10000 <= amountPulled * debtPrice * collateralUnit * liquidationBonus;
 }

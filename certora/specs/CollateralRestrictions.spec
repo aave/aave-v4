@@ -49,7 +49,7 @@ methods {
     function MathUtils.uncheckedExp(uint256,uint256) internal returns (uint256) => NONDET;
     function WadRayMath.rayMulUp(uint256,uint256) internal returns (uint256) => NONDET;
     
-    // Delete raw storage readers from invariant transitions and allow storage splitting.
+    // Remove raw read-only storage accessors from the scene to allow storage splitting.
     function _.extSload(bytes32) external => NONDET DELETE;
     function _.extSloads(bytes32[]) external => NONDET DELETE;
 

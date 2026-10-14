@@ -17,6 +17,8 @@ rule exactMulDivMatchesSolidity(uint256 x, uint256 y, uint256 denominator, bool 
     }
     bool reverted = lastReverted;
     mathint quotient = denominator == 0 ? 0 : (up ? (x * y + denominator - 1) / denominator : x * y / denominator);
+    // The call reverts exactly when the denominator is zero or the rounded quotient exceeds uint256.
     assert reverted <=> (denominator == 0 || quotient > max_uint256), "Revert condition differs";
+    // A successful call returns the expected rounded quotient.
     assert !reverted => result == quotient, "Result differs";
 }

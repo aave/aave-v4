@@ -22,7 +22,7 @@ methods {
     function MathUtils.uncheckedExp(uint256, uint256 exponent) internal returns (uint256) => assetUnit(exponent);
     function _.getReservePrice(uint256 reserveId) external => oraclePrice(reserveId) expect uint256;
 
-    // Remove raw storage readers from the scene to allow storage splitting.
+    // Remove raw read-only storage accessors from the scene to allow storage splitting.
     function _.extSload(bytes32) external => NONDET DELETE;
     function _.extSloads(bytes32[]) external => NONDET DELETE;
 
@@ -129,6 +129,7 @@ function previewAddBySharesWithGalois(address hub, uint256 assetId, uint256 shar
 rule galoisLemma {
     mathint x; mathint k; mathint q; mathint n;
 
+    // For x,n >= 0 and k,q > 0, rounding x*k/q down to at least n means rounding n*q/k up gives at most x.
     assert galois(x, k, q, n);
 }
 
@@ -139,6 +140,7 @@ rule liquidationPaymentWithinDebtToCover(env e, uint256 debtReserveId, uint256 d
 
     liquidationCall(e, debtReserveId, debtToCover, user, maxCollateralToRemove);
 
+    // The total requested payment from the liquidator does not exceed debtToCover.
     assert amountPulled <= debtToCover;
 }
 
@@ -153,5 +155,6 @@ rule liquidationPaymentWithinUserDebt(env e, uint256 debtReserveId, uint256 debt
 
     liquidationCall(e, debtReserveId, debtToCover, user, maxCollateralToRemove);
 
+    // The total requested payment does not exceed the user's pre-call drawn and premium debt in this reserve.
     assert amountPulled <= drawnDebt + premiumDebt;
 }
