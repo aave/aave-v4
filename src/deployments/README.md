@@ -46,7 +46,7 @@ This requires a **two-step deploy** because Foundry needs to re-compile with the
 
 **Step 1 — `LibraryPreCompile.s.sol`** (separate transaction):
 
-1. `SpokeDeployUtils.deployLiquidationLogic()` deploys it via CREATE2 with `salt=0`
+1. `SpokeDeployUtils.deployLiquidationLogic()` deploys it via CREATE2 with `SpokeDeployUtils.LIQUIDATION_LOGIC_SALT`, the salt the live markets used
 2. Writes `FOUNDRY_LIBRARIES=src/spoke/libraries/LiquidationLogic.sol:LiquidationLogic:0x<address>` to `.env` via FFI
 3. On re-run: if the library is already deployed (has code), skips. If `FOUNDRY_LIBRARIES` exists but the library isn't deployed (wrong chain/fork), deletes the stale entry and asks you to run again
 
