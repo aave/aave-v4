@@ -27,6 +27,8 @@ contract AaveV4SentoraDeployConfigTest is PostDeploymentVerificationBase, AaveV4
   address internal constant SENTORA_FEE_ADMIN = 0x769C952ac9Bbb45524790B658fd70938a8A5d19E;
   /// @dev The Sentora Executor, behind the Sentora payloads controller's 2-day delay.
   address internal constant SENTORA_EXECUTOR = 0x59D15D3f4e86499d64f68ad7096a8D0939dA8343;
+  /// @dev The RiskSteward behind the ReduceRiskStewardWrapper, holding the risk role.
+  address internal constant RISK_STEWARD = 0x0e0D14B3A52E5E3548B0C530b4C5207d7fD01785;
 
   function setUp() public override(PostDeploymentVerificationBase) {
     _etchCreate2Factory();
@@ -73,8 +75,6 @@ contract AaveV4SentoraDeployConfigTest is PostDeploymentVerificationBase, AaveV4
   }
 
   /// @notice The handover targets are read off the same file the deploy is driven by.
-  /// @dev The Risk Steward is a placeholder until it is deployed: replace the assertion and
-  ///      scripts/config/sentora.json together.
   function test_handoverTargets() public view {
     AaveV4SentoraConfigInputs.Handover memory targets = AaveV4SentoraConfigInputs.readHandover();
 
@@ -84,11 +84,7 @@ contract AaveV4SentoraDeployConfigTest is PostDeploymentVerificationBase, AaveV4
     assertEq(targets.gatewayOwner, SENTORA_EXECUTOR, 'gatewayOwner');
     assertEq(targets.positionManagerOwner, SENTORA_EXECUTOR, 'positionManagerOwner');
     assertEq(targets.sentoraExecutor, SENTORA_EXECUTOR, 'sentoraExecutor');
-    assertEq(
-      targets.riskSteward,
-      AaveV4SentoraConfigInputs.RISK_STEWARD_PLACEHOLDER,
-      'riskSteward'
-    );
+    assertEq(targets.riskSteward, RISK_STEWARD, 'riskSteward');
     assertEq(targets.emergencyOperator, EMERGENCY_OPERATOR, 'emergencyOperator');
   }
 
@@ -280,18 +276,10 @@ contract AaveV4SentoraDeployConfigTest is PostDeploymentVerificationBase, AaveV4
     AaveV4SentoraConfigInputs.readHandover();
   }
 
-  /// @notice The handover refuses to run on Ethereum while the Risk Steward is still a placeholder.
-  function test_handoverRejectsRiskStewardPlaceholderOnEthereum() public {
+  /// @notice The handover's Risk Steward check passes on Ethereum with the deployed steward.
+  function test_handoverAcceptsRiskStewardOnEthereum() public {
     vm.chainId(ETHEREUM_CHAIN_ID);
 
-    vm.expectRevert(
-      abi.encodeWithSelector(AaveV4SentoraConfigInputs.PlaceholderAddress.selector, 'riskSteward')
-    );
-    this.requireRiskSteward();
-  }
-
-  /// @dev Exposes the Risk Steward check externally, so that `vm.expectRevert` sees a nested call.
-  function requireRiskSteward() external view {
     AaveV4SentoraConfigInputs.requireRiskSteward(AaveV4SentoraConfigInputs.readHandover());
   }
 
