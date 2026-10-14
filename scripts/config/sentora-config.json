@@ -40,7 +40,7 @@
     {
       "symbol": "USDe",
       "underlying": "0x4c9EDD5852cd905f086C759E8383e09bff1E68B3",
-      "priceSource": "0x40DB5Fc54e3E47295Bd013f202edb66E60C0ECFb",
+      "priceSource": "0x8004d13AF906d85997106D92Cec947880191e7Cc",
       "liquidityFee": 0,
       "optimalUsageRatio": 9000,
       "baseDrawnRate": 0,

@@ -125,7 +125,7 @@ contract AaveV4SentoraDeployConfigTest is PostDeploymentVerificationBase, AaveV4
       assets[3],
       'USDe',
       0x4c9EDD5852cd905f086C759E8383e09bff1E68B3,
-      0x40DB5Fc54e3E47295Bd013f202edb66E60C0ECFb,
+      0x8004d13AF906d85997106D92Cec947880191e7Cc,
       false
     );
     _assertAsset(
