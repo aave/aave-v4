@@ -1,0 +1,26 @@
+tests/deployments/AaveV4SentoraDeployConfig.t.sol
+  s_2843833aabf52a::t_ff9a5d3de522f7 30-31,87,279-280
+scripts/config/sentora.json
+  s_2843833aabf52a::t_ff9a5d3de522f7 12
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "42192fdc1db174a74f98b46fcb2910e901855a74",
+  "prompts": {},
+  "humans": {
+    "h_739c25e72c37fb": {
+      "author": "DhairyaSethi <55102840+DhairyaSethi@users.noreply.github.com>"
+    }
+  },
+  "sessions": {
+    "s_2843833aabf52a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ae63ebf5-88d7-4dfe-976c-39793e6bfe86",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "DhairyaSethi <55102840+DhairyaSethi@users.noreply.github.com>"
+    }
+  }
+}
