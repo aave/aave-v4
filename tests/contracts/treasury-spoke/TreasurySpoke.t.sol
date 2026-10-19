@@ -629,18 +629,27 @@ contract TreasurySpokeTest is Base {
     uint256 accruedFees = hub.getAssetAccruedFees(assetId);
     uint256 suppliedAssets = treasurySpoke.getSuppliedAssets(address(hub), underlying);
     uint256 suppliedShares = treasurySpoke.getSuppliedShares(address(hub), underlying);
+    uint256 shareValue = hub.previewRemoveByShares(assetId, 1);
     assertEq(
       suppliedShares,
       hub.getSpokeAddedShares(assetId, address(treasurySpoke)) +
         hub.previewAddByAssets(assetId, accruedFees),
       'shares before mint'
     );
+    assertEq(suppliedAssets, hub.previewRemoveByShares(assetId, suppliedShares), 'assets');
 
     HubActions.mintFeeShares({hub: hub, assetId: assetId, caller: ADMIN});
 
-    assertEq(hub.getSpokeAddedAssets(assetId, address(treasurySpoke)), suppliedAssets, 'assets');
     assertEq(hub.getSpokeAddedShares(assetId, address(treasurySpoke)), suppliedShares, 'shares');
-    assertEq(treasurySpoke.getSuppliedAssets(address(hub), underlying), suppliedAssets);
+    _assertWithinMintRounding(
+      suppliedAssets,
+      hub.getSpokeAddedAssets(assetId, address(treasurySpoke)),
+      shareValue
+    );
+    assertEq(
+      treasurySpoke.getSuppliedAssets(address(hub), underlying),
+      hub.getSpokeAddedAssets(assetId, address(treasurySpoke))
+    );
     assertEq(treasurySpoke.getSuppliedShares(address(hub), underlying), suppliedShares);
   }
 
@@ -657,12 +666,28 @@ contract TreasurySpokeTest is Base {
 
     uint256 suppliedAssets = treasurySpoke.getSuppliedAssets(address(hub1), address(tokenList.dai));
     uint256 suppliedShares = treasurySpoke.getSuppliedShares(address(hub1), address(tokenList.dai));
+    uint256 shareValue = hub1.previewRemoveByShares(assetId, 1);
     assertGt(suppliedShares, hub1.getSpokeAddedShares(assetId, address(treasurySpoke)));
 
     HubActions.mintFeeShares({hub: hub1, assetId: assetId, caller: ADMIN});
 
-    assertEq(hub1.getSpokeAddedAssets(assetId, address(treasurySpoke)), suppliedAssets);
     assertEq(hub1.getSpokeAddedShares(assetId, address(treasurySpoke)), suppliedShares);
+    _assertWithinMintRounding(
+      suppliedAssets,
+      hub1.getSpokeAddedAssets(assetId, address(treasurySpoke)),
+      shareValue
+    );
+  }
+
+  /// @dev Minting fee shares raises the share price by less than one share's worth, so the pre-mint
+  /// valuation is below the post-mint one by at most `floor(price) + 1`.
+  function _assertWithinMintRounding(
+    uint256 preMintAssets,
+    uint256 postMintAssets,
+    uint256 shareValue
+  ) internal pure {
+    assertLe(preMintAssets, postMintAssets, 'pre-mint above post-mint');
+    assertLe(postMintAssets - preMintAssets, shareValue + 1, 'mint rounding');
   }
 
   function test_getters_notFeeReceiver_excludeAccruedFees() public {

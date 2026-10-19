@@ -353,10 +353,11 @@ contract RevenueSplitterTest is Base {
     assertEq(tokenList.dai.balanceOf(address(splitter)), 0);
   }
 
-  function test_splitRevenue_dust_skipsZeroTransfers() public {
+  function test_splitRevenue_dust() public {
     deal(address(tokenList.dai), address(splitter), 1);
 
-    vm.expectCall(address(tokenList.dai), abi.encodeCall(IERC20.transfer, (recipientA, 0)), 0);
+    vm.expectCall(address(tokenList.dai), abi.encodeCall(IERC20.transfer, (recipientA, 0)));
+    vm.expectCall(address(tokenList.dai), abi.encodeCall(IERC20.transfer, (recipientB, 1)));
     splitter.splitRevenue(_pair(address(hub1)), _pair(address(tokenList.dai)));
 
     assertEq(tokenList.dai.balanceOf(recipientA), 0);
@@ -462,11 +463,9 @@ contract RevenueSplitterTest is Base {
   }
 
   /// @dev Unique non-zero recipients with non-zero splits summing to `PERCENTAGE_FACTOR`.
-  function _randomRecipients(
-    uint256 count
-  ) internal returns (address[] memory recipients, uint256[] memory splits) {
-    recipients = new address[](count);
-    splits = new uint256[](count);
+  function _randomRecipients(uint256 count) internal returns (address[] memory, uint256[] memory) {
+    address[] memory recipients = new address[](count);
+    uint256[] memory splits = new uint256[](count);
     uint256 remaining = PercentageMath.PERCENTAGE_FACTOR;
     for (uint256 i; i < count; ++i) {
       recipients[i] = makeAddr(string.concat('recipient', vm.toString(i)));
@@ -477,22 +476,26 @@ contract RevenueSplitterTest is Base {
         remaining -= splits[i];
       }
     }
+    return (recipients, splits);
   }
 
-  function _pair(address a, address b) internal pure returns (address[] memory arr) {
-    arr = new address[](2);
+  function _pair(address a, address b) internal pure returns (address[] memory) {
+    address[] memory arr = new address[](2);
     arr[0] = a;
     arr[1] = b;
+    return arr;
   }
 
-  function _pair(uint256 a, uint256 b) internal pure returns (uint256[] memory arr) {
-    arr = new uint256[](2);
+  function _pair(uint256 a, uint256 b) internal pure returns (uint256[] memory) {
+    uint256[] memory arr = new uint256[](2);
     arr[0] = a;
     arr[1] = b;
+    return arr;
   }
 
-  function _pair(address a) internal pure returns (address[] memory arr) {
-    arr = new address[](1);
+  function _pair(address a) internal pure returns (address[] memory) {
+    address[] memory arr = new address[](1);
     arr[0] = a;
+    return arr;
   }
 }

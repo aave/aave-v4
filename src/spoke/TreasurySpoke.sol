@@ -4,7 +4,6 @@ pragma solidity 0.8.28;
 import {Ownable2StepUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/Ownable2StepUpgradeable.sol';
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
-import {SharesMath} from 'src/hub/libraries/SharesMath.sol';
 import {IHub, IHubBase} from 'src/hub/interfaces/IHub.sol';
 import {ITreasurySpoke} from 'src/spoke/interfaces/ITreasurySpoke.sol';
 
@@ -90,25 +89,14 @@ abstract contract TreasurySpoke is ITreasurySpoke, Ownable2StepUpgradeable {
   function getSuppliedAssets(address hub, address underlying) external view returns (uint256) {
     IHub targetHub = IHub(hub);
     uint256 assetId = targetHub.getAssetId(underlying);
-    (uint256 fees, uint256 feeShares) = _getPendingFees(targetHub, assetId);
-    if (feeShares == 0) {
-      return targetHub.getSpokeAddedAssets(assetId, address(this));
-    }
-    // mirrors the Hub state right after fee shares are minted
-    return
-      SharesMath.toAssetsDown({
-        shares: targetHub.getSpokeAddedShares(assetId, address(this)) + feeShares,
-        totalAssets: targetHub.getAddedAssets(assetId) + fees,
-        totalShares: targetHub.getAddedShares(assetId) + feeShares
-      });
+    return targetHub.previewRemoveByShares(assetId, _getSuppliedShares(targetHub, assetId));
   }
 
   /// @inheritdoc ITreasurySpoke
   function getSuppliedShares(address hub, address underlying) external view returns (uint256) {
     IHub targetHub = IHub(hub);
     uint256 assetId = targetHub.getAssetId(underlying);
-    (, uint256 feeShares) = _getPendingFees(targetHub, assetId);
-    return targetHub.getSpokeAddedShares(assetId, address(this)) + feeShares;
+    return _getSuppliedShares(targetHub, assetId);
   }
 
   /// @dev Common Supply workflow. When `skim` is true, it avoids pulling tokens from the caller and intends
@@ -130,16 +118,13 @@ abstract contract TreasurySpoke is ITreasurySpoke, Ownable2StepUpgradeable {
     return (shares, amount);
   }
 
-  /// @dev Returns the accrued fees not yet minted and their shares, if this spoke is the fee receiver.
-  function _getPendingFees(
-    IHub hub,
-    uint256 assetId
-  ) internal view returns (uint256 fees, uint256 feeShares) {
-    if (hub.getAssetConfig(assetId).feeReceiver != address(this)) {
-      return (0, 0);
+  /// @dev Includes the shares of accrued fees not yet minted, if this spoke is the fee receiver.
+  function _getSuppliedShares(IHub hub, uint256 assetId) internal view returns (uint256) {
+    uint256 shares = hub.getSpokeAddedShares(assetId, address(this));
+    if (hub.getAssetConfig(assetId).feeReceiver == address(this)) {
+      shares += hub.previewAddByAssets(assetId, hub.getAssetAccruedFees(assetId));
     }
-    fees = hub.getAssetAccruedFees(assetId);
-    feeShares = hub.previewAddByAssets(assetId, fees);
+    return shares;
   }
 
   /// @dev Loads the TreasurySpoke storage struct.

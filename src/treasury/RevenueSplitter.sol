@@ -3,6 +3,8 @@ pragma solidity 0.8.28;
 
 import {ReentrancyGuardTransient} from 'src/dependencies/openzeppelin/ReentrancyGuardTransient.sol';
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
+import {SlotDerivation} from 'src/dependencies/openzeppelin/SlotDerivation.sol';
+import {TransientSlot} from 'src/dependencies/openzeppelin/TransientSlot.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
@@ -16,6 +18,13 @@ import {IRevenueSplitter} from 'src/treasury/interfaces/IRevenueSplitter.sol';
 contract RevenueSplitter is IRevenueSplitter, ReentrancyGuardTransient {
   using SafeERC20 for IERC20;
   using PercentageMath for uint256;
+  using SlotDerivation for bytes32;
+  using TransientSlot for *;
+
+  /// @dev The transient storage slot of the mapping used to detect duplicate recipients.
+  bytes32 private constant RECIPIENTS_SEEN_SLOT =
+    // keccak256(abi.encode(uint256(keccak256("aave-v4.transient.RevenueSplitter.recipients")) - 1)) & ~bytes32(uint256(0xff))
+    0x0dee9fa2bd77061243fe06effbd6fd7d57ff7ef96253c3753b9ec2335ae9e900;
 
   /// @inheritdoc IRevenueSplitter
   address public immutable TREASURY_SPOKE;
@@ -35,9 +44,11 @@ contract RevenueSplitter is IRevenueSplitter, ReentrancyGuardTransient {
     uint256 totalSplit;
     for (uint256 i; i < recipients_.length; ++i) {
       require(recipients_[i] != address(0), InvalidAddress());
-      for (uint256 j; j < i; ++j) {
-        require(recipients_[i] != recipients_[j], DuplicateRecipient());
-      }
+      TransientSlot.BooleanSlot seen = RECIPIENTS_SEEN_SLOT
+        .deriveMapping(recipients_[i])
+        .asBoolean();
+      require(!seen.tload(), DuplicateRecipient());
+      seen.tstore(true);
       require(splits_[i] > 0 && splits_[i] < PercentageMath.PERCENTAGE_FACTOR, InvalidSplit());
       totalSplit += splits_[i];
     }
@@ -89,17 +100,10 @@ contract RevenueSplitter is IRevenueSplitter, ReentrancyGuardTransient {
     for (uint256 i; i < lastIndex; ++i) {
       uint256 amount = balance.percentMulDown(_splits[i]);
       remaining -= amount;
-      _transfer(underlying, _recipients[i], amount);
+      IERC20(underlying).safeTransfer(_recipients[i], amount);
     }
-    _transfer(underlying, _recipients[lastIndex], remaining);
+    IERC20(underlying).safeTransfer(_recipients[lastIndex], remaining);
 
     emit SplitRevenue(hub, underlying, balance);
-  }
-
-  /// @dev Skips zero amounts, as some tokens revert on zero-value transfers.
-  function _transfer(address token, address to, uint256 amount) internal {
-    if (amount > 0) {
-      IERC20(token).safeTransfer(to, amount);
-    }
   }
 }

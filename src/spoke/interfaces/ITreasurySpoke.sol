@@ -68,6 +68,7 @@ interface ITreasurySpoke {
   /// @notice Returns the amount of assets supplied by this spoke, including accrued fees not yet minted.
   /// @dev Accrued fees are included only if this spoke is the fee receiver of the asset.
   /// @dev Can exceed the amount withdrawable through `withdraw` until the Hub mints the fee shares.
+  /// @dev Valued at the current share price, so it can be marginally below the value once fee shares are minted.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
   /// @return The amount of assets supplied.
