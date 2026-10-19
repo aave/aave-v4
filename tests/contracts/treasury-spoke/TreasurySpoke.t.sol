@@ -72,6 +72,141 @@ contract TreasurySpokeTest is Base {
     }
     assertEq(Ownable2Step(address(treasurySpoke)).owner(), TREASURY_ADMIN);
     assertEq(Ownable2Step(address(treasurySpoke)).pendingOwner(), address(0));
+    assertEq(treasurySpoke.getClaimer(), address(0));
+  }
+
+  function test_setClaimer_revertsWith_OwnableUnauthorizedAccount() public {
+    address caller = vm.randomAddress();
+    while (caller == TREASURY_ADMIN || caller == ADMIN) caller = vm.randomAddress();
+
+    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, caller));
+    vm.prank(caller);
+    treasurySpoke.setClaimer(caller);
+  }
+
+  function test_setClaimer_revertsWith_OwnableUnauthorizedAccount_claimer() public {
+    address claimer = makeAddr('claimer');
+    vm.prank(TREASURY_ADMIN);
+    treasurySpoke.setClaimer(claimer);
+
+    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, claimer));
+    vm.prank(claimer);
+    treasurySpoke.setClaimer(makeAddr('newClaimer'));
+  }
+
+  function test_setClaimer_fuzz(address claimer) public {
+    vm.expectEmit(address(treasurySpoke));
+    emit ITreasurySpoke.UpdateClaimer(claimer);
+    vm.prank(TREASURY_ADMIN);
+    treasurySpoke.setClaimer(claimer);
+
+    assertEq(treasurySpoke.getClaimer(), claimer);
+  }
+
+  function test_setClaimer_zeroAddress_removesClaimer() public {
+    address claimer = makeAddr('claimer');
+    vm.startPrank(TREASURY_ADMIN);
+    treasurySpoke.setClaimer(claimer);
+
+    vm.expectEmit(address(treasurySpoke));
+    emit ITreasurySpoke.UpdateClaimer(address(0));
+    treasurySpoke.setClaimer(address(0));
+    vm.stopPrank();
+
+    assertEq(treasurySpoke.getClaimer(), address(0));
+  }
+
+  function test_withdraw_claimer_fuzz(uint256 amount, uint256 withdrawAmount) public {
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
+    withdrawAmount = bound(withdrawAmount, 1, amount);
+    address claimer = makeAddr('claimer');
+
+    vm.startPrank(TREASURY_ADMIN);
+    treasurySpoke.supply(address(hub1), address(tokenList.dai), amount);
+    treasurySpoke.setClaimer(claimer);
+    vm.stopPrank();
+
+    uint256 expectedShares = hub1.previewRemoveByAssets(daiAssetId, withdrawAmount);
+    uint256 adminBalanceBefore = tokenList.dai.balanceOf(TREASURY_ADMIN);
+
+    vm.prank(claimer);
+    (uint256 shares, uint256 withdrawn) = treasurySpoke.withdraw(
+      address(hub1),
+      address(tokenList.dai),
+      withdrawAmount
+    );
+
+    assertEq(shares, expectedShares, 'shares');
+    assertEq(withdrawn, withdrawAmount, 'withdrawn');
+    assertEq(tokenList.dai.balanceOf(claimer), withdrawAmount, 'claimer balance');
+    assertEq(tokenList.dai.balanceOf(TREASURY_ADMIN), adminBalanceBefore, 'admin balance');
+    assertEq(
+      treasurySpoke.getSuppliedAssets(address(hub1), address(tokenList.dai)),
+      amount - withdrawAmount
+    );
+  }
+
+  function test_withdraw_owner_withClaimerSet() public {
+    uint256 amount = 100e18;
+    vm.startPrank(TREASURY_ADMIN);
+    treasurySpoke.supply(address(hub1), address(tokenList.dai), amount);
+    treasurySpoke.setClaimer(makeAddr('claimer'));
+
+    uint256 adminBalanceBefore = tokenList.dai.balanceOf(TREASURY_ADMIN);
+    treasurySpoke.withdraw(address(hub1), address(tokenList.dai), amount);
+    vm.stopPrank();
+
+    assertEq(tokenList.dai.balanceOf(TREASURY_ADMIN), adminBalanceBefore + amount);
+    assertEq(treasurySpoke.getSuppliedAssets(address(hub1), address(tokenList.dai)), 0);
+  }
+
+  function test_withdraw_revertsWith_OwnableUnauthorizedAccount_removedClaimer() public {
+    address claimer = makeAddr('claimer');
+    vm.startPrank(TREASURY_ADMIN);
+    treasurySpoke.supply(address(hub1), address(tokenList.dai), 100e18);
+    treasurySpoke.setClaimer(claimer);
+    treasurySpoke.setClaimer(address(0));
+    vm.stopPrank();
+
+    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, claimer));
+    vm.prank(claimer);
+    treasurySpoke.withdraw(address(hub1), address(tokenList.dai), 1);
+  }
+
+  function test_withdraw_revertsWith_OwnableUnauthorizedAccount_replacedClaimer() public {
+    address claimer = makeAddr('claimer');
+    vm.startPrank(TREASURY_ADMIN);
+    treasurySpoke.supply(address(hub1), address(tokenList.dai), 100e18);
+    treasurySpoke.setClaimer(claimer);
+    treasurySpoke.setClaimer(makeAddr('newClaimer'));
+    vm.stopPrank();
+
+    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, claimer));
+    vm.prank(claimer);
+    treasurySpoke.withdraw(address(hub1), address(tokenList.dai), 1);
+  }
+
+  function test_claimer_ownerOnlyActions_revertWith_OwnableUnauthorizedAccount() public {
+    address claimer = makeAddr('claimer');
+    vm.prank(TREASURY_ADMIN);
+    treasurySpoke.setClaimer(claimer);
+
+    bytes memory unauthorized = abi.encodeWithSelector(
+      Ownable.OwnableUnauthorizedAccount.selector,
+      claimer
+    );
+    vm.startPrank(claimer);
+    vm.expectRevert(unauthorized);
+    treasurySpoke.supply(address(hub1), address(tokenList.dai), 1);
+    vm.expectRevert(unauthorized);
+    treasurySpoke.supplySkimmed(address(hub1), address(tokenList.dai), 1);
+    vm.expectRevert(unauthorized);
+    treasurySpoke.transfer(address(tokenList.dai), claimer, 1);
+    vm.expectRevert(unauthorized);
+    Ownable2Step(address(treasurySpoke)).transferOwnership(claimer);
+    vm.expectRevert(unauthorized);
+    Ownable2Step(address(treasurySpoke)).renounceOwnership();
+    vm.stopPrank();
   }
 
   function test_supply_revertsWith_OwnableUnauthorizedAccount() public {
@@ -471,6 +606,136 @@ contract TreasurySpokeTest is Base {
         'treasury spoke remaining supplied amount'
       );
     }
+  }
+
+  function test_getters_fuzz_includeAccruedFees(
+    uint256 reserveId,
+    uint256 amount,
+    uint256 liquidityFee,
+    uint256 skipTime
+  ) public {
+    reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
+    IHub hub = IHub(address(spoke1.getReserve(reserveId).hub));
+    uint256 assetId = spoke1.getReserve(reserveId).assetId;
+    (address underlying, ) = hub.getAssetUnderlyingAndDecimals(assetId);
+    amount = bound(amount, 1, _calculateMaxSupplyAmount(spoke1, reserveId));
+    liquidityFee = bound(liquidityFee, 0, 100_00);
+    skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
+
+    _updateLiquidityFee(hub, assetId, liquidityFee);
+    _openDebtPosition({spoke: spoke1, reserveId: reserveId, amount: amount, withPremium: true});
+    skip(skipTime);
+
+    uint256 accruedFees = hub.getAssetAccruedFees(assetId);
+    uint256 suppliedAssets = treasurySpoke.getSuppliedAssets(address(hub), underlying);
+    uint256 suppliedShares = treasurySpoke.getSuppliedShares(address(hub), underlying);
+    uint256 shareValue = hub.previewRemoveByShares(assetId, 1);
+    assertEq(
+      suppliedShares,
+      hub.getSpokeAddedShares(assetId, address(treasurySpoke)) +
+        hub.previewAddByAssets(assetId, accruedFees),
+      'shares before mint'
+    );
+    assertEq(suppliedAssets, hub.previewRemoveByShares(assetId, suppliedShares), 'assets');
+
+    HubActions.mintFeeShares({hub: hub, assetId: assetId, caller: ADMIN});
+
+    assertEq(hub.getSpokeAddedShares(assetId, address(treasurySpoke)), suppliedShares, 'shares');
+    _assertWithinMintRounding(
+      suppliedAssets,
+      hub.getSpokeAddedAssets(assetId, address(treasurySpoke)),
+      shareValue
+    );
+    assertEq(
+      treasurySpoke.getSuppliedAssets(address(hub), underlying),
+      hub.getSpokeAddedAssets(assetId, address(treasurySpoke))
+    );
+    assertEq(treasurySpoke.getSuppliedShares(address(hub), underlying), suppliedShares);
+  }
+
+  function test_getters_includeRealizedFees() public {
+    uint256 assetId = daiAssetId;
+    _updateLiquidityFee(hub1, assetId, 50_00);
+    _openDebtPosition(spoke1, _daiReserveId(spoke1), 10_000e18, true);
+    skip(365 days);
+
+    // accrues without minting, moving unrealized fees into realized fees
+    _updateLiquidityFee(hub1, assetId, 40_00);
+    assertGt(hub1.getAsset(assetId).realizedFees, 0, 'realized fees');
+    assertEq(hub1.getAssetAccruedFees(assetId), hub1.getAsset(assetId).realizedFees);
+
+    uint256 suppliedAssets = treasurySpoke.getSuppliedAssets(address(hub1), address(tokenList.dai));
+    uint256 suppliedShares = treasurySpoke.getSuppliedShares(address(hub1), address(tokenList.dai));
+    uint256 shareValue = hub1.previewRemoveByShares(assetId, 1);
+    assertGt(suppliedShares, hub1.getSpokeAddedShares(assetId, address(treasurySpoke)));
+
+    HubActions.mintFeeShares({hub: hub1, assetId: assetId, caller: ADMIN});
+
+    assertEq(hub1.getSpokeAddedShares(assetId, address(treasurySpoke)), suppliedShares);
+    _assertWithinMintRounding(
+      suppliedAssets,
+      hub1.getSpokeAddedAssets(assetId, address(treasurySpoke)),
+      shareValue
+    );
+  }
+
+  /// @dev Minting fee shares raises the share price by less than one share's worth, so the pre-mint
+  /// valuation is below the post-mint one by at most `floor(price) + 1`.
+  function _assertWithinMintRounding(
+    uint256 preMintAssets,
+    uint256 postMintAssets,
+    uint256 shareValue
+  ) internal pure {
+    assertLe(preMintAssets, postMintAssets, 'pre-mint above post-mint');
+    assertLe(postMintAssets - preMintAssets, shareValue + 1, 'mint rounding');
+  }
+
+  function test_getters_notFeeReceiver_excludeAccruedFees() public {
+    uint256 assetId = daiAssetId;
+    vm.prank(TREASURY_ADMIN);
+    treasurySpoke.supply(address(hub1), address(tokenList.dai), 1000e18);
+
+    IHub.AssetConfig memory config = hub1.getAssetConfig(assetId);
+    config.feeReceiver = makeAddr('newFeeReceiver');
+    config.liquidityFee = 50_00;
+    vm.prank(HUB_ADMIN);
+    hub1.updateAssetConfig(assetId, config, new bytes(0));
+
+    _openDebtPosition(spoke1, _daiReserveId(spoke1), 10_000e18, true);
+    skip(365 days);
+    assertGt(hub1.getAssetAccruedFees(assetId), 0, 'accrued fees');
+
+    assertEq(
+      treasurySpoke.getSuppliedAssets(address(hub1), address(tokenList.dai)),
+      hub1.getSpokeAddedAssets(assetId, address(treasurySpoke))
+    );
+    assertEq(
+      treasurySpoke.getSuppliedShares(address(hub1), address(tokenList.dai)),
+      hub1.getSpokeAddedShares(assetId, address(treasurySpoke))
+    );
+  }
+
+  function test_withdraw_excludesAccruedFees() public {
+    uint256 assetId = daiAssetId;
+    _updateLiquidityFee(hub1, assetId, 50_00);
+    _openDebtPosition(spoke1, _daiReserveId(spoke1), 10_000e18, true);
+    skip(365 days);
+    HubActions.mintFeeShares({hub: hub1, assetId: assetId, caller: ADMIN});
+    skip(365 days);
+
+    uint256 minted = hub1.getSpokeAddedAssets(assetId, address(treasurySpoke));
+    uint256 supplied = treasurySpoke.getSuppliedAssets(address(hub1), address(tokenList.dai));
+    assertGt(supplied, minted, 'accrued fees pending');
+
+    vm.prank(TREASURY_ADMIN);
+    (, uint256 withdrawn) = treasurySpoke.withdraw(
+      address(hub1),
+      address(tokenList.dai),
+      UINT256_MAX
+    );
+
+    assertEq(withdrawn, minted);
+    assertEq(hub1.getSpokeAddedAssets(assetId, address(treasurySpoke)), 0);
   }
 
   function test_getters() public {
