@@ -1,0 +1,27 @@
+tests/contracts/treasury-spoke/TreasurySpoke.t.sol
+  s_5d2e786f3f09be::t_b16a36bb29ea46 632,639,644-652,669,675-690
+src/treasury/RevenueSplitter.sol
+  s_5d2e786f3f09be::t_c882513b892966 6-7,21-27,47-51,103,105
+tests/contracts/treasury/RevenueSplitter.t.sol
+  s_5d2e786f3f09be::t_b16a36bb29ea46 356,359-360,466-468,479,482-483,486,489-490,493,496-497,499
+src/spoke/TreasurySpoke.sol
+  s_5d2e786f3f09be::t_77ed767241466c 92,99,121-125,127
+src/spoke/interfaces/ITreasurySpoke.sol
+  s_5d2e786f3f09be::t_c882513b892966 71
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "1a1dfade9f0fe78727d5090ca9eb600fc94c7b5b",
+  "prompts": {},
+  "sessions": {
+    "s_5d2e786f3f09be": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a71e9eb1-7dca-425f-b9e2-5f34e15e0931",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "DhairyaSethi <55102840+DhairyaSethi@users.noreply.github.com>"
+    }
+  }
+}
