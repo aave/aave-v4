@@ -44,13 +44,38 @@ library Create2Utils {
     address initialOwner,
     bytes memory data
   ) internal returns (address) {
+    return create2Deploy(salt, getProxyInitCode(logic, initialOwner, data));
+  }
+
+  /// @notice Computes the address `proxify` deploys to for the same arguments.
+  /// @param salt The CREATE2 salt.
+  /// @param logic The implementation contract address.
+  /// @param initialOwner The initial proxy admin owner.
+  /// @param data The initializer calldata.
+  /// @return The deterministic proxy address.
+  function computeProxyAddress(
+    bytes32 salt,
+    address logic,
+    address initialOwner,
+    bytes memory data
+  ) internal pure returns (address) {
+    return computeCreate2Address(salt, getProxyInitCode(logic, initialOwner, data));
+  }
+
+  /// @notice Returns the init code of a TransparentUpgradeableProxy.
+  /// @param logic The implementation contract address.
+  /// @param initialOwner The initial proxy admin owner.
+  /// @param data The initializer calldata.
+  /// @return The proxy creation bytecode with encoded constructor arguments.
+  function getProxyInitCode(
+    address logic,
+    address initialOwner,
+    bytes memory data
+  ) internal pure returns (bytes memory) {
     return
-      create2Deploy(
-        salt,
-        abi.encodePacked(
-          type(TransparentUpgradeableProxy).creationCode,
-          abi.encode(logic, initialOwner, data)
-        )
+      abi.encodePacked(
+        type(TransparentUpgradeableProxy).creationCode,
+        abi.encode(logic, initialOwner, data)
       );
   }
 

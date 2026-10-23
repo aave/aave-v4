@@ -7,16 +7,16 @@ import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 contract AaveV4DeployBaseWrapper {
   bool public IS_TEST = true;
 
-  function deploySpokeInstanceBatch(
+  function deployAaveOracleBatch(
     address proxyAdminOwner,
     address authority,
     bytes memory spokeBytecode,
     uint8 oracleDecimals,
     uint16 maxUserReservesLimit,
     bytes32 salt
-  ) external returns (BatchReports.SpokeInstanceBatchReport memory) {
+  ) external returns (BatchReports.AaveOracleBatchReport memory) {
     return
-      AaveV4DeployBase.deploySpokeInstanceBatch({
+      AaveV4DeployBase.deployAaveOracleBatch({
         proxyAdminOwner: proxyAdminOwner,
         authority: authority,
         spokeBytecode: spokeBytecode,

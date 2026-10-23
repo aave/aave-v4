@@ -22,6 +22,7 @@ import {AaveV4SpokeInstanceBatch} from 'src/deployments/batches/AaveV4SpokeInsta
 import {TestTokensBatch} from 'tests/deployments/batches/TestTokensBatch.sol';
 import {AaveV4DeployBase} from 'src/deployments/orchestration/AaveV4DeployBase.sol';
 import {AaveV4HubImplementationDeployProcedure} from 'src/deployments/procedures/deploy/hub/AaveV4HubImplementationDeployProcedure.sol';
+import {AaveV4SpokeImplementationDeployProcedure} from 'src/deployments/procedures/deploy/spoke/AaveV4SpokeImplementationDeployProcedure.sol';
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
@@ -393,7 +394,7 @@ library AaveV4TestOrchestration {
       });
   }
 
-  /// @dev Spoke instance batch, as in the deployment orchestration.
+  /// @dev AaveOracle batch, Spoke implementation, then the Spoke instance batch, as in the deployment orchestration.
   function _deploySpoke(
     address proxyAdminOwner,
     address authority,
@@ -401,13 +402,26 @@ library AaveV4TestOrchestration {
     uint16 maxUserReservesLimit,
     bytes32 salt
   ) internal returns (BatchReports.SpokeInstanceBatchReport memory) {
-    return
-      AaveV4DeployBase.deploySpokeInstanceBatch({
+    address aaveOracle = AaveV4DeployBase
+      .deployAaveOracleBatch({
         proxyAdminOwner: proxyAdminOwner,
         authority: authority,
         spokeBytecode: spokeBytecode,
         oracleDecimals: DeployConstants.ORACLE_DECIMALS,
         maxUserReservesLimit: maxUserReservesLimit,
+        salt: salt
+      })
+      .aaveOracle;
+    return
+      AaveV4DeployBase.deploySpokeInstanceBatch({
+        proxyAdminOwner: proxyAdminOwner,
+        authority: authority,
+        spokeImplementation: AaveV4SpokeImplementationDeployProcedure.deploySpokeImplementation({
+          oracle: aaveOracle,
+          spokeBytecode: spokeBytecode,
+          maxUserReservesLimit: maxUserReservesLimit,
+          salt: salt
+        }),
         salt: salt
       });
   }
