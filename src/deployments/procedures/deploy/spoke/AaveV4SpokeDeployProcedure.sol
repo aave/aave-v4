@@ -31,7 +31,7 @@ contract AaveV4SpokeDeployProcedure {
     require(maxUserReservesLimit > 0, 'invalid max user reserves limit');
     spokeImplementation = Create2Utils.create2Deploy({
       salt: salt,
-      bytecode: _getSpokeInstanceInitCode(spokeBytecode, oracle, maxUserReservesLimit)
+      bytecode: abi.encodePacked(spokeBytecode, abi.encode(oracle, maxUserReservesLimit))
     });
     spokeProxy = Create2Utils.proxify({
       salt: salt,
@@ -40,18 +40,5 @@ contract AaveV4SpokeDeployProcedure {
       data: abi.encodeCall(ISpokeInstance.initialize, (authority))
     });
     return (spokeProxy, spokeImplementation);
-  }
-
-  /// @notice Constructs the full init code for a Spoke instance by appending constructor arguments.
-  /// @param spokeBytecode The creation bytecode of the Spoke implementation.
-  /// @param oracle The oracle address to encode as a constructor argument.
-  /// @param maxUserReservesLimit The maximum number of user reserves to encode as a constructor argument.
-  /// @return The complete init code with encoded constructor arguments.
-  function _getSpokeInstanceInitCode(
-    bytes memory spokeBytecode,
-    address oracle,
-    uint16 maxUserReservesLimit
-  ) internal pure returns (bytes memory) {
-    return abi.encodePacked(spokeBytecode, abi.encode(oracle, maxUserReservesLimit));
   }
 }
