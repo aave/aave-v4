@@ -1,0 +1,47 @@
+snapshots/Hub.Operations.json
+  s_2edb996a46df23::t_567f44f48a17cf 17
+src/deployments/README.md
+  s_2edb996a46df23::t_96125c7b2571d4 77-78,240,250-253
+src/deployments/batches/AaveV4AaveOracleBatch.sol
+  s_2edb996a46df23::t_f05c8ee614f6d5 10-18,22,25-27,29-30,34-41
+src/deployments/batches/AaveV4SpokeInstanceBatch.sol
+  s_2edb996a46df23::t_852b4442f8158b 11-12,35
+src/deployments/libraries/BatchReports.sol
+  s_2edb996a46df23::t_62f09c9cccd376 23,26
+src/deployments/orchestration/AaveV4DeployBase.sol
+  s_2edb996a46df23::t_e3165b8d37d2f6 102,105,110,115,121,127-134
+src/deployments/orchestration/AaveV4DeployOrchestration.sol
+  s_2edb996a46df23::t_0769a0c110276e 96,225,239,257,271,289-293,370,377,383-387
+tests/deployments/batches/AaveV4AaveOracleBatch.t.sol
+  s_2edb996a46df23::t_15a0a433c3e1b7 12,17,19-22,27,38-42,45-49,52-58,61-70,73-79,82-84,89,91-92,98,101-107,110-117,119-124
+tests/deployments/batches/AaveV4SpokeInstanceBatch.t.sol
+  s_2edb996a46df23::t_52be881d3629e5 14,77,79-81
+tests/deployments/orchestration/AaveV4TestOrchestration.sol
+  s_2edb996a46df23::t_9be4d9837d7a3f 397-398,405-406,408,412-426
+tests/helpers/mocks/deployments/AaveV4DeployBaseWrapper.sol
+  s_2edb996a46df23::t_22e5880666a8da 11,17
+snapshots/SignatureGateway.Operations.json
+  s_2edb996a46df23::t_a913775b1a10c6 2-3,5-6
+snapshots/Spoke.Operations.ZeroRiskPremium.json
+  s_2edb996a46df23::t_3d178502121609 9,14
+snapshots/Spoke.Operations.json
+  s_2edb996a46df23::t_329ced20b6bd25 9,14
+snapshots/TakerPositionManager.Operations.json
+  s_2edb996a46df23::t_2f996e18cd64e0 5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "2cf034a29ab6846c014993d02996dfd98c5f8ae4",
+  "prompts": {},
+  "sessions": {
+    "s_2edb996a46df23": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6c371a7f-79c4-4828-9825-be341be0509c",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}
