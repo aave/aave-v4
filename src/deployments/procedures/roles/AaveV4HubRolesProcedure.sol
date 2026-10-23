@@ -15,9 +15,10 @@ library AaveV4HubRolesProcedure {
   /// @param accessManager The address of the AccessManager contract.
   /// @param admin The address to receive all Hub roles.
   function grantHubAllRoles(address accessManager, address admin) internal {
-    grantHubRole(accessManager, Roles.HUB_CONFIGURATOR_ROLE, admin);
-    grantHubRole(accessManager, Roles.HUB_FEE_MINTER_ROLE, admin);
-    grantHubRole(accessManager, Roles.HUB_DEFICIT_ELIMINATOR_ROLE, admin);
+    uint64[] memory roleIds = Roles.getHubRoles();
+    for (uint256 i; i < roleIds.length; ++i) {
+      grantHubRole(accessManager, roleIds[i], admin);
+    }
   }
 
   /// @notice Grants a specific Hub role to the given address.
@@ -34,24 +35,10 @@ library AaveV4HubRolesProcedure {
   /// @param accessManager The address of the AccessManager contract.
   /// @param hub The address of the Hub contract.
   function setupHubAllRoles(address accessManager, address hub) internal {
-    setupHubRole(
-      accessManager,
-      hub,
-      Roles.HUB_CONFIGURATOR_ROLE,
-      Roles.getHubConfiguratorRoleSelectors()
-    );
-    setupHubRole(
-      accessManager,
-      hub,
-      Roles.HUB_FEE_MINTER_ROLE,
-      Roles.getHubFeeMinterRoleSelectors()
-    );
-    setupHubRole(
-      accessManager,
-      hub,
-      Roles.HUB_DEFICIT_ELIMINATOR_ROLE,
-      Roles.getHubDeficitEliminatorRoleSelectors()
-    );
+    uint64[] memory roleIds = Roles.getHubRoles();
+    for (uint256 i; i < roleIds.length; ++i) {
+      setupHubRole(accessManager, hub, roleIds[i], Roles.getHubRoleSelectors(roleIds[i]));
+    }
   }
 
   /// @notice Sets up a specific Hub role by assigning function selectors to the target.
