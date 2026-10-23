@@ -36,7 +36,7 @@ This runs `AaveV4DeployOrchestration.deployAaveV4()`, which deploys batches in o
 
 ### Per-transaction gas cap
 
-Large contracts get their own transaction, so the deployment can fit on chains that cap the gas of a single transaction (e.g. 30M on Tempo, where code deposit costs 1,000 gas per byte). Hub implementations are deployed directly by the deployer through a library procedure, in their own transaction, and configurators and position managers get one batch each. `AaveV4SpokeInstanceBatch` still deploys the Spoke implementation, its proxy and its AaveOracle together, because the AaveOracle and the Spoke reference each other.
+Each transaction deploys at most one large contract, so the deployment fits on chains that cap the gas of a single transaction (e.g. 30M on Tempo, where code deposit costs 1,000 gas per byte). Hub and Spoke implementations are deployed directly by the deployer through library procedures, each in its own transaction; configurators, position managers and each Spoke's AaveOracle get their own batch. On a Tempo fork, the largest transaction is the Spoke implementation at about 27.3M gas.
 
 Foundry's default gas limit is 130% of the estimate, which exceeds a 30M cap for the implementations. On such chains, pass a lower multiplier, e.g. `--gas-estimate-multiplier 105`.
 
@@ -59,7 +59,7 @@ This requires a **two-step deploy** because Foundry needs to re-compile with the
 **Step 2 — Main deploy script** (next invocation):
 
 1. Foundry reads `.env` at startup, sees `FOUNDRY_LIBRARIES`, and at compile time replaces all `__$<hash>$__` placeholders in `SpokeInstance`'s bytecode with the library address
-2. `AaveV4SpokeInstanceBatch` deploys `SpokeInstance` with fully linked bytecode
+2. `AaveV4SpokeImplementationDeployProcedure.deploySpokeImplementation` deploys `SpokeInstance` with fully linked bytecode
 
 ## Architecture
 
@@ -74,7 +74,8 @@ src/deployments/
     AaveV4SpokeConfiguratorBatch        SpokeConfigurator
     AaveV4TreasurySpokeBatch            TreasurySpoke (single instance, proxy + impl)
     AaveV4HubInstanceBatch              HubInstance proxy (impl deployed beforehand), InterestRateStrategy
-    AaveV4SpokeInstanceBatch            SpokeInstance (proxy + impl), AaveOracle
+    AaveV4AaveOracleBatch               AaveOracle; binds it to the SpokeInstance proxy once, owner-only
+    AaveV4SpokeInstanceBatch            SpokeInstance proxy (impl and AaveOracle deployed beforehand)
     AaveV4GatewayBatch                  NativeTokenGateway, SignatureGateway
     AaveV4GiverPositionManagerBatch     GiverPositionManager
     AaveV4TakerPositionManagerBatch     TakerPositionManager
@@ -86,7 +87,7 @@ src/deployments/
 
   procedures/                 Granular operations
     deploy/                   Individual contract deploy procedures. Contracts are inherited by batches;
-                              libraries (Hub implementation) run directly from the orchestration
+                              libraries (Hub/Spoke implementation) run directly from the orchestration
     roles/                    Role setup procedures per component (libraries, run directly from the orchestration)
 
   libraries/
@@ -234,11 +235,22 @@ AaveV4DeployBatchBase.s.sol                         (Foundry script entry point)
     |     |
     |     +-- _deploySpokes(spokeLabels)            for each spoke label:
     |     |     _deploySpoke()
+    |     |       _deployAaveOracleBatch()
+    |     |         AaveV4DeployBase.deployAaveOracleBatch()
+    |     |           Create2Utils.create2Deploy() --> AaveV4AaveOracleBatch(owner = deployer, decimals, salt)
+    |     |             new AaveOracle{salt}()       (deployer = batch)
+    |     |       _deploySpokeImplementation()
+    |     |         AaveV4SpokeImplementationDeployProcedure.deploySpokeImplementation()
+    |     |           Create2Utils.create2Deploy() --> SpokeInstance (impl)
     |     |       _deploySpokeInstanceBatch()
     |     |         AaveV4DeployBase.deploySpokeInstanceBatch()
-    |     |           Create2Utils.create2Deploy() --> AaveV4SpokeInstanceBatch(proxyAdmin, authority, bytecode, ...)
-    |     |             new AaveOracle{salt}()       (deployer = batch, which calls setSpoke)
-    |     |             Create2Utils.proxify()    --> SpokeInstance (proxy + impl)
+    |     |           new AaveV4SpokeInstanceBatch(proxyAdmin, authority, spokeImpl, salt)
+    |     |             AaveV4SpokeDeployProcedure._deploySpokeProxy()
+    |     |               Create2Utils.proxify()    --> SpokeInstance (proxy)
+    |     |       _setAaveOracleSpoke()
+    |     |         AaveV4DeployBase.setAaveOracleSpoke()
+    |     |           AaveV4AaveOracleBatch.setSpoke(spokeProxy)    (owner-only)
+    |     |             AaveOracle.setSpoke(spokeProxy)            (one-shot, checks spoke.ORACLE())
     |     |       _setupSpokeRoles()
     |     |         AaveV4SpokeRolesProcedure.setupSpokeAllRoles()
     |     |           AccessManager.setTargetFunctionRole()  (selector -> role mappings for Spoke)
