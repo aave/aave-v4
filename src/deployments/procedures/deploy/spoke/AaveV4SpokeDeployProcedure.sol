@@ -6,52 +6,31 @@ import {ISpokeInstance} from 'src/deployments/utils/interfaces/ISpokeInstance.so
 
 /// @title AaveV4SpokeDeployProcedure
 /// @author Aave Labs
-/// @notice Deploys an upgradeable Spoke instance behind a transparent proxy.
+/// @notice Deploys the transparent proxy of a Spoke instance.
+/// @dev The implementation is deployed in its own transaction (see `AaveV4DeployBase.deploySpokeImplementation`)
+///      so that each step fits on chains with a per-transaction gas cap.
 contract AaveV4SpokeDeployProcedure {
-  /// @notice Deploys a Spoke implementation via CREATE2 and sets up a transparent proxy.
+  /// @notice Deploys a transparent proxy for an already deployed Spoke implementation via CREATE2.
   /// @param proxyAdminOwner The owner of the proxy admin contract.
   /// @param authority The access control authority address used to initialize the Spoke.
-  /// @param oracle The oracle address used by the Spoke instance.
-  /// @param spokeBytecode The creation bytecode of the Spoke implementation.
-  /// @param maxUserReservesLimit The maximum number of reserves a single user can interact with.
+  /// @param spokeImplementation The address of the deployed Spoke implementation.
   /// @param salt The CREATE2 salt for deterministic deployment.
-  /// @return spokeProxy The address of the deployed transparent proxy.
-  /// @return spokeImplementation The address of the deployed Spoke implementation contract.
-  function _deployUpgradeableSpokeInstance(
+  /// @return The address of the deployed transparent proxy.
+  function _deploySpokeProxy(
     address proxyAdminOwner,
     address authority,
-    address oracle,
-    bytes memory spokeBytecode,
-    uint16 maxUserReservesLimit,
+    address spokeImplementation,
     bytes32 salt
-  ) internal returns (address spokeProxy, address spokeImplementation) {
+  ) internal returns (address) {
     require(proxyAdminOwner != address(0), 'invalid proxy admin owner');
     require(authority != address(0), 'invalid authority');
-    require(oracle != address(0), 'invalid oracle');
-    require(maxUserReservesLimit > 0, 'invalid max user reserves limit');
-    spokeImplementation = Create2Utils.create2Deploy({
-      salt: salt,
-      bytecode: _getSpokeInstanceInitCode(spokeBytecode, oracle, maxUserReservesLimit)
-    });
-    spokeProxy = Create2Utils.proxify({
-      salt: salt,
-      logic: spokeImplementation,
-      initialOwner: proxyAdminOwner,
-      data: abi.encodeCall(ISpokeInstance.initialize, (authority))
-    });
-    return (spokeProxy, spokeImplementation);
-  }
-
-  /// @notice Constructs the full init code for a Spoke instance by appending constructor arguments.
-  /// @param spokeBytecode The creation bytecode of the Spoke implementation.
-  /// @param oracle The oracle address to encode as a constructor argument.
-  /// @param maxUserReservesLimit The maximum number of user reserves to encode as a constructor argument.
-  /// @return The complete init code with encoded constructor arguments.
-  function _getSpokeInstanceInitCode(
-    bytes memory spokeBytecode,
-    address oracle,
-    uint16 maxUserReservesLimit
-  ) internal pure returns (bytes memory) {
-    return abi.encodePacked(spokeBytecode, abi.encode(oracle, maxUserReservesLimit));
+    require(spokeImplementation.code.length > 0, 'invalid spoke implementation');
+    return
+      Create2Utils.proxify({
+        salt: salt,
+        logic: spokeImplementation,
+        initialOwner: proxyAdminOwner,
+        data: abi.encodeCall(ISpokeInstance.initialize, (authority))
+      });
   }
 }

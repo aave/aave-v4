@@ -20,6 +20,13 @@ library BatchReports {
     address spokeConfigurator;
   }
 
+  /// @dev aaveOracleBatch The batch that deployed the AaveOracle and binds it to its Spoke.
+  /// @dev aaveOracle The deployed AaveOracle contract address.
+  struct AaveOracleBatchReport {
+    address aaveOracleBatch;
+    address aaveOracle;
+  }
+
   /// @dev spokeProxy The deployed Spoke proxy contract address.
   /// @dev spokeImplementation The deployed Spoke implementation contract address.
   /// @dev aaveOracle The deployed AaveOracle contract address.

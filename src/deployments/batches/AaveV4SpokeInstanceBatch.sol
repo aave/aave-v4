@@ -2,49 +2,38 @@
 pragma solidity ^0.8.0;
 
 import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
-import {AaveV4AaveOracleDeployProcedure} from 'src/deployments/procedures/deploy/spoke/AaveV4AaveOracleDeployProcedure.sol';
 import {AaveV4SpokeDeployProcedure} from 'src/deployments/procedures/deploy/spoke/AaveV4SpokeDeployProcedure.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
-import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 
 /// @title AaveV4SpokeInstanceBatch
 /// @author Aave Labs
-/// @notice Deploys a Spoke (proxy + implementation) and its AaveOracle, producing a batch report.
-contract AaveV4SpokeInstanceBatch is AaveV4SpokeDeployProcedure, AaveV4AaveOracleDeployProcedure {
+/// @notice Deploys a Spoke proxy in front of an already deployed implementation, producing a batch report.
+/// @dev The AaveOracle is the one the implementation was built with. Binding it to this proxy is a separate call to
+///      `AaveV4AaveOracleBatch.setSpoke`, since only the oracle's deployer can call `AaveOracle.setSpoke`.
+contract AaveV4SpokeInstanceBatch is AaveV4SpokeDeployProcedure {
   BatchReports.SpokeInstanceBatchReport internal _report;
 
   /// @dev Constructor.
   /// @param proxyAdminOwner_ The owner of the proxy admin.
   /// @param authority_ The access-control authority for the Spoke.
-  /// @param spokeBytecode_ The creation bytecode of the Spoke implementation.
-  /// @param oracleDecimals_ The decimal precision for the AaveOracle.
-  /// @param maxUserReservesLimit_ The maximum number of reserves a user can interact with.
+  /// @param spokeImplementation_ The address of the deployed Spoke implementation.
   /// @param salt_ The CREATE2 salt for deterministic deployment.
   constructor(
     address proxyAdminOwner_,
     address authority_,
-    bytes memory spokeBytecode_,
-    uint8 oracleDecimals_,
-    uint16 maxUserReservesLimit_,
+    address spokeImplementation_,
     bytes32 salt_
   ) {
-    address aaveOracle = _deployAaveOracle(oracleDecimals_, salt_);
-    (address spokeProxy, address spokeImplementation) = _deployUpgradeableSpokeInstance({
+    address spokeProxy = _deploySpokeProxy({
       proxyAdminOwner: proxyAdminOwner_,
       authority: authority_,
-      oracle: aaveOracle,
-      spokeBytecode: spokeBytecode_,
-      salt: salt_,
-      maxUserReservesLimit: maxUserReservesLimit_
+      spokeImplementation: spokeImplementation_,
+      salt: salt_
     });
-    IAaveOracle(aaveOracle).setSpoke(spokeProxy);
-
-    require(ISpoke(spokeProxy).ORACLE() == aaveOracle, 'spoke oracle mismatch');
-    require(IAaveOracle(aaveOracle).spoke() == spokeProxy, 'oracle spoke mismatch');
 
     _report = BatchReports.SpokeInstanceBatchReport({
-      aaveOracle: aaveOracle,
-      spokeImplementation: spokeImplementation,
+      aaveOracle: ISpoke(spokeProxy).ORACLE(),
+      spokeImplementation: spokeImplementation_,
       spokeProxy: spokeProxy
     });
   }
