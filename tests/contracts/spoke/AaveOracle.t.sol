@@ -142,21 +142,17 @@ contract AaveOracleTest is Base {
     oracle.setReserveSource(reserveId1, _source1);
   }
 
-  function test_setReserveSource_revertsWith_OracleMismatch() public {
+  function test_setSpoke_undeployedSpoke() public {
     vm.startPrank(deployer);
     IAaveOracle newOracle = IAaveOracle(new AaveOracle(_oracleDecimals));
+    address undeployedSpoke = makeAddr('undeployedSpoke');
+    assertEq(undeployedSpoke.code.length, 0);
 
-    // set new spoke to a separate oracle
-    address mismatchOracle = address(new AaveOracle(_oracleDecimals));
-    address newSpoke = address(
-      AaveV4TestOrchestration.deploySpokeImplementation(
-        mismatchOracle,
-        MAX_ALLOWED_USER_RESERVES_LIMIT
-      )
-    );
+    vm.expectEmit(address(newOracle));
+    emit IAaveOracle.SetSpoke(undeployedSpoke);
+    newOracle.setSpoke(undeployedSpoke);
 
-    vm.expectRevert(IAaveOracle.OracleMismatch.selector);
-    newOracle.setSpoke(newSpoke);
+    assertEq(newOracle.spoke(), undeployedSpoke);
   }
 
   function test_setReserveSource() public {

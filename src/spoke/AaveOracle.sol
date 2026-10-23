@@ -2,7 +2,6 @@
 pragma solidity 0.8.28;
 
 import {IPriceFeed} from 'src/spoke/interfaces/IPriceFeed.sol';
-import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IAaveOracle, IPriceOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 
 /// @title AaveOracle
@@ -35,7 +34,6 @@ contract AaveOracle is IAaveOracle {
     require(msg.sender == DEPLOYER, OnlyDeployer());
     require(spoke_ != address(0), InvalidAddress());
     require(spoke == address(0), SpokeAlreadySet());
-    require(ISpoke(spoke_).ORACLE() == address(this), OracleMismatch());
     spoke = spoke_;
     emit SetSpoke(spoke_);
   }

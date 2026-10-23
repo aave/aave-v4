@@ -37,12 +37,11 @@ interface IAaveOracle is IPriceOracle {
   /// @dev Thrown when the given address is invalid.
   error InvalidAddress();
 
-  /// @dev Thrown when the Spoke's oracle does not match the current oracle.
-  error OracleMismatch();
-
   /// @notice Sets the address of the Spoke.
   /// @dev Can only be called once by the deployer.
   /// @dev The spoke should be set before any other function is called.
+  /// @dev The Spoke does not need to be deployed yet, so the deployer can bind its predicted address. The deployer
+  ///      is responsible for ensuring that the Spoke uses this oracle.
   /// @param spoke The address of the Spoke.
   function setSpoke(address spoke) external;
 
