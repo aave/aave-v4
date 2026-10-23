@@ -34,7 +34,10 @@ contract AaveV4TokenizationSpokeDeployProcedure {
 
     tokenizationSpokeImplementation = Create2Utils.create2Deploy({
       salt: salt,
-      bytecode: _getTokenizationSpokeInstanceInitCode(hub, underlying)
+      bytecode: abi.encodePacked(
+        type(TokenizationSpokeInstance).creationCode,
+        abi.encode(hub, underlying)
+      )
     });
 
     tokenizationSpokeProxy = Create2Utils.proxify({
@@ -54,17 +57,5 @@ contract AaveV4TokenizationSpokeDeployProcedure {
     );
 
     return (tokenizationSpokeProxy, tokenizationSpokeImplementation);
-  }
-
-  /// @notice Returns the creation bytecode for a TokenizationSpokeInstance with constructor arguments appended.
-  /// @param hub The address of the Hub contract.
-  /// @param underlying The address of the underlying asset.
-  /// @return The ABI-encoded creation bytecode.
-  function _getTokenizationSpokeInstanceInitCode(
-    address hub,
-    address underlying
-  ) internal pure returns (bytes memory) {
-    return
-      abi.encodePacked(type(TokenizationSpokeInstance).creationCode, abi.encode(hub, underlying));
   }
 }
