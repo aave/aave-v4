@@ -87,6 +87,23 @@ library Roles {
     return selectors;
   }
 
+  /// @notice Returns the granular Hub roles.
+  function getHubRoles() internal pure returns (uint64[] memory) {
+    uint64[] memory roleIds = new uint64[](3);
+    roleIds[0] = HUB_CONFIGURATOR_ROLE;
+    roleIds[1] = HUB_FEE_MINTER_ROLE;
+    roleIds[2] = HUB_DEFICIT_ELIMINATOR_ROLE;
+    return roleIds;
+  }
+
+  /// @notice Returns the function selectors associated with the given granular Hub role.
+  function getHubRoleSelectors(uint64 roleId) internal pure returns (bytes4[] memory) {
+    if (roleId == HUB_CONFIGURATOR_ROLE) return getHubConfiguratorRoleSelectors();
+    if (roleId == HUB_FEE_MINTER_ROLE) return getHubFeeMinterRoleSelectors();
+    if (roleId == HUB_DEFICIT_ELIMINATOR_ROLE) return getHubDeficitEliminatorRoleSelectors();
+    revert('unknown hub role');
+  }
+
   // ─── HubConfigurator selector getters ───
 
   /// @notice Returns the function selectors associated with the HubConfigurator Domain Admin role.
@@ -138,6 +155,21 @@ library Roles {
     selectors[5] = ISpoke.updatePositionManager.selector;
     selectors[6] = ISpoke.updateReservePriceSource.selector;
     return selectors;
+  }
+
+  /// @notice Returns the granular Spoke roles.
+  function getSpokeRoles() internal pure returns (uint64[] memory) {
+    uint64[] memory roleIds = new uint64[](2);
+    roleIds[0] = SPOKE_USER_POSITION_UPDATER_ROLE;
+    roleIds[1] = SPOKE_CONFIGURATOR_ROLE;
+    return roleIds;
+  }
+
+  /// @notice Returns the function selectors associated with the given granular Spoke role.
+  function getSpokeRoleSelectors(uint64 roleId) internal pure returns (bytes4[] memory) {
+    if (roleId == SPOKE_USER_POSITION_UPDATER_ROLE) return getSpokePositionUpdaterRoleSelectors();
+    if (roleId == SPOKE_CONFIGURATOR_ROLE) return getSpokeConfiguratorRoleSelectors();
+    revert('unknown spoke role');
   }
 
   // ─── SpokeConfigurator selector getters ───
