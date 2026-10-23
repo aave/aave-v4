@@ -15,8 +15,8 @@ contract MetadataLoggerTest is Test {
   {
     report.salt = keccak256('test-salt');
     report.authorityBatchReport.accessManager = makeAddr('accessManager');
-    report.configuratorBatchReport.hubConfigurator = makeAddr('hubConfigurator');
-    report.configuratorBatchReport.spokeConfigurator = makeAddr('spokeConfigurator');
+    report.hubConfiguratorBatchReport.hubConfigurator = makeAddr('hubConfigurator');
+    report.spokeConfiguratorBatchReport.spokeConfigurator = makeAddr('spokeConfigurator');
     report.treasurySpokeBatchReport.treasurySpoke = makeAddr('treasurySpoke');
 
     report.hubInstanceBatchReports = new OrchestrationReports.HubDeploymentReport[](2);
@@ -42,9 +42,9 @@ contract MetadataLoggerTest is Test {
     report.gatewaysBatchReport.nativeGateway = makeAddr('nativeGateway');
     report.gatewaysBatchReport.signatureGateway = makeAddr('signatureGateway');
 
-    report.positionManagerBatchReport.giverPositionManager = makeAddr('giverPM');
-    report.positionManagerBatchReport.takerPositionManager = makeAddr('takerPM');
-    report.positionManagerBatchReport.configPositionManager = makeAddr('configPM');
+    report.giverPositionManagerBatchReport.giverPositionManager = makeAddr('giverPM');
+    report.takerPositionManagerBatchReport.takerPositionManager = makeAddr('takerPM');
+    report.configPositionManagerBatchReport.configPositionManager = makeAddr('configPM');
   }
 
   function test_writeJsonReportMarket_fullReport() public {
@@ -62,11 +62,11 @@ contract MetadataLoggerTest is Test {
     );
     assertEq(
       vm.parseJsonAddress(json, '$.hubConfigurator'),
-      report.configuratorBatchReport.hubConfigurator
+      report.hubConfiguratorBatchReport.hubConfigurator
     );
     assertEq(
       vm.parseJsonAddress(json, '$.spokeConfigurator'),
-      report.configuratorBatchReport.spokeConfigurator
+      report.spokeConfiguratorBatchReport.spokeConfigurator
     );
     assertEq(
       vm.parseJsonAddress(json, '$.treasurySpoke'),
@@ -122,15 +122,15 @@ contract MetadataLoggerTest is Test {
     // Position Managers
     assertEq(
       vm.parseJsonAddress(json, '$.giverPositionManager'),
-      report.positionManagerBatchReport.giverPositionManager
+      report.giverPositionManagerBatchReport.giverPositionManager
     );
     assertEq(
       vm.parseJsonAddress(json, '$.takerPositionManager'),
-      report.positionManagerBatchReport.takerPositionManager
+      report.takerPositionManagerBatchReport.takerPositionManager
     );
     assertEq(
       vm.parseJsonAddress(json, '$.configPositionManager'),
-      report.positionManagerBatchReport.configPositionManager
+      report.configPositionManagerBatchReport.configPositionManager
     );
   }
 
@@ -155,9 +155,9 @@ contract MetadataLoggerTest is Test {
   function test_writeJsonReportMarket_noPositionManagers() public {
     MetadataLogger logger = new MetadataLogger(OUTPUT_DIR);
     OrchestrationReports.FullDeploymentReport memory report = _fullReport();
-    report.positionManagerBatchReport.giverPositionManager = address(0);
-    report.positionManagerBatchReport.takerPositionManager = address(0);
-    report.positionManagerBatchReport.configPositionManager = address(0);
+    report.giverPositionManagerBatchReport.giverPositionManager = address(0);
+    report.takerPositionManagerBatchReport.takerPositionManager = address(0);
+    report.configPositionManagerBatchReport.configPositionManager = address(0);
 
     logger.writeJsonReportMarket(report);
     string memory json = logger.getJson();
@@ -172,9 +172,9 @@ contract MetadataLoggerTest is Test {
     OrchestrationReports.FullDeploymentReport memory report = _fullReport();
     report.gatewaysBatchReport.nativeGateway = address(0);
     report.gatewaysBatchReport.signatureGateway = address(0);
-    report.positionManagerBatchReport.giverPositionManager = address(0);
-    report.positionManagerBatchReport.takerPositionManager = address(0);
-    report.positionManagerBatchReport.configPositionManager = address(0);
+    report.giverPositionManagerBatchReport.giverPositionManager = address(0);
+    report.takerPositionManagerBatchReport.takerPositionManager = address(0);
+    report.configPositionManagerBatchReport.configPositionManager = address(0);
 
     logger.writeJsonReportMarket(report);
     string memory json = logger.getJson();
@@ -201,8 +201,8 @@ contract MetadataLoggerTest is Test {
 
     report.salt = keccak256('single');
     report.authorityBatchReport.accessManager = makeAddr('am');
-    report.configuratorBatchReport.hubConfigurator = makeAddr('hc');
-    report.configuratorBatchReport.spokeConfigurator = makeAddr('sc');
+    report.hubConfiguratorBatchReport.hubConfigurator = makeAddr('hc');
+    report.spokeConfiguratorBatchReport.spokeConfigurator = makeAddr('sc');
     report.treasurySpokeBatchReport.treasurySpoke = makeAddr('ts');
 
     report.hubInstanceBatchReports = new OrchestrationReports.HubDeploymentReport[](1);
@@ -231,8 +231,8 @@ contract MetadataLoggerTest is Test {
 
     report.salt = keccak256('empty');
     report.authorityBatchReport.accessManager = makeAddr('am');
-    report.configuratorBatchReport.hubConfigurator = makeAddr('hc');
-    report.configuratorBatchReport.spokeConfigurator = makeAddr('sc');
+    report.hubConfiguratorBatchReport.hubConfigurator = makeAddr('hc');
+    report.spokeConfiguratorBatchReport.spokeConfigurator = makeAddr('sc');
     report.treasurySpokeBatchReport.treasurySpoke = makeAddr('ts');
     report.hubInstanceBatchReports = new OrchestrationReports.HubDeploymentReport[](0);
     report.spokeInstanceBatchReports = new OrchestrationReports.SpokeDeploymentReport[](0);

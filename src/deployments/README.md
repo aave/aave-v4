@@ -34,6 +34,12 @@ make deploy-contracts
 
 This runs `AaveV4DeployOrchestration.deployAaveV4()`, which deploys batches in order: AccessManager → role labeling → Configurators → Configurator role setup → TreasurySpoke → Hubs → Spokes → Gateways → PositionManagers → role grants → DEFAULT_ADMIN transfer.
 
+### Per-transaction gas cap
+
+Large contracts get their own transaction, so the deployment can fit on chains that cap the gas of a single transaction (e.g. 30M on Tempo, where code deposit costs 1,000 gas per byte). Hub implementations are deployed directly by the deployer through a library procedure, in their own transaction, and configurators and position managers get one batch each. `AaveV4SpokeInstanceBatch` still deploys the Spoke implementation, its proxy and its AaveOracle together, because the AaveOracle and the Spoke reference each other.
+
+Foundry's default gas limit is 130% of the estimate, which exceeds a 30M cap for the implementations. On such chains, pass a lower multiplier, e.g. `--gas-estimate-multiplier 105`.
+
 ### TokenizationSpoke
 
 `TokenizationSpoke` is **not** deployed by the orchestration, because it requires an asset to already be listed on a Hub and Spoke. Each `TokenizationSpoke` instance should be deployed separately after asset listing, one per asset.
@@ -62,22 +68,26 @@ scripts/deploy/
   AaveV4DeployBatchBase.s.sol     Base: deploy-only run()
 
 src/deployments/
-  batches/                    Batch constructors -- deploy related contracts together
-    AaveV4AuthorityBatch        AccessManagerEnumerable
-    AaveV4ConfiguratorBatch     HubConfigurator, SpokeConfigurator
-    AaveV4TreasurySpokeBatch    TreasurySpoke (single instance, proxy + impl)
-    AaveV4HubInstanceBatch      HubInstance (proxy + impl), InterestRateStrategy
-    AaveV4SpokeInstanceBatch    SpokeInstance (proxy + impl), AaveOracle
-    AaveV4GatewayBatch          NativeTokenGateway, SignatureGateway
-    AaveV4PositionManagerBatch  GiverPositionManager, TakerPositionManager, ConfigPositionManager
+  batches/                    Batch constructors -- deploy related contracts together, one transaction each
+    AaveV4AuthorityBatch                AccessManagerEnumerable
+    AaveV4HubConfiguratorBatch          HubConfigurator
+    AaveV4SpokeConfiguratorBatch        SpokeConfigurator
+    AaveV4TreasurySpokeBatch            TreasurySpoke (single instance, proxy + impl)
+    AaveV4HubInstanceBatch              HubInstance proxy (impl deployed beforehand), InterestRateStrategy
+    AaveV4SpokeInstanceBatch            SpokeInstance (proxy + impl), AaveOracle
+    AaveV4GatewayBatch                  NativeTokenGateway, SignatureGateway
+    AaveV4GiverPositionManagerBatch     GiverPositionManager
+    AaveV4TakerPositionManagerBatch     TakerPositionManager
+    AaveV4ConfigPositionManagerBatch    ConfigPositionManager
 
   orchestration/              High-level orchestrators
     AaveV4DeployOrchestration   Main entry: deployAaveV4() -- calls batches in order
     AaveV4DeployBase            Static deploy helpers for each batch
 
   procedures/                 Granular operations
-    deploy/                   Individual contract deploy procedures
-    roles/                    Role setup procedures per component
+    deploy/                   Individual contract deploy procedures. Contracts are inherited by batches;
+                              libraries (Hub implementation) run directly from the orchestration
+    roles/                    Role setup procedures per component (libraries, run directly from the orchestration)
 
   libraries/
     BatchReports              Report structs for each batch
@@ -182,11 +192,15 @@ AaveV4DeployBatchBase.s.sol                         (Foundry script entry point)
     |     |     AaveV4AccessManagerRolesProcedure.labelAllRoles()
     |     |       AccessManager.labelRole()  (labels all roles with the associated Roles.sol constant names)
     |     |
-    |     +-- _deployConfiguratorBatch()
-    |     |     AaveV4DeployBase.deployConfiguratorBatch()
-    |     |       new AaveV4ConfiguratorBatch(hubAuth, spokeAuth, salt)
+    |     +-- _deployHubConfiguratorBatch()
+    |     |     AaveV4DeployBase.deployHubConfiguratorBatch()
+    |     |       new AaveV4HubConfiguratorBatch(authority, salt)
     |     |         AaveV4HubConfiguratorDeployProcedure._deployHubConfigurator()
     |     |           Create2Utils.create2Deploy() --> HubConfigurator
+    |     |
+    |     +-- _deploySpokeConfiguratorBatch()
+    |     |     AaveV4DeployBase.deploySpokeConfiguratorBatch()
+    |     |       new AaveV4SpokeConfiguratorBatch(authority, salt)
     |     |         AaveV4SpokeConfiguratorDeployProcedure._deploySpokeConfigurator()
     |     |           Create2Utils.create2Deploy() --> SpokeConfigurator
     |     |
@@ -205,10 +219,14 @@ AaveV4DeployBatchBase.s.sol                         (Foundry script entry point)
     |     |
     |     +-- _deployHubs(hubLabels)                for each hub label:
     |     |     _deployHub()
+    |     |       _deployHubImplementation()
+    |     |         AaveV4HubImplementationDeployProcedure.deployHubImplementation()
+    |     |           Create2Utils.create2Deploy() --> HubInstance (impl)
     |     |       _deployHubInstanceBatch()
     |     |         AaveV4DeployBase.deployHubInstanceBatch()
-    |     |           new AaveV4HubInstanceBatch(proxyAdmin, authority, hubBytecode, salt)
-    |     |             Create2Utils.proxify()    --> HubInstance (proxy + impl)
+    |     |           new AaveV4HubInstanceBatch(proxyAdmin, authority, hubImpl, salt)
+    |     |             AaveV4HubDeployProcedure._deployHubProxy()
+    |     |               Create2Utils.proxify()    --> HubInstance (proxy)
     |     |             Create2Utils.create2Deploy() --> InterestRateStrategy
     |     |       _setupHubRoles()
     |     |         AaveV4HubRolesProcedure.setupHubAllRoles()
@@ -230,11 +248,17 @@ AaveV4DeployBatchBase.s.sol                         (Foundry script entry point)
     |     |       new AaveV4GatewayBatch(owner, nativeWrapper, deployNativeTokenGateway, deploySignatureGateway, salt)
     |     |         Create2Utils.create2Deploy() --> NativeTokenGateway, SignatureGateway
     |     |
-    |     +-- _deployPositionManagerBatch()         (if deployPositionManagers)
-    |     |     AaveV4DeployBase.deployPositionManagerBatch()
-    |     |       new AaveV4PositionManagerBatch(owner, salt)
+    |     +-- _deployGiverPositionManagerBatch()    (if deployPositionManagers)
+    |     |     AaveV4DeployBase.deployGiverPositionManagerBatch()
+    |     |       new AaveV4GiverPositionManagerBatch(owner, salt)
     |     |         Create2Utils.create2Deploy() --> GiverPositionManager
+    |     +-- _deployTakerPositionManagerBatch()    (if deployPositionManagers)
+    |     |     AaveV4DeployBase.deployTakerPositionManagerBatch()
+    |     |       new AaveV4TakerPositionManagerBatch(owner, salt)
     |     |         Create2Utils.create2Deploy() --> TakerPositionManager
+    |     +-- _deployConfigPositionManagerBatch()   (if deployPositionManagers)
+    |     |     AaveV4DeployBase.deployConfigPositionManagerBatch()
+    |     |       new AaveV4ConfigPositionManagerBatch(owner, salt)
     |     |         Create2Utils.create2Deploy() --> ConfigPositionManager
     |     |
     |     +-- grantRoles (if grantRoles == true)

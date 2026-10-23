@@ -29,8 +29,11 @@ abstract contract PostDeploymentVerificationBase is BatchTestProcedures {
     string memory json
   ) internal view returns (OrchestrationReports.FullDeploymentReport memory report) {
     report.authorityBatchReport.accessManager = vm.parseJsonAddress(json, '$.accessManager');
-    report.configuratorBatchReport.hubConfigurator = vm.parseJsonAddress(json, '$.hubConfigurator');
-    report.configuratorBatchReport.spokeConfigurator = vm.parseJsonAddress(
+    report.hubConfiguratorBatchReport.hubConfigurator = vm.parseJsonAddress(
+      json,
+      '$.hubConfigurator'
+    );
+    report.spokeConfiguratorBatchReport.spokeConfigurator = vm.parseJsonAddress(
       json,
       '$.spokeConfigurator'
     );
@@ -45,19 +48,19 @@ abstract contract PostDeploymentVerificationBase is BatchTestProcedures {
       report.gatewaysBatchReport.signatureGateway = vm.parseJsonAddress(json, '$.signatureGateway');
     }
     if (vm.keyExistsJson(json, '$.giverPositionManager')) {
-      report.positionManagerBatchReport.giverPositionManager = vm.parseJsonAddress(
+      report.giverPositionManagerBatchReport.giverPositionManager = vm.parseJsonAddress(
         json,
         '$.giverPositionManager'
       );
     }
     if (vm.keyExistsJson(json, '$.takerPositionManager')) {
-      report.positionManagerBatchReport.takerPositionManager = vm.parseJsonAddress(
+      report.takerPositionManagerBatchReport.takerPositionManager = vm.parseJsonAddress(
         json,
         '$.takerPositionManager'
       );
     }
     if (vm.keyExistsJson(json, '$.configPositionManager')) {
-      report.positionManagerBatchReport.configPositionManager = vm.parseJsonAddress(
+      report.configPositionManagerBatchReport.configPositionManager = vm.parseJsonAddress(
         json,
         '$.configPositionManager'
       );
