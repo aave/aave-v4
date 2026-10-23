@@ -63,6 +63,24 @@ contract RolesTest is Test {
     _rolesWrapper.getSpokeRoleSelectors(Roles.SPOKE_DOMAIN_ADMIN_ROLE);
   }
 
+  function test_getRoleLabels() public pure {
+    (uint64[] memory roleIds, string[] memory labels) = Roles.getRoleLabels();
+    assertEq(roleIds.length, 9);
+    assertEq(labels.length, roleIds.length);
+    assertEq(roleIds[0], Roles.HUB_DOMAIN_ADMIN_ROLE);
+    assertEq(labels[0], 'HUB_DOMAIN_ADMIN_ROLE');
+    assertEq(roleIds[4], Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE);
+    assertEq(labels[4], 'HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE');
+    assertEq(roleIds[8], Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE);
+    assertEq(labels[8], 'SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE');
+    for (uint256 i; i < roleIds.length; ++i) {
+      assertNotEq(roleIds[i], Roles.ACCESS_MANAGER_ADMIN_ROLE);
+      for (uint256 j = i + 1; j < roleIds.length; ++j) {
+        assertNotEq(roleIds[i], roleIds[j]);
+      }
+    }
+  }
+
   function _assertSelectorsEq(bytes4[] memory a, bytes4[] memory b) internal pure {
     assertEq(abi.encode(a), abi.encode(b));
   }

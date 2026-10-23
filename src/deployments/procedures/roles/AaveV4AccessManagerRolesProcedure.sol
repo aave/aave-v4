@@ -12,27 +12,10 @@ library AaveV4AccessManagerRolesProcedure {
   /// @param accessManager The address of the AccessManager contract.
   function labelAllRoles(address accessManager) internal {
     require(accessManager != address(0), 'invalid access manager');
-    IAccessManager am = IAccessManager(accessManager);
-
-    // Hub roles
-    am.labelRole(Roles.HUB_DOMAIN_ADMIN_ROLE, 'HUB_DOMAIN_ADMIN_ROLE');
-    am.labelRole(Roles.HUB_CONFIGURATOR_ROLE, 'HUB_CONFIGURATOR_ROLE');
-    am.labelRole(Roles.HUB_FEE_MINTER_ROLE, 'HUB_FEE_MINTER_ROLE');
-    am.labelRole(Roles.HUB_DEFICIT_ELIMINATOR_ROLE, 'HUB_DEFICIT_ELIMINATOR_ROLE');
-
-    // HubConfigurator roles
-    am.labelRole(Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE, 'HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE');
-
-    // Spoke roles
-    am.labelRole(Roles.SPOKE_DOMAIN_ADMIN_ROLE, 'SPOKE_DOMAIN_ADMIN_ROLE');
-    am.labelRole(Roles.SPOKE_CONFIGURATOR_ROLE, 'SPOKE_CONFIGURATOR_ROLE');
-    am.labelRole(Roles.SPOKE_USER_POSITION_UPDATER_ROLE, 'SPOKE_USER_POSITION_UPDATER_ROLE');
-
-    // SpokeConfigurator roles
-    am.labelRole(
-      Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE,
-      'SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE'
-    );
+    (uint64[] memory roleIds, string[] memory labels) = Roles.getRoleLabels();
+    for (uint256 i; i < roleIds.length; ++i) {
+      IAccessManager(accessManager).labelRole(roleIds[i], labels[i]);
+    }
   }
 
   /// @notice Replaces the default admin by granting the role to a new address and revoking it from the old one.
