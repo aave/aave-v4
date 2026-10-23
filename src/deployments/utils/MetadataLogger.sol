@@ -17,8 +17,8 @@ contract MetadataLogger is Logger {
   function writeJsonReportMarket(OrchestrationReports.FullDeploymentReport memory report) public {
     _write('salt', report.salt);
     _write('accessManager', report.authorityBatchReport.accessManager);
-    _write('hubConfigurator', report.configuratorBatchReport.hubConfigurator);
-    _write('spokeConfigurator', report.configuratorBatchReport.spokeConfigurator);
+    _write('hubConfigurator', report.hubConfiguratorBatchReport.hubConfigurator);
+    _write('spokeConfigurator', report.spokeConfiguratorBatchReport.spokeConfigurator);
     _write('treasurySpoke', report.treasurySpokeBatchReport.treasurySpoke);
 
     // Group hubs by property type
@@ -73,14 +73,17 @@ contract MetadataLogger is Logger {
     if (report.gatewaysBatchReport.nativeGateway != address(0)) {
       _write('nativeTokenGateway', report.gatewaysBatchReport.nativeGateway);
     }
-    if (report.positionManagerBatchReport.giverPositionManager != address(0)) {
-      _write('giverPositionManager', report.positionManagerBatchReport.giverPositionManager);
+    if (report.giverPositionManagerBatchReport.giverPositionManager != address(0)) {
+      _write('giverPositionManager', report.giverPositionManagerBatchReport.giverPositionManager);
     }
-    if (report.positionManagerBatchReport.takerPositionManager != address(0)) {
-      _write('takerPositionManager', report.positionManagerBatchReport.takerPositionManager);
+    if (report.takerPositionManagerBatchReport.takerPositionManager != address(0)) {
+      _write('takerPositionManager', report.takerPositionManagerBatchReport.takerPositionManager);
     }
-    if (report.positionManagerBatchReport.configPositionManager != address(0)) {
-      _write('configPositionManager', report.positionManagerBatchReport.configPositionManager);
+    if (report.configPositionManagerBatchReport.configPositionManager != address(0)) {
+      _write(
+        'configPositionManager',
+        report.configPositionManagerBatchReport.configPositionManager
+      );
     }
   }
 }

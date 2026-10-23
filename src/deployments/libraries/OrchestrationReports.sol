@@ -22,21 +22,27 @@ library OrchestrationReports {
   }
 
   /// @dev authorityBatchReport AccessManager deployment report.
-  /// @dev configuratorBatchReport Configurator deployment report.
+  /// @dev hubConfiguratorBatchReport HubConfigurator deployment report.
+  /// @dev spokeConfiguratorBatchReport SpokeConfigurator deployment report.
   /// @dev treasurySpokeBatchReport TreasurySpoke deployment report.
   /// @dev spokeInstanceBatchReports Per-spoke deployment reports.
   /// @dev hubInstanceBatchReports Per-hub deployment reports.
   /// @dev gatewaysBatchReport Gateway deployment report.
-  /// @dev positionManagerBatchReport PositionManager deployment report.
+  /// @dev giverPositionManagerBatchReport GiverPositionManager deployment report.
+  /// @dev takerPositionManagerBatchReport TakerPositionManager deployment report.
+  /// @dev configPositionManagerBatchReport ConfigPositionManager deployment report.
   /// @dev salt The salt used to derive deterministic contract addresses.
   struct FullDeploymentReport {
     BatchReports.AuthorityBatchReport authorityBatchReport;
-    BatchReports.ConfiguratorBatchReport configuratorBatchReport;
+    BatchReports.HubConfiguratorBatchReport hubConfiguratorBatchReport;
+    BatchReports.SpokeConfiguratorBatchReport spokeConfiguratorBatchReport;
     BatchReports.TreasurySpokeBatchReport treasurySpokeBatchReport;
     SpokeDeploymentReport[] spokeInstanceBatchReports;
     HubDeploymentReport[] hubInstanceBatchReports;
     BatchReports.GatewaysBatchReport gatewaysBatchReport;
-    BatchReports.PositionManagerBatchReport positionManagerBatchReport;
+    BatchReports.GiverPositionManagerBatchReport giverPositionManagerBatchReport;
+    BatchReports.TakerPositionManagerBatchReport takerPositionManagerBatchReport;
+    BatchReports.ConfigPositionManagerBatchReport configPositionManagerBatchReport;
     bytes32 salt;
   }
 }

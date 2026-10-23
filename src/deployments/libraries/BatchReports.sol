@@ -11,9 +11,12 @@ library BatchReports {
   }
 
   /// @dev hubConfigurator The deployed HubConfigurator contract address.
-  /// @dev spokeConfigurator The deployed SpokeConfigurator contract address.
-  struct ConfiguratorBatchReport {
+  struct HubConfiguratorBatchReport {
     address hubConfigurator;
+  }
+
+  /// @dev spokeConfigurator The deployed SpokeConfigurator contract address.
+  struct SpokeConfiguratorBatchReport {
     address spokeConfigurator;
   }
 
@@ -48,11 +51,17 @@ library BatchReports {
   }
 
   /// @dev giverPositionManager The deployed GiverPositionManager contract address.
-  /// @dev takerPositionManager The deployed TakerPositionManager contract address.
-  /// @dev configPositionManager The deployed ConfigPositionManager contract address.
-  struct PositionManagerBatchReport {
+  struct GiverPositionManagerBatchReport {
     address giverPositionManager;
+  }
+
+  /// @dev takerPositionManager The deployed TakerPositionManager contract address.
+  struct TakerPositionManagerBatchReport {
     address takerPositionManager;
+  }
+
+  /// @dev configPositionManager The deployed ConfigPositionManager contract address.
+  struct ConfigPositionManagerBatchReport {
     address configPositionManager;
   }
 
