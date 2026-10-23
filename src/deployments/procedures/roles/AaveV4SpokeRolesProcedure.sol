@@ -12,8 +12,10 @@ library AaveV4SpokeRolesProcedure {
   /// @param accessManager The address of the AccessManager contract.
   /// @param admin The address to receive all spoke roles.
   function grantSpokeAllRoles(address accessManager, address admin) internal {
-    grantSpokeRole(accessManager, Roles.SPOKE_USER_POSITION_UPDATER_ROLE, admin);
-    grantSpokeRole(accessManager, Roles.SPOKE_CONFIGURATOR_ROLE, admin);
+    uint64[] memory roleIds = Roles.getSpokeRoles();
+    for (uint256 i; i < roleIds.length; ++i) {
+      grantSpokeRole(accessManager, roleIds[i], admin);
+    }
   }
 
   /// @notice Grants a specific spoke role to the given address.
@@ -30,18 +32,15 @@ library AaveV4SpokeRolesProcedure {
   /// @param accessManager The address of the AccessManager contract.
   /// @param spoke The address of the Spoke contract.
   function setupSpokeAllRoles(address accessManager, address spoke) internal {
-    setupSpokeRole({
-      accessManager: accessManager,
-      spoke: spoke,
-      roleId: Roles.SPOKE_USER_POSITION_UPDATER_ROLE,
-      selectors: Roles.getSpokePositionUpdaterRoleSelectors()
-    });
-    setupSpokeRole({
-      accessManager: accessManager,
-      spoke: spoke,
-      roleId: Roles.SPOKE_CONFIGURATOR_ROLE,
-      selectors: Roles.getSpokeConfiguratorRoleSelectors()
-    });
+    uint64[] memory roleIds = Roles.getSpokeRoles();
+    for (uint256 i; i < roleIds.length; ++i) {
+      setupSpokeRole({
+        accessManager: accessManager,
+        spoke: spoke,
+        roleId: roleIds[i],
+        selectors: Roles.getSpokeRoleSelectors(roleIds[i])
+      });
+    }
   }
 
   /// @notice Sets up a specific spoke role by assigning function selectors to the target.
