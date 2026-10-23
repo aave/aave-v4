@@ -16,6 +16,7 @@ import {AaveV4AccessManagerEnumerableDeployProcedureWrapper} from 'tests/helpers
 import {AaveV4AaveOracleDeployProcedureWrapper} from 'tests/helpers/mocks/deployments/procedures/AaveV4AaveOracleDeployProcedureWrapper.sol';
 import {AaveV4SpokeDeployProcedureWrapper} from 'tests/helpers/mocks/deployments/procedures/AaveV4SpokeDeployProcedureWrapper.sol';
 import {AaveV4HubImplementationDeployProcedureWrapper} from 'tests/helpers/mocks/deployments/procedures/AaveV4HubImplementationDeployProcedureWrapper.sol';
+import {AaveV4SpokeImplementationDeployProcedureWrapper} from 'tests/helpers/mocks/deployments/procedures/AaveV4SpokeImplementationDeployProcedureWrapper.sol';
 import {AaveV4TreasurySpokeDeployProcedureWrapper} from 'tests/helpers/mocks/deployments/procedures/AaveV4TreasurySpokeDeployProcedureWrapper.sol';
 import {AaveV4SpokeConfiguratorDeployProcedureWrapper} from 'tests/helpers/mocks/deployments/procedures/AaveV4SpokeConfiguratorDeployProcedureWrapper.sol';
 import {AaveV4AccessManagerRolesProcedureWrapper} from 'tests/helpers/mocks/deployments/procedures/AaveV4AccessManagerRolesProcedureWrapper.sol';

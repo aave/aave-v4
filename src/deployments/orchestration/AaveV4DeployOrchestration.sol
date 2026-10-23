@@ -11,6 +11,7 @@ import {AaveV4SpokeRolesProcedure} from 'src/deployments/procedures/roles/AaveV4
 import {AaveV4HubConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubConfiguratorRolesProcedure.sol';
 import {AaveV4SpokeConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeConfiguratorRolesProcedure.sol';
 import {AaveV4HubImplementationDeployProcedure} from 'src/deployments/procedures/deploy/hub/AaveV4HubImplementationDeployProcedure.sol';
+import {AaveV4SpokeImplementationDeployProcedure} from 'src/deployments/procedures/deploy/spoke/AaveV4SpokeImplementationDeployProcedure.sol';
 import {InputUtils} from 'src/deployments/utils/libraries/InputUtils.sol';
 import {Logger} from 'src/deployments/utils/Logger.sol';
 import {DeployConstants} from 'src/deployments/utils/libraries/DeployConstants.sol';
@@ -261,13 +262,27 @@ library AaveV4DeployOrchestration {
     OrchestrationReports.SpokeDeploymentReport memory spokeReport;
 
     spokeReport.label = label;
-    spokeReport.report = _deploySpokeInstanceBatch({
+    BatchReports.AaveOracleBatchReport memory aaveOracleReport = _deployAaveOracleBatch({
       logger: logger,
       proxyAdminOwner: proxyAdminOwner,
       authority: authority,
       spokeBytecode: spokeBytecode,
       oracleDecimals: oracleDecimals,
       maxUserReservesLimit: maxUserReservesLimit,
+      salt: salt
+    });
+    address spokeImplementation = _deploySpokeImplementation({
+      logger: logger,
+      aaveOracle: aaveOracleReport.aaveOracle,
+      spokeBytecode: spokeBytecode,
+      maxUserReservesLimit: maxUserReservesLimit,
+      salt: salt
+    });
+    spokeReport.report = _deploySpokeInstanceBatch({
+      logger: logger,
+      proxyAdminOwner: proxyAdminOwner,
+      authority: authority,
+      spokeImplementation: spokeImplementation,
       salt: salt
     });
     _logSpokeReport({logger: logger, report: spokeReport.report, label: label});
@@ -344,7 +359,7 @@ library AaveV4DeployOrchestration {
     return report;
   }
 
-  function _deploySpokeInstanceBatch(
+  function _deployAaveOracleBatch(
     Logger logger,
     address proxyAdminOwner,
     address authority,
@@ -352,14 +367,48 @@ library AaveV4DeployOrchestration {
     uint8 oracleDecimals,
     uint16 maxUserReservesLimit,
     bytes32 salt
+  ) internal returns (BatchReports.AaveOracleBatchReport memory) {
+    logger.logHeader1('deploying AaveOracleBatch');
+    return
+      AaveV4DeployBase.deployAaveOracleBatch({
+        proxyAdminOwner: proxyAdminOwner,
+        authority: authority,
+        spokeBytecode: spokeBytecode,
+        oracleDecimals: oracleDecimals,
+        maxUserReservesLimit: maxUserReservesLimit,
+        salt: salt
+      });
+  }
+
+  function _deploySpokeImplementation(
+    Logger logger,
+    address aaveOracle,
+    bytes memory spokeBytecode,
+    uint16 maxUserReservesLimit,
+    bytes32 salt
+  ) internal returns (address) {
+    logger.logHeader1('deploying Spoke implementation');
+    return
+      AaveV4SpokeImplementationDeployProcedure.deploySpokeImplementation({
+        oracle: aaveOracle,
+        spokeBytecode: spokeBytecode,
+        maxUserReservesLimit: maxUserReservesLimit,
+        salt: salt
+      });
+  }
+
+  function _deploySpokeInstanceBatch(
+    Logger logger,
+    address proxyAdminOwner,
+    address authority,
+    address spokeImplementation,
+    bytes32 salt
   ) internal returns (BatchReports.SpokeInstanceBatchReport memory report) {
     logger.logHeader1('deploying AaveV4SpokeInstanceBatch');
     report = AaveV4DeployBase.deploySpokeInstanceBatch({
       proxyAdminOwner: proxyAdminOwner,
       authority: authority,
-      spokeBytecode: spokeBytecode,
-      oracleDecimals: oracleDecimals,
-      maxUserReservesLimit: maxUserReservesLimit,
+      spokeImplementation: spokeImplementation,
       salt: salt
     });
     return report;

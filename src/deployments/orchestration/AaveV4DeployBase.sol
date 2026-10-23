@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
+import {AaveV4AaveOracleBatch} from 'src/deployments/batches/AaveV4AaveOracleBatch.sol';
 import {AaveV4AuthorityBatch} from 'src/deployments/batches/AaveV4AuthorityBatch.sol';
 import {AaveV4HubConfiguratorBatch} from 'src/deployments/batches/AaveV4HubConfiguratorBatch.sol';
 import {AaveV4SpokeConfiguratorBatch} from 'src/deployments/batches/AaveV4SpokeConfiguratorBatch.sol';
@@ -98,32 +99,33 @@ library AaveV4DeployBase {
     return hubInstanceBatch.getReport();
   }
 
-  /// @notice Deploys the Spoke instance batch containing the Spoke proxy, implementation, and AaveOracle.
-  /// @param proxyAdminOwner The owner of the proxy admin.
+  /// @notice Deploys the AaveOracle batch, which deploys a Spoke's AaveOracle and binds it to the predicted Spoke proxy.
+  /// @dev Deployed through the CREATE2 factory so that the AaveOracle, and the Spoke implementation and proxy
+  ///      built on it, do not depend on the deployer's nonce.
+  /// @param proxyAdminOwner The owner of the Spoke proxy admin.
   /// @param authority The access-control authority for the Spoke.
   /// @param spokeBytecode The creation bytecode of the SpokeInstance contract.
   /// @param oracleDecimals The decimal precision for the AaveOracle.
   /// @param maxUserReservesLimit The maximum number of reserves a user can interact with.
   /// @param salt The CREATE2 salt for deterministic deployment.
-  /// @return The Spoke instance batch report.
-  function deploySpokeInstanceBatch(
+  /// @return The AaveOracle batch report.
+  function deployAaveOracleBatch(
     address proxyAdminOwner,
     address authority,
     bytes memory spokeBytecode,
     uint8 oracleDecimals,
     uint16 maxUserReservesLimit,
     bytes32 salt
-  ) internal returns (BatchReports.SpokeInstanceBatchReport memory) {
+  ) internal returns (BatchReports.AaveOracleBatchReport memory) {
     // the CREATE2 factory drops revert reasons, so repeat the batch's input checks here
     require(oracleDecimals > 0, 'invalid oracle decimals');
     require(proxyAdminOwner != address(0), 'invalid proxy admin owner');
     require(authority != address(0), 'invalid authority');
     require(maxUserReservesLimit > 0, 'invalid max user reserves limit');
-    // the batch deploys the AaveOracle, so its address must not depend on the deployer's nonce
-    address spokeInstanceBatch = Create2Utils.create2Deploy({
+    address aaveOracleBatch = Create2Utils.create2Deploy({
       salt: salt,
       bytecode: abi.encodePacked(
-        type(AaveV4SpokeInstanceBatch).creationCode,
+        type(AaveV4AaveOracleBatch).creationCode,
         abi.encode(
           proxyAdminOwner,
           authority,
@@ -134,7 +136,28 @@ library AaveV4DeployBase {
         )
       )
     });
-    return AaveV4SpokeInstanceBatch(spokeInstanceBatch).getReport();
+    return AaveV4AaveOracleBatch(aaveOracleBatch).getReport();
+  }
+
+  /// @notice Deploys the Spoke instance batch containing the Spoke proxy.
+  /// @param proxyAdminOwner The owner of the proxy admin.
+  /// @param authority The access-control authority for the Spoke.
+  /// @param spokeImplementation The address of the deployed Spoke implementation.
+  /// @param salt The CREATE2 salt for deterministic deployment.
+  /// @return The Spoke instance batch report.
+  function deploySpokeInstanceBatch(
+    address proxyAdminOwner,
+    address authority,
+    address spokeImplementation,
+    bytes32 salt
+  ) internal returns (BatchReports.SpokeInstanceBatchReport memory) {
+    AaveV4SpokeInstanceBatch spokeInstanceBatch = new AaveV4SpokeInstanceBatch({
+      proxyAdminOwner_: proxyAdminOwner,
+      authority_: authority,
+      spokeImplementation_: spokeImplementation,
+      salt_: salt
+    });
+    return spokeInstanceBatch.getReport();
   }
 
   /// @notice Deploys the GiverPositionManager batch.
