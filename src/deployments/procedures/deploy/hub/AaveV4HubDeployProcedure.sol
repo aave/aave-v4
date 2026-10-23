@@ -6,30 +6,31 @@ import {IHubInstance} from 'src/deployments/utils/interfaces/IHubInstance.sol';
 
 /// @title AaveV4HubDeployProcedure
 /// @author Aave Labs
-/// @notice Deploys an upgradeable Hub instance behind a transparent proxy.
+/// @notice Deploys the transparent proxy of a Hub instance.
+/// @dev The implementation is deployed in its own transaction (see `AaveV4DeployBase.deployHubImplementation`)
+///      so that each step fits on chains with a per-transaction gas cap.
 contract AaveV4HubDeployProcedure {
-  /// @notice Deploys a Hub implementation via CREATE2 and sets up a transparent proxy.
+  /// @notice Deploys a transparent proxy for an already deployed Hub implementation via CREATE2.
   /// @param proxyAdminOwner The owner of the proxy admin contract.
   /// @param authority The access control authority address used to initialize the Hub.
-  /// @param hubBytecode The creation bytecode of the Hub implementation.
+  /// @param hubImplementation The address of the deployed Hub implementation.
   /// @param salt The CREATE2 salt for deterministic deployment.
-  /// @return hubProxy The address of the deployed transparent proxy.
-  /// @return hubImplementation The address of the deployed Hub implementation contract.
-  function _deployUpgradeableHubInstance(
+  /// @return The address of the deployed transparent proxy.
+  function _deployHubProxy(
     address proxyAdminOwner,
     address authority,
-    bytes memory hubBytecode,
+    address hubImplementation,
     bytes32 salt
-  ) internal returns (address hubProxy, address hubImplementation) {
+  ) internal returns (address) {
     require(proxyAdminOwner != address(0), 'invalid proxy admin owner');
     require(authority != address(0), 'invalid authority');
-    hubImplementation = Create2Utils.create2Deploy({salt: salt, bytecode: hubBytecode});
-    hubProxy = Create2Utils.proxify({
-      salt: salt,
-      logic: hubImplementation,
-      initialOwner: proxyAdminOwner,
-      data: abi.encodeCall(IHubInstance.initialize, (authority))
-    });
-    return (hubProxy, hubImplementation);
+    require(hubImplementation.code.length > 0, 'invalid hub implementation');
+    return
+      Create2Utils.proxify({
+        salt: salt,
+        logic: hubImplementation,
+        initialOwner: proxyAdminOwner,
+        data: abi.encodeCall(IHubInstance.initialize, (authority))
+      });
   }
 }
