@@ -5,6 +5,7 @@ import {Test} from 'forge-std/Test.sol';
 
 import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
+import {Initializable} from 'src/dependencies/openzeppelin-upgradeable/Initializable.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {ISpokeInstance} from 'src/deployments/utils/interfaces/ISpokeInstance.sol';
 import {IPriceOracle} from 'src/spoke/interfaces/IPriceOracle.sol';
@@ -42,6 +43,9 @@ contract AaveV4DeployPAXGCorrelatedSpokeTest is Test {
       uint256(ISpoke(report.spokeProxy).MAX_USER_RESERVES_LIMIT()),
       uint256(DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT)
     );
+    assertEq(ProxyHelper.getImplementation(report.spokeProxy), report.spokeImplementation);
+    assertEq(ProxyHelper.getProxyInitializedVersion(report.spokeProxy), 1);
+    assertEq(ISpoke(report.spokeProxy).getReserveCount(), 0);
   }
 
   function test_run_ownershipMatchesPaxgGoldSpoke() public {
@@ -60,9 +64,6 @@ contract AaveV4DeployPAXGCorrelatedSpokeTest is Test {
       IPriceOracle(report.aaveOracle).decimals(),
       IPriceOracle(ISpoke(existing).ORACLE()).decimals()
     );
-    assertEq(ProxyHelper.getImplementation(report.spokeProxy), report.spokeImplementation);
-    assertEq(ProxyHelper.getProxyInitializedVersion(report.spokeProxy), 1);
-    assertEq(ISpoke(report.spokeProxy).getReserveCount(), 0);
   }
 
   function test_run_positionManagersStartInactive() public {
@@ -80,9 +81,9 @@ contract AaveV4DeployPAXGCorrelatedSpokeTest is Test {
   function test_run_proxyAndImplementationCannotBeReinitialized() public {
     BatchReports.SpokeInstanceBatchReport memory report = _script.run();
     address authority = _script.ACCESS_MANAGER();
-    vm.expectRevert(bytes4(keccak256('InvalidInitialization()')));
+    vm.expectRevert(Initializable.InvalidInitialization.selector);
     ISpokeInstance(report.spokeProxy).initialize(authority);
-    vm.expectRevert(bytes4(keccak256('InvalidInitialization()')));
+    vm.expectRevert(Initializable.InvalidInitialization.selector);
     ISpokeInstance(report.spokeImplementation).initialize(authority);
   }
 
