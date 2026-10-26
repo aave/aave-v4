@@ -1,0 +1,107 @@
+name: Certora
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - feat/*
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  discover:
+    name: Check configs
+    runs-on: ubuntu-latest
+    outputs:
+      list: ${{ steps.find.outputs.list }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # Fork PRs get no secrets. Fail once here, before starting the matrix.
+      - name: Check CERTORAKEY
+        env:
+          CERTORAKEY: ${{ secrets.CERTORAKEY }}
+        run: |
+          if [ -z "$CERTORAKEY" ]; then
+            echo "::error::CERTORAKEY is not set. Fork PRs do not receive secrets."
+            exit 1
+          fi
+
+      - id: find
+        name: Build verification matrix
+        shell: bash
+        run: |
+          confs=(
+            certora/confs/CollateralRemovalBounds.conf
+            certora/confs/LiquidationPaymentBounds.conf
+            certora/confs/SettlementAccounting.conf
+            certora/confs/CollateralRestrictions.conf
+          )
+
+          # Keep the suite explicit and catch stale config/spec paths.
+          for conf in "${confs[@]}"; do
+            if [ ! -f "$conf" ]; then
+              echo "::error file=$conf::Config does not exist."
+              exit 1
+            fi
+
+            spec=$(sed -nE 's|^[[:space:]]*"verify"[[:space:]]*:[[:space:]]*"[^"]+:([^"]+)".*$|\1|p' "$conf")
+
+            if [ -z "$spec" ]; then
+              echo "::error file=$conf::Missing or unreadable verify target."
+              exit 1
+            fi
+
+            if [ ! -f "$spec" ]; then
+              echo "::error file=$conf::Verify target does not exist: $spec"
+              exit 1
+            fi
+          done
+
+          printf 'list=%s\n' "$(printf '%s\n' "${confs[@]}" | jq -Rnc '[inputs] | map({conf:., cli:"8.18.0"})')" >> "$GITHUB_OUTPUT"
+
+  verify:
+    name: Verify ${{ matrix.conf }} (${{ matrix.cli }})
+    needs: discover
+    runs-on: ubuntu-latest
+    # Leave room for LiquidationPaymentBounds' 7200s timeout plus setup/build.
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        include: ${{ fromJson(needs.discover.outputs.list) }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install python
+        uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+
+      # split_rules needs the local Typechecker, which requires Java >= 19.
+      - name: Install java
+        uses: actions/setup-java@v4
+        with: { java-version: "21", java-package: jre, distribution: temurin }
+
+      - name: Install certora cli ${{ matrix.cli }}
+        run: pip install certora-cli==${{ matrix.cli }}
+
+      # All four configs request the compiler by the exact name solc.
+      - name: Install solc
+        run: |
+          wget -q https://github.com/ethereum/solidity/releases/download/v0.8.28/solc-static-linux
+          chmod +x solc-static-linux
+          sudo mv solc-static-linux /usr/local/bin/solc
+
+      # Wait for verdicts so violated rules fail CI.
+      - name: Verify ${{ matrix.conf }}
+        run: certoraRun ${{ matrix.conf }} --wait_for_results all
+        env:
+          CERTORAKEY: ${{ secrets.CERTORAKEY }}
