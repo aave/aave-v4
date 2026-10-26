@@ -181,3 +181,54 @@ contract AaveV4DeployMapleCorrelatedSpoke is AaveV4DeployCorrelatedSpokeBase {
     return 'Maple Correlated Spoke';
   }
 }
+
+/// @title AaveV4DeployAvalancheEthenaEcosystemSpoke
+/// @author Aave Labs
+/// @notice Deploys the Ethena Ecosystem Spoke (USDe collateral against USDT and USDC) on the Core Hub,
+///         Avalanche. Reserve listing and configuration are performed separately by governance.
+/// @dev Usage (make sure FOUNDRY_LIBRARIES is populated in .env with the Avalanche LiquidationLogic address):
+///   forge clean && forge script \
+///     scripts/deploy/AaveV4DeployCorrelatedSpoke.s.sol:AaveV4DeployAvalancheEthenaEcosystemSpoke \
+///     --rpc-url avalanche --account <acct> --slow (--broadcast --verify)
+contract AaveV4DeployAvalancheEthenaEcosystemSpoke is AaveV4DeployCorrelatedSpokeBase {
+  uint256 internal constant _AVALANCHE_CHAIN_ID = 43114;
+
+  // AaveV4Avalanche.ACCESS_MANAGER
+  // https://github.com/aave-dao/aave-address-book/blob/6463b76862f4e2ea79764a02e0f1971c3fedb7fe/src/AaveV4Avalanche.sol#L8
+  address public constant ACCESS_MANAGER = 0xe069096bDAfF9bAD15b2f1079EaF0f1685a24522;
+  // MiscAvalanche.V4_SECURITY_COUNCIL
+  // https://github.com/aave-dao/aave-address-book/blob/6463b76862f4e2ea79764a02e0f1971c3fedb7fe/src/MiscAvalanche.sol#L61
+  address public constant PROTOCOL_SECURITY_COUNCIL = 0x187AAE17d4931310B3fc75743e7F16Bdc9eD77e9;
+
+  uint256 internal constant _VERSION = 1;
+  string internal constant _SPOKE_LABEL = 'ETHENA_ECOSYSTEM_SPOKE';
+
+  function spokeSalt(address deployer) public view returns (bytes32) {
+    bytes32 userSalt = keccak256(
+      bytes(string.concat('chain ', vm.toString(block.chainid), '_version ', vm.toString(_VERSION)))
+    );
+    bytes32 rootSalt = AaveV4DeployOrchestration._deriveSalt(deployer, userSalt);
+    return AaveV4DeployOrchestration._deriveChildSalt(rootSalt, 'spoke', _SPOKE_LABEL);
+  }
+
+  function _getDeployInputs(
+    address deployer
+  ) internal view override returns (SpokeDeployInputs memory) {
+    return
+      SpokeDeployInputs({
+        proxyAdminOwner: PROTOCOL_SECURITY_COUNCIL,
+        authority: ACCESS_MANAGER,
+        oracleDecimals: DeployConstants.ORACLE_DECIMALS,
+        maxUserReservesLimit: DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT,
+        salt: spokeSalt(deployer)
+      });
+  }
+
+  function _expectedChainId() internal pure override returns (uint256) {
+    return _AVALANCHE_CHAIN_ID;
+  }
+
+  function _deploymentName() internal pure override returns (string memory) {
+    return 'Avalanche Ethena Ecosystem Spoke';
+  }
+}
