@@ -71,10 +71,24 @@ library AaveV4BabylonConfig {
     ISpoke.DynamicReserveConfig dynamicConfig;
   }
 
+  /// @dev A spoke deployed outside this market, connected to an asset a reserve listed on `hub`.
+  /// @dev hub The Hub listing the asset.
+  /// @dev underlying The underlying asset.
+  /// @dev spoke The connected spoke.
+  /// @dev spokeConfig The spoke config on the Hub asset.
+  struct ExternalSpoke {
+    address hub;
+    address underlying;
+    address spoke;
+    IHub.SpokeConfig spokeConfig;
+  }
+
   /// @dev reserves The reserves in BabylonSpoke reserve identifier order.
+  /// @dev externalSpokes The spokes connected to listed assets besides the BabylonSpoke.
   /// @dev liquidationConfig The BabylonSpoke liquidation config.
   struct MarketConfig {
     ReserveListing[] reserves;
+    ExternalSpoke[] externalSpokes;
     ISpoke.LiquidationConfig liquidationConfig;
   }
 
@@ -205,6 +219,48 @@ library AaveV4BabylonConfig {
     return parseMarketConfig({json: vm.readFile(path()), config: config, deployment: deployment});
   }
 
+  /// @notice Reads the external spokes of the config named by the `BABYLON_CONFIG` env variable.
+  /// @param config The Babylon market config.
+  /// @param deployment The deployed Babylon market.
+  function readExternalSpokes(
+    Config memory config,
+    Deployment memory deployment
+  ) internal view returns (ExternalSpoke[] memory) {
+    return parseExternalSpokes({json: vm.readFile(path()), config: config, deployment: deployment});
+  }
+
+  /// @notice Parses the optional `externalSpokes` of a config JSON.
+  /// @param json The config JSON.
+  /// @param config The Babylon market config.
+  /// @param deployment The deployed Babylon market.
+  function parseExternalSpokes(
+    string memory json,
+    Config memory config,
+    Deployment memory deployment
+  ) internal view returns (ExternalSpoke[] memory) {
+    uint256 count;
+    while (vm.keyExistsJson(json, string.concat('.externalSpokes[', vm.toString(count), ']'))) {
+      ++count;
+    }
+    ExternalSpoke[] memory externalSpokes = new ExternalSpoke[](count);
+    for (uint256 i; i < count; ++i) {
+      string memory key = string.concat('.externalSpokes[', vm.toString(i), ']');
+      externalSpokes[i] = ExternalSpoke({
+        hub: deployment.hubs[
+          _hubIndex(config, vm.parseJsonString(json, string.concat(key, '.hub')))
+        ],
+        underlying: vm.parseJsonAddress(json, string.concat(key, '.underlying')),
+        spoke: vm.parseJsonAddress(json, string.concat(key, '.spoke')),
+        spokeConfig: _spokeConfig(json, key)
+      });
+      require(
+        externalSpokes[i].underlying != address(0) && externalSpokes[i].spoke != address(0),
+        'external spoke address unset'
+      );
+    }
+    return externalSpokes;
+  }
+
   /// @notice Parses the market config from a config JSON, resolving Hub labels against the deployment.
   /// @param json The config JSON.
   /// @param config The Babylon market config.
@@ -234,13 +290,7 @@ library AaveV4BabylonConfig {
           rateGrowthBeforeOptimal: _uint(json, key, '.irData.rateGrowthBeforeOptimal').toUint32(),
           rateGrowthAfterOptimal: _uint(json, key, '.irData.rateGrowthAfterOptimal').toUint32()
         }),
-        spokeConfig: IHub.SpokeConfig({
-          addCap: _uint(json, key, '.spokeConfig.addCap').toUint40(),
-          drawCap: _uint(json, key, '.spokeConfig.drawCap').toUint40(),
-          riskPremiumThreshold: _uint(json, key, '.spokeConfig.riskPremiumThreshold').toUint24(),
-          active: _bool(json, key, '.spokeConfig.active'),
-          halted: _bool(json, key, '.spokeConfig.halted')
-        }),
+        spokeConfig: _spokeConfig(json, key),
         reserveConfig: ISpoke.ReserveConfig({
           collateralRisk: _uint(json, key, '.reserveConfig.collateralRisk').toUint24(),
           paused: _bool(json, key, '.reserveConfig.paused'),
@@ -262,6 +312,7 @@ library AaveV4BabylonConfig {
     return
       MarketConfig({
         reserves: reserves,
+        externalSpokes: parseExternalSpokes({json: json, config: config, deployment: deployment}),
         liquidationConfig: ISpoke.LiquidationConfig({
           targetHealthFactor: _uint(json, '.liquidationConfig', '.targetHealthFactor').toUint128(),
           healthFactorForMaxBonus: _uint(json, '.liquidationConfig', '.healthFactorForMaxBonus')
@@ -269,6 +320,20 @@ library AaveV4BabylonConfig {
           liquidationBonusFactor: _uint(json, '.liquidationConfig', '.liquidationBonusFactor')
             .toUint16()
         })
+      });
+  }
+
+  function _spokeConfig(
+    string memory json,
+    string memory key
+  ) private pure returns (IHub.SpokeConfig memory) {
+    return
+      IHub.SpokeConfig({
+        addCap: _uint(json, key, '.spokeConfig.addCap').toUint40(),
+        drawCap: _uint(json, key, '.spokeConfig.drawCap').toUint40(),
+        riskPremiumThreshold: _uint(json, key, '.spokeConfig.riskPremiumThreshold').toUint24(),
+        active: _bool(json, key, '.spokeConfig.active'),
+        halted: _bool(json, key, '.spokeConfig.halted')
       });
   }
 

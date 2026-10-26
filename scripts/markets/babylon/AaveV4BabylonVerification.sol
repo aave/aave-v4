@@ -133,9 +133,11 @@ library AaveV4BabylonVerification {
   /// @dev Walks every spoke registered on each Hub asset too, so a spoke connected later is covered.
   /// @param deployment The deployed Babylon market.
   /// @param owner The expected owner of every ProxyAdmin.
+  /// @param externalSpokes The configured external spokes, which this market does not own.
   function verifyProxyAdmins(
     AaveV4BabylonConfig.Deployment memory deployment,
-    address owner
+    address owner,
+    AaveV4BabylonConfig.ExternalSpoke[] memory externalSpokes
   ) internal view {
     _requireProxyAdminOwner(deployment.babylonSpoke, owner);
     _requireProxyAdminOwner(deployment.treasurySpoke, owner);
@@ -146,7 +148,10 @@ library AaveV4BabylonVerification {
       for (uint256 assetId; assetId < assetCount; ++assetId) {
         uint256 spokeCount = hub.getSpokeCount(assetId);
         for (uint256 j; j < spokeCount; ++j) {
-          _requireProxyAdminOwner(hub.getSpokeAddress(assetId, j), owner);
+          address spoke = hub.getSpokeAddress(assetId, j);
+          if (!_isExternalSpoke(externalSpokes, address(hub), spoke)) {
+            _requireProxyAdminOwner(spoke, owner);
+          }
         }
       }
     }
@@ -187,7 +192,24 @@ library AaveV4BabylonVerification {
     }
 
     for (uint256 i; i < marketConfig.reserves.length; ++i) {
-      _verifyReserve({deployment: deployment, listing: marketConfig.reserves[i], reserveId: i});
+      _verifyReserve({
+        deployment: deployment,
+        listing: marketConfig.reserves[i],
+        reserveId: i,
+        externalSpokes: marketConfig.externalSpokes
+      });
+    }
+
+    for (uint256 i; i < marketConfig.externalSpokes.length; ++i) {
+      AaveV4BabylonConfig.ExternalSpoke memory externalSpoke = marketConfig.externalSpokes[i];
+      IHub hub = IHub(externalSpoke.hub);
+      uint256 assetId = hub.getAssetId(externalSpoke.underlying);
+      require(hub.isSpokeListed(assetId, externalSpoke.spoke), 'external spoke not listed');
+      require(
+        keccak256(abi.encode(hub.getSpokeConfig(assetId, externalSpoke.spoke))) ==
+          keccak256(abi.encode(externalSpoke.spokeConfig)),
+        'external spoke config'
+      );
     }
 
     require(
@@ -200,7 +222,8 @@ library AaveV4BabylonVerification {
   function _verifyReserve(
     AaveV4BabylonConfig.Deployment memory deployment,
     AaveV4BabylonConfig.ReserveListing memory listing,
-    uint256 reserveId
+    uint256 reserveId,
+    AaveV4BabylonConfig.ExternalSpoke[] memory externalSpokes
   ) private view {
     ISpoke spoke = ISpoke(deployment.babylonSpoke);
     ISpoke.Reserve memory reserve = spoke.getReserve(reserveId);
@@ -238,8 +261,12 @@ library AaveV4BabylonVerification {
       'asset ir data'
     );
 
-    // the BabylonSpoke and the TreasurySpoke, added by `addAsset` as fee receiver
-    require(hub.getSpokeCount(reserve.assetId) == 2, 'asset spoke count');
+    // the BabylonSpoke, the TreasurySpoke added by `addAsset` as fee receiver and the external spokes
+    require(
+      hub.getSpokeCount(reserve.assetId) ==
+        2 + _externalSpokeCount(externalSpokes, listing.hub, listing.underlying),
+      'asset spoke count'
+    );
     require(
       keccak256(abi.encode(hub.getSpokeConfig(reserve.assetId, deployment.babylonSpoke))) ==
         keccak256(abi.encode(listing.spokeConfig)),
@@ -260,6 +287,31 @@ library AaveV4BabylonVerification {
         ),
       'treasury spoke config'
     );
+  }
+
+  function _externalSpokeCount(
+    AaveV4BabylonConfig.ExternalSpoke[] memory externalSpokes,
+    address hub,
+    address underlying
+  ) private pure returns (uint256 count) {
+    for (uint256 i; i < externalSpokes.length; ++i) {
+      if (externalSpokes[i].hub == hub && externalSpokes[i].underlying == underlying) {
+        ++count;
+      }
+    }
+  }
+
+  function _isExternalSpoke(
+    AaveV4BabylonConfig.ExternalSpoke[] memory externalSpokes,
+    address hub,
+    address spoke
+  ) private pure returns (bool) {
+    for (uint256 i; i < externalSpokes.length; ++i) {
+      if (externalSpokes[i].hub == hub && externalSpokes[i].spoke == spoke) {
+        return true;
+      }
+    }
+    return false;
   }
 
   function _listingCount(

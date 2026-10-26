@@ -40,7 +40,11 @@ contract AaveV4BabylonHandover is Script {
     vm.stopBroadcast();
 
     AaveV4BabylonVerification.verifyRoles(deployment, config.admin);
-    AaveV4BabylonVerification.verifyProxyAdmins(deployment, config.admin);
+    AaveV4BabylonVerification.verifyProxyAdmins({
+      deployment: deployment,
+      owner: config.admin,
+      externalSpokes: _externalSpokes(config, deployment)
+    });
     AaveV4BabylonVerification.verifyTreasurySpokeOwner({
       deployment: deployment,
       owner: config.admin,
@@ -51,6 +55,13 @@ contract AaveV4BabylonHandover is Script {
 
   function _config() internal view virtual returns (AaveV4BabylonConfig.Config memory) {
     return AaveV4BabylonConfig.read();
+  }
+
+  function _externalSpokes(
+    AaveV4BabylonConfig.Config memory config,
+    AaveV4BabylonConfig.Deployment memory deployment
+  ) internal view virtual returns (AaveV4BabylonConfig.ExternalSpoke[] memory) {
+    return AaveV4BabylonConfig.readExternalSpokes(config, deployment);
   }
 
   function _handover(

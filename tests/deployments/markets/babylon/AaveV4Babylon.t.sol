@@ -59,13 +59,30 @@ contract AaveV4DeployBabylonHarness is AaveV4DeployBabylon {
 
 contract AaveV4BabylonHandoverHarness is AaveV4BabylonHandover {
   AaveV4BabylonConfig.Config internal _harnessConfig;
+  string internal _marketJson = '{}';
 
   constructor(AaveV4BabylonConfig.Config memory config) {
     _harnessConfig = config;
   }
 
+  function setMarketJson(string memory marketJson) external {
+    _marketJson = marketJson;
+  }
+
   function _config() internal view override returns (AaveV4BabylonConfig.Config memory) {
     return _harnessConfig;
+  }
+
+  function _externalSpokes(
+    AaveV4BabylonConfig.Config memory config,
+    AaveV4BabylonConfig.Deployment memory deployment
+  ) internal view override returns (AaveV4BabylonConfig.ExternalSpoke[] memory) {
+    return
+      AaveV4BabylonConfig.parseExternalSpokes({
+        json: _marketJson,
+        config: config,
+        deployment: deployment
+      });
   }
 }
 
@@ -531,6 +548,58 @@ contract AaveV4BabylonTest is Create2TestHelper {
     this.verifyMarketConfig(deployment);
   }
 
+  function test_externalSpoke_configureHandoverVerify() public {
+    string memory json = _sepoliaJsonWithExternalSpoke();
+    _deployAndWriteReport();
+    _deploySepoliaTokensAndFeeds();
+    new AaveV4BabylonConfigureHarness(_config, json).run();
+    AaveV4BabylonConfig.Deployment memory deployment = AaveV4BabylonConfig.readDeployment(_config);
+
+    IHub hub = IHub(deployment.hubs[1]);
+    uint256 assetId = hub.getAssetId(SEPOLIA_WBTC);
+    assertTrue(hub.isSpokeListed(assetId, _externalSpoke));
+    assertEq(
+      abi.encode(hub.getSpokeConfig(assetId, _externalSpoke)),
+      abi.encode(_externalSpokeConfig())
+    );
+
+    AaveV4BabylonHandoverHarness handover = new AaveV4BabylonHandoverHarness(_config);
+    handover.setMarketJson(json);
+    handover.run();
+    vm.prank(_admin);
+    Ownable2StepUpgradeable(deployment.treasurySpoke).acceptOwnership();
+    new AaveV4BabylonVerifyHarness(_config, json).run();
+  }
+
+  function test_verifyMarketConfig_revertsWith_externalSpokeConfig() public {
+    string memory json = _sepoliaJsonWithExternalSpoke();
+    _deployAndWriteReport();
+    _deploySepoliaTokensAndFeeds();
+    new AaveV4BabylonConfigureHarness(_config, json).run();
+    AaveV4BabylonConfig.Deployment memory deployment = AaveV4BabylonConfig.readDeployment(_config);
+
+    IHub hub = IHub(deployment.hubs[1]);
+    uint256 assetId = hub.getAssetId(SEPOLIA_WBTC);
+    vm.prank(_deployer);
+    IHubConfigurator(deployment.hubConfigurator).updateSpokeDrawCap({
+      hub: address(hub),
+      assetId: assetId,
+      spoke: _externalSpoke,
+      drawCap: 101
+    });
+    vm.expectRevert('external spoke config');
+    this.verifyMarketConfigJson(deployment, json);
+  }
+
+  function test_handover_revertsWith_unconfiguredExternalSpoke() public {
+    _deployAndWriteReport();
+    _deploySepoliaTokensAndFeeds();
+    new AaveV4BabylonConfigureHarness(_config, _sepoliaJsonWithExternalSpoke()).run();
+    AaveV4BabylonHandoverHarness handover = new AaveV4BabylonHandoverHarness(_config);
+    vm.expectRevert('not a transparent proxy');
+    handover.run();
+  }
+
   function test_verifyMarketConfig_revertsWith_extraAsset() public {
     AaveV4BabylonConfig.Deployment memory deployment = _configureHandoverAndAccept();
     address token = makeAddr('extra token');
@@ -591,17 +660,133 @@ contract AaveV4BabylonTest is Create2TestHelper {
     assertEq(marketConfig.liquidationConfig.liquidationBonusFactor, 90_00);
   }
 
-  /// @dev The mainnet test config keeps a zero vaultBTC address until Babylon deploys it, so the
-  /// configure step cannot run on it before then.
-  function test_mainnetTestMarketConfig_revertsWhileVaultBtcUnset() public {
+  /// @dev Babylon's mocks and price feeds on the ARFC layout and risk parameters.
+  function test_mainnetTestMarketConfig() public {
     AaveV4BabylonConfig.Deployment memory deployment;
     deployment.hubs = new address[](2);
+    deployment.hubs[0] = makeAddr('babylon-btc');
+    deployment.hubs[1] = makeAddr('babylon-stables');
     deployment.irStrategies = new address[](2);
-    vm.expectRevert('reserve address unset');
-    this.parseMarketConfig(
+    AaveV4BabylonConfig.MarketConfig memory marketConfig = this.parseMarketConfig(
       vm.readFile('scripts/markets/babylon/config/mainnet-test.json'),
       deployment
     );
+
+    address vaultBtc = 0xb754C46a7975f3B5b834ac7e6eD6aBE87042462B;
+    address usdt = 0x9585a58004b1ef6b994940AeF65b48e10EAF0f2e;
+    address usdc = 0x80E8127F482eC1d75408aD7BD83f7fD3Ecb043AA;
+    address wbtc = 0x549A9C66B3d310A0cb706B8Efacf46bb13Abf210;
+    address usdFeed = 0xE12149A586c4548328b82F838E1e459F2a02d6E8;
+    address btcFeed = 0xbd8c6A609e0D239C0a04cA4D4D526A61fE661bDC;
+
+    AaveV4BabylonConfig.ReserveListing[] memory reserves = marketConfig.reserves;
+    assertEq(reserves.length, 7);
+    _assertMainnetTestReserve(reserves[0], deployment.hubs[0], vaultBtc, btcFeed, 300, 0, false);
+    _assertMainnetTestReserve(
+      reserves[1],
+      deployment.hubs[0],
+      usdt,
+      usdFeed,
+      5_000_000,
+      5_000_000,
+      true
+    );
+    _assertMainnetTestReserve(
+      reserves[2],
+      deployment.hubs[0],
+      usdc,
+      usdFeed,
+      5_000_000,
+      5_000_000,
+      true
+    );
+    _assertMainnetTestReserve(reserves[3], deployment.hubs[0], wbtc, btcFeed, 100, 100, true);
+    _assertMainnetTestReserve(
+      reserves[4],
+      deployment.hubs[1],
+      usdt,
+      usdFeed,
+      8_000_000,
+      8_000_000,
+      true
+    );
+    _assertMainnetTestReserve(
+      reserves[5],
+      deployment.hubs[1],
+      usdc,
+      usdFeed,
+      8_000_000,
+      8_000_000,
+      true
+    );
+    _assertMainnetTestReserve(reserves[6], deployment.hubs[1], wbtc, btcFeed, 100, 0, false);
+
+    assertEq(reserves[0].dynamicConfig.collateralFactor, 78_00);
+    assertEq(reserves[0].dynamicConfig.maxLiquidationBonus, 105_55);
+    for (uint256 i = 1; i < reserves.length; ++i) {
+      assertEq(reserves[i].dynamicConfig.collateralFactor, 0);
+    }
+
+    uint16[7] memory liquidityFees = [0, 10_00, 10_00, 20_00, 10_00, 10_00, 20_00];
+    // optimal usage ratio, base drawn rate, growth before and after optimal, in BPS
+    uint32[4][7] memory irData = [
+      [uint32(99_00), 0, 0, 0],
+      [uint32(92_00), 0, 4_50, 20_00],
+      [uint32(92_00), 0, 4_50, 20_00],
+      [uint32(80_00), 25, 4_00, 60_00],
+      [uint32(92_00), 0, 4_50, 20_00],
+      [uint32(92_00), 0, 5_00, 20_00],
+      [uint32(80_00), 25, 4_00, 60_00]
+    ];
+    for (uint256 i; i < reserves.length; ++i) {
+      assertEq(reserves[i].liquidityFee, liquidityFees[i]);
+      assertEq(reserves[i].irData.optimalUsageRatio, irData[i][0]);
+      assertEq(reserves[i].irData.baseDrawnRate, irData[i][1]);
+      assertEq(reserves[i].irData.rateGrowthBeforeOptimal, irData[i][2]);
+      assertEq(reserves[i].irData.rateGrowthAfterOptimal, irData[i][3]);
+    }
+
+    assertEq(marketConfig.externalSpokes.length, 1);
+    assertEq(marketConfig.externalSpokes[0].hub, deployment.hubs[1]);
+    assertEq(marketConfig.externalSpokes[0].underlying, wbtc);
+    assertEq(marketConfig.externalSpokes[0].spoke, 0xA5f877cEfEAA7534460f19d7fc8b76CdE820a92A);
+    assertEq(
+      abi.encode(marketConfig.externalSpokes[0].spokeConfig),
+      abi.encode(
+        IHub.SpokeConfig({
+          addCap: 0,
+          drawCap: 100,
+          riskPremiumThreshold: 0,
+          active: true,
+          halted: false
+        })
+      )
+    );
+
+    assertEq(marketConfig.liquidationConfig.targetHealthFactor, 1e18);
+    assertEq(marketConfig.liquidationConfig.healthFactorForMaxBonus, 0.9e18);
+    assertEq(marketConfig.liquidationConfig.liquidationBonusFactor, 90_00);
+  }
+
+  function _assertMainnetTestReserve(
+    AaveV4BabylonConfig.ReserveListing memory listing,
+    address hub,
+    address underlying,
+    address priceSource,
+    uint256 addCap,
+    uint256 drawCap,
+    bool borrowable
+  ) internal pure {
+    assertEq(listing.hub, hub);
+    assertEq(listing.underlying, underlying);
+    assertEq(listing.priceSource, priceSource);
+    assertEq(listing.spokeConfig.addCap, addCap);
+    assertEq(listing.spokeConfig.drawCap, drawCap);
+    assertEq(listing.spokeConfig.riskPremiumThreshold, 0);
+    assertTrue(listing.spokeConfig.active);
+    assertFalse(listing.spokeConfig.halted);
+    assertEq(listing.reserveConfig.borrowable, borrowable);
+    assertEq(listing.dynamicConfig.liquidationFee, 0);
   }
 
   function parseMarketConfig(
@@ -730,6 +915,16 @@ contract AaveV4BabylonTest is Create2TestHelper {
     }
     (bool deployerIsAdmin, ) = accessManager.hasRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, _deployer);
     assertFalse(deployerIsAdmin);
+  }
+
+  function verifyMarketConfigJson(
+    AaveV4BabylonConfig.Deployment memory deployment,
+    string memory json
+  ) external view {
+    AaveV4BabylonVerification.verifyMarketConfig(
+      deployment,
+      AaveV4BabylonConfig.parseMarketConfig({json: json, config: _config, deployment: deployment})
+    );
   }
 
   function verifyMarketConfig(AaveV4BabylonConfig.Deployment memory deployment) external view {
@@ -981,6 +1176,35 @@ contract AaveV4BabylonTest is Create2TestHelper {
     deployment = AaveV4BabylonConfig.readDeployment(_config);
     vm.prank(_admin);
     Ownable2StepUpgradeable(deployment.treasurySpoke).acceptOwnership();
+  }
+
+  address internal _externalSpoke = makeAddr('btcVaultSwap');
+
+  function _externalSpokeConfig() internal pure returns (IHub.SpokeConfig memory) {
+    return
+      IHub.SpokeConfig({
+        addCap: 0,
+        drawCap: 100,
+        riskPremiumThreshold: 0,
+        active: true,
+        halted: false
+      });
+  }
+
+  /// @dev The Sepolia config with a spoke connected to WBTC on `babylon-stables`.
+  function _sepoliaJsonWithExternalSpoke() internal view returns (string memory) {
+    return
+      vm.replace(
+        vm.readFile(SEPOLIA_CONFIG),
+        '"liquidationConfig"',
+        string.concat(
+          '"externalSpokes": [{"hub": "babylon-stables", "underlying": "',
+          vm.toString(SEPOLIA_WBTC),
+          '", "spoke": "',
+          vm.toString(_externalSpoke),
+          '", "spokeConfig": {"addCap": 0, "drawCap": 100, "riskPremiumThreshold": 0, "active": true, "halted": false}}],\n  "liquidationConfig"'
+        )
+      );
   }
 
   function _verifier() internal returns (AaveV4BabylonVerifyHarness) {

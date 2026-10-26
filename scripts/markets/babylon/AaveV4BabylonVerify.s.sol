@@ -15,16 +15,21 @@ contract AaveV4BabylonVerify is Script {
     AaveV4BabylonConfig.Config memory config = _config();
     require(config.admin != address(0), 'admin unset');
     AaveV4BabylonConfig.Deployment memory deployment = AaveV4BabylonConfig.readDeployment(config);
+    AaveV4BabylonConfig.MarketConfig memory marketConfig = _marketConfig(config, deployment);
 
     AaveV4BabylonVerification.verifyDeployment(config, deployment);
     AaveV4BabylonVerification.verifyRoles(deployment, config.admin);
-    AaveV4BabylonVerification.verifyProxyAdmins(deployment, config.admin);
+    AaveV4BabylonVerification.verifyProxyAdmins({
+      deployment: deployment,
+      owner: config.admin,
+      externalSpokes: marketConfig.externalSpokes
+    });
     AaveV4BabylonVerification.verifyTreasurySpokeOwner({
       deployment: deployment,
       owner: config.admin,
       allowPending: false
     });
-    AaveV4BabylonVerification.verifyMarketConfig(deployment, _marketConfig(config, deployment));
+    AaveV4BabylonVerification.verifyMarketConfig(deployment, marketConfig);
   }
 
   function _config() internal view virtual returns (AaveV4BabylonConfig.Config memory) {

@@ -11,6 +11,7 @@ import {AaveV4HubRolesProcedure} from 'src/deployments/procedures/roles/AaveV4Hu
 import {AaveV4HubConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubConfiguratorRolesProcedure.sol';
 import {AaveV4SpokeRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol';
 import {AaveV4SpokeConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeConfiguratorRolesProcedure.sol';
+import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
@@ -20,7 +21,8 @@ import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 /// @notice Lists the configured assets on the Babylon Hubs and adds them as BabylonSpoke reserves.
 /// @dev Run by the deployer before `AaveV4BabylonHandover`. Grants the deployer the configurator
 /// domain admin roles and the configurators their Hub and Spoke roles. The handover revokes the
-/// deployer roles. Every asset's fee receiver is the TreasurySpoke.
+/// deployer roles. Every asset's fee receiver is the TreasurySpoke. External spokes are connected
+/// after the reserves.
 contract AaveV4BabylonConfigure is Script {
   function run() external {
     AaveV4BabylonConfig.Config memory config = _config();
@@ -121,6 +123,16 @@ contract AaveV4BabylonConfigure is Script {
         dynamicConfig: listing.dynamicConfig
       });
       require(reserveId == i, 'unexpected reserve id');
+    }
+
+    for (uint256 i; i < marketConfig.externalSpokes.length; ++i) {
+      AaveV4BabylonConfig.ExternalSpoke memory externalSpoke = marketConfig.externalSpokes[i];
+      hubConfigurator.addSpoke({
+        hub: externalSpoke.hub,
+        spoke: externalSpoke.spoke,
+        assetId: IHub(externalSpoke.hub).getAssetId(externalSpoke.underlying),
+        config: externalSpoke.spokeConfig
+      });
     }
 
     spokeConfigurator.updateLiquidationConfig(

@@ -9,23 +9,24 @@ Two Hubs, `babylon-btc` for vaultBTC and `babylon-stables` for the borrowed stab
 
 A production mainnet market gets its own config, so it never shares an address with `mainnet-test`.
 
-| Field                        | Meaning                                                                                               |
-| ---------------------------- | ----------------------------------------------------------------------------------------------------- |
-| `chainId`                    | Chain the config is for                                                                               |
-| `salt`                       | Deploy salt                                                                                           |
-| `librarySalt`                | CREATE2 salt of LiquidationLogic and BabylonLiquidationLogic                                          |
-| `hubLabels`                  | Hub labels, `babylon-btc` and `babylon-stables`                                                       |
-| `babylonSpokeLabel`          | BabylonSpoke label, `babylon`                                                                         |
-| `liquidationManager`         | The only address allowed to liquidate on the BabylonSpoke. Immutable.                                 |
-| `managedCollateralReserveId` | The only reserve usable as collateral. Immutable, so the collateral must be the first reserve added.  |
-| `admin`                      | Receives every role and ownership at handover                                                         |
-| `report`                     | Deployment report written by step 2, read by steps 3 and 4                                            |
-| `reserves`                   | BabylonSpoke reserves in reserve id order, each listed on its `hub` and connected to the BabylonSpoke |
-| `liquidationConfig`          | BabylonSpoke liquidation config                                                                       |
+| Field                        | Meaning                                                                                                                                                                          |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `chainId`                    | Chain the config is for                                                                                                                                                          |
+| `salt`                       | Deploy salt                                                                                                                                                                      |
+| `librarySalt`                | CREATE2 salt of LiquidationLogic and BabylonLiquidationLogic                                                                                                                     |
+| `hubLabels`                  | Hub labels, `babylon-btc` and `babylon-stables`                                                                                                                                  |
+| `babylonSpokeLabel`          | BabylonSpoke label, `babylon`                                                                                                                                                    |
+| `liquidationManager`         | The only address allowed to liquidate on the BabylonSpoke. Immutable.                                                                                                            |
+| `managedCollateralReserveId` | The only reserve usable as collateral. Immutable, so the collateral must be the first reserve added.                                                                             |
+| `admin`                      | Receives every role and ownership at handover                                                                                                                                    |
+| `report`                     | Deployment report written by step 2, read by steps 3 and 4                                                                                                                       |
+| `reserves`                   | BabylonSpoke reserves in reserve id order, each listed on its `hub` and connected to the BabylonSpoke                                                                            |
+| `externalSpokes`             | Optional. Spokes deployed outside the market, connected to a listed asset on its `hub`. Configure connects them, verify checks their config, and the ProxyAdmin checks skip them |
+| `liquidationConfig`          | BabylonSpoke liquidation config                                                                                                                                                  |
 
 On Sepolia, `salt` is `keccak256("aave-v4-babylon-v2")`, `librarySalt` is the canonical `0x2bdf` and `liquidationManager` is the AaveAdapter at its precomputed address `0x6A785E8fdF251E2aA758a6E1841e1470074f46BF`.
 
-On `mainnet-test`, `salt` is `keccak256("aave-v4-babylon-mainnet-test-v1")` and `librarySalt` is `keccak256("aave-v4-babylon-mainnet-test-libraries-v1")`, so its libraries are separate from the canonical LiquidationLogic. `liquidationManager` is the AaveAdapter Babylon precomputed at `0xF93892D520630d3eB0ed9A2157746E0a63a9E6f2`. The parameters follow the [ARFC](https://governance.aave.com/t/arfc-onboard-native-btc-as-collateral-to-aave-v4-via-babylon-trustless-bitcoin-vaults/25845/10): `babylon-btc` stands in for the Babylon Hub and `babylon-stables` for the Core Hub. vaultBTC's address comes from Babylon after step 2, so step 3 reverts until it is filled in. Values the ARFC leaves open are set for the test: vaultBTC has a zero rate and no liquidity fee, `babylon-stables` copies the live Core Hub curves and fees, and its add caps equal its draw caps so liquidity can be supplied through the BabylonSpoke.
+On `mainnet-test`, `salt` is `keccak256("aave-v4-babylon-mainnet-test-v1")` and `librarySalt` is `keccak256("aave-v4-babylon-mainnet-test-libraries-v1")`, so its libraries are separate from the canonical LiquidationLogic. `liquidationManager` is the AaveAdapter Babylon precomputed at `0xF93892D520630d3eB0ed9A2157746E0a63a9E6f2`. The parameters follow the [ARFC](https://governance.aave.com/t/arfc-onboard-native-btc-as-collateral-to-aave-v4-via-babylon-trustless-bitcoin-vaults/25845/10): `babylon-btc` stands in for the Babylon Hub and `babylon-stables` for the Core Hub. Every token and price feed is a Babylon mock, so only the Hub and Spoke layout and the risk parameters follow the ARFC. `babylon-stables` also lists WBTC supply-only on the BabylonSpoke, so it can be funded for BTCVaultSwap, which is the external spoke drawing it. Values the ARFC leaves open are set for the test: vaultBTC has a zero rate and no liquidity fee, `babylon-stables` copies the live Core Hub curves and fees, and its add caps equal its draw caps so liquidity can be supplied through the BabylonSpoke.
 
 ## Steps
 
