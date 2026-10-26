@@ -46,9 +46,9 @@ deploy-contracts :;
 	$(if ${dry},, --broadcast --verify) \
 
 # Initial markets (see scripts/markets/README.md)
-# `make <target> market=ethereum|avalanche|arc chain=<rpc alias> account=<keystore>`
+# `make <target> market=ethereum|avalanche|arc|base chain=<rpc alias> account=<keystore>`
 MARKET_DIR = scripts/markets/${market}
-MARKET_NAME = $(if $(filter ethereum,${market}),Ethereum,$(if $(filter arc,${market}),Arc,Avalanche))
+MARKET_NAME = $(if $(filter ethereum,${market}),Ethereum,$(if $(filter arc,${market}),Arc,$(if $(filter base,${market}),Base,Avalanche)))
 # Arc's explorer cannot be reached by `forge --verify`, and its LiquidationLogic is at salt 0
 MARKET_VERIFY = $(if $(filter arc,${market}),,--verify)
 MARKET_LIBRARY_SALT = $(if $(filter arc,${market}),0,11231)
@@ -87,5 +87,14 @@ arc-deploy-config-engine :; $(call ARC_SCRIPT,AaveV4DeployArcConfigEngine)
 arc-configure :; $(call ARC_SCRIPT,AaveV4ConfigureArc)
 arc-relinquish :; $(call ARC_SCRIPT,AaveV4RelinquishArc)
 arc-verify :; forge script scripts/markets/arc/AaveV4VerifyArc.s.sol --rpc-url ${chain}
+
+# Base, run after market-deploy-precompile and market-deploy-contracts with market=base.
+# Configuring verifies too, since listing USDC deploys its TokenizationSpoke.
+BASE_SCRIPT = forge script scripts/markets/base/$(1).s.sol \
+	--rpc-url ${chain} --account ${account} --slow $(if ${dry},, --broadcast $(2))
+
+base-deploy-config-engine :; $(call BASE_SCRIPT,AaveV4DeployBaseConfigEngine,--verify)
+base-configure :; $(call BASE_SCRIPT,AaveV4ConfigureBase,--verify)
+base-relinquish :; $(call BASE_SCRIPT,AaveV4RelinquishBase)
 
 market-test :; FOUNDRY_PROFILE=markets forge test

@@ -1,6 +1,6 @@
 # Aave V4 initial markets
 
-Scripts, configs, payloads and generators used for the initial Aave V4 deployments on Ethereum (2026-03-23/24) and Avalanche (2026-07-07), both deployed by `0xB00A89E5C8756bA8629846eEF8a4a9C71Ad1930A`, and Arc (2026-09-02), deployed by `0x623f1C807fE1088439e129ebF3B9c92a63a0F5cD`. They were recovered from the private `feat/deploy` (Ethereum) and `feat/deploy-avax-devnet` (Avalanche) branches, plus the Etherscan/Snowscan verified sources for the files that were never committed, and adapted to compile against the current `src/`.
+Scripts, configs, payloads and generators used for the initial Aave V4 deployments on Ethereum (2026-03-23/24) and Avalanche (2026-07-07), both deployed by `0xB00A89E5C8756bA8629846eEF8a4a9C71Ad1930A`, Arc (2026-09-02), deployed by `0x623f1C807fE1088439e129ebF3B9c92a63a0F5cD`, and Base (2026-09-18), deployed by `0x4C11ed256D43762811B093145e6F6b58F2be4782`. They were recovered from the private `feat/deploy` (Ethereum) and `feat/deploy-avax-devnet` (Avalanche) branches, plus the Etherscan/Snowscan verified sources for the files that were never committed, and adapted to compile against the current `src/`.
 
 ```
 scripts/markets/
@@ -14,11 +14,13 @@ scripts/markets/
 │   ├── AaveV4EthereumMarketPayloads.s.sol
 │   └── payloads/
 ├── avalanche/                          same layout, LlamaRisk markdown instead of the xlsx
-└── arc/                                configured by the deployer directly, no payloads (see below)
-    ├── config/                         deploy.json (deploy inputs and handover targets), config.json (assets), deployment.json
-    ├── libraries/                      ARFC parameters, configuration, handover and verification logic
-    ├── tests/                          `make market-test`
-    └── docs/                           go-live notes and the Security Council Safe batches
+├── arc/                                configured by the deployer directly, no payloads (see below)
+│   ├── config/                         deploy.json (deploy inputs and handover targets), config.json (assets), deployment.json
+│   ├── libraries/                      ARFC parameters, configuration, handover and verification logic
+│   ├── tests/                          `make market-test`
+│   └── docs/                           go-live notes and the Security Council Safe batches
+└── base/                               same approach as Arc, risk parameters per asset in config.json
+    └── docs/                           deploy runbook
 ```
 
 ## Run order
@@ -70,3 +72,19 @@ All targets take `chain=<rpc alias> account=<keystore>`, add `dry=1` to simulate
 The two Safe batches that followed (accept ownership, then un-halt) are in `arc/docs/`. `arc-verify` asserts the market is halted, so it fails against the live market since the un-halt.
 
 Replaying steps 2 to 5 on a fork taken right before nonce 22 reproduces every address in `arc/config/deployment.json`, the ConfigEngine and the TokenizationSpokes, with the same calldata and events for every transaction except the `since` timestamp of `RoleGranted`. Nonces 0-21 and 117+ are outside of this repository (the Council Executor deployment, an earlier deployment attempt with other inputs, and later unrelated transactions).
+
+## Base
+
+Base follows the Arc approach: the deployer configured the market with direct calls, halted every asset and handed it over to the Security Council Safe `0x187AAE17d4931310B3fc75743e7F16Bdc9eD77e9`, with the Council Executor `0xA9D9923A1ADC1200771aaaA38CFeD6A5b8483d70` as configurator domain admin and the Governance Executor `0x9390B1735def18560c509E2d0bc090E9d6BA257a` added on roles `0` and `200`. Imported from aave/aave-v4#1356, see `base/docs/deploy.md`.
+
+All targets take `chain=<rpc alias> account=<keystore>`, add `dry=1` to simulate.
+
+| Step | Target                                 | Deployer nonces                     |
+| ---- | -------------------------------------- | ----------------------------------- |
+| 1    | `market-deploy-precompile market=base` | 3, LiquidationLogic at salt `11231` |
+| 2    | `market-deploy-contracts market=base`  | 4-26                                |
+| 3    | `base-configure`                       | 27-75                               |
+| 4    | `base-relinquish`                      | 76-88                               |
+| 5    | `base-deploy-config-engine`            | 89-94                               |
+
+Replaying all steps on a fork taken right before nonce 3 reproduces every address in `base/config/deployment.json` and the ConfigEngine, with the same calldata and events for every transaction except the `since` timestamp of `RoleGranted`. Nonces 0-2 (a transfer to the Safe, the Council Executor deployment and its ownership transfer) and 95+ are outside of this repository.
