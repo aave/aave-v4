@@ -36,13 +36,18 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
 
   /// @dev Same inputs and salt must produce the same AaveOracle, Spoke implementation and Spoke
   ///      proxy addresses regardless of the deployer's nonce.
-  function testAaveV4BatchDeployment_spokeAddressesIndependentOfDeployerNonce() public {
+  function testAaveV4BatchDeployment_spokeAddressesIndependentOfDeployerNonce_fuzz(
+    uint64 deployerNonceBump,
+    uint64 callerNonceBump
+  ) public {
+    deployerNonceBump = uint64(bound(deployerNonceBump, 1, type(uint32).max));
+    callerNonceBump = uint64(bound(callerNonceBump, 1, type(uint32).max));
     uint256 snapshotId = vm.snapshotState();
     OrchestrationReports.FullDeploymentReport memory first = _deployV4();
 
     vm.revertToState(snapshotId);
-    vm.setNonce(_deployer, vm.getNonce(_deployer) + 7);
-    vm.setNonce(address(this), vm.getNonce(address(this)) + 7);
+    vm.setNonce(_deployer, vm.getNonce(_deployer) + deployerNonceBump);
+    vm.setNonce(address(this), vm.getNonce(address(this)) + callerNonceBump);
     OrchestrationReports.FullDeploymentReport memory second = _deployV4();
 
     assertGt(first.spokeInstanceBatchReports.length, 0);
