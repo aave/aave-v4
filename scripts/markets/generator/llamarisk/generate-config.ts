@@ -75,7 +75,7 @@ function isDash(s: unknown): boolean {
 
 /** "73.00%" → 7300 BPS, "144.28%" → 14428 BPS. Bare numbers are treated as %. */
 function pctToBps(s: string, ctx: string): number {
-  const n = parseFloat(String(s).replace('%', '').replace(/,/g, '').trim());
+  const n = parseFloat(String(s).replace(/%/g, '').replace(/,/g, '').trim());
   if (!Number.isFinite(n)) throw new Error(`${ctx}: "${s}" is not a valid percentage`);
   const exact = n * 100;
   const rounded = Math.round(exact);
