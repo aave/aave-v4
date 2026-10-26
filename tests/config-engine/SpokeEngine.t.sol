@@ -644,7 +644,7 @@ contract SpokeEngineTest is BaseConfigEngineTest {
     assertTrue(config.borrowable);
   }
 
-  function test_executeSpokeReserveListings_revertsWith_KeepCurrentInListing() public {
+  function test_executeSpokeReserveListings_revertsWith_KeepCurrentNotAllowed() public {
     uint256 newAssetId = _seedAsset(hub1(), irStrategy1(), address(newToken), 18);
     _seedSpokeOnAsset(hub1(), newAssetId, spoke1());
 
@@ -658,8 +658,32 @@ contract SpokeEngineTest is BaseConfigEngineTest {
         listing.dynamicConfig.maxLiquidationBonus = EngineFlags.KEEP_CURRENT_UINT32;
       } else listing.dynamicConfig.liquidationFee = EngineFlags.KEEP_CURRENT_UINT16;
 
-      vm.expectRevert(SpokeEngine.KeepCurrentInListing.selector);
+      vm.expectRevert(SpokeEngine.KeepCurrentNotAllowed.selector);
       engine.executeSpokeReserveListings(_toReserveListingArray(listing));
+    }
+  }
+
+  function test_executeSpokeDynamicReserveConfigAdditions_revertsWith_KeepCurrentNotAllowed()
+    public
+  {
+    for (uint256 field; field < 4; ++field) {
+      IAaveV4ConfigEngine.DynamicReserveConfigAddition
+        memory addition = _defaultDynamicReserveConfigAddition();
+      if (field == 0) addition.dynamicConfig.collateralFactor = EngineFlags.KEEP_CURRENT_UINT16;
+      else if (field == 1) {
+        addition.dynamicConfig.maxLiquidationBonus = EngineFlags.KEEP_CURRENT_UINT32;
+      } else if (field == 2) {
+        addition.dynamicConfig.liquidationFee = EngineFlags.KEEP_CURRENT_UINT16;
+      } else {
+        // passes Spoke validation on its own: percentMulUp(0) is 0
+        addition.dynamicConfig.collateralFactor = 0;
+        addition.dynamicConfig.maxLiquidationBonus = EngineFlags.KEEP_CURRENT_UINT32;
+      }
+
+      vm.expectRevert(SpokeEngine.KeepCurrentNotAllowed.selector);
+      engine.executeSpokeDynamicReserveConfigAdditions(
+        _toDynamicReserveConfigAdditionArray(addition)
+      );
     }
   }
 
