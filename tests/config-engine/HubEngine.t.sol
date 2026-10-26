@@ -42,8 +42,8 @@ contract HubEngineTest is BaseConfigEngineTest {
     engine.executeHubAssetListings(_toAssetListingArray(listing));
   }
 
-  function test_executeHubAssetListings_revertsWith_KeepCurrentInListing() public {
-    for (uint256 field; field < 7; ++field) {
+  function test_executeHubAssetListings_revertsWith_KeepCurrentNotAllowed() public {
+    for (uint256 field; field < 8; ++field) {
       IAaveV4ConfigEngine.AssetListing memory listing = _defaultAssetListing();
       listing.underlying = address(newToken);
       if (field == 0) listing.feeReceiver = EngineFlags.KEEP_CURRENT_ADDRESS;
@@ -52,9 +52,17 @@ contract HubEngineTest is BaseConfigEngineTest {
       else if (field == 3) listing.irData.optimalUsageRatio = EngineFlags.KEEP_CURRENT_UINT16;
       else if (field == 4) listing.irData.baseDrawnRate = EngineFlags.KEEP_CURRENT_UINT32;
       else if (field == 5) listing.irData.rateGrowthBeforeOptimal = EngineFlags.KEEP_CURRENT_UINT32;
-      else listing.irData.rateGrowthAfterOptimal = EngineFlags.KEEP_CURRENT_UINT32;
+      else if (field == 6) listing.irData.rateGrowthAfterOptimal = EngineFlags.KEEP_CURRENT_UINT32;
+      else {
+        listing.tokenization = IAaveV4ConfigEngine.TokenizationSpokeConfig({
+          addCap: 1000,
+          proxyAdminOwner: EngineFlags.KEEP_CURRENT_ADDRESS,
+          name: 'tNEW',
+          symbol: 'tNEW'
+        });
+      }
 
-      vm.expectRevert(HubEngine.KeepCurrentInListing.selector);
+      vm.expectRevert(HubEngine.KeepCurrentNotAllowed.selector);
       engine.executeHubAssetListings(_toAssetListingArray(listing));
     }
   }

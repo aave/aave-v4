@@ -123,7 +123,7 @@ The `EngineFlags` library defines sentinel values for each width that needs a "s
 
 When a struct field is set to its corresponding sentinel, the engine **skips** updating that field and leaves the on-chain value unchanged. This lets a single struct express partial updates — for example, changing the liquidity fee without touching the fee receiver or IR strategy.
 
-Listing structs (`AssetListing`, `ReserveListing`) have no current value to keep, so a listing field set to its sentinel reverts with `KeepCurrentInListing` instead of being forwarded.
+Listings (`AssetListing`, `ReserveListing`) and dynamic reserve config additions (`DynamicReserveConfigAddition`) write new values with no current value to keep, so a field set to its sentinel reverts with `KeepCurrentNotAllowed` instead of being forwarded.
 
 `EngineFlags` also provides boolean convenience constants (`ENABLED = 1`, `DISABLED = 0`) and conversion helpers `toBool(uint256)` / `fromBool(bool)`.
 
