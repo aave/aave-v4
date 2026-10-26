@@ -116,6 +116,7 @@ contract AaveV4BabylonTest is Create2TestHelper {
   string internal constant OUTPUT_DIR = 'output/reports/deployments/';
   string internal constant REPORT_NAME = 'babylon-handover-test';
   address internal constant SEPOLIA_AAVE_ADAPTER = 0x6A785E8fdF251E2aA758a6E1841e1470074f46BF;
+  address internal constant SEPOLIA_ADMIN = 0x66501C33b8fA9DD06348469bA34d96D3dE7F2239;
   address internal constant SEPOLIA_BTC = 0x2ba819663bDB2C51205997187e75eb7D092D3444;
   address internal constant SEPOLIA_USDC = 0xB588C1bd8A6cd3F114A52a0AD916778B419ECf48;
   address internal constant SEPOLIA_USDT = 0xCFf21358114814258635524588f74521762A6c04;
@@ -155,7 +156,7 @@ contract AaveV4BabylonTest is Create2TestHelper {
     assertEq(config.babylonSpokeLabel, 'babylon');
     assertEq(config.liquidationManager, SEPOLIA_AAVE_ADAPTER);
     assertEq(config.managedCollateralReserveId, 0);
-    assertEq(config.admin, address(0));
+    assertEq(config.admin, SEPOLIA_ADMIN);
   }
 
   function test_unsupportedChain_reverts() public {
