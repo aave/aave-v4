@@ -1,0 +1,30 @@
+{
+  "accessManager": "0xB3129893F1242E3576e3AC386ac26300F7021B3C",
+  "babylonSpoke": {
+    "babylon": "0xD1E3cE13B8a8Ca9DB5B42eD8b6D3F2CD8FfE9cc5"
+  },
+  "babylonSpokeImplementation": {
+    "babylon": "0x5fB89f99C2f3f55Ba7114F34176628a3b477fc41"
+  },
+  "hub": {
+    "babylon-btc": "0xc551Cc801aCB95F9131A26081E495AEf960a2f37",
+    "babylon-stables": "0xf5960351a45633821CD6Fc4A1da2d0f066Dd06Fc"
+  },
+  "hubConfigurator": "0xD4A327d689ae0F665fD20805B7936CF3DDA6D23e",
+  "hubImplementation": {
+    "babylon-btc": "0x2BDdE66760d3D08f07372aea7FbB711936Eae87D",
+    "babylon-stables": "0xE4a77DC3D80eB86d077a7007aE08F9a52d29281D"
+  },
+  "irStrategy": {
+    "babylon-btc": "0x9694a7bFa73244fF84bEAE004eCc060670EF4a53",
+    "babylon-stables": "0xDe9A0AB0e68cbbb0d37069B82B7aCa6E41C06b32"
+  },
+  "oracle": {
+    "babylon": "0xC65a6B49d1FC87Ae9213c41502C9e8Cb7d8B41B8"
+  },
+  "salt": "0x0c32da34797b3cfe4b52c8c6bcaf651e7c4ac0958eaffb5e3cf8f97965c5d91c",
+  "spoke": "",
+  "spokeConfigurator": "0x0CAE62F15025Ee6893950428C0778003eddfEF81",
+  "spokeImplementation": "",
+  "treasurySpoke": "0x55f06F1441D4F333b156C6cC5A52c3Df0330dbC1"
+}
