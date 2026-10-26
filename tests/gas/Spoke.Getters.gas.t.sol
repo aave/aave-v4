@@ -7,7 +7,7 @@ import 'tests/setup/Base.t.sol';
 contract SpokeGetters_Gas_Tests is Base {
   function test_getUserAccountData() external {
     spoke1.getUserAccountData(alice);
-    vm.snapshotGasLastCall('Spoke.Getters', 'getUserAccountData: supplies: 0, borrows: 0');
+    vm.snapshotGasLastFrame('Spoke.Getters', 'getUserAccountData: supplies: 0, borrows: 0');
   }
 
   function test_getUserAccountData_oneSupplies() external {
@@ -16,7 +16,7 @@ contract SpokeGetters_Gas_Tests is Base {
     spoke1.setUsingAsCollateral(_daiReserveId(spoke1), true, alice);
 
     spoke1.getUserAccountData(alice);
-    vm.snapshotGasLastCall('Spoke.Getters', 'getUserAccountData: supplies: 1, borrows: 0');
+    vm.snapshotGasLastFrame('Spoke.Getters', 'getUserAccountData: supplies: 1, borrows: 0');
     vm.stopPrank();
   }
 
@@ -29,7 +29,7 @@ contract SpokeGetters_Gas_Tests is Base {
     spoke1.setUsingAsCollateral(_wethReserveId(spoke1), true, alice);
 
     spoke1.getUserAccountData(alice);
-    vm.snapshotGasLastCall('Spoke.Getters', 'getUserAccountData: supplies: 2, borrows: 0');
+    vm.snapshotGasLastFrame('Spoke.Getters', 'getUserAccountData: supplies: 2, borrows: 0');
     vm.stopPrank();
   }
 
@@ -47,7 +47,7 @@ contract SpokeGetters_Gas_Tests is Base {
     spoke1.borrow(_usdxReserveId(spoke1), 800e6, alice);
 
     spoke1.getUserAccountData(alice);
-    vm.snapshotGasLastCall('Spoke.Getters', 'getUserAccountData: supplies: 2, borrows: 1');
+    vm.snapshotGasLastFrame('Spoke.Getters', 'getUserAccountData: supplies: 2, borrows: 1');
     vm.stopPrank();
   }
 
@@ -68,7 +68,7 @@ contract SpokeGetters_Gas_Tests is Base {
     spoke1.borrow(_usdxReserveId(spoke1), 800e6, alice);
 
     spoke1.getUserAccountData(alice);
-    vm.snapshotGasLastCall('Spoke.Getters', 'getUserAccountData: supplies: 2, borrows: 2');
+    vm.snapshotGasLastFrame('Spoke.Getters', 'getUserAccountData: supplies: 2, borrows: 2');
     vm.stopPrank();
   }
 }
