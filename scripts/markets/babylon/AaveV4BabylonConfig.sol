@@ -16,9 +16,11 @@ library AaveV4BabylonConfig {
 
   Vm internal constant vm = Vm(address(uint160(uint256(keccak256('hevm cheat code')))));
 
-  uint256 internal constant SEPOLIA_CHAIN_ID = 11155111;
+  string internal constant CONFIG_DIR = 'scripts/markets/babylon/config/';
 
+  /// @dev chainId The chain the config is for.
   /// @dev salt The user-provided deploy salt.
+  /// @dev librarySalt The CREATE2 salt of LiquidationLogic and BabylonLiquidationLogic.
   /// @dev hubLabels The labels of the Babylon Hubs.
   /// @dev babylonSpokeLabel The label of the BabylonSpoke.
   /// @dev liquidationManager The only address allowed to liquidate on the BabylonSpoke.
@@ -26,7 +28,9 @@ library AaveV4BabylonConfig {
   /// @dev admin The address receiving every role and ownership at handover.
   /// @dev report The deployment report written by the deploy script.
   struct Config {
+    uint256 chainId;
     bytes32 salt;
+    bytes32 librarySalt;
     string[] hubLabels;
     string babylonSpokeLabel;
     address liquidationManager;
@@ -74,17 +78,27 @@ library AaveV4BabylonConfig {
     ISpoke.LiquidationConfig liquidationConfig;
   }
 
-  /// @notice Returns the config file path for the current chain.
+  /// @notice Returns the path of the config named by the `BABYLON_CONFIG` env variable.
   function path() internal view returns (string memory) {
-    if (block.chainid == SEPOLIA_CHAIN_ID) {
-      return 'scripts/markets/babylon/sepolia.json';
-    }
-    revert('unsupported chain');
+    return path(vm.envString('BABYLON_CONFIG'));
   }
 
-  /// @notice Reads the config for the current chain.
+  /// @notice Returns the path of the config named `name`.
+  function path(string memory name) internal pure returns (string memory) {
+    return string.concat(CONFIG_DIR, name, '.json');
+  }
+
+  /// @notice Reads the config named by the `BABYLON_CONFIG` env variable.
   function read() internal view returns (Config memory) {
-    return parse(vm.readFile(path()));
+    return read(vm.envString('BABYLON_CONFIG'));
+  }
+
+  /// @notice Reads the config named `name`.
+  /// @dev Reverts unless the config is for the current chain.
+  function read(string memory name) internal view returns (Config memory) {
+    Config memory config = parse(vm.readFile(path(name)));
+    require(config.chainId == block.chainid, 'config chain id mismatch');
+    return config;
   }
 
   /// @notice Parses a config JSON.
@@ -92,7 +106,9 @@ library AaveV4BabylonConfig {
   function parse(string memory json) internal pure returns (Config memory) {
     return
       Config({
+        chainId: vm.parseJsonUint(json, '.chainId'),
         salt: vm.parseJsonBytes32(json, '.salt'),
+        librarySalt: vm.parseJsonBytes32(json, '.librarySalt'),
         hubLabels: vm.parseJsonStringArray(json, '.hubLabels'),
         babylonSpokeLabel: vm.parseJsonString(json, '.babylonSpokeLabel'),
         liquidationManager: vm.parseJsonAddress(json, '.liquidationManager'),
@@ -238,6 +254,10 @@ library AaveV4BabylonConfig {
           liquidationFee: _uint(json, key, '.dynamicConfig.liquidationFee').toUint16()
         })
       });
+      require(
+        reserves[i].underlying != address(0) && reserves[i].priceSource != address(0),
+        'reserve address unset'
+      );
     }
     return
       MarketConfig({

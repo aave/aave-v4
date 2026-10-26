@@ -39,9 +39,20 @@ contract AaveV4DeployBabylonHarness is AaveV4DeployBabylon {
     return _loadWarningsAndSanitizeInputs(_getDeployInputs(), deployer);
   }
 
+  function requireConfigLibraries(bytes32 librarySalt) external view {
+    super._requireConfigLibraries(librarySalt);
+  }
+
+  function containsAddress(bytes memory code, address target) external pure returns (bool) {
+    return _containsAddress(code, target);
+  }
+
   function _config() internal view override returns (AaveV4BabylonConfig.Config memory) {
     return _harnessConfig;
   }
+
+  /// @dev Tests link the libraries foundry deploys, not the ones at the config salt.
+  function _requireConfigLibraries(bytes32) internal view override {}
 
   function _executeUserPrompt() internal override {}
 }
@@ -117,13 +128,16 @@ contract AaveV4BabylonTest is Create2TestHelper {
   string internal constant REPORT_NAME = 'babylon-handover-test';
   address internal constant SEPOLIA_AAVE_ADAPTER = 0x6A785E8fdF251E2aA758a6E1841e1470074f46BF;
   address internal constant SEPOLIA_ADMIN = 0x66501C33b8fA9DD06348469bA34d96D3dE7F2239;
+  uint256 internal constant SEPOLIA_CHAIN_ID = 11155111;
+  bytes32 internal constant CANONICAL_LIBRARY_SALT = bytes32(uint256(0x2bdf));
+  address internal constant MAINNET_TEST_AAVE_ADAPTER = 0xF93892D520630d3eB0ed9A2157746E0a63a9E6f2;
   address internal constant SEPOLIA_BTC = 0x2ba819663bDB2C51205997187e75eb7D092D3444;
   address internal constant SEPOLIA_USDC = 0xB588C1bd8A6cd3F114A52a0AD916778B419ECf48;
   address internal constant SEPOLIA_USDT = 0xCFf21358114814258635524588f74521762A6c04;
   address internal constant SEPOLIA_WBTC = 0x504579d0424B7B7cB4b17e16626f6A2f67bCa054;
   address internal constant SEPOLIA_USD_FEED = 0xdd04B859B3bF9aAfBb3cBe175E6159b1ED998765;
   address internal constant SEPOLIA_BTC_FEED = 0xF9C48C4C694cb1101081c4402F95Cf5Dd33fb316;
-  string internal constant SEPOLIA_CONFIG = 'scripts/markets/babylon/sepolia.json';
+  string internal constant SEPOLIA_CONFIG = 'scripts/markets/babylon/config/sepolia.json';
 
   address internal _deployer = DEFAULT_SENDER;
   address internal _admin = makeAddr('admin');
@@ -136,7 +150,9 @@ contract AaveV4BabylonTest is Create2TestHelper {
     hubLabels[0] = 'babylon-btc';
     hubLabels[1] = 'babylon-stables';
     _config = AaveV4BabylonConfig.Config({
+      chainId: block.chainid,
       salt: keccak256('aave-v4-babylon-v2'),
+      librarySalt: CANONICAL_LIBRARY_SALT,
       hubLabels: hubLabels,
       babylonSpokeLabel: 'babylon',
       liquidationManager: _liquidationManager,
@@ -147,9 +163,11 @@ contract AaveV4BabylonTest is Create2TestHelper {
   }
 
   function test_sepoliaConfig() public {
-    vm.chainId(AaveV4BabylonConfig.SEPOLIA_CHAIN_ID);
-    AaveV4BabylonConfig.Config memory config = AaveV4BabylonConfig.read();
+    vm.chainId(SEPOLIA_CHAIN_ID);
+    AaveV4BabylonConfig.Config memory config = AaveV4BabylonConfig.read('sepolia');
+    assertEq(config.chainId, SEPOLIA_CHAIN_ID);
     assertEq(config.salt, keccak256('aave-v4-babylon-v2'));
+    assertEq(config.librarySalt, CANONICAL_LIBRARY_SALT);
     assertEq(config.hubLabels.length, 2);
     assertEq(config.hubLabels[0], 'babylon-btc');
     assertEq(config.hubLabels[1], 'babylon-stables');
@@ -159,16 +177,56 @@ contract AaveV4BabylonTest is Create2TestHelper {
     assertEq(config.admin, SEPOLIA_ADMIN);
   }
 
-  function test_unsupportedChain_reverts() public {
+  function test_mainnetTestConfig() public {
     vm.chainId(1);
-    vm.expectRevert('unsupported chain');
-    this.readConfig();
+    AaveV4BabylonConfig.Config memory config = AaveV4BabylonConfig.read('mainnet-test');
+    assertEq(config.chainId, 1);
+    assertEq(config.salt, keccak256('aave-v4-babylon-mainnet-test-v1'));
+    assertEq(config.librarySalt, keccak256('aave-v4-babylon-mainnet-test-libraries-v1'));
+    assertEq(config.hubLabels.length, 2);
+    assertEq(config.hubLabels[0], 'babylon-btc');
+    assertEq(config.hubLabels[1], 'babylon-stables');
+    assertEq(config.babylonSpokeLabel, 'babylon');
+    assertEq(config.liquidationManager, MAINNET_TEST_AAVE_ADAPTER);
+    assertEq(config.managedCollateralReserveId, 0);
+    assertEq(config.admin, SEPOLIA_ADMIN);
+    assertEq(config.report, 'scripts/markets/babylon/reports/mainnet-test.json');
+  }
+
+  function test_read_revertsWith_chainIdMismatch() public {
+    vm.chainId(1);
+    vm.expectRevert('config chain id mismatch');
+    this.readConfig('sepolia');
+
+    vm.chainId(SEPOLIA_CHAIN_ID);
+    vm.expectRevert('config chain id mismatch');
+    this.readConfig('mainnet-test');
+  }
+
+  function test_requireConfigLibraries_revertsWith_librariesNotDeployed() public {
+    AaveV4DeployBabylonHarness harness = new AaveV4DeployBabylonHarness(_config);
+    vm.expectRevert('config libraries not deployed');
+    harness.requireConfigLibraries(keccak256('aave-v4-babylon-mainnet-test-libraries-v1'));
+  }
+
+  function test_containsAddress() public {
+    AaveV4DeployBabylonHarness harness = new AaveV4DeployBabylonHarness(_config);
+    address target = makeAddr('library');
+    bytes memory code = abi.encodePacked(hex'6080', target, hex'5b');
+    assertTrue(harness.containsAddress(code, target));
+    assertTrue(harness.containsAddress(abi.encodePacked(target), target));
+    assertFalse(
+      harness.containsAddress(abi.encodePacked(hex'6080', bytes19(bytes20(target))), target)
+    );
+    assertFalse(harness.containsAddress(code, makeAddr('other')));
   }
 
   function test_sepoliaConfig_deploy() public {
-    vm.chainId(AaveV4BabylonConfig.SEPOLIA_CHAIN_ID);
+    vm.chainId(SEPOLIA_CHAIN_ID);
     OrchestrationReports.FullDeploymentReport memory report = this.deploy(
-      new AaveV4DeployBabylonHarness(AaveV4BabylonConfig.read()).sanitizedDeployInputs(_deployer)
+      new AaveV4DeployBabylonHarness(AaveV4BabylonConfig.read('sepolia')).sanitizedDeployInputs(
+        _deployer
+      )
     );
 
     IBabylonSpoke babylonSpoke = IBabylonSpoke(
@@ -533,6 +591,27 @@ contract AaveV4BabylonTest is Create2TestHelper {
     assertEq(marketConfig.liquidationConfig.liquidationBonusFactor, 90_00);
   }
 
+  /// @dev The mainnet test config keeps a zero vaultBTC address until Babylon deploys it, so the
+  /// configure step cannot run on it before then.
+  function test_mainnetTestMarketConfig_revertsWhileVaultBtcUnset() public {
+    AaveV4BabylonConfig.Deployment memory deployment;
+    deployment.hubs = new address[](2);
+    deployment.irStrategies = new address[](2);
+    vm.expectRevert('reserve address unset');
+    this.parseMarketConfig(
+      vm.readFile('scripts/markets/babylon/config/mainnet-test.json'),
+      deployment
+    );
+  }
+
+  function parseMarketConfig(
+    string memory json,
+    AaveV4BabylonConfig.Deployment memory deployment
+  ) external view returns (AaveV4BabylonConfig.MarketConfig memory) {
+    return
+      AaveV4BabylonConfig.parseMarketConfig({json: json, config: _config, deployment: deployment});
+  }
+
   function test_configure() public {
     OrchestrationReports.FullDeploymentReport memory report = _deployAndWriteReport();
     _deploySepoliaTokensAndFeeds();
@@ -664,8 +743,10 @@ contract AaveV4BabylonTest is Create2TestHelper {
     );
   }
 
-  function readConfig() external view returns (AaveV4BabylonConfig.Config memory) {
-    return AaveV4BabylonConfig.read();
+  function readConfig(
+    string memory name
+  ) external view returns (AaveV4BabylonConfig.Config memory) {
+    return AaveV4BabylonConfig.read(name);
   }
 
   function deploy(

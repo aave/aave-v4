@@ -1,0 +1,328 @@
+{
+  "chainId": 1,
+  "salt": "0x551c9d3862436cd2ee203a88a2fb6c7a4db023d6c8ad17762cde739d5e5ac51d",
+  "librarySalt": "0x3d92f025fdb34dc3fc7e28b2f1dd5db6a99692474fb6195323c850ee42d300fe",
+  "hubLabels": ["babylon-btc", "babylon-stables"],
+  "babylonSpokeLabel": "babylon",
+  "liquidationManager": "0xF93892D520630d3eB0ed9A2157746E0a63a9E6f2",
+  "managedCollateralReserveId": 0,
+  "admin": "0x66501C33b8fA9DD06348469bA34d96D3dE7F2239",
+  "report": "scripts/markets/babylon/reports/mainnet-test.json",
+  "reserves": [
+    {
+      "hub": "babylon-btc",
+      "underlying": "0x0000000000000000000000000000000000000000",
+      "priceSource": "0xb41E773f507F7a7EA890b1afB7d2b660c30C8B0A",
+      "liquidityFee": 0,
+      "irData": {
+        "optimalUsageRatio": 9900,
+        "baseDrawnRate": 0,
+        "rateGrowthBeforeOptimal": 0,
+        "rateGrowthAfterOptimal": 0
+      },
+      "spokeConfig": {
+        "addCap": 300,
+        "drawCap": 0,
+        "riskPremiumThreshold": 0,
+        "active": true,
+        "halted": false
+      },
+      "reserveConfig": {
+        "collateralRisk": 0,
+        "paused": false,
+        "frozen": false,
+        "borrowable": false,
+        "receiveSharesEnabled": false
+      },
+      "dynamicConfig": {
+        "collateralFactor": 7800,
+        "maxLiquidationBonus": 10555,
+        "liquidationFee": 0
+      }
+    },
+    {
+      "hub": "babylon-btc",
+      "underlying": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+      "priceSource": "0x260326c220E469358846b187eE53328303Efe19C",
+      "liquidityFee": 1000,
+      "irData": {
+        "optimalUsageRatio": 9200,
+        "baseDrawnRate": 0,
+        "rateGrowthBeforeOptimal": 450,
+        "rateGrowthAfterOptimal": 2000
+      },
+      "spokeConfig": {
+        "addCap": 5000000,
+        "drawCap": 5000000,
+        "riskPremiumThreshold": 0,
+        "active": true,
+        "halted": false
+      },
+      "reserveConfig": {
+        "collateralRisk": 0,
+        "paused": false,
+        "frozen": false,
+        "borrowable": true,
+        "receiveSharesEnabled": false
+      },
+      "dynamicConfig": {
+        "collateralFactor": 0,
+        "maxLiquidationBonus": 10000,
+        "liquidationFee": 0
+      }
+    },
+    {
+      "hub": "babylon-btc",
+      "underlying": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "priceSource": "0x3f73F03aa83B2A48ed27E964eD0fDb590332095B",
+      "liquidityFee": 1000,
+      "irData": {
+        "optimalUsageRatio": 9200,
+        "baseDrawnRate": 0,
+        "rateGrowthBeforeOptimal": 450,
+        "rateGrowthAfterOptimal": 2000
+      },
+      "spokeConfig": {
+        "addCap": 5000000,
+        "drawCap": 5000000,
+        "riskPremiumThreshold": 0,
+        "active": true,
+        "halted": false
+      },
+      "reserveConfig": {
+        "collateralRisk": 0,
+        "paused": false,
+        "frozen": false,
+        "borrowable": true,
+        "receiveSharesEnabled": false
+      },
+      "dynamicConfig": {
+        "collateralFactor": 0,
+        "maxLiquidationBonus": 10000,
+        "liquidationFee": 0
+      }
+    },
+    {
+      "hub": "babylon-btc",
+      "underlying": "0x40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f",
+      "priceSource": "0xD110cac5d8682A3b045D5524a9903E031d70FCCd",
+      "liquidityFee": 1000,
+      "irData": {
+        "optimalUsageRatio": 9200,
+        "baseDrawnRate": 0,
+        "rateGrowthBeforeOptimal": 450,
+        "rateGrowthAfterOptimal": 2000
+      },
+      "spokeConfig": {
+        "addCap": 1000000,
+        "drawCap": 1000000,
+        "riskPremiumThreshold": 0,
+        "active": true,
+        "halted": false
+      },
+      "reserveConfig": {
+        "collateralRisk": 0,
+        "paused": false,
+        "frozen": false,
+        "borrowable": true,
+        "receiveSharesEnabled": false
+      },
+      "dynamicConfig": {
+        "collateralFactor": 0,
+        "maxLiquidationBonus": 10000,
+        "liquidationFee": 0
+      }
+    },
+    {
+      "hub": "babylon-btc",
+      "underlying": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+      "priceSource": "0xDaa4B74C6bAc4e25188e64ebc68DB5050b690cAc",
+      "liquidityFee": 2000,
+      "irData": {
+        "optimalUsageRatio": 8000,
+        "baseDrawnRate": 25,
+        "rateGrowthBeforeOptimal": 400,
+        "rateGrowthAfterOptimal": 6000
+      },
+      "spokeConfig": {
+        "addCap": 100,
+        "drawCap": 100,
+        "riskPremiumThreshold": 0,
+        "active": true,
+        "halted": false
+      },
+      "reserveConfig": {
+        "collateralRisk": 0,
+        "paused": false,
+        "frozen": false,
+        "borrowable": true,
+        "receiveSharesEnabled": false
+      },
+      "dynamicConfig": {
+        "collateralFactor": 0,
+        "maxLiquidationBonus": 10000,
+        "liquidationFee": 0
+      }
+    },
+    {
+      "hub": "babylon-stables",
+      "underlying": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+      "priceSource": "0x260326c220E469358846b187eE53328303Efe19C",
+      "liquidityFee": 1000,
+      "irData": {
+        "optimalUsageRatio": 9200,
+        "baseDrawnRate": 0,
+        "rateGrowthBeforeOptimal": 450,
+        "rateGrowthAfterOptimal": 2000
+      },
+      "spokeConfig": {
+        "addCap": 8000000,
+        "drawCap": 8000000,
+        "riskPremiumThreshold": 0,
+        "active": true,
+        "halted": false
+      },
+      "reserveConfig": {
+        "collateralRisk": 0,
+        "paused": false,
+        "frozen": false,
+        "borrowable": true,
+        "receiveSharesEnabled": false
+      },
+      "dynamicConfig": {
+        "collateralFactor": 0,
+        "maxLiquidationBonus": 10000,
+        "liquidationFee": 0
+      }
+    },
+    {
+      "hub": "babylon-stables",
+      "underlying": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "priceSource": "0x3f73F03aa83B2A48ed27E964eD0fDb590332095B",
+      "liquidityFee": 1000,
+      "irData": {
+        "optimalUsageRatio": 9200,
+        "baseDrawnRate": 0,
+        "rateGrowthBeforeOptimal": 500,
+        "rateGrowthAfterOptimal": 2000
+      },
+      "spokeConfig": {
+        "addCap": 8000000,
+        "drawCap": 8000000,
+        "riskPremiumThreshold": 0,
+        "active": true,
+        "halted": false
+      },
+      "reserveConfig": {
+        "collateralRisk": 0,
+        "paused": false,
+        "frozen": false,
+        "borrowable": true,
+        "receiveSharesEnabled": false
+      },
+      "dynamicConfig": {
+        "collateralFactor": 0,
+        "maxLiquidationBonus": 10000,
+        "liquidationFee": 0
+      }
+    },
+    {
+      "hub": "babylon-stables",
+      "underlying": "0x40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f",
+      "priceSource": "0xD110cac5d8682A3b045D5524a9903E031d70FCCd",
+      "liquidityFee": 1000,
+      "irData": {
+        "optimalUsageRatio": 9000,
+        "baseDrawnRate": 0,
+        "rateGrowthBeforeOptimal": 400,
+        "rateGrowthAfterOptimal": 3000
+      },
+      "spokeConfig": {
+        "addCap": 1000000,
+        "drawCap": 1000000,
+        "riskPremiumThreshold": 0,
+        "active": true,
+        "halted": false
+      },
+      "reserveConfig": {
+        "collateralRisk": 0,
+        "paused": false,
+        "frozen": false,
+        "borrowable": true,
+        "receiveSharesEnabled": false
+      },
+      "dynamicConfig": {
+        "collateralFactor": 0,
+        "maxLiquidationBonus": 10000,
+        "liquidationFee": 0
+      }
+    },
+    {
+      "hub": "babylon-stables",
+      "underlying": "0xe343167631d89B6Ffc58B88d6b7fB0228795491D",
+      "priceSource": "0x83D20dEEdcd4aC1313496c8CBcAad0fa298c0CE4",
+      "liquidityFee": 2000,
+      "irData": {
+        "optimalUsageRatio": 9000,
+        "baseDrawnRate": 0,
+        "rateGrowthBeforeOptimal": 400,
+        "rateGrowthAfterOptimal": 2000
+      },
+      "spokeConfig": {
+        "addCap": 2000000,
+        "drawCap": 2000000,
+        "riskPremiumThreshold": 0,
+        "active": true,
+        "halted": false
+      },
+      "reserveConfig": {
+        "collateralRisk": 0,
+        "paused": false,
+        "frozen": false,
+        "borrowable": true,
+        "receiveSharesEnabled": false
+      },
+      "dynamicConfig": {
+        "collateralFactor": 0,
+        "maxLiquidationBonus": 10000,
+        "liquidationFee": 0
+      }
+    },
+    {
+      "hub": "babylon-stables",
+      "underlying": "0x8292Bb45bf1Ee4d140127049757C2E0fF06317eD",
+      "priceSource": "0xf0eaC18E908B34770FDEe46d069c846bDa866759",
+      "liquidityFee": 2000,
+      "irData": {
+        "optimalUsageRatio": 8000,
+        "baseDrawnRate": 0,
+        "rateGrowthBeforeOptimal": 400,
+        "rateGrowthAfterOptimal": 3500
+      },
+      "spokeConfig": {
+        "addCap": 2000000,
+        "drawCap": 2000000,
+        "riskPremiumThreshold": 0,
+        "active": true,
+        "halted": false
+      },
+      "reserveConfig": {
+        "collateralRisk": 0,
+        "paused": false,
+        "frozen": false,
+        "borrowable": true,
+        "receiveSharesEnabled": false
+      },
+      "dynamicConfig": {
+        "collateralFactor": 0,
+        "maxLiquidationBonus": 10000,
+        "liquidationFee": 0
+      }
+    }
+  ],
+  "liquidationConfig": {
+    "targetHealthFactor": "1000000000000000000",
+    "healthFactorForMaxBonus": "900000000000000000",
+    "liquidationBonusFactor": 9000
+  }
+}
