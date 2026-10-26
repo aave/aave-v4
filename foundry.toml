@@ -50,6 +50,9 @@ runs = 5000
 [profile.ci.fuzz]
 runs = 10000
 
+[profile.markets]
+test = 'scripts/markets'
+
 [profile.gas]
 gas_snapshot_check = true
 test = 'tests/gas'
@@ -77,6 +80,7 @@ zkevm = "${RPC_ZKEVM}"
 gnosis = "${RPC_GNOSIS}"
 bnb = "${RPC_BNB}"
 celo = "${RPC_CELO}"
+arc = "${RPC_ARC}"
 anvil = "http://127.0.0.1:8545"
 
 [etherscan]

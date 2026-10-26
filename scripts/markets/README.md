@@ -1,6 +1,6 @@
 # Aave V4 initial markets
 
-Scripts, configs, payloads and generators used for the initial Aave V4 deployments on Ethereum (2026-03-23/24) and Avalanche (2026-07-07), all deployed by `0xB00A89E5C8756bA8629846eEF8a4a9C71Ad1930A`. They were recovered from the private `feat/deploy` (Ethereum) and `feat/deploy-avax-devnet` (Avalanche) branches, plus the Etherscan/Snowscan verified sources for the files that were never committed, and adapted to compile against the current `src/`.
+Scripts, configs, payloads and generators used for the initial Aave V4 deployments on Ethereum (2026-03-23/24) and Avalanche (2026-07-07), both deployed by `0xB00A89E5C8756bA8629846eEF8a4a9C71Ad1930A`, and Arc (2026-09-02), deployed by `0x623f1C807fE1088439e129ebF3B9c92a63a0F5cD`. They were recovered from the private `feat/deploy` (Ethereum) and `feat/deploy-avax-devnet` (Avalanche) branches, plus the Etherscan/Snowscan verified sources for the files that were never committed, and adapted to compile against the current `src/`.
 
 ```
 scripts/markets/
@@ -13,7 +13,12 @@ scripts/markets/
 │   ├── TokenizationSpokeDeploy.s.sol   generated
 │   ├── AaveV4EthereumMarketPayloads.s.sol
 │   └── payloads/
-└── avalanche/                          same layout, LlamaRisk markdown instead of the xlsx
+├── avalanche/                          same layout, LlamaRisk markdown instead of the xlsx
+└── arc/                                configured by the deployer directly, no payloads (see below)
+    ├── config/                         deploy.json (deploy inputs and handover targets), config.json (assets), deployment.json
+    ├── libraries/                      ARFC parameters, configuration, handover and verification logic
+    ├── tests/                          `make market-test`
+    └── docs/                           go-live notes and the Security Council Safe batches
 ```
 
 ## Run order
@@ -46,3 +51,22 @@ Replaying all steps on forks taken right before the first deploy transaction rep
 - The Avalanche tokenization `addCap` values in `avalanche/config/config.json` were lowered by hand after generation, running `market-config` outputs the original LlamaRisk derived caps.
 - `Deactivate`, `DeactivateHub`, `FinalPermissionsPayload` and the Avalanche payloads come from their verified sources, the handover script reproduces transactions that were sent manually, with the ProxyAdmin ownership transfers in a different order.
 - A third Avalanche ConfigEngine and its libraries (nonces 78-82) were deployed but never used, they are not reproduced.
+
+## Arc
+
+Arc was not configured through payloads: the deployer kept the AccessManager admin role (`grantRoles: false`), configured the market with direct calls, halted every asset and handed everything over to the Security Council Safe `0x187AAE17d4931310B3fc75743e7F16Bdc9eD77e9`, with the Council Executor `0x8e79b0541122d3822eC93082cEB1ab03EDBc1Fd5` as configurator domain admin. Imported from aave/aave-v4#1354.
+
+All targets take `chain=<rpc alias> account=<keystore>`, add `dry=1` to simulate.
+
+| Step | Target                                                                           | Deployer nonces                                         |
+| ---- | -------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| 1    | `market-deploy-precompile market=arc`                                            | none, LiquidationLogic was already deployed at salt `0` |
+| 2    | `market-deploy-contracts market=arc`                                             | 22-47                                                   |
+| 3    | `arc-deploy-config-engine`                                                       | 48-51                                                   |
+| 4    | `arc-configure`                                                                  | 52-101                                                  |
+| 5    | `arc-relinquish`                                                                 | 102-116                                                 |
+| 6    | `arc-verify`, read only, after the Safe accepted the position managers ownership |                                                         |
+
+The two Safe batches that followed (accept ownership, then un-halt) are in `arc/docs/`. `arc-verify` asserts the market is halted, so it fails against the live market since the un-halt.
+
+Replaying steps 2 to 5 on a fork taken right before nonce 22 reproduces every address in `arc/config/deployment.json`, the ConfigEngine and the TokenizationSpokes, with the same calldata and events for every transaction except the `since` timestamp of `RoleGranted`. Nonces 0-21 and 117+ are outside of this repository (the Council Executor deployment, an earlier deployment attempt with other inputs, and later unrelated transactions).

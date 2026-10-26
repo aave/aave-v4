@@ -46,9 +46,12 @@ deploy-contracts :;
 	$(if ${dry},, --broadcast --verify) \
 
 # Initial markets (see scripts/markets/README.md)
-# `make <target> market=ethereum|avalanche chain=<rpc alias> account=<keystore>`
+# `make <target> market=ethereum|avalanche|arc chain=<rpc alias> account=<keystore>`
 MARKET_DIR = scripts/markets/${market}
-MARKET_NAME = $(if $(filter ethereum,${market}),Ethereum,Avalanche)
+MARKET_NAME = $(if $(filter ethereum,${market}),Ethereum,$(if $(filter arc,${market}),Arc,Avalanche))
+# Arc's explorer cannot be reached by `forge --verify`, and its LiquidationLogic is at salt 0
+MARKET_VERIFY = $(if $(filter arc,${market}),,--verify)
+MARKET_LIBRARY_SALT = $(if $(filter arc,${market}),0,11231)
 MARKET_SCRIPT = forge script ${MARKET_DIR}/AaveV4${MARKET_NAME}MarketPayloads.s.sol \
 	--rpc-url ${chain} --account ${account} --slow $(if ${dry},, --broadcast)
 
@@ -60,12 +63,12 @@ market-tokenization-payload :; bun run scripts/markets/generator/generateTokeniz
 market-diff :; bun run scripts/markets/generator/generateDiffPayload.ts ${market}
 
 market-deploy-precompile :;
-	forge script scripts/LibraryPreCompile.s.sol --sig 'run(bytes32)' $$(cast to-uint256 11231) \
-	--rpc-url ${chain} --account ${account} --ffi $(if ${dry},, --broadcast --verify)
+	forge script scripts/LibraryPreCompile.s.sol --sig 'run(bytes32)' $$(cast to-uint256 ${MARKET_LIBRARY_SALT}) \
+	--rpc-url ${chain} --account ${account} --ffi $(if ${dry},, --broadcast ${MARKET_VERIFY})
 
 market-deploy-contracts :;
 	forge script ${MARKET_DIR}/AaveV4Deploy${MARKET_NAME}Market.s.sol \
-	--rpc-url ${chain} --account ${account} --slow $(if ${dry},, --broadcast --verify)
+	--rpc-url ${chain} --account ${account} --slow $(if ${dry},, --broadcast ${MARKET_VERIFY})
 
 market-setup :; ${MARKET_SCRIPT} --sig 'setup()'
 
@@ -75,3 +78,14 @@ market-deploy-tokenization :;
 
 market-listings :; ${MARKET_SCRIPT} $(if ${engine},--sig 'listings(address)' ${engine},--sig 'listings()')
 market-handover :; ${MARKET_SCRIPT} --sig 'handover()'
+
+# Arc, run after market-deploy-precompile and market-deploy-contracts with market=arc
+ARC_SCRIPT = forge script scripts/markets/arc/$(1).s.sol \
+	--rpc-url ${chain} --account ${account} --slow $(if ${dry},, --broadcast)
+
+arc-deploy-config-engine :; $(call ARC_SCRIPT,AaveV4DeployArcConfigEngine)
+arc-configure :; $(call ARC_SCRIPT,AaveV4ConfigureArc)
+arc-relinquish :; $(call ARC_SCRIPT,AaveV4RelinquishArc)
+arc-verify :; forge script scripts/markets/arc/AaveV4VerifyArc.s.sol --rpc-url ${chain}
+
+market-test :; FOUNDRY_PROFILE=markets forge test
