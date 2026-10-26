@@ -44,3 +44,34 @@ deploy-contracts :;
 	FOUNDRY_PROFILE=${chain} forge clean && forge script scripts/deploy/AaveV4DeployBatch.s.sol:AaveV4DeployBatchScript \
 	--rpc-url ${chain} --account ${account} --slow \
 	$(if ${dry},, --broadcast --verify) \
+
+# Initial markets (see scripts/markets/README.md)
+# `make <target> market=ethereum|avalanche chain=<rpc alias> account=<keystore>`
+MARKET_DIR = scripts/markets/${market}
+MARKET_NAME = $(if $(filter ethereum,${market}),Ethereum,Avalanche)
+MARKET_SCRIPT = forge script ${MARKET_DIR}/AaveV4${MARKET_NAME}MarketPayloads.s.sol \
+	--rpc-url ${chain} --account ${account} --slow $(if ${dry},, --broadcast)
+
+market-config :; bun run scripts/markets/generator/$(if $(filter ethereum,${market}),chaos,llamarisk)/generate-config.ts
+market-address-lib :; bun run scripts/markets/generator/generateContracts.ts ${market}
+market-payloads :; bun run scripts/markets/generator/generatePayload.ts ${market}
+market-tokenization :; bun run scripts/markets/generator/generateTokenizationSpoke.ts ${market}
+market-tokenization-payload :; bun run scripts/markets/generator/generateTokenizationSpoke.ts ${market} --payload
+market-diff :; bun run scripts/markets/generator/generateDiffPayload.ts ${market}
+
+market-deploy-precompile :;
+	forge script scripts/LibraryPreCompile.s.sol --sig 'run(bytes32)' $$(cast to-uint256 11231) \
+	--rpc-url ${chain} --account ${account} --ffi $(if ${dry},, --broadcast --verify)
+
+market-deploy-contracts :;
+	forge script ${MARKET_DIR}/AaveV4Deploy${MARKET_NAME}Market.s.sol \
+	--rpc-url ${chain} --account ${account} --slow $(if ${dry},, --broadcast --verify)
+
+market-setup :; ${MARKET_SCRIPT} --sig 'setup()'
+
+market-deploy-tokenization :;
+	forge script ${MARKET_DIR}/TokenizationSpokeDeploy.s.sol --tc TokenizationSpokeDeploy \
+	--rpc-url ${chain} --account ${account} --slow $(if ${dry},, --broadcast)
+
+market-listings :; ${MARKET_SCRIPT} $(if ${engine},--sig 'listings(address)' ${engine},--sig 'listings()')
+market-handover :; ${MARKET_SCRIPT} --sig 'handover()'

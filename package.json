@@ -24,5 +24,10 @@
   },
   "lint-staged": {
     "*.{sol,md,py,ts}": "prettier . --write"
+  },
+  "dependencies": {
+    "viem": "^2.47.5",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
+    "zod": "4.3.6"
   }
 }
