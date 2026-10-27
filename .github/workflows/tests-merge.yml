@@ -13,6 +13,10 @@ jobs:
   test:
     name: Foundry build n test
     runs-on: ubuntu-latest
+    env:
+      RPC_MAINNET: ${{ secrets.RPC_MAINNET }}
+      RPC_AVALANCHE: ${{ secrets.RPC_AVALANCHE }}
+      RPC_ARC: ${{ secrets.RPC_ARC }}
     steps:
       - uses: actions/checkout@v4
         with:
