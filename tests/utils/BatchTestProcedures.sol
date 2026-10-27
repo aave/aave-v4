@@ -672,6 +672,11 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     InputUtils.FullDeployInputs memory inputs
   ) internal view {
     assertEq(Ownable(treasurySpoke).owner(), inputs.treasurySpokeOwner, 'treasury spoke owner');
+    assertEq(
+      Ownable(ProxyHelper.getProxyAdmin(treasurySpoke)).owner(),
+      inputs.treasurySpokeOwner,
+      'treasury spoke proxy admin owner'
+    );
   }
 
   function _checkHubSelectorRoles(
