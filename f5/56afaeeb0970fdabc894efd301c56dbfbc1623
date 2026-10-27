@@ -1,0 +1,19 @@
+tests/deployments/markets/babylon/AaveV4Babylon.t.sol
+  s_477c0d90c4846f::t_a5938298bb7ea1 119,159
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f556afaeeb0970fdabc894efd301c56dbfbc1623",
+  "prompts": {},
+  "sessions": {
+    "s_477c0d90c4846f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9de15bb6-ef2d-4870-b4ab-7a2a27701508",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}
