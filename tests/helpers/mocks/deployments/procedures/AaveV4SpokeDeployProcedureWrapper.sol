@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {AaveV4SpokeDeployProcedure} from 'src/deployments/procedures/deploy/spoke/AaveV4SpokeDeployProcedure.sol';
 
-contract AaveV4SpokeDeployProcedureWrapper is AaveV4SpokeDeployProcedure {
+contract AaveV4SpokeDeployProcedureWrapper {
   bool public IS_TEST = true;
 
   function deployUpgradeableSpokeInstance(
@@ -15,7 +15,7 @@ contract AaveV4SpokeDeployProcedureWrapper is AaveV4SpokeDeployProcedure {
     bytes32 salt
   ) external returns (address spokeProxy, address spokeImplementation) {
     return
-      _deployUpgradeableSpokeInstance(
+      AaveV4SpokeDeployProcedure.deployUpgradeableSpokeInstance(
         proxyAdminOwner,
         authority,
         oracle,

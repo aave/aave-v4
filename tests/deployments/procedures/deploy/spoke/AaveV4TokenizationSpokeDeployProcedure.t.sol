@@ -16,14 +16,16 @@ contract AaveV4TokenizationSpokeDeployProcedureTest is ProceduresBase {
     wrapper = new AaveV4TokenizationSpokeDeployProcedureWrapper();
 
     // TokenizationSpokeInstance constructor requires hub
-    AaveV4HubInstanceBatch hubInstanceBatch = new AaveV4HubInstanceBatch({
-      proxyAdminOwner_: admin,
-      authority_: accessManager,
-      hubBytecode_: hubBytecode,
-      salt_: salt
+    (deployedHub, ) = AaveV4HubDeployProcedure.deployUpgradeableHubInstance({
+      proxyAdminOwner: admin,
+      authority: accessManager,
+      hubBytecode: hubBytecode,
+      salt: salt
     });
-    BatchReports.HubInstanceBatchReport memory hubReport = hubInstanceBatch.getReport();
-    deployedHub = hubReport.hubProxy;
+    address irStrategy = AaveV4InterestRateStrategyDeployProcedure.deployInterestRateStrategy({
+      hub: deployedHub,
+      salt: salt
+    });
 
     // Deploy test ERC20
     TestnetERC20 testToken = new TestnetERC20('Test DAI', 'tDAI', 18);
@@ -49,7 +51,7 @@ contract AaveV4TokenizationSpokeDeployProcedureTest is ProceduresBase {
       underlying: underlying,
       decimals: 18,
       feeReceiver: feeReceiver,
-      irStrategy: hubReport.irStrategy,
+      irStrategy: irStrategy,
       irData: irData
     });
   }
