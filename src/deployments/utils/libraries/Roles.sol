@@ -68,24 +68,26 @@ library Roles {
   function getRoleLabels() internal pure returns (uint64[] memory roleIds, string[] memory labels) {
     roleIds = new uint64[](9);
     labels = new string[](9);
-    (roleIds[0], labels[0]) = (HUB_DOMAIN_ADMIN_ROLE, 'HUB_DOMAIN_ADMIN_ROLE');
-    (roleIds[1], labels[1]) = (HUB_CONFIGURATOR_ROLE, 'HUB_CONFIGURATOR_ROLE');
-    (roleIds[2], labels[2]) = (HUB_FEE_MINTER_ROLE, 'HUB_FEE_MINTER_ROLE');
-    (roleIds[3], labels[3]) = (HUB_DEFICIT_ELIMINATOR_ROLE, 'HUB_DEFICIT_ELIMINATOR_ROLE');
-    (roleIds[4], labels[4]) = (
-      HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE,
-      'HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE'
-    );
-    (roleIds[5], labels[5]) = (SPOKE_DOMAIN_ADMIN_ROLE, 'SPOKE_DOMAIN_ADMIN_ROLE');
-    (roleIds[6], labels[6]) = (SPOKE_CONFIGURATOR_ROLE, 'SPOKE_CONFIGURATOR_ROLE');
-    (roleIds[7], labels[7]) = (
-      SPOKE_USER_POSITION_UPDATER_ROLE,
-      'SPOKE_USER_POSITION_UPDATER_ROLE'
-    );
-    (roleIds[8], labels[8]) = (
-      SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE,
-      'SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE'
-    );
+    uint256 i;
+    roleIds[i] = HUB_DOMAIN_ADMIN_ROLE;
+    labels[i++] = 'HUB_DOMAIN_ADMIN_ROLE';
+    roleIds[i] = HUB_CONFIGURATOR_ROLE;
+    labels[i++] = 'HUB_CONFIGURATOR_ROLE';
+    roleIds[i] = HUB_FEE_MINTER_ROLE;
+    labels[i++] = 'HUB_FEE_MINTER_ROLE';
+    roleIds[i] = HUB_DEFICIT_ELIMINATOR_ROLE;
+    labels[i++] = 'HUB_DEFICIT_ELIMINATOR_ROLE';
+    roleIds[i] = HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE;
+    labels[i++] = 'HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE';
+    roleIds[i] = SPOKE_DOMAIN_ADMIN_ROLE;
+    labels[i++] = 'SPOKE_DOMAIN_ADMIN_ROLE';
+    roleIds[i] = SPOKE_CONFIGURATOR_ROLE;
+    labels[i++] = 'SPOKE_CONFIGURATOR_ROLE';
+    roleIds[i] = SPOKE_USER_POSITION_UPDATER_ROLE;
+    labels[i++] = 'SPOKE_USER_POSITION_UPDATER_ROLE';
+    roleIds[i] = SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE;
+    labels[i++] = 'SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE';
+    assert(i == roleIds.length);
   }
 
   // ─── Hub selector getters ───
