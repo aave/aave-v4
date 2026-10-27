@@ -6,10 +6,10 @@ import {ITokenizationSpokeInstance} from 'src/deployments/utils/interfaces/IToke
 import {TokenizationSpokeInstance} from 'src/spoke/instances/TokenizationSpokeInstance.sol';
 import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
 
-/// @title AaveV4TokenizationSpokeDeployProcedure
+/// @title AaveV4TokenizationSpokeDeployProcedure Library
 /// @author Aave Labs
 /// @notice Deploys an upgradeable TokenizationSpoke instance behind a transparent proxy.
-contract AaveV4TokenizationSpokeDeployProcedure {
+library AaveV4TokenizationSpokeDeployProcedure {
   /// @notice Deploys a TokenizationSpoke implementation via CREATE2 and sets up a transparent proxy.
   /// @param hub The address of the Hub that the tokenization spoke connects to.
   /// @param underlying The address of the underlying asset to tokenize.
@@ -19,7 +19,7 @@ contract AaveV4TokenizationSpokeDeployProcedure {
   /// @param salt The CREATE2 salt for deterministic deployment.
   /// @return tokenizationSpokeProxy The address of the deployed transparent proxy.
   /// @return tokenizationSpokeImplementation The address of the deployed TokenizationSpoke implementation contract.
-  function _deployUpgradeableTokenizationSpokeInstance(
+  function deployUpgradeableTokenizationSpokeInstance(
     address hub,
     address underlying,
     address proxyAdminOwner,
@@ -34,7 +34,7 @@ contract AaveV4TokenizationSpokeDeployProcedure {
 
     tokenizationSpokeImplementation = Create2Utils.create2Deploy({
       salt: salt,
-      bytecode: _getTokenizationSpokeInstanceInitCode(hub, underlying)
+      bytecode: getTokenizationSpokeInstanceInitCode(hub, underlying)
     });
 
     tokenizationSpokeProxy = Create2Utils.proxify({
@@ -60,7 +60,7 @@ contract AaveV4TokenizationSpokeDeployProcedure {
   /// @param hub The address of the Hub contract.
   /// @param underlying The address of the underlying asset.
   /// @return The ABI-encoded creation bytecode.
-  function _getTokenizationSpokeInstanceInitCode(
+  function getTokenizationSpokeInstanceInitCode(
     address hub,
     address underlying
   ) internal pure returns (bytes memory) {

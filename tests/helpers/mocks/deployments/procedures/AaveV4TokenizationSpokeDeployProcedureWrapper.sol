@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {AaveV4TokenizationSpokeDeployProcedure} from 'src/deployments/procedures/deploy/spoke/AaveV4TokenizationSpokeDeployProcedure.sol';
 
-contract AaveV4TokenizationSpokeDeployProcedureWrapper is AaveV4TokenizationSpokeDeployProcedure {
+contract AaveV4TokenizationSpokeDeployProcedureWrapper {
   bool public IS_TEST = true;
 
   function deployUpgradeableTokenizationSpokeInstance(
@@ -15,7 +15,7 @@ contract AaveV4TokenizationSpokeDeployProcedureWrapper is AaveV4TokenizationSpok
     bytes32 salt
   ) external returns (address tokenizationSpokeProxy, address tokenizationSpokeImplementation) {
     return
-      _deployUpgradeableTokenizationSpokeInstance(
+      AaveV4TokenizationSpokeDeployProcedure.deployUpgradeableTokenizationSpokeInstance(
         hub,
         underlying,
         proxyAdminOwner,

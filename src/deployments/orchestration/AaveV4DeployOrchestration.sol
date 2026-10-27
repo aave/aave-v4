@@ -3,13 +3,25 @@ pragma solidity ^0.8.0;
 
 import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
-import {AaveV4DeployBase} from 'src/deployments/orchestration/AaveV4DeployBase.sol';
 import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 import {AaveV4AccessManagerRolesProcedure} from 'src/deployments/procedures/roles/AaveV4AccessManagerRolesProcedure.sol';
 import {AaveV4HubRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
 import {AaveV4SpokeRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol';
 import {AaveV4HubConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubConfiguratorRolesProcedure.sol';
 import {AaveV4SpokeConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeConfiguratorRolesProcedure.sol';
+import {AaveV4AccessManagerEnumerableDeployProcedure} from 'src/deployments/procedures/deploy/AaveV4AccessManagerEnumerableDeployProcedure.sol';
+import {AaveV4HubConfiguratorDeployProcedure} from 'src/deployments/procedures/deploy/hub/AaveV4HubConfiguratorDeployProcedure.sol';
+import {AaveV4HubDeployProcedure} from 'src/deployments/procedures/deploy/hub/AaveV4HubDeployProcedure.sol';
+import {AaveV4InterestRateStrategyDeployProcedure} from 'src/deployments/procedures/deploy/hub/AaveV4InterestRateStrategyDeployProcedure.sol';
+import {AaveV4ConfigPositionManagerDeployProcedure} from 'src/deployments/procedures/deploy/position-manager/AaveV4ConfigPositionManagerDeployProcedure.sol';
+import {AaveV4GiverPositionManagerDeployProcedure} from 'src/deployments/procedures/deploy/position-manager/AaveV4GiverPositionManagerDeployProcedure.sol';
+import {AaveV4NativeTokenGatewayDeployProcedure} from 'src/deployments/procedures/deploy/position-manager/AaveV4NativeTokenGatewayDeployProcedure.sol';
+import {AaveV4SignatureGatewayDeployProcedure} from 'src/deployments/procedures/deploy/position-manager/AaveV4SignatureGatewayDeployProcedure.sol';
+import {AaveV4TakerPositionManagerDeployProcedure} from 'src/deployments/procedures/deploy/position-manager/AaveV4TakerPositionManagerDeployProcedure.sol';
+import {AaveV4AaveOracleDeployProcedure} from 'src/deployments/procedures/deploy/spoke/AaveV4AaveOracleDeployProcedure.sol';
+import {AaveV4SpokeConfiguratorDeployProcedure} from 'src/deployments/procedures/deploy/spoke/AaveV4SpokeConfiguratorDeployProcedure.sol';
+import {AaveV4SpokeDeployProcedure} from 'src/deployments/procedures/deploy/spoke/AaveV4SpokeDeployProcedure.sol';
+import {AaveV4TreasurySpokeDeployProcedure} from 'src/deployments/procedures/deploy/spoke/AaveV4TreasurySpokeDeployProcedure.sol';
 import {InputUtils} from 'src/deployments/utils/libraries/InputUtils.sol';
 import {Logger} from 'src/deployments/utils/Logger.sol';
 import {DeployConstants} from 'src/deployments/utils/libraries/DeployConstants.sol';
@@ -17,6 +29,8 @@ import {DeployConstants} from 'src/deployments/utils/libraries/DeployConstants.s
 /// @title AaveV4DeployOrchestration Library
 /// @author Aave Labs
 /// @notice Main orchestrator that deploys all Aave V4 contracts in order and configures roles.
+/// @dev Every procedure is an internal library call that runs in the caller's context, so when a script
+///      broadcasts, each CREATE2 factory call and each AccessManager call is its own transaction.
 library AaveV4DeployOrchestration {
   bytes32 public constant SALT = keccak256('AAVE_V4');
 
@@ -26,7 +40,7 @@ library AaveV4DeployOrchestration {
   /// @param deployInputs The full set of deployment configuration inputs.
   /// @param hubBytecode The creation bytecode of the HubInstance contract.
   /// @param spokeBytecode The creation bytecode of the SpokeInstance contract.
-  /// @return report The full deployment report containing all batch sub-reports.
+  /// @return report The full deployment report containing all sub-reports.
   function deployAaveV4(
     Logger logger,
     address deployer,
@@ -37,10 +51,10 @@ library AaveV4DeployOrchestration {
     bytes32 salt = _deriveSalt({deployer: deployer, salt: deployInputs.salt});
     report.salt = deployInputs.salt;
 
-    // Deploy Access Batch
+    // Deploy AccessManager
     // initialize with deployer as access manager admin
     address initialAdmin = deployer;
-    report.authorityBatchReport = _deployAuthorityBatch({
+    report.authorityBatchReport = _deployAuthority({
       logger: logger,
       accessManagerAdmin: initialAdmin,
       salt: salt
@@ -52,8 +66,8 @@ library AaveV4DeployOrchestration {
     logger.logHeader1('labeling roles');
     AaveV4AccessManagerRolesProcedure.labelAllRoles(accessManager);
 
-    // Deploy Configurator Batch with AccessManager as authority
-    report.configuratorBatchReport = _deployConfiguratorBatch({
+    // Deploy Configurators with AccessManager as authority
+    report.configuratorBatchReport = _deployConfigurators({
       logger: logger,
       hubConfiguratorAuthority: accessManager,
       spokeConfiguratorAuthority: accessManager,
@@ -63,8 +77,8 @@ library AaveV4DeployOrchestration {
     // Setup Configurator Roles
     _setupConfiguratorRoles({logger: logger, report: report});
 
-    // Deploy TreasurySpoke Batch (single instance for all hubs)
-    report.treasurySpokeBatchReport = _deployTreasurySpokeBatch({
+    // Deploy TreasurySpoke (single instance for all hubs)
+    report.treasurySpokeBatchReport = _deployTreasurySpoke({
       logger: logger,
       treasurySpokeOwner: deployInputs.treasurySpokeOwner,
       salt: salt
@@ -74,7 +88,7 @@ library AaveV4DeployOrchestration {
     InputUtils.validateUniqueLabels(deployInputs.hubLabels, 'hub');
     InputUtils.validateUniqueLabels(deployInputs.spokeLabels, 'spoke');
 
-    // Deploy Hub Batches
+    // Deploy Hubs
     report.hubInstanceBatchReports = _deployHubs({
       logger: logger,
       proxyAdminOwner: deployInputs.proxyAdminOwner,
@@ -84,18 +98,19 @@ library AaveV4DeployOrchestration {
       salt: salt
     });
 
-    // Deploy Spoke Instance Batches
+    // Deploy Spokes
     report.spokeInstanceBatchReports = _deploySpokes({
       logger: logger,
+      deployer: deployer,
       authority: accessManager,
       inputs: deployInputs,
       spokeBytecode: spokeBytecode,
       salt: salt
     });
 
-    // Deploy Gateways Batch if either gateway flag is enabled
+    // Deploy Gateways if either gateway flag is enabled
     if (deployInputs.deployNativeTokenGateway || deployInputs.deploySignatureGateway) {
-      report.gatewaysBatchReport = _deployGatewayBatch({
+      report.gatewaysBatchReport = _deployGateways({
         logger: logger,
         gatewayOwner: deployInputs.gatewayOwner,
         nativeWrapper: deployInputs.nativeWrapper,
@@ -105,9 +120,9 @@ library AaveV4DeployOrchestration {
       });
     }
 
-    // Deploy Position Managers Batch if flag is enabled
+    // Deploy Position Managers if flag is enabled
     if (deployInputs.deployPositionManagers) {
-      report.positionManagerBatchReport = _deployPositionManagerBatch({
+      report.positionManagerBatchReport = _deployPositionManagers({
         logger: logger,
         positionManagerOwner: deployInputs.positionManagerOwner,
         salt: salt
@@ -184,7 +199,7 @@ library AaveV4DeployOrchestration {
   ) internal returns (OrchestrationReports.HubDeploymentReport memory) {
     OrchestrationReports.HubDeploymentReport memory hubReport;
     hubReport.label = label;
-    hubReport.report = _deployHubInstanceBatch({
+    hubReport.report = _deployHubInstance({
       logger: logger,
       proxyAdminOwner: proxyAdminOwner,
       authority: authority,
@@ -200,6 +215,7 @@ library AaveV4DeployOrchestration {
 
   function _deploySpokes(
     Logger logger,
+    address deployer,
     address authority,
     InputUtils.FullDeployInputs memory inputs,
     bytes memory spokeBytecode,
@@ -213,6 +229,7 @@ library AaveV4DeployOrchestration {
       bytes32 childSalt = _deriveChildSalt(salt, 'spoke', inputs.spokeLabels[i]);
       spokeBatchReports[i] = _deploySpoke({
         logger: logger,
+        deployer: deployer,
         proxyAdminOwner: inputs.proxyAdminOwner,
         authority: authority,
         label: inputs.spokeLabels[i],
@@ -230,6 +247,7 @@ library AaveV4DeployOrchestration {
 
   function _deploySpoke(
     Logger logger,
+    address deployer,
     address proxyAdminOwner,
     address authority,
     string memory label,
@@ -241,8 +259,9 @@ library AaveV4DeployOrchestration {
     OrchestrationReports.SpokeDeploymentReport memory spokeReport;
 
     spokeReport.label = label;
-    spokeReport.report = _deploySpokeInstanceBatch({
+    spokeReport.report = _deploySpokeInstance({
       logger: logger,
+      deployer: deployer,
       proxyAdminOwner: proxyAdminOwner,
       authority: authority,
       spokeBytecode: spokeBytecode,
@@ -256,48 +275,58 @@ library AaveV4DeployOrchestration {
     return spokeReport;
   }
 
-  function _deployHubInstanceBatch(
+  function _deployHubInstance(
     Logger logger,
     address proxyAdminOwner,
     address authority,
     bytes memory hubBytecode,
     bytes32 salt
   ) internal returns (BatchReports.HubInstanceBatchReport memory report) {
-    logger.logHeader1('deploying HubBatch');
-    report = AaveV4DeployBase.deployHubInstanceBatch({
-      proxyAdminOwner: proxyAdminOwner,
-      authority: authority,
-      hubBytecode: hubBytecode,
+    logger.logHeader1('deploying Hub');
+    (report.hubProxy, report.hubImplementation) = AaveV4HubDeployProcedure
+      .deployUpgradeableHubInstance({
+        proxyAdminOwner: proxyAdminOwner,
+        authority: authority,
+        hubBytecode: hubBytecode,
+        salt: salt
+      });
+    logger.logHeader1('deploying InterestRateStrategy');
+    report.irStrategy = AaveV4InterestRateStrategyDeployProcedure.deployInterestRateStrategy({
+      hub: report.hubProxy,
       salt: salt
     });
     return report;
   }
 
-  function _deployAuthorityBatch(
+  function _deployAuthority(
     Logger logger,
     address accessManagerAdmin,
     bytes32 salt
   ) internal returns (BatchReports.AuthorityBatchReport memory report) {
-    logger.logHeader1('deploying AuthorityBatch');
+    logger.logHeader1('deploying AccessManager');
 
-    report = AaveV4DeployBase.deployAuthorityBatch({admin: accessManagerAdmin, salt: salt});
+    report.accessManager = AaveV4AccessManagerEnumerableDeployProcedure
+      .deployAccessManagerEnumerable({admin: accessManagerAdmin, salt: salt});
 
     logger.log('AccessManager', report.accessManager);
     logger.logNewLine();
     return report;
   }
 
-  function _deployConfiguratorBatch(
+  function _deployConfigurators(
     Logger logger,
     address hubConfiguratorAuthority,
     address spokeConfiguratorAuthority,
     bytes32 salt
   ) internal returns (BatchReports.ConfiguratorBatchReport memory report) {
-    logger.logHeader1('deploying ConfiguratorBatch');
-
-    report = AaveV4DeployBase.deployConfiguratorBatch({
-      hubConfiguratorAuthority: hubConfiguratorAuthority,
-      spokeConfiguratorAuthority: spokeConfiguratorAuthority,
+    logger.logHeader1('deploying HubConfigurator');
+    report.hubConfigurator = AaveV4HubConfiguratorDeployProcedure.deployHubConfigurator({
+      authority: hubConfiguratorAuthority,
+      salt: salt
+    });
+    logger.logHeader1('deploying SpokeConfigurator');
+    report.spokeConfigurator = AaveV4SpokeConfiguratorDeployProcedure.deploySpokeConfigurator({
+      authority: spokeConfiguratorAuthority,
       salt: salt
     });
 
@@ -307,8 +336,9 @@ library AaveV4DeployOrchestration {
     return report;
   }
 
-  function _deploySpokeInstanceBatch(
+  function _deploySpokeInstance(
     Logger logger,
+    address deployer,
     address proxyAdminOwner,
     address authority,
     bytes memory spokeBytecode,
@@ -316,31 +346,50 @@ library AaveV4DeployOrchestration {
     uint16 maxUserReservesLimit,
     bytes32 salt
   ) internal returns (BatchReports.SpokeInstanceBatchReport memory report) {
-    logger.logHeader1('deploying AaveV4SpokeInstanceBatch');
-    report = AaveV4DeployBase.deploySpokeInstanceBatch({
-      proxyAdminOwner: proxyAdminOwner,
-      authority: authority,
-      spokeBytecode: spokeBytecode,
-      oracleDecimals: oracleDecimals,
-      maxUserReservesLimit: maxUserReservesLimit,
+    // The Spoke implementation takes the oracle in its constructor, and only the oracle's deployer can
+    // call `AaveOracle.setSpoke`, so the oracle comes first through an AaveV4AaveOracleDeployer owned by
+    // the deployer, and is bound once the Spoke proxy exists.
+    logger.logHeader1('deploying AaveOracle');
+    address aaveOracleDeployer;
+    (aaveOracleDeployer, report.aaveOracle) = AaveV4AaveOracleDeployProcedure.deployAaveOracle({
+      owner: deployer,
+      decimals: oracleDecimals,
       salt: salt
+    });
+    logger.logHeader1('deploying Spoke');
+    (report.spokeProxy, report.spokeImplementation) = AaveV4SpokeDeployProcedure
+      .deployUpgradeableSpokeInstance({
+        proxyAdminOwner: proxyAdminOwner,
+        authority: authority,
+        oracle: report.aaveOracle,
+        spokeBytecode: spokeBytecode,
+        maxUserReservesLimit: maxUserReservesLimit,
+        salt: salt
+      });
+    logger.logHeader1('setting AaveOracle spoke');
+    AaveV4AaveOracleDeployProcedure.setAaveOracleSpoke({
+      aaveOracleDeployer: aaveOracleDeployer,
+      spoke: report.spokeProxy
     });
     return report;
   }
 
-  function _deployTreasurySpokeBatch(
+  function _deployTreasurySpoke(
     Logger logger,
     address treasurySpokeOwner,
     bytes32 salt
   ) internal returns (BatchReports.TreasurySpokeBatchReport memory report) {
-    logger.logHeader1('deploying TreasurySpokeBatch');
-    report = AaveV4DeployBase.deployTreasurySpokeBatch({owner: treasurySpokeOwner, salt: salt});
+    logger.logHeader1('deploying TreasurySpoke');
+    report.treasurySpoke = AaveV4TreasurySpokeDeployProcedure.deployTreasurySpoke({
+      owner: treasurySpokeOwner,
+      salt: salt
+    });
     logger.log('TreasurySpoke', report.treasurySpoke);
     logger.logNewLine();
     return report;
   }
 
-  function _deployGatewayBatch(
+  function _deployGateways(
     Logger logger,
     address gatewayOwner,
     address nativeWrapper,
@@ -348,30 +397,38 @@ library AaveV4DeployOrchestration {
     bool deploySignatureGateway,
     bytes32 salt
   ) internal returns (BatchReports.GatewaysBatchReport memory report) {
-    logger.logHeader1('deploying GatewayBatch');
-    report = AaveV4DeployBase.deployGatewaysBatch({
-      owner: gatewayOwner,
-      nativeWrapper: nativeWrapper,
-      deployNativeTokenGateway: deployNativeTokenGateway,
-      deploySignatureGateway: deploySignatureGateway,
-      salt: salt
-    });
     if (deployNativeTokenGateway) {
+      logger.logHeader1('deploying NativeTokenGateway');
+      report.nativeGateway = AaveV4NativeTokenGatewayDeployProcedure.deployNativeTokenGateway({
+        nativeWrapper: nativeWrapper,
+        owner: gatewayOwner,
+        salt: salt
+      });
       logger.log('NativeTokenGateway', report.nativeGateway);
     }
     if (deploySignatureGateway) {
+      logger.logHeader1('deploying SignatureGateway');
+      report.signatureGateway = AaveV4SignatureGatewayDeployProcedure.deploySignatureGateway({
+        owner: gatewayOwner,
+        salt: salt
+      });
       logger.log('SignatureGateway', report.signatureGateway);
     }
     return report;
   }
 
-  function _deployPositionManagerBatch(
+  function _deployPositionManagers(
     Logger logger,
     address positionManagerOwner,
     bytes32 salt
   ) internal returns (BatchReports.PositionManagerBatchReport memory report) {
-    logger.logHeader1('deploying PositionManagerBatch');
-    report = AaveV4DeployBase.deployPositionManagerBatch({owner: positionManagerOwner, salt: salt});
+    logger.logHeader1('deploying PositionManagers');
+    report.giverPositionManager = AaveV4GiverPositionManagerDeployProcedure
+      .deployGiverPositionManager({owner: positionManagerOwner, salt: salt});
+    report.takerPositionManager = AaveV4TakerPositionManagerDeployProcedure
+      .deployTakerPositionManager({owner: positionManagerOwner, salt: salt});
+    report.configPositionManager = AaveV4ConfigPositionManagerDeployProcedure
+      .deployConfigPositionManager({owner: positionManagerOwner, salt: salt});
     logger.logDetail('GiverPositionManager', report.giverPositionManager);
     logger.logDetail('TakerPositionManager', report.takerPositionManager);
     logger.logDetail('ConfigPositionManager', report.configPositionManager);

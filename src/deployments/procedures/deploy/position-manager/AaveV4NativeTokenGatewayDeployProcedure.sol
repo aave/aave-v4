@@ -4,16 +4,16 @@ pragma solidity ^0.8.0;
 import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 import {NativeTokenGateway} from 'src/position-manager/NativeTokenGateway.sol';
 
-/// @title AaveV4NativeTokenGatewayDeployProcedure
+/// @title AaveV4NativeTokenGatewayDeployProcedure Library
 /// @author Aave Labs
 /// @notice Deploys the NativeTokenGateway contract.
-contract AaveV4NativeTokenGatewayDeployProcedure {
+library AaveV4NativeTokenGatewayDeployProcedure {
   /// @notice Deploys a new NativeTokenGateway instance via CREATE2.
   /// @param nativeWrapper The address of the native wrapper token (e.g. WETH).
   /// @param owner The owner of the NativeTokenGateway.
   /// @param salt The CREATE2 salt for deterministic deployment.
   /// @return The address of the deployed NativeTokenGateway contract.
-  function _deployNativeTokenGateway(
+  function deployNativeTokenGateway(
     address nativeWrapper,
     address owner,
     bytes32 salt

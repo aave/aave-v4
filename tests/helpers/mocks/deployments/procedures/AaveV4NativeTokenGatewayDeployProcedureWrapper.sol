@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {AaveV4NativeTokenGatewayDeployProcedure} from 'src/deployments/procedures/deploy/position-manager/AaveV4NativeTokenGatewayDeployProcedure.sol';
 
-contract AaveV4NativeTokenGatewayDeployProcedureWrapper is AaveV4NativeTokenGatewayDeployProcedure {
+contract AaveV4NativeTokenGatewayDeployProcedureWrapper {
   bool public IS_TEST = true;
 
   function deployNativeTokenGateway(
@@ -11,6 +11,6 @@ contract AaveV4NativeTokenGatewayDeployProcedureWrapper is AaveV4NativeTokenGate
     address owner,
     bytes32 salt
   ) external returns (address) {
-    return _deployNativeTokenGateway(nativeWrapper, owner, salt);
+    return AaveV4NativeTokenGatewayDeployProcedure.deployNativeTokenGateway(nativeWrapper, owner, salt);
   }
 }
