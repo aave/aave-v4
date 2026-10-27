@@ -84,6 +84,10 @@ library AaveV4DeployBase {
   }
 
   /// @notice Deploys the Spoke instance batch containing the Spoke proxy, implementation, and AaveOracle.
+  /// @dev Unlike the other batches, this one is deployed through the CREATE2 factory instead of `new`.
+  ///      The batch deploys the AaveOracle with `new` (the oracle's deployer must be the batch, which calls
+  ///      `setSpoke`), so the oracle address is only deterministic if the batch address is. The factory drops
+  ///      revert reasons, so the batch's input checks are repeated here.
   /// @param proxyAdminOwner The owner of the proxy admin.
   /// @param authority The access-control authority for the Spoke.
   /// @param spokeBytecode The creation bytecode of the SpokeInstance contract.
@@ -99,12 +103,10 @@ library AaveV4DeployBase {
     uint16 maxUserReservesLimit,
     bytes32 salt
   ) internal returns (BatchReports.SpokeInstanceBatchReport memory) {
-    // the CREATE2 factory drops revert reasons, so repeat the batch's input checks here
     require(oracleDecimals > 0, 'invalid oracle decimals');
     require(proxyAdminOwner != address(0), 'invalid proxy admin owner');
     require(authority != address(0), 'invalid authority');
     require(maxUserReservesLimit > 0, 'invalid max user reserves limit');
-    // the batch deploys the AaveOracle, so its address must not depend on the deployer's nonce
     address spokeInstanceBatch = Create2Utils.create2Deploy({
       salt: salt,
       bytecode: abi.encodePacked(
