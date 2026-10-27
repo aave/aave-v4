@@ -32,11 +32,13 @@ This deploys `LiquidationLogic` via CREATE2 and writes `FOUNDRY_LIBRARIES` to `.
 make deploy-contracts
 ```
 
-This runs `AaveV4DeployOrchestration.deployAaveV4()`, which deploys batches in order: AccessManager → role labeling → Configurators → Configurator role setup → TreasurySpoke → Hubs → Spokes → Gateways → PositionManagers → role grants → DEFAULT_ADMIN transfer.
+This runs `AaveV4DeployOrchestration.deployAaveV4()`, which deploys batches in order: AccessManager → role labeling → Configurators → Configurator role setup → TreasurySpoke → TokenizationSpoke implementation → Hubs → Spokes → Gateways → PositionManagers → role grants → DEFAULT_ADMIN transfer.
 
 ### TokenizationSpoke
 
-`TokenizationSpoke` is **not** deployed by the orchestration, because it requires an asset to already be listed on a Hub and Spoke. Each `TokenizationSpoke` instance should be deployed separately after asset listing, one per asset.
+The orchestration deploys one canonical `TokenizationSpokeInstance` implementation (`tokenizationSpokeImplementation` in the report). It holds no Hub or asset specific state and is shared by every `TokenizationSpoke` proxy.
+
+`TokenizationSpoke` proxies are **not** deployed by the orchestration, because each requires an asset to already be listed on a Hub. Deploy one proxy per asset after listing, either through the config engine (`AssetListing.tokenization`) or with `AaveV4TokenizationSpokeBatch`, passing the canonical implementation.
 
 ### LiquidationLogic Pre-deployment
 

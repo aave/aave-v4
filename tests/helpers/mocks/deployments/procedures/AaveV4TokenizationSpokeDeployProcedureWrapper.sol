@@ -6,16 +6,22 @@ import {AaveV4TokenizationSpokeDeployProcedure} from 'src/deployments/procedures
 contract AaveV4TokenizationSpokeDeployProcedureWrapper is AaveV4TokenizationSpokeDeployProcedure {
   bool public IS_TEST = true;
 
-  function deployUpgradeableTokenizationSpokeInstance(
+  function deployTokenizationSpokeImplementation(bytes32 salt) external returns (address) {
+    return _deployTokenizationSpokeImplementation(salt);
+  }
+
+  function deployTokenizationSpokeProxy(
+    address implementation,
     address hub,
     address underlying,
     address proxyAdminOwner,
     string memory shareName,
     string memory shareSymbol,
     bytes32 salt
-  ) external returns (address tokenizationSpokeProxy, address tokenizationSpokeImplementation) {
+  ) external returns (address) {
     return
-      _deployUpgradeableTokenizationSpokeInstance(
+      _deployTokenizationSpokeProxy(
+        implementation,
         hub,
         underlying,
         proxyAdminOwner,

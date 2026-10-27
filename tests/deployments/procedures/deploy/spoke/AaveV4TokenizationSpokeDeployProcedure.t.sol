@@ -2,20 +2,23 @@
 pragma solidity ^0.8.0;
 
 import 'tests/deployments/procedures/ProceduresBase.t.sol';
+import {TokenizationSpokeInstance} from 'src/spoke/instances/TokenizationSpokeInstance.sol';
 
 contract AaveV4TokenizationSpokeDeployProcedureTest is ProceduresBase {
   AaveV4TokenizationSpokeDeployProcedureWrapper public wrapper;
   address public deployedHub;
   uint256 public assetId;
   address public underlying;
+  address public implementation;
   string public shareName = 'Test Vault Share';
   string public shareSymbol = 'tvDAI';
 
   function setUp() public override {
     super.setUp();
     wrapper = new AaveV4TokenizationSpokeDeployProcedureWrapper();
+    implementation = wrapper.deployTokenizationSpokeImplementation(salt);
 
-    // TokenizationSpokeInstance constructor requires hub
+    // TokenizationSpokeInstance initializer requires a hub with the asset listed
     AaveV4HubInstanceBatch hubInstanceBatch = new AaveV4HubInstanceBatch({
       proxyAdminOwner_: admin,
       authority_: accessManager,
@@ -54,31 +57,52 @@ contract AaveV4TokenizationSpokeDeployProcedureTest is ProceduresBase {
     });
   }
 
-  function test_deployUpgradeableTokenizationSpokeInstance() public {
-    (address tokenizationSpokeProxy, address tokenizationSpokeImplementation) = wrapper
-      .deployUpgradeableTokenizationSpokeInstance(
-        deployedHub,
-        underlying,
-        owner,
-        shareName,
-        shareSymbol,
-        salt
-      );
-    assertNotEq(tokenizationSpokeProxy, address(0));
-    assertNotEq(tokenizationSpokeImplementation, address(0));
-    assertEq(Ownable(ProxyHelper.getProxyAdmin(tokenizationSpokeProxy)).owner(), owner);
+  function test_deployTokenizationSpokeImplementation() public view {
     assertEq(
-      ProxyHelper.getImplementation(tokenizationSpokeProxy),
-      tokenizationSpokeImplementation
+      implementation,
+      Create2Utils.computeCreate2Address(salt, type(TokenizationSpokeInstance).creationCode)
     );
+    assertEq(TokenizationSpokeInstance(implementation).SPOKE_REVISION(), 2);
+    assertEq(ProxyHelper.getProxyInitializedVersion(implementation), type(uint64).max);
+    assertEq(ITokenizationSpoke(implementation).hub(), address(0));
+  }
+
+  function test_deployTokenizationSpokeProxy() public {
+    address tokenizationSpokeProxy = wrapper.deployTokenizationSpokeProxy(
+      implementation,
+      deployedHub,
+      underlying,
+      owner,
+      shareName,
+      shareSymbol,
+      salt
+    );
+    assertNotEq(tokenizationSpokeProxy, address(0));
+    assertEq(Ownable(ProxyHelper.getProxyAdmin(tokenizationSpokeProxy)).owner(), owner);
+    assertEq(ProxyHelper.getImplementation(tokenizationSpokeProxy), implementation);
+    assertEq(ProxyHelper.getProxyInitializedVersion(tokenizationSpokeProxy), 2);
     assertEq(ITokenizationSpoke(tokenizationSpokeProxy).hub(), deployedHub);
     assertEq(ITokenizationSpoke(tokenizationSpokeProxy).assetId(), assetId);
     assertEq(ITokenizationSpoke(tokenizationSpokeProxy).asset(), underlying);
+    assertEq(ITokenizationSpoke(tokenizationSpokeProxy).name(), shareName);
+    assertEq(ITokenizationSpoke(tokenizationSpokeProxy).symbol(), shareSymbol);
   }
 
-  function test_deployUpgradeableTokenizationSpokeInstance_reverts() public {
+  function test_deployTokenizationSpokeProxy_reverts() public {
+    vm.expectRevert('invalid implementation');
+    wrapper.deployTokenizationSpokeProxy({
+      implementation: address(0),
+      hub: deployedHub,
+      underlying: underlying,
+      proxyAdminOwner: owner,
+      shareName: shareName,
+      shareSymbol: shareSymbol,
+      salt: keccak256('zeroImplementationSalt')
+    });
+
     vm.expectRevert('invalid hub');
-    wrapper.deployUpgradeableTokenizationSpokeInstance({
+    wrapper.deployTokenizationSpokeProxy({
+      implementation: implementation,
       hub: address(0),
       underlying: underlying,
       proxyAdminOwner: owner,
@@ -88,7 +112,8 @@ contract AaveV4TokenizationSpokeDeployProcedureTest is ProceduresBase {
     });
 
     vm.expectRevert('invalid proxy admin owner');
-    wrapper.deployUpgradeableTokenizationSpokeInstance({
+    wrapper.deployTokenizationSpokeProxy({
+      implementation: implementation,
       hub: deployedHub,
       underlying: underlying,
       proxyAdminOwner: address(0),
@@ -98,7 +123,8 @@ contract AaveV4TokenizationSpokeDeployProcedureTest is ProceduresBase {
     });
 
     vm.expectRevert('invalid share name');
-    wrapper.deployUpgradeableTokenizationSpokeInstance({
+    wrapper.deployTokenizationSpokeProxy({
+      implementation: implementation,
       hub: deployedHub,
       underlying: underlying,
       proxyAdminOwner: owner,
@@ -108,7 +134,8 @@ contract AaveV4TokenizationSpokeDeployProcedureTest is ProceduresBase {
     });
 
     vm.expectRevert('invalid share symbol');
-    wrapper.deployUpgradeableTokenizationSpokeInstance({
+    wrapper.deployTokenizationSpokeProxy({
+      implementation: implementation,
       hub: deployedHub,
       underlying: underlying,
       proxyAdminOwner: owner,
@@ -118,11 +145,10 @@ contract AaveV4TokenizationSpokeDeployProcedureTest is ProceduresBase {
     });
   }
 
-  function test_deployUpgradeableTokenizationSpokeInstance_revertsWith_failedCreate2FactoryCall()
-    public
-  {
+  function test_deployTokenizationSpokeProxy_revertsWith_failedCreate2FactoryCall() public {
     vm.expectRevert(Create2Utils.FailedCreate2FactoryCall.selector);
-    wrapper.deployUpgradeableTokenizationSpokeInstance({
+    wrapper.deployTokenizationSpokeProxy({
+      implementation: implementation,
       hub: deployedHub,
       underlying: makeAddr('nonExistentUnderlying'),
       proxyAdminOwner: owner,
@@ -130,5 +156,10 @@ contract AaveV4TokenizationSpokeDeployProcedureTest is ProceduresBase {
       shareSymbol: shareSymbol,
       salt: keccak256('salt')
     });
+  }
+
+  function test_deployTokenizationSpokeImplementation_revertsWith_ContractAlreadyDeployed() public {
+    vm.expectRevert(Create2Utils.ContractAlreadyDeployed.selector);
+    wrapper.deployTokenizationSpokeImplementation(salt);
   }
 }

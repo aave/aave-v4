@@ -18,6 +18,9 @@ contract MetadataLoggerTest is Test {
     report.configuratorBatchReport.hubConfigurator = makeAddr('hubConfigurator');
     report.configuratorBatchReport.spokeConfigurator = makeAddr('spokeConfigurator');
     report.treasurySpokeBatchReport.treasurySpoke = makeAddr('treasurySpoke');
+    report.tokenizationSpokeImplementationBatchReport.tokenizationSpokeImplementation = makeAddr(
+      'tokenizationSpokeImplementation'
+    );
 
     report.hubInstanceBatchReports = new OrchestrationReports.HubDeploymentReport[](2);
     report.hubInstanceBatchReports[0].label = 'core';
@@ -71,6 +74,10 @@ contract MetadataLoggerTest is Test {
     assertEq(
       vm.parseJsonAddress(json, '$.treasurySpoke'),
       report.treasurySpokeBatchReport.treasurySpoke
+    );
+    assertEq(
+      vm.parseJsonAddress(json, '$.tokenizationSpokeImplementation'),
+      report.tokenizationSpokeImplementationBatchReport.tokenizationSpokeImplementation
     );
 
     // Hubs

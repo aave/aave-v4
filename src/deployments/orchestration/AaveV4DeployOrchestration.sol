@@ -70,6 +70,13 @@ library AaveV4DeployOrchestration {
       salt: salt
     });
 
+    // Deploy canonical TokenizationSpoke implementation (shared by all TokenizationSpoke proxies)
+    report
+      .tokenizationSpokeImplementationBatchReport = _deployTokenizationSpokeImplementationBatch({
+      logger: logger,
+      salt: salt
+    });
+
     // Validate label uniqueness (duplicate labels produce identical CREATE2 salts)
     InputUtils.validateUniqueLabels(deployInputs.hubLabels, 'hub');
     InputUtils.validateUniqueLabels(deployInputs.spokeLabels, 'spoke');
@@ -336,6 +343,17 @@ library AaveV4DeployOrchestration {
     logger.logHeader1('deploying TreasurySpokeBatch');
     report = AaveV4DeployBase.deployTreasurySpokeBatch({owner: treasurySpokeOwner, salt: salt});
     logger.log('TreasurySpoke', report.treasurySpoke);
+    logger.logNewLine();
+    return report;
+  }
+
+  function _deployTokenizationSpokeImplementationBatch(
+    Logger logger,
+    bytes32 salt
+  ) internal returns (BatchReports.TokenizationSpokeImplementationBatchReport memory report) {
+    logger.logHeader1('deploying TokenizationSpokeImplementationBatch');
+    report = AaveV4DeployBase.deployTokenizationSpokeImplementationBatch({salt: salt});
+    logger.log('TokenizationSpokeImplementation', report.tokenizationSpokeImplementation);
     logger.logNewLine();
     return report;
   }

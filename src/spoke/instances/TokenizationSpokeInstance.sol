@@ -7,24 +7,24 @@ import {TokenizationSpoke} from 'src/spoke/TokenizationSpoke.sol';
 /// @author Aave Labs
 /// @notice Implementation contract for the TokenizationSpoke.
 contract TokenizationSpokeInstance is TokenizationSpoke {
-  uint64 public constant SPOKE_REVISION = 1;
+  uint64 public constant SPOKE_REVISION = 2;
 
   /// @dev Constructor.
-  /// @param hub_ The address of the associated Hub.
-  /// @param underlying_ The address of the underlying asset to be tokenized.
-  constructor(address hub_, address underlying_) TokenizationSpoke(hub_, underlying_) {
+  constructor() {
     _disableInitializers();
   }
 
   /// @notice Initializer.
+  /// @param hub The address of the associated Hub.
+  /// @param underlying The address of the underlying asset to be tokenized.
   /// @param shareName The ERC20 name of the share issued by this vault.
   /// @param shareSymbol The ERC20 symbol of the share issued by this vault.
   function initialize(
+    address hub,
+    address underlying,
     string memory shareName,
     string memory shareSymbol
   ) external override reinitializer(SPOKE_REVISION) {
-    emit SetTokenizationSpokeImmutables(address(HUB), ASSET_ID);
-
-    __TokenizationSpoke_init(shareName, shareSymbol);
+    __TokenizationSpoke_init(hub, underlying, shareName, shareSymbol);
   }
 }

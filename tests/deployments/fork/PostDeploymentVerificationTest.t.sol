@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import {PostDeploymentVerificationBase} from 'tests/deployments/fork/PostDeploymentVerificationBase.t.sol';
 import {AaveV4DeployAnvil} from 'scripts/deploy/examples/AaveV4DeployAnvil.s.sol';
 import {InputUtils} from 'src/deployments/utils/libraries/InputUtils.sol';
+import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
 
 /// @title PostDeploymentVerificationTest
 /// @author Aave Labs
@@ -46,6 +47,26 @@ contract PostDeploymentVerificationTest is PostDeploymentVerificationBase, AaveV
       _deployer
     );
     _deployWriteReportAndVerify(sanitizedInputs, OUTPUT_DIR, FILE_NAME);
+    assertFalse(_skipTokenizationSpokeImplementationCheck);
+  }
+
+  /// @notice Reports written before the canonical TokenizationSpoke implementation lack its key.
+  function test_parseReport_withoutTokenizationSpokeImplementation() public {
+    string memory obj = 'report-without-tokenization-spoke-implementation';
+    vm.serializeAddress(obj, 'accessManager', makeAddr('accessManager'));
+    vm.serializeAddress(obj, 'hubConfigurator', makeAddr('hubConfigurator'));
+    vm.serializeAddress(obj, 'spokeConfigurator', makeAddr('spokeConfigurator'));
+    vm.serializeAddress(obj, 'treasurySpoke', makeAddr('treasurySpoke'));
+    string memory json = vm.serializeBytes32(obj, 'salt', keccak256('salt'));
+
+    OrchestrationReports.FullDeploymentReport memory report = _parseReportFromJson(json);
+
+    assertTrue(_skipTokenizationSpokeImplementationCheck);
+    assertEq(
+      report.tokenizationSpokeImplementationBatchReport.tokenizationSpokeImplementation,
+      address(0)
+    );
+    assertEq(report.treasurySpokeBatchReport.treasurySpoke, makeAddr('treasurySpoke'));
   }
 
   /// deploy all gateways

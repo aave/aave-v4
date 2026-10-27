@@ -56,8 +56,13 @@ library BatchReports {
     address configPositionManager;
   }
 
-  /// @dev tokenizationSpokeImplementation The deployed TokenizationSpoke implementation contract address.
+  /// @dev tokenizationSpokeImplementation The deployed canonical TokenizationSpoke implementation contract address.
+  struct TokenizationSpokeImplementationBatchReport {
+    address tokenizationSpokeImplementation;
+  }
+
   /// @dev tokenizationSpokeProxy The deployed TokenizationSpoke proxy contract address.
+  /// @dev tokenizationSpokeImplementation The TokenizationSpoke implementation the proxy points to.
   struct TokenizationSpokeBatchReport {
     address tokenizationSpokeProxy;
     address tokenizationSpokeImplementation;

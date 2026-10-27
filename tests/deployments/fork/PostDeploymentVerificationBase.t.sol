@@ -27,7 +27,7 @@ abstract contract PostDeploymentVerificationBase is BatchTestProcedures {
 
   function _parseReportFromJson(
     string memory json
-  ) internal view returns (OrchestrationReports.FullDeploymentReport memory report) {
+  ) internal returns (OrchestrationReports.FullDeploymentReport memory report) {
     report.authorityBatchReport.accessManager = vm.parseJsonAddress(json, '$.accessManager');
     report.configuratorBatchReport.hubConfigurator = vm.parseJsonAddress(json, '$.hubConfigurator');
     report.configuratorBatchReport.spokeConfigurator = vm.parseJsonAddress(
@@ -37,7 +37,15 @@ abstract contract PostDeploymentVerificationBase is BatchTestProcedures {
     report.treasurySpokeBatchReport.treasurySpoke = vm.parseJsonAddress(json, '$.treasurySpoke');
     report.salt = vm.parseJsonBytes32(json, '$.salt');
 
-    // Optional fields (conditionally written by MetadataLogger)
+    // Optional fields (conditionally written by MetadataLogger, or absent from older reports)
+    _skipTokenizationSpokeImplementationCheck = !vm.keyExistsJson(
+      json,
+      '$.tokenizationSpokeImplementation'
+    );
+    if (!_skipTokenizationSpokeImplementationCheck) {
+      report.tokenizationSpokeImplementationBatchReport.tokenizationSpokeImplementation = vm
+        .parseJsonAddress(json, '$.tokenizationSpokeImplementation');
+    }
     if (vm.keyExistsJson(json, '$.nativeTokenGateway')) {
       report.gatewaysBatchReport.nativeGateway = vm.parseJsonAddress(json, '$.nativeTokenGateway');
     }
