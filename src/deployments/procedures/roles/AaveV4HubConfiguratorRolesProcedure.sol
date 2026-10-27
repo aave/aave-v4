@@ -8,11 +8,14 @@ import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 /// @author Aave Labs
 /// @notice Procedures for granting and setting up HubConfigurator roles on the AccessManager.
 library AaveV4HubConfiguratorRolesProcedure {
-  /// @notice Grants the HubConfigurator domain admin role (200) to `admin`.
+  /// @notice Grants all HubConfigurator roles to `admin`.
   /// @param accessManager The address of the AccessManager contract.
-  /// @param admin The address to receive the HubConfigurator domain admin role.
+  /// @param admin The address to receive all HubConfigurator roles.
   function grantHubConfiguratorAllRoles(address accessManager, address admin) internal {
-    grantHubConfiguratorRole(accessManager, Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE, admin);
+    uint64[] memory roleIds = Roles.getHubConfiguratorTargetRoles();
+    for (uint256 i; i < roleIds.length; ++i) {
+      grantHubConfiguratorRole(accessManager, roleIds[i], admin);
+    }
   }
 
   /// @notice Grants a specific HubConfigurator role to the given address.
@@ -25,16 +28,19 @@ library AaveV4HubConfiguratorRolesProcedure {
     IAccessManager(accessManager).grantRole({roleId: role, account: admin, executionDelay: 0});
   }
 
-  /// @notice Sets up the HubConfigurator domain admin role with all target selectors.
+  /// @notice Sets up all HubConfigurator roles by assigning their target function selectors.
   /// @param accessManager The address of the AccessManager contract.
   /// @param hubConfigurator The address of the HubConfigurator contract.
   function setupHubConfiguratorAllRoles(address accessManager, address hubConfigurator) internal {
-    setupHubConfiguratorRole(
-      accessManager,
-      hubConfigurator,
-      Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE,
-      Roles.getHubConfiguratorDomainAdminRoleSelectors()
-    );
+    uint64[] memory roleIds = Roles.getHubConfiguratorTargetRoles();
+    for (uint256 i; i < roleIds.length; ++i) {
+      setupHubConfiguratorRole(
+        accessManager,
+        hubConfigurator,
+        roleIds[i],
+        Roles.getHubConfiguratorTargetRoleSelectors(roleIds[i])
+      );
+    }
   }
 
   /// @notice Sets up a specific HubConfigurator role by assigning function selectors to the target.

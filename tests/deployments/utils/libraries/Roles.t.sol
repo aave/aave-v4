@@ -63,6 +63,42 @@ contract RolesTest is Test {
     _rolesWrapper.getSpokeRoleSelectors(Roles.SPOKE_DOMAIN_ADMIN_ROLE);
   }
 
+  function test_getHubConfiguratorTargetRoles() public pure {
+    uint64[] memory roleIds = Roles.getHubConfiguratorTargetRoles();
+    assertEq(roleIds.length, 1);
+    assertEq(roleIds[0], Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE);
+  }
+
+  function test_getHubConfiguratorTargetRoleSelectors() public pure {
+    _assertSelectorsEq(
+      Roles.getHubConfiguratorTargetRoleSelectors(Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE),
+      Roles.getHubConfiguratorDomainAdminRoleSelectors()
+    );
+  }
+
+  function test_getHubConfiguratorTargetRoleSelectors_revertsWith_unknownRole() public {
+    vm.expectRevert('unknown hub configurator role');
+    _rolesWrapper.getHubConfiguratorTargetRoleSelectors(Roles.HUB_CONFIGURATOR_ROLE);
+  }
+
+  function test_getSpokeConfiguratorTargetRoles() public pure {
+    uint64[] memory roleIds = Roles.getSpokeConfiguratorTargetRoles();
+    assertEq(roleIds.length, 1);
+    assertEq(roleIds[0], Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE);
+  }
+
+  function test_getSpokeConfiguratorTargetRoleSelectors() public pure {
+    _assertSelectorsEq(
+      Roles.getSpokeConfiguratorTargetRoleSelectors(Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE),
+      Roles.getSpokeConfiguratorDomainAdminRoleSelectors()
+    );
+  }
+
+  function test_getSpokeConfiguratorTargetRoleSelectors_revertsWith_unknownRole() public {
+    vm.expectRevert('unknown spoke configurator role');
+    _rolesWrapper.getSpokeConfiguratorTargetRoleSelectors(Roles.SPOKE_CONFIGURATOR_ROLE);
+  }
+
   function test_getRoleLabels() public pure {
     (uint64[] memory roleIds, string[] memory labels) = Roles.getRoleLabels();
     assertEq(roleIds.length, 9);

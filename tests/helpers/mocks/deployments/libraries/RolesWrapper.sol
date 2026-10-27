@@ -11,4 +11,16 @@ contract RolesWrapper {
   function getSpokeRoleSelectors(uint64 roleId) external pure returns (bytes4[] memory) {
     return Roles.getSpokeRoleSelectors(roleId);
   }
+
+  function getHubConfiguratorTargetRoleSelectors(
+    uint64 roleId
+  ) external pure returns (bytes4[] memory) {
+    return Roles.getHubConfiguratorTargetRoleSelectors(roleId);
+  }
+
+  function getSpokeConfiguratorTargetRoleSelectors(
+    uint64 roleId
+  ) external pure returns (bytes4[] memory) {
+    return Roles.getSpokeConfiguratorTargetRoleSelectors(roleId);
+  }
 }

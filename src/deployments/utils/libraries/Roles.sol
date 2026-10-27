@@ -164,6 +164,23 @@ library Roles {
     return selectors;
   }
 
+  /// @notice Returns the roles targeting the HubConfigurator.
+  function getHubConfiguratorTargetRoles() internal pure returns (uint64[] memory) {
+    uint64[] memory roleIds = new uint64[](1);
+    roleIds[0] = HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE;
+    return roleIds;
+  }
+
+  /// @notice Returns the function selectors associated with the given role targeting the HubConfigurator.
+  function getHubConfiguratorTargetRoleSelectors(
+    uint64 roleId
+  ) internal pure returns (bytes4[] memory) {
+    if (roleId == HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE) {
+      return getHubConfiguratorDomainAdminRoleSelectors();
+    }
+    revert('unknown hub configurator role');
+  }
+
   // ─── Spoke selector getters ───
 
   /// @notice Returns the function selectors associated with the Spoke Position Updater role.
@@ -232,5 +249,22 @@ library Roles {
     selectors[22] = ISpokeConfigurator.freezeReserve.selector;
     selectors[23] = ISpokeConfigurator.updatePositionManager.selector;
     return selectors;
+  }
+
+  /// @notice Returns the roles targeting the SpokeConfigurator.
+  function getSpokeConfiguratorTargetRoles() internal pure returns (uint64[] memory) {
+    uint64[] memory roleIds = new uint64[](1);
+    roleIds[0] = SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE;
+    return roleIds;
+  }
+
+  /// @notice Returns the function selectors associated with the given role targeting the SpokeConfigurator.
+  function getSpokeConfiguratorTargetRoleSelectors(
+    uint64 roleId
+  ) internal pure returns (bytes4[] memory) {
+    if (roleId == SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE) {
+      return getSpokeConfiguratorDomainAdminRoleSelectors();
+    }
+    revert('unknown spoke configurator role');
   }
 }
