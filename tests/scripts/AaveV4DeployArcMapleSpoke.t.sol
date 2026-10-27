@@ -15,8 +15,6 @@ import {ProxyHelper} from 'tests/utils/ProxyHelper.sol';
 
 import {AaveV4DeployArcMapleSpoke} from 'scripts/deploy/AaveV4DeployCorrelatedSpoke.s.sol';
 
-/// @dev Run with FOUNDRY_LIBRARIES linking LiquidationLogic to the Arc instance
-///      (0x818E84198224535FAeaEc1b583d3Ff6b812A5AF3), otherwise the bytecode check fails.
 contract AaveV4DeployArcMapleSpokeTest is Test {
   struct ImmutableReference {
     uint256 length;
@@ -25,6 +23,8 @@ contract AaveV4DeployArcMapleSpokeTest is Test {
 
   // https://explorer.arc.io/address/0xf76b49f5911ca3838a469563c0ffb07c8f91ba79
   address internal constant ARC_MAIN_SPOKE_IMPL = 0xf76b49F5911Ca3838a469563c0ffB07c8f91ba79;
+  // https://explorer.arc.io/address/0x818E84198224535FAeaEc1b583d3Ff6b812A5AF3
+  address internal constant ARC_LIQUIDATION_LOGIC = 0x818E84198224535FAeaEc1b583d3Ff6b812A5AF3;
 
   AaveV4DeployArcMapleSpoke internal _script;
 
@@ -93,6 +93,24 @@ contract AaveV4DeployArcMapleSpokeTest is Test {
         for (uint256 k; k < refs[j].length; ++k) {
           deployed[refs[j].start + k] = 0;
           live[refs[j].start + k] = 0;
+        }
+      }
+    }
+
+    // Unless built with FOUNDRY_LIBRARIES, LiquidationLogic is linked to a test-deployed instance,
+    // so it is swapped for the Arc one, which also checks the live spoke links to it
+    string memory linkRefsPath = string.concat(
+      ".deployedBytecode.linkReferences['src/spoke/libraries/LiquidationLogic.sol']",
+      '.LiquidationLogic'
+    );
+    if (vm.keyExistsJson(artifact, linkRefsPath)) {
+      ImmutableReference[] memory linkRefs = abi.decode(
+        vm.parseJson(artifact, linkRefsPath),
+        (ImmutableReference[])
+      );
+      for (uint256 i; i < linkRefs.length; ++i) {
+        for (uint256 k; k < linkRefs[i].length; ++k) {
+          deployed[linkRefs[i].start + k] = bytes20(ARC_LIQUIDATION_LOGIC)[k];
         }
       }
     }

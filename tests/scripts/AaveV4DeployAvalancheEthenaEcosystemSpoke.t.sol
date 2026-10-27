@@ -15,8 +15,6 @@ import {ProxyHelper} from 'tests/utils/ProxyHelper.sol';
 
 import {AaveV4DeployAvalancheEthenaEcosystemSpoke} from 'scripts/deploy/AaveV4DeployCorrelatedSpoke.s.sol';
 
-/// @dev Run with FOUNDRY_LIBRARIES linking LiquidationLogic to the Avalanche instance
-///      (0x88df535473c5adf1f57789734a05e555f7deb8db), otherwise the bytecode check fails.
 contract AaveV4DeployAvalancheEthenaEcosystemSpokeTest is Test {
   struct ImmutableReference {
     uint256 length;
@@ -25,6 +23,9 @@ contract AaveV4DeployAvalancheEthenaEcosystemSpokeTest is Test {
 
   // https://snowscan.xyz/address/0x56F74D6BC5F51dA3ba0D3F715A67cD7D15358AD4
   address internal constant AVALANCHE_MAIN_SPOKE_IMPL = 0x56F74D6BC5F51dA3ba0D3F715A67cD7D15358AD4;
+  // https://snowscan.xyz/address/0x88dF535473C5adf1f57789734A05E555F7Deb8DB
+  address internal constant AVALANCHE_LIQUIDATION_LOGIC =
+    0x88dF535473C5adf1f57789734A05E555F7Deb8DB;
 
   AaveV4DeployAvalancheEthenaEcosystemSpoke internal _script;
 
@@ -94,6 +95,24 @@ contract AaveV4DeployAvalancheEthenaEcosystemSpokeTest is Test {
         for (uint256 k; k < refs[j].length; ++k) {
           deployed[refs[j].start + k] = 0;
           live[refs[j].start + k] = 0;
+        }
+      }
+    }
+
+    // Unless built with FOUNDRY_LIBRARIES, LiquidationLogic is linked to a test-deployed instance,
+    // so it is swapped for the Avalanche one, which also checks the live spoke links to it
+    string memory linkRefsPath = string.concat(
+      ".deployedBytecode.linkReferences['src/spoke/libraries/LiquidationLogic.sol']",
+      '.LiquidationLogic'
+    );
+    if (vm.keyExistsJson(artifact, linkRefsPath)) {
+      ImmutableReference[] memory linkRefs = abi.decode(
+        vm.parseJson(artifact, linkRefsPath),
+        (ImmutableReference[])
+      );
+      for (uint256 i; i < linkRefs.length; ++i) {
+        for (uint256 k; k < linkRefs[i].length; ++k) {
+          deployed[linkRefs[i].start + k] = bytes20(AVALANCHE_LIQUIDATION_LOGIC)[k];
         }
       }
     }
