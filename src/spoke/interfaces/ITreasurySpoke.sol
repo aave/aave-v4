@@ -4,7 +4,18 @@ pragma solidity ^0.8.0;
 /// @title ITreasurySpoke
 /// @author Aave Labs
 /// @notice Interface for the TreasurySpoke.
-interface ITreasurySpoke {
+interface IOwnable {
+  /// @notice Returns the current owner.
+  function owner() external view returns (address);
+
+  /// @notice Transfers ownership to a new owner.
+  function transferOwnership(address newOwner) external;
+
+  /// @notice Renounces ownership of the contract.
+  function renounceOwnership() external;
+}
+
+interface ITreasurySpoke is IOwnable {
   /// @notice Supplies a specified amount of the underlying asset to the specified Hub.
   /// @dev The Spoke pulls the underlying asset from the caller, so prior approval is required.
   /// @param hub The address of the Hub.
