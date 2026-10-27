@@ -90,22 +90,60 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
   ) internal view {
     _checkSpokeBatchDeployments({report: report, inputs: inputs});
     _checkHubBatchDeployments({report: report, inputs: inputs});
-    _checkConfiguratorBatchDeployments({report: report});
+    _checkConfiguratorBatchDeployments({report: report, inputs: inputs});
     _checkGatewayBatchDeployments({report: report, inputs: inputs});
   }
 
   function _checkConfiguratorBatchDeployments(
-    OrchestrationReports.FullDeploymentReport memory report
+    OrchestrationReports.FullDeploymentReport memory report,
+    InputUtils.FullDeployInputs memory inputs
+  ) internal view {
+    _checkConfiguratorDeployment({
+      proxy: report.configuratorBatchReport.hubConfigurator,
+      implementation: report.configuratorBatchReport.hubConfiguratorImplementation,
+      accessManager: report.authorityBatchReport.accessManager,
+      expectedProxyAdminOwner: inputs.proxyAdminOwner,
+      artifact: 'src/hub/instances/HubConfiguratorInstance.sol:HubConfiguratorInstance',
+      label: 'HubConfigurator'
+    });
+    _checkConfiguratorDeployment({
+      proxy: report.configuratorBatchReport.spokeConfigurator,
+      implementation: report.configuratorBatchReport.spokeConfiguratorImplementation,
+      accessManager: report.authorityBatchReport.accessManager,
+      expectedProxyAdminOwner: inputs.proxyAdminOwner,
+      artifact: 'src/spoke/instances/SpokeConfiguratorInstance.sol:SpokeConfiguratorInstance',
+      label: 'SpokeConfigurator'
+    });
+  }
+
+  function _checkConfiguratorDeployment(
+    address proxy,
+    address implementation,
+    address accessManager,
+    address expectedProxyAdminOwner,
+    string memory artifact,
+    string memory label
   ) internal view {
     assertEq(
-      IAccessManaged(report.configuratorBatchReport.hubConfigurator).authority(),
-      report.authorityBatchReport.accessManager,
-      'HubConfigurator authority'
+      ProxyHelper.getImplementation(proxy),
+      implementation,
+      string.concat(label, ' implementation')
     );
     assertEq(
-      IAccessManaged(report.configuratorBatchReport.spokeConfigurator).authority(),
-      report.authorityBatchReport.accessManager,
-      'SpokeConfigurator authority'
+      Ownable(ProxyHelper.getProxyAdmin(proxy)).owner(),
+      expectedProxyAdminOwner,
+      string.concat(label, ' proxy admin owner')
+    );
+    assertEq(IAccessManaged(proxy).authority(), accessManager, string.concat(label, ' authority'));
+    assertEq(
+      ProxyHelper.getProxyInitializedVersion(implementation),
+      type(uint64).max,
+      string.concat(label, ' implementation initializers disabled')
+    );
+    assertEq(
+      implementation.codehash,
+      keccak256(vm.getDeployedCode(artifact)),
+      string.concat(label, ' implementation bytecode')
     );
   }
 

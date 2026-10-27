@@ -115,7 +115,7 @@ contract HubRestoreTest is Base {
 
   function test_restore_revertsWith_SpokeNotActive_whenPaused() public {
     vm.prank(HUB_CONFIGURATOR_ADMIN);
-    hubConfigurator.deactivateAsset(address(hub1), daiAssetId);
+    hubConfigurator.deactivateAsset(address(hub1), address(tokenList.dai));
 
     IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
       spoke1,
@@ -203,7 +203,7 @@ contract HubRestoreTest is Base {
 
     // Reset asset caps
     vm.prank(HUB_CONFIGURATOR_ADMIN);
-    hubConfigurator.resetAssetCaps(address(hub1), daiAssetId);
+    hubConfigurator.resetAssetCaps(address(hub1), address(tokenList.dai));
 
     (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
     uint256 drawnRestored = drawn / 2;

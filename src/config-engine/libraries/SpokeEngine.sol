@@ -20,11 +20,10 @@ library SpokeEngine {
   ) external {
     uint256 length = listings.length;
     for (uint256 i; i < length; ++i) {
-      uint256 assetId = IHubBase(listings[i].hub).getAssetId(listings[i].underlying);
       listings[i].spokeConfigurator.addReserve(
         listings[i].spoke,
         listings[i].hub,
-        assetId,
+        listings[i].underlying,
         listings[i].priceSource,
         listings[i].config,
         listings[i].dynamicConfig
@@ -33,57 +32,54 @@ library SpokeEngine {
   }
 
   /// @notice Updates reserve config on Spokes.
+  /// @dev `frozen` dispatches to `freezeReserve` (which also zeroes the collateral factor) unless the
+  /// reserve is already frozen with a zero collateral factor, or to `unfreezeReserve` if the reserve is frozen.
   /// @param updates The reserve config updates to execute.
   function executeSpokeReserveConfigUpdates(
     IAaveV4ConfigEngine.ReserveConfigUpdate[] calldata updates
   ) external {
     uint256 length = updates.length;
     for (uint256 i; i < length; ++i) {
-      uint256 reserveId = _resolveReserveId(
-        updates[i].spoke,
-        updates[i].hub,
-        updates[i].underlying
-      );
-
       if (updates[i].priceSource != EngineFlags.KEEP_CURRENT_ADDRESS) {
         updates[i].spokeConfigurator.updateReservePriceSource(
           updates[i].spoke,
-          reserveId,
+          updates[i].hub,
+          updates[i].underlying,
           updates[i].priceSource
         );
       }
       if (updates[i].collateralRisk != EngineFlags.KEEP_CURRENT) {
         updates[i].spokeConfigurator.updateCollateralRisk(
           updates[i].spoke,
-          reserveId,
+          updates[i].hub,
+          updates[i].underlying,
           updates[i].collateralRisk
         );
       }
       if (updates[i].paused != EngineFlags.KEEP_CURRENT) {
         updates[i].spokeConfigurator.updatePaused(
           updates[i].spoke,
-          reserveId,
+          updates[i].hub,
+          updates[i].underlying,
           EngineFlags.toBool(updates[i].paused)
         );
       }
       if (updates[i].frozen != EngineFlags.KEEP_CURRENT) {
-        updates[i].spokeConfigurator.updateFrozen(
-          updates[i].spoke,
-          reserveId,
-          EngineFlags.toBool(updates[i].frozen)
-        );
+        _updateFrozen(updates[i]);
       }
       if (updates[i].borrowable != EngineFlags.KEEP_CURRENT) {
         updates[i].spokeConfigurator.updateBorrowable(
           updates[i].spoke,
-          reserveId,
+          updates[i].hub,
+          updates[i].underlying,
           EngineFlags.toBool(updates[i].borrowable)
         );
       }
       if (updates[i].receiveSharesEnabled != EngineFlags.KEEP_CURRENT) {
         updates[i].spokeConfigurator.updateReceiveSharesEnabled(
           updates[i].spoke,
-          reserveId,
+          updates[i].hub,
+          updates[i].underlying,
           EngineFlags.toBool(updates[i].receiveSharesEnabled)
         );
       }
@@ -143,14 +139,10 @@ library SpokeEngine {
   ) external {
     uint256 length = additions.length;
     for (uint256 i; i < length; ++i) {
-      uint256 reserveId = _resolveReserveId(
-        additions[i].spoke,
-        additions[i].hub,
-        additions[i].underlying
-      );
       additions[i].spokeConfigurator.addDynamicReserveConfig(
         additions[i].spoke,
-        reserveId,
+        additions[i].hub,
+        additions[i].underlying,
         additions[i].dynamicConfig
       );
     }
@@ -194,7 +186,8 @@ library SpokeEngine {
 
       updates[i].spokeConfigurator.updateDynamicReserveConfig(
         updates[i].spoke,
-        reserveId,
+        updates[i].hub,
+        updates[i].underlying,
         updates[i].dynamicConfigKey.toUint32(),
         current
       );
@@ -213,6 +206,23 @@ library SpokeEngine {
         updates[i].positionManager,
         updates[i].active
       );
+    }
+  }
+
+  /// @dev Skips the configurator call when it would revert for having nothing to change.
+  function _updateFrozen(IAaveV4ConfigEngine.ReserveConfigUpdate calldata update) private {
+    ISpoke spoke = ISpoke(update.spoke);
+    uint256 reserveId = _resolveReserveId(update.spoke, update.hub, update.underlying);
+    bool isFrozen = spoke.getReserveConfig(reserveId).frozen;
+    if (EngineFlags.toBool(update.frozen)) {
+      uint256 latestCollateralFactor = spoke
+        .getDynamicReserveConfig(reserveId, spoke.getReserve(reserveId).dynamicConfigKey)
+        .collateralFactor;
+      if (!isFrozen || latestCollateralFactor != 0) {
+        update.spokeConfigurator.freezeReserve(update.spoke, update.hub, update.underlying);
+      }
+    } else if (isFrozen) {
+      update.spokeConfigurator.unfreezeReserve(update.spoke, update.hub, update.underlying);
     }
   }
 

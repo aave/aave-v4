@@ -30,9 +30,17 @@ abstract contract PostDeploymentVerificationBase is BatchTestProcedures {
   ) internal view returns (OrchestrationReports.FullDeploymentReport memory report) {
     report.authorityBatchReport.accessManager = vm.parseJsonAddress(json, '$.accessManager');
     report.configuratorBatchReport.hubConfigurator = vm.parseJsonAddress(json, '$.hubConfigurator');
+    report.configuratorBatchReport.hubConfiguratorImplementation = vm.parseJsonAddress(
+      json,
+      '$.hubConfiguratorImplementation'
+    );
     report.configuratorBatchReport.spokeConfigurator = vm.parseJsonAddress(
       json,
       '$.spokeConfigurator'
+    );
+    report.configuratorBatchReport.spokeConfiguratorImplementation = vm.parseJsonAddress(
+      json,
+      '$.spokeConfiguratorImplementation'
     );
     report.treasurySpokeBatchReport.treasurySpoke = vm.parseJsonAddress(json, '$.treasurySpoke');
     report.salt = vm.parseJsonBytes32(json, '$.salt');

@@ -10,11 +10,15 @@ library BatchReports {
     address accessManager;
   }
 
-  /// @dev hubConfigurator The deployed HubConfigurator contract address.
-  /// @dev spokeConfigurator The deployed SpokeConfigurator contract address.
+  /// @dev hubConfigurator The deployed HubConfigurator proxy contract address.
+  /// @dev hubConfiguratorImplementation The deployed HubConfigurator implementation contract address.
+  /// @dev spokeConfigurator The deployed SpokeConfigurator proxy contract address.
+  /// @dev spokeConfiguratorImplementation The deployed SpokeConfigurator implementation contract address.
   struct ConfiguratorBatchReport {
     address hubConfigurator;
+    address hubConfiguratorImplementation;
     address spokeConfigurator;
+    address spokeConfiguratorImplementation;
   }
 
   /// @dev spokeProxy The deployed Spoke proxy contract address.

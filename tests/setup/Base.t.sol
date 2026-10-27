@@ -59,6 +59,8 @@ import {
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {TreasurySpoke, ITreasurySpoke} from 'src/spoke/TreasurySpoke.sol';
 import {TreasurySpokeInstance} from 'src/spoke/instances/TreasurySpokeInstance.sol';
+import {HubConfiguratorInstance} from 'src/hub/instances/HubConfiguratorInstance.sol';
+import {SpokeConfiguratorInstance} from 'src/spoke/instances/SpokeConfiguratorInstance.sol';
 import {IPriceOracle} from 'src/spoke/interfaces/IPriceOracle.sol';
 import {IPriceFeed} from 'src/spoke/interfaces/IPriceFeed.sol';
 import {AaveOracle} from 'src/spoke/AaveOracle.sol';
@@ -836,6 +838,32 @@ abstract contract Base is BaseHelpers, BatchTestProcedures {
       irData: encodedIrData
     });
     return assetParams;
+  }
+
+  function _deployHubConfigurator(address authority) internal returns (IHubConfigurator) {
+    return
+      IHubConfigurator(
+        address(
+          new TransparentUpgradeableProxy(
+            address(new HubConfiguratorInstance()),
+            ADMIN,
+            abi.encodeCall(HubConfiguratorInstance.initialize, (authority))
+          )
+        )
+      );
+  }
+
+  function _deploySpokeConfigurator(address authority) internal returns (ISpokeConfigurator) {
+    return
+      ISpokeConfigurator(
+        address(
+          new TransparentUpgradeableProxy(
+            address(new SpokeConfiguratorInstance()),
+            ADMIN,
+            abi.encodeCall(SpokeConfiguratorInstance.initialize, (authority))
+          )
+        )
+      );
   }
 
   function _grantSpokeConfiguratorRole(ISpoke spoke, address configurator) internal {

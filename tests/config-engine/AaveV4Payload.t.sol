@@ -759,6 +759,50 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     assertEq(dynConfig.liquidationFee, additions[0].dynamicConfig.liquidationFee);
   }
 
+  function test_execute_freezeAndDynamicReserveConfigAddition_leavesFrozenWithAddedCollateralFactor()
+    public
+  {
+    uint256 reserveId = _getReserveId(0, 0);
+    uint32 keyBefore = spoke1().getReserve(reserveId).dynamicConfigKey;
+    assertGt(spoke1().getDynamicReserveConfig(reserveId, keyBefore).collateralFactor, 0);
+
+    IAaveV4ConfigEngine.ReserveConfigUpdate[]
+      memory updates = new IAaveV4ConfigEngine.ReserveConfigUpdate[](1);
+    updates[0] = _defaultReserveConfigUpdate();
+    updates[0].collateralRisk = EngineFlags.KEEP_CURRENT;
+    updates[0].paused = EngineFlags.KEEP_CURRENT;
+    updates[0].frozen = EngineFlags.ENABLED;
+    updates[0].borrowable = EngineFlags.KEEP_CURRENT;
+    updates[0].receiveSharesEnabled = EngineFlags.KEEP_CURRENT;
+    updates[0].priceSource = EngineFlags.KEEP_CURRENT_ADDRESS;
+    payload.setSpokeReserveConfigUpdates(updates);
+
+    IAaveV4ConfigEngine.DynamicReserveConfigAddition[]
+      memory additions = new IAaveV4ConfigEngine.DynamicReserveConfigAddition[](1);
+    additions[0] = _defaultDynamicReserveConfigAddition();
+    assertGt(additions[0].dynamicConfig.collateralFactor, 0);
+    payload.setSpokeDynamicReserveConfigAdditions(additions);
+
+    payload.execute();
+
+    assertTrue(spoke1().getReserveConfig(reserveId).frozen);
+    uint32 latestKey = spoke1().getReserve(reserveId).dynamicConfigKey;
+    assertEq(latestKey, keyBefore + 2);
+    assertEq(spoke1().getDynamicReserveConfig(reserveId, keyBefore + 1).collateralFactor, 0);
+    assertEq(
+      spoke1().getDynamicReserveConfig(reserveId, latestKey).collateralFactor,
+      additions[0].dynamicConfig.collateralFactor
+    );
+    assertEq(
+      spokeConfigurator.getSavedDynamicConfigKey(
+        address(spoke1()),
+        additions[0].hub,
+        additions[0].underlying
+      ),
+      keyBefore
+    );
+  }
+
   function test_execute_spokeDynamicReserveConfigUpdates() public {
     IAaveV4ConfigEngine.DynamicReserveConfigUpdate[]
       memory updates = new IAaveV4ConfigEngine.DynamicReserveConfigUpdate[](1);

@@ -6,7 +6,11 @@ import {AaveV4HubConfiguratorDeployProcedure} from 'src/deployments/procedures/d
 contract AaveV4HubConfiguratorDeployProcedureWrapper is AaveV4HubConfiguratorDeployProcedure {
   bool public IS_TEST = true;
 
-  function deployHubConfigurator(address authority, bytes32 salt) external returns (address) {
-    return _deployHubConfigurator(authority, salt);
+  function deployUpgradeableHubConfigurator(
+    address proxyAdminOwner,
+    address authority,
+    bytes32 salt
+  ) external returns (address, address) {
+    return _deployUpgradeableHubConfigurator(proxyAdminOwner, authority, salt);
   }
 }

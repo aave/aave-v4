@@ -18,7 +18,15 @@ contract MetadataLogger is Logger {
     _write('salt', report.salt);
     _write('accessManager', report.authorityBatchReport.accessManager);
     _write('hubConfigurator', report.configuratorBatchReport.hubConfigurator);
+    _write(
+      'hubConfiguratorImplementation',
+      report.configuratorBatchReport.hubConfiguratorImplementation
+    );
     _write('spokeConfigurator', report.configuratorBatchReport.spokeConfigurator);
+    _write(
+      'spokeConfiguratorImplementation',
+      report.configuratorBatchReport.spokeConfiguratorImplementation
+    );
     _write('treasurySpoke', report.treasurySpokeBatchReport.treasurySpoke);
 
     // Group hubs by property type
