@@ -57,6 +57,7 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
       assertEq(a.aaveOracle, b.aaveOracle, 'aave oracle');
       assertEq(a.spokeImplementation, b.spokeImplementation, 'spoke implementation');
       assertEq(a.spokeProxy, b.spokeProxy, 'spoke proxy');
+      assertEq(abi.encode(a), abi.encode(b));
     }
   }
 

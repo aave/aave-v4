@@ -81,7 +81,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
   ) internal view {
     _checkFullReport({report: report, inputs: inputs});
     _checkBatchDeployments({report: report, inputs: inputs});
-    _checkRoles(report, _inputs);
+    _checkRoles(report, inputs);
   }
 
   function _checkBatchDeployments(
