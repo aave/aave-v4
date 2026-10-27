@@ -1,0 +1,81 @@
+src/deployments/libraries/BatchReports.sol
+  s_8b1557a4f69971::t_da3f7cc71f6919 6-8
+src/deployments/orchestration/AaveV4DeployOrchestration.sol
+  s_8b1557a4f69971::t_9e73ac53ec93d0 12-24,32-33,43,54,57,69-70,80-81,91,101,104,111,113,123,125,202,218,232,250,262,264,278,285-295,301,306,308-309,316,322-329,339,341,349-356,359-373,377,382-386,392,401-406,410-414,420,425-431
+src/deployments/procedures/deploy/AaveV4AccessManagerEnumerableDeployProcedure.sol
+  s_8b1557a4f69971::t_d3f67dfc26d754 7,10,15
+src/deployments/procedures/deploy/hub/AaveV4HubConfiguratorDeployProcedure.sol
+  s_8b1557a4f69971::t_979492f0c57c05 7,10,15
+src/deployments/procedures/deploy/hub/AaveV4HubDeployProcedure.sol
+  s_8b1557a4f69971::t_a8ecb4bf6a0ec5 7,10,18
+src/deployments/procedures/deploy/hub/AaveV4InterestRateStrategyDeployProcedure.sol
+  s_8b1557a4f69971::t_c21b49034ccb67 7,10,15
+src/deployments/procedures/deploy/position-manager/AaveV4ConfigPositionManagerDeployProcedure.sol
+  s_8b1557a4f69971::t_59fe9135473b3e 7,10,15
+src/deployments/procedures/deploy/position-manager/AaveV4GiverPositionManagerDeployProcedure.sol
+  s_8b1557a4f69971::t_9c204680d44a8d 7,10,15
+src/deployments/procedures/deploy/position-manager/AaveV4NativeTokenGatewayDeployProcedure.sol
+  s_8b1557a4f69971::t_e296c06b0d7643 7,10,16
+src/deployments/procedures/deploy/position-manager/AaveV4SignatureGatewayDeployProcedure.sol
+  s_8b1557a4f69971::t_564c0cfdf29d45 7,10,15
+src/deployments/procedures/deploy/position-manager/AaveV4TakerPositionManagerDeployProcedure.sol
+  s_8b1557a4f69971::t_4fb2593b940531 7,10,15
+src/deployments/procedures/deploy/spoke/AaveV4AaveOracleDeployProcedure.sol
+  s_8b1557a4f69971::t_e5870352a1b064 4-5,7,9-12,15-23,25-40
+src/deployments/procedures/deploy/spoke/AaveV4SpokeConfiguratorDeployProcedure.sol
+  s_8b1557a4f69971::t_9b3d25fff793d1 6,9,14
+src/deployments/procedures/deploy/spoke/AaveV4SpokeDeployProcedure.sol
+  s_8b1557a4f69971::t_c48edfb5d9c798 7,10,20,34,50
+src/deployments/procedures/deploy/spoke/AaveV4TokenizationSpokeDeployProcedure.sol
+  s_8b1557a4f69971::t_9142ade30f82a6 9,12,22,37,63
+src/deployments/procedures/deploy/spoke/AaveV4TreasurySpokeDeployProcedure.sol
+  s_8b1557a4f69971::t_42c9bf4a75e53b 7,10,15
+src/deployments/utils/AaveV4AaveOracleDeployer.sol
+  s_8b1557a4f69971::t_efda36fa8950aa 4,7,9-25,28,31-35,38-43
+tests/deployments/orchestration/AaveV4TestOrchestration.sol
+  s_8b1557a4f69971::t_39d8a2ee43f5e5 19-29,77-79,81-85,87,89-94,97,99-105,108-120,132-138,148-149,166-167,181,361-407
+tests/deployments/procedures/ProceduresBase.t.sol
+  s_8b1557a4f69971::t_a8083c3d2b9665 27-28
+tests/deployments/procedures/deploy/spoke/AaveV4AaveOracleDeployProcedure.t.sol
+  s_8b1557a4f69971::t_00f0b5877d833c 6,17-28,34,37,41-50,52-57,59-63
+tests/deployments/procedures/deploy/spoke/AaveV4TokenizationSpokeDeployProcedure.t.sol
+  s_8b1557a4f69971::t_e672d11f53430a 19-27,54
+tests/helpers/mocks/deployments/procedures/AaveV4AaveOracleDeployProcedureWrapper.sol
+  s_8b1557a4f69971::t_e00745aee1c8f4 6,9-18
+tests/helpers/mocks/deployments/procedures/AaveV4AccessManagerEnumerableDeployProcedureWrapper.sol
+  s_8b1557a4f69971::t_33bdfe3d11c95a 6,9
+tests/helpers/mocks/deployments/procedures/AaveV4HubConfiguratorDeployProcedureWrapper.sol
+  s_8b1557a4f69971::t_03ea77227c9cbf 6,10
+tests/helpers/mocks/deployments/procedures/AaveV4HubDeployProcedureWrapper.sol
+  s_8b1557a4f69971::t_7f7e0c4f91e7dc 6,15
+tests/helpers/mocks/deployments/procedures/AaveV4InterestRateStrategyDeployProcedureWrapper.sol
+  s_8b1557a4f69971::t_c54e78fc9105ad 6,10
+tests/helpers/mocks/deployments/procedures/AaveV4NativeTokenGatewayDeployProcedureWrapper.sol
+  s_8b1557a4f69971::t_a6e6073f24d659 6,14
+tests/helpers/mocks/deployments/procedures/AaveV4SignatureGatewayDeployProcedureWrapper.sol
+  s_8b1557a4f69971::t_4c673371bb4fb5 6,10
+tests/helpers/mocks/deployments/procedures/AaveV4SpokeConfiguratorDeployProcedureWrapper.sol
+  s_8b1557a4f69971::t_db4fb2d149cb5e 6,10
+tests/helpers/mocks/deployments/procedures/AaveV4SpokeDeployProcedureWrapper.sol
+  s_8b1557a4f69971::t_d26aab06bcb545 6,18
+tests/helpers/mocks/deployments/procedures/AaveV4TokenizationSpokeDeployProcedureWrapper.sol
+  s_8b1557a4f69971::t_04b39794a0b609 6,18
+tests/helpers/mocks/deployments/procedures/AaveV4TreasurySpokeDeployProcedureWrapper.sol
+  s_8b1557a4f69971::t_8cd12848397c99 6,10
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "8f397af275df1f54f60ee16e717c7517dca1a1f9",
+  "prompts": {},
+  "sessions": {
+    "s_8b1557a4f69971": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c4dba2c6-a42c-43e8-aa5e-79271ff4465b",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}
