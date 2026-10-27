@@ -4,10 +4,10 @@ pragma solidity ^0.8.0;
 import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 import {ISpokeInstance} from 'src/deployments/utils/interfaces/ISpokeInstance.sol';
 
-/// @title AaveV4SpokeDeployProcedure
+/// @title AaveV4SpokeDeployProcedure Library
 /// @author Aave Labs
 /// @notice Deploys an upgradeable Spoke instance behind a transparent proxy.
-contract AaveV4SpokeDeployProcedure {
+library AaveV4SpokeDeployProcedure {
   /// @notice Deploys a Spoke implementation via CREATE2 and sets up a transparent proxy.
   /// @param proxyAdminOwner The owner of the proxy admin contract.
   /// @param authority The access control authority address used to initialize the Spoke.
@@ -17,7 +17,7 @@ contract AaveV4SpokeDeployProcedure {
   /// @param salt The CREATE2 salt for deterministic deployment.
   /// @return spokeProxy The address of the deployed transparent proxy.
   /// @return spokeImplementation The address of the deployed Spoke implementation contract.
-  function _deployUpgradeableSpokeInstance(
+  function deployUpgradeableSpokeInstance(
     address proxyAdminOwner,
     address authority,
     address oracle,
@@ -31,7 +31,7 @@ contract AaveV4SpokeDeployProcedure {
     require(maxUserReservesLimit > 0, 'invalid max user reserves limit');
     spokeImplementation = Create2Utils.create2Deploy({
       salt: salt,
-      bytecode: _getSpokeInstanceInitCode(spokeBytecode, oracle, maxUserReservesLimit)
+      bytecode: getSpokeInstanceInitCode(spokeBytecode, oracle, maxUserReservesLimit)
     });
     spokeProxy = Create2Utils.proxify({
       salt: salt,
@@ -47,7 +47,7 @@ contract AaveV4SpokeDeployProcedure {
   /// @param oracle The oracle address to encode as a constructor argument.
   /// @param maxUserReservesLimit The maximum number of user reserves to encode as a constructor argument.
   /// @return The complete init code with encoded constructor arguments.
-  function _getSpokeInstanceInitCode(
+  function getSpokeInstanceInitCode(
     bytes memory spokeBytecode,
     address oracle,
     uint16 maxUserReservesLimit

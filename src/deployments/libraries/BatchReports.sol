@@ -3,7 +3,9 @@ pragma solidity ^0.8.0;
 
 /// @title BatchReports Library
 /// @author Aave Labs
-/// @notice Report structs returned by each deployment batch, including deployed contract addresses.
+/// @notice Report structs grouping the deployed contract addresses of each deployment step.
+/// @dev The deployment batch contracts are gone, but the structs keep their `Batch` names, and the JSON
+///      report keeps its keys, so the report format and its downstream consumers stay unchanged.
 library BatchReports {
   /// @dev accessManager The deployed AccessManagerEnumerable contract address.
   struct AuthorityBatchReport {
