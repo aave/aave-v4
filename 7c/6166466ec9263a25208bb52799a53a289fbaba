@@ -1,0 +1,38 @@
+src/deployments/procedures/roles/AaveV4SpokeConfiguratorRolesProcedure.sol
+  s_151709b1f75f19::t_f58dc84937abf7 16-18,31,37,44
+  s_151709b1f75f19::t_5a87e9a053e030 15,36,42
+  s_151709b1f75f19::t_714228b3627b6b 38-41,43
+  s_151709b1f75f19::t_2456eea89decef 11,13
+src/deployments/utils/libraries/Roles.sol
+  s_151709b1f75f19::t_2456eea89decef 178,180,265,267
+  s_151709b1f75f19::t_a72ca130ffd1bf 167,174,254,261
+  s_151709b1f75f19::t_23d9dd9ef8baa3 269
+  s_151709b1f75f19::t_f58dc84937abf7 169-173,181-183,253,256-260,268
+  s_151709b1f75f19::t_714228b3627b6b 179,263-264,266
+  s_151709b1f75f19::t_5a87e9a053e030 168,175-177,255,262
+tests/helpers/mocks/deployments/libraries/RolesWrapper.sol
+  s_151709b1f75f19::t_a72ca130ffd1bf 14-25
+src/deployments/procedures/roles/AaveV4HubConfiguratorRolesProcedure.sol
+  s_151709b1f75f19::t_f58dc84937abf7 16-18,31,36,43
+  s_151709b1f75f19::t_2456eea89decef 11,13
+  s_151709b1f75f19::t_714228b3627b6b 37-40,42
+  s_151709b1f75f19::t_5a87e9a053e030 15,35,41
+tests/deployments/utils/libraries/Roles.t.sol
+  s_151709b1f75f19::t_a72ca130ffd1bf 66-101
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7c6166466ec9263a25208bb52799a53a289fbaba",
+  "prompts": {},
+  "sessions": {
+    "s_151709b1f75f19": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f116a874-be23-45e7-aa8b-9ae0eea79130",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}
