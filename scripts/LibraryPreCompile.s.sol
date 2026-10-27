@@ -17,9 +17,14 @@ import {SpokeDeployUtils} from 'scripts/utils/SpokeDeployUtils.sol';
  *
  * Usage:
  *   forge script scripts/LibraryPreCompile.s.sol --broadcast --fork-url $RPC --ffi
+ *   forge script scripts/LibraryPreCompile.s.sol --sig 'run(bytes32)' <salt> --broadcast --fork-url $RPC --ffi
  */
 contract LibraryPreCompile is Script {
   function run() external {
+    run(bytes32(0));
+  }
+
+  function run(bytes32 salt) public {
     bool found = SpokeDeployUtils._librariesPathExists();
 
     if (found) {
@@ -37,7 +42,7 @@ contract LibraryPreCompile is Script {
     }
 
     vm.startBroadcast();
-    SpokeDeployUtils._deployAndWriteLibrariesConfig(bytes32(0));
+    SpokeDeployUtils._deployAndWriteLibrariesConfig(salt);
     vm.stopBroadcast();
 
     console.log('LibraryPreCompile: FOUNDRY_LIBRARIES set. Run the main deploy script.');

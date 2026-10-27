@@ -1,0 +1,30 @@
+{
+  "accessManager": "0x4010C94698EDE9d895814502B6EB122D764a1Cc6",
+  "configPositionManager": "0xe90F830bEe4b190B4910e146908437075b0BDaaF",
+  "giverPositionManager": "0x9E81c2fDE4E34CAB3AB1667ca3c932dBAED95F08",
+  "hub": {
+    "equities": "0xa4d5947Eb727A052bae69C593FfC84247EC9864E"
+  },
+  "hubConfigurator": "0x2Cd40DFF9f2F74e8765dA148102b6668A5e9778A",
+  "hubImplementation": {
+    "equities": "0xF912A34a97e78EB2B68C602701aAf06226e0D2F6"
+  },
+  "irStrategy": {
+    "equities": "0x3b0c5FbEff9d32fB6bB706bACc988c88b1871770"
+  },
+  "nativeTokenGateway": "0xdFC11f7037Ba11D9cC29A822844f5dC19C42B70d",
+  "oracle": {
+    "mag7": "0xaBaf048fD7675Ea34a84332371ffd5D55E322A47"
+  },
+  "salt": "0xd72c0dea5ad283a0bacbf56534163edcc6b58ca0c36cc3607fcb4ad4d73597d5",
+  "signatureGateway": "0x5d488d3EAAa86DDb6D4f834FC34938054eC505A7",
+  "spoke": {
+    "mag7": "0x17905Db0e4A3514467539956c084180616AE7B8D"
+  },
+  "spokeConfigurator": "0x0191B1Aa743c6B3C545119B5D56a0577D7f3a57F",
+  "spokeImplementation": {
+    "mag7": "0x81A73c282faa932DE3B2541CEe19549f4BF13b19"
+  },
+  "takerPositionManager": "0x8481204E528735aF2F3391AD98f36E757A56D695",
+  "treasurySpoke": "0x5F8d0102F5B51Fae6DE9d2F2561bda63Fb5Db674"
+}

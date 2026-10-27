@@ -1,0 +1,391 @@
+{
+  "defaults": {
+    "spokeRegistration": {
+      "riskPremiumThreshold": 0,
+      "active": true,
+      "halted": false
+    },
+    "reserve": {
+      "receiveSharesEnabled": true,
+      "frozen": false,
+      "paused": false,
+      "liquidationFee": 0,
+      "maxLiquidationBonus": 10000
+    },
+    "asset": {
+      "liquidityFee": 0
+    },
+    "tokenize": {
+      "enabled": true
+    }
+  },
+  "tokens": {
+    "BTCb": {
+      "address": "0x152b9d0FdC40C096757F570A51E494bd4b943E50",
+      "priceFeed": "0x2779D32d5166BAaa2B2b658333bA7e6Ec0C65743"
+    },
+    "EURC": {
+      "address": "0xC891EB4cbdEFf6e073e859e987815Ed1505c2ACD",
+      "priceFeed": "0x3368310bC4AeE5D96486A73bae8E6b49FcDE62D3"
+    },
+    "USDC": {
+      "address": "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
+      "priceFeed": "0xb0D7A8bbDcdb1203850b742bB4d7f57a1F1C8483"
+    },
+    "USDT": {
+      "address": "0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7",
+      "priceFeed": "0x5b7810a910B4a878AaA4800a824E5E5796838009"
+    },
+    "WAVAX": {
+      "address": "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
+      "priceFeed": "0x0A77230d17318075983913bC2145DB16C7366156"
+    },
+    "WETHe": {
+      "address": "0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB",
+      "priceFeed": "0x976B3D034E162d8bD72D6b9C989d545b839003b0"
+    },
+    "sAVAX": {
+      "address": "0x2b2C81e08f1Af8835a78Bb2A90AE924ACE0eA4bE",
+      "priceFeed": "0xB2B332f27e4B7305649a228C31Ed9858c5a6bAD9"
+    }
+  },
+  "hubs": [
+    {
+      "key": "CORE_HUB"
+    }
+  ],
+  "spokes": [
+    {
+      "key": "MAIN_SPOKE",
+      "liquidationConfig": {
+        "targetHealthFactor": "1240000000000000000",
+        "healthFactorForMaxBonus": "900000000000000000",
+        "liquidationBonusFactor": 9000
+      }
+    },
+    {
+      "key": "AVAX_CORRELATED_SPOKE",
+      "liquidationConfig": {
+        "targetHealthFactor": "1035000000000000000",
+        "healthFactorForMaxBonus": "990000000000000000",
+        "liquidationBonusFactor": 10000
+      }
+    },
+    {
+      "key": "FOREX_SPOKE",
+      "liquidationConfig": {
+        "targetHealthFactor": "1044200000000000000",
+        "healthFactorForMaxBonus": "990000000000000000",
+        "liquidationBonusFactor": 10000
+      }
+    }
+  ],
+  "assets": [
+    {
+      "tokenKey": "WAVAX",
+      "hubKey": "CORE_HUB",
+      "irData": {
+        "baseDrawnRate": 100,
+        "rateGrowthBeforeOptimal": 400,
+        "rateGrowthAfterOptimal": 14428,
+        "optimalUsageRatio": 6500
+      },
+      "liquidityFee": 2000,
+      "tokenize": {
+        "name": "Wrapped Aave Core WAVAX",
+        "symbol": "waCoreWAVAX",
+        "addCap": 150000
+      }
+    },
+    {
+      "tokenKey": "BTCb",
+      "hubKey": "CORE_HUB",
+      "irData": {
+        "baseDrawnRate": 0,
+        "rateGrowthBeforeOptimal": 400,
+        "rateGrowthAfterOptimal": 8000,
+        "optimalUsageRatio": 8000
+      },
+      "liquidityFee": 2500,
+      "tokenize": {
+        "name": "Wrapped Aave Core BTCb",
+        "symbol": "waCoreBTCb",
+        "addCap": 20
+      }
+    },
+    {
+      "tokenKey": "USDC",
+      "hubKey": "CORE_HUB",
+      "irData": {
+        "baseDrawnRate": 0,
+        "rateGrowthBeforeOptimal": 400,
+        "rateGrowthAfterOptimal": 1000,
+        "optimalUsageRatio": 9000
+      },
+      "liquidityFee": 1000,
+      "tokenize": {
+        "name": "Wrapped Aave Core USDC",
+        "symbol": "waCoreUSDC",
+        "addCap": 1500000
+      }
+    },
+    {
+      "tokenKey": "USDT",
+      "hubKey": "CORE_HUB",
+      "irData": {
+        "baseDrawnRate": 0,
+        "rateGrowthBeforeOptimal": 400,
+        "rateGrowthAfterOptimal": 1000,
+        "optimalUsageRatio": 9000
+      },
+      "liquidityFee": 1000,
+      "tokenize": {
+        "name": "Wrapped Aave Core USDT",
+        "symbol": "waCoreUSDT",
+        "addCap": 1500000
+      }
+    },
+    {
+      "tokenKey": "WETHe",
+      "hubKey": "CORE_HUB",
+      "irData": {
+        "baseDrawnRate": 0,
+        "rateGrowthBeforeOptimal": 250,
+        "rateGrowthAfterOptimal": 800,
+        "optimalUsageRatio": 9000
+      },
+      "liquidityFee": 1500,
+      "tokenize": {
+        "name": "Wrapped Aave Core WETHe",
+        "symbol": "waCoreWETHe",
+        "addCap": 600
+      }
+    },
+    {
+      "tokenKey": "EURC",
+      "hubKey": "CORE_HUB",
+      "irData": {
+        "baseDrawnRate": 0,
+        "rateGrowthBeforeOptimal": 550,
+        "rateGrowthAfterOptimal": 5000,
+        "optimalUsageRatio": 9000
+      },
+      "liquidityFee": 1000,
+      "tokenize": {
+        "name": "Wrapped Aave Core EURC",
+        "symbol": "waCoreEURC",
+        "addCap": 150000
+      }
+    },
+    {
+      "tokenKey": "sAVAX",
+      "hubKey": "CORE_HUB",
+      "irData": {
+        "optimalUsageRatio": 9900,
+        "baseDrawnRate": 0,
+        "rateGrowthBeforeOptimal": 0,
+        "rateGrowthAfterOptimal": 0
+      },
+      "tokenize": {
+        "name": "Wrapped Aave Core sAVAX",
+        "symbol": "waCoresAVAX",
+        "addCap": 0
+      }
+    }
+  ],
+  "spokeRegistrations": [
+    {
+      "assetKey": "WAVAX",
+      "hubKey": "CORE_HUB",
+      "spokeKey": "MAIN_SPOKE",
+      "addCap": 500000,
+      "drawCap": 50000
+    },
+    {
+      "assetKey": "BTCb",
+      "hubKey": "CORE_HUB",
+      "spokeKey": "MAIN_SPOKE",
+      "addCap": 100,
+      "drawCap": 10
+    },
+    {
+      "assetKey": "USDC",
+      "hubKey": "CORE_HUB",
+      "spokeKey": "MAIN_SPOKE",
+      "addCap": 5000000,
+      "drawCap": 5000000
+    },
+    {
+      "assetKey": "USDT",
+      "hubKey": "CORE_HUB",
+      "spokeKey": "MAIN_SPOKE",
+      "addCap": 5000000,
+      "drawCap": 5000000
+    },
+    {
+      "assetKey": "WETHe",
+      "hubKey": "CORE_HUB",
+      "spokeKey": "MAIN_SPOKE",
+      "addCap": 3000,
+      "drawCap": 300
+    },
+    {
+      "assetKey": "EURC",
+      "hubKey": "CORE_HUB",
+      "spokeKey": "MAIN_SPOKE",
+      "addCap": 500000,
+      "drawCap": 400000
+    },
+    {
+      "assetKey": "sAVAX",
+      "hubKey": "CORE_HUB",
+      "spokeKey": "AVAX_CORRELATED_SPOKE",
+      "addCap": 200000,
+      "drawCap": 0
+    },
+    {
+      "assetKey": "WAVAX",
+      "hubKey": "CORE_HUB",
+      "spokeKey": "AVAX_CORRELATED_SPOKE",
+      "addCap": 0,
+      "drawCap": 250000
+    },
+    {
+      "assetKey": "EURC",
+      "hubKey": "CORE_HUB",
+      "spokeKey": "FOREX_SPOKE",
+      "addCap": 300000,
+      "drawCap": 400000
+    },
+    {
+      "assetKey": "USDC",
+      "hubKey": "CORE_HUB",
+      "spokeKey": "FOREX_SPOKE",
+      "addCap": 200000,
+      "drawCap": 150000
+    },
+    {
+      "assetKey": "USDT",
+      "hubKey": "CORE_HUB",
+      "spokeKey": "FOREX_SPOKE",
+      "addCap": 200000,
+      "drawCap": 150000
+    }
+  ],
+  "reserves": [
+    {
+      "spokeKey": "MAIN_SPOKE",
+      "hubKey": "CORE_HUB",
+      "assetKey": "WAVAX",
+      "borrowable": true,
+      "collateralFactor": 7300,
+      "collateralRisk": 0,
+      "maxLiquidationBonus": 11000,
+      "liquidationFee": 1000
+    },
+    {
+      "spokeKey": "MAIN_SPOKE",
+      "hubKey": "CORE_HUB",
+      "assetKey": "BTCb",
+      "borrowable": true,
+      "collateralFactor": 7500,
+      "collateralRisk": 0,
+      "maxLiquidationBonus": 10722,
+      "liquidationFee": 1000
+    },
+    {
+      "spokeKey": "MAIN_SPOKE",
+      "hubKey": "CORE_HUB",
+      "assetKey": "USDC",
+      "borrowable": true,
+      "collateralFactor": 7800,
+      "collateralRisk": 0,
+      "maxLiquidationBonus": 10555,
+      "liquidationFee": 1000
+    },
+    {
+      "spokeKey": "MAIN_SPOKE",
+      "hubKey": "CORE_HUB",
+      "assetKey": "USDT",
+      "borrowable": true,
+      "collateralFactor": 7800,
+      "collateralRisk": 0,
+      "maxLiquidationBonus": 10555,
+      "liquidationFee": 1000
+    },
+    {
+      "spokeKey": "MAIN_SPOKE",
+      "hubKey": "CORE_HUB",
+      "assetKey": "WETHe",
+      "borrowable": true,
+      "collateralFactor": 8300,
+      "collateralRisk": 0,
+      "maxLiquidationBonus": 10555,
+      "liquidationFee": 1000
+    },
+    {
+      "spokeKey": "MAIN_SPOKE",
+      "hubKey": "CORE_HUB",
+      "assetKey": "EURC",
+      "borrowable": true,
+      "collateralFactor": 0,
+      "collateralRisk": 0
+    },
+    {
+      "spokeKey": "AVAX_CORRELATED_SPOKE",
+      "hubKey": "CORE_HUB",
+      "assetKey": "sAVAX",
+      "borrowable": false,
+      "collateralFactor": 9500,
+      "collateralRisk": 0,
+      "maxLiquidationBonus": 10100,
+      "liquidationFee": 1000
+    },
+    {
+      "spokeKey": "AVAX_CORRELATED_SPOKE",
+      "hubKey": "CORE_HUB",
+      "assetKey": "WAVAX",
+      "borrowable": true,
+      "collateralFactor": 0,
+      "collateralRisk": 0
+    },
+    {
+      "spokeKey": "FOREX_SPOKE",
+      "hubKey": "CORE_HUB",
+      "assetKey": "EURC",
+      "borrowable": true,
+      "collateralFactor": 9000,
+      "collateralRisk": 0,
+      "maxLiquidationBonus": 10200,
+      "liquidationFee": 1000
+    },
+    {
+      "spokeKey": "FOREX_SPOKE",
+      "hubKey": "CORE_HUB",
+      "assetKey": "USDC",
+      "borrowable": true,
+      "collateralFactor": 9000,
+      "collateralRisk": 0,
+      "maxLiquidationBonus": 10200,
+      "liquidationFee": 1000
+    },
+    {
+      "spokeKey": "FOREX_SPOKE",
+      "hubKey": "CORE_HUB",
+      "assetKey": "USDT",
+      "borrowable": true,
+      "collateralFactor": 9000,
+      "collateralRisk": 0,
+      "maxLiquidationBonus": 10200,
+      "liquidationFee": 1000
+    }
+  ],
+  "periphery": {
+    "nativeTokenKey": "WAVAX",
+    "deploySignatureGateway": true,
+    "deployNativeTokenGateway": true,
+    "deployGiverPositionManager": true,
+    "deployTakerPositionManager": true,
+    "deployConfigPositionManager": true
+  }
+}
