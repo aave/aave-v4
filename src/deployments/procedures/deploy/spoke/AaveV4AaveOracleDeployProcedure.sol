@@ -2,12 +2,11 @@
 pragma solidity ^0.8.0;
 
 import {AaveOracle} from 'src/spoke/AaveOracle.sol';
-import {AaveV4DeployProcedureBase} from 'src/deployments/procedures/AaveV4DeployProcedureBase.sol';
 
 /// @title AaveV4AaveOracleDeployProcedure
 /// @author Aave Labs
 /// @notice Deploys the AaveOracle contract.
-contract AaveV4AaveOracleDeployProcedure is AaveV4DeployProcedureBase {
+contract AaveV4AaveOracleDeployProcedure {
   /// @notice Deploys a new AaveOracle instance via CREATE2 from this contract.
   /// @dev Not via the CREATE2 factory: AaveOracle records `msg.sender` as the only account allowed to
   /// call `setSpoke`, so this contract must be the direct deployer.

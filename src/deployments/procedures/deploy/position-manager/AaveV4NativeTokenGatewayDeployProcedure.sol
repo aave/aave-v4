@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: LicenseRef-BUSL
 pragma solidity ^0.8.0;
 
-import {AaveV4DeployProcedureBase} from 'src/deployments/procedures/AaveV4DeployProcedureBase.sol';
 import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 import {NativeTokenGateway} from 'src/position-manager/NativeTokenGateway.sol';
 
 /// @title AaveV4NativeTokenGatewayDeployProcedure
 /// @author Aave Labs
 /// @notice Deploys the NativeTokenGateway contract.
-contract AaveV4NativeTokenGatewayDeployProcedure is AaveV4DeployProcedureBase {
+contract AaveV4NativeTokenGatewayDeployProcedure {
   /// @notice Deploys a new NativeTokenGateway instance via CREATE2.
   /// @param nativeWrapper The address of the native wrapper token (e.g. WETH).
   /// @param owner The owner of the NativeTokenGateway.
