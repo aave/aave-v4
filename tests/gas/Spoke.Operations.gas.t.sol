@@ -16,7 +16,7 @@ contract SpokeOperations_Gas_Tests is Base {
     _seed();
   }
 
-  function test_supply() public {
+  function test_supply() public virtual {
     vm.startPrank(alice);
     spoke.supply(reserveId.usdx, 1000e6, alice);
     vm.snapshotGasLastFrame(NAMESPACE, 'supply: 0 borrows, collateral disabled');
@@ -32,7 +32,7 @@ contract SpokeOperations_Gas_Tests is Base {
     vm.stopPrank();
   }
 
-  function test_usingAsCollateral() public {
+  function test_usingAsCollateral() public virtual {
     vm.prank(bob);
     spoke.supply(reserveId.dai, 1000e18, bob);
 
@@ -61,7 +61,7 @@ contract SpokeOperations_Gas_Tests is Base {
     vm.stopPrank();
   }
 
-  function test_withdraw() public {
+  function test_withdraw() public virtual {
     vm.startPrank(alice);
     spoke.supply(reserveId.usdx, 100e6, alice);
     spoke.setUsingAsCollateral(reserveId.usdx, true, alice);
@@ -91,7 +91,7 @@ contract SpokeOperations_Gas_Tests is Base {
     vm.stopPrank();
   }
 
-  function test_borrow() public {
+  function test_borrow() public virtual {
     vm.startPrank(bob);
     spoke.supply(reserveId.dai, 1000e18, bob);
     spoke.setUsingAsCollateral(reserveId.dai, true, bob);
@@ -133,7 +133,7 @@ contract SpokeOperations_Gas_Tests is Base {
     vm.stopPrank();
   }
 
-  function test_liquidation_partial() public {
+  function test_liquidation_partial() public virtual {
     _liquidationSetup(85_00);
 
     vm.startPrank(bob);
@@ -148,7 +148,7 @@ contract SpokeOperations_Gas_Tests is Base {
     vm.stopPrank();
   }
 
-  function test_liquidation_full() public {
+  function test_liquidation_full() public virtual {
     _liquidationSetup(85_00);
 
     vm.startPrank(bob);
@@ -164,7 +164,7 @@ contract SpokeOperations_Gas_Tests is Base {
     vm.stopPrank();
   }
 
-  function test_liquidation_receiveShares_partial() public {
+  function test_liquidation_receiveShares_partial() public virtual {
     _liquidationSetup(85_00);
 
     vm.startPrank(bob);
@@ -180,7 +180,7 @@ contract SpokeOperations_Gas_Tests is Base {
     vm.stopPrank();
   }
 
-  function test_liquidation_receiveShares_full() public {
+  function test_liquidation_receiveShares_full() public virtual {
     _liquidationSetup(85_00);
 
     vm.startPrank(bob);
@@ -196,7 +196,7 @@ contract SpokeOperations_Gas_Tests is Base {
     vm.stopPrank();
   }
 
-  function test_liquidation_reportDeficit_full() public {
+  function test_liquidation_reportDeficit_full() public virtual {
     _liquidationSetup(45_00);
 
     vm.startPrank(bob);
@@ -212,7 +212,7 @@ contract SpokeOperations_Gas_Tests is Base {
     vm.stopPrank();
   }
 
-  function test_updateRiskPremium() public {
+  function test_updateRiskPremium() public virtual {
     vm.prank(bob);
     spoke.supply(reserveId.dai, 1000e18, bob);
 
@@ -234,7 +234,7 @@ contract SpokeOperations_Gas_Tests is Base {
     vm.stopPrank();
   }
 
-  function test_updateUserDynamicConfig() public {
+  function test_updateUserDynamicConfig() public virtual {
     vm.startPrank(alice);
     spoke.setUsingAsCollateral(reserveId.usdx, true, alice);
     _updateLiquidationFee(spoke, reserveId.usdx, 10_00);
@@ -250,7 +250,7 @@ contract SpokeOperations_Gas_Tests is Base {
     vm.stopPrank();
   }
 
-  function test_multicall_ops() public {
+  function test_multicall_ops() public virtual {
     vm.startPrank(bob);
     spoke.supply(reserveId.dai, 1000e18, bob);
     spoke.supply(reserveId.usdx, 1000e6, bob);
@@ -371,9 +371,15 @@ contract SpokeOperations_Gas_Tests is Base {
     vm.stopPrank();
   }
 
+  /// @dev Liquidation fee configured on the collateral reserve by the liquidation setups. The
+  /// BabylonSpoke suite overrides it to zero: its managed collateral reserve must stay fee-free.
+  function _collateralLiquidationFee() internal pure virtual returns (uint16) {
+    return 10_00;
+  }
+
   function _liquidationSetup(uint256 pricePercentage) internal {
     _updateMaxLiquidationBonus(spoke, _usdxReserveId(spoke), 105_00);
-    _updateLiquidationFee(spoke, _usdxReserveId(spoke), 10_00);
+    _updateLiquidationFee(spoke, _usdxReserveId(spoke), _collateralLiquidationFee());
 
     vm.prank(bob);
     spoke.supply(reserveId.dai, 1_000_000e18, bob);
