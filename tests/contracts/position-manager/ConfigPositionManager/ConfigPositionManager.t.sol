@@ -489,6 +489,39 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
     assertEq(isCollateral, useAsCollateral);
   }
 
+  function test_setUsingAsCollateralOnBehalfOf_noop_whenStatusUnchanged(
+    uint256 reserveId,
+    bool useAsCollateral
+  ) public {
+    reserveId = bound(reserveId, 1, spoke1.getReserveCount() - 1);
+
+    vm.prank(alice);
+    positionManager.setCanSetUsingAsCollateralPermission(address(spoke1), bob, true);
+
+    vm.prank(alice);
+    spoke1.setUsingAsCollateral(reserveId, useAsCollateral, alice);
+
+    (bool isCollateral, ) = spoke1.getUserReserveStatus(reserveId, alice);
+    assertEq(isCollateral, useAsCollateral);
+
+    vm.recordLogs();
+    vm.prank(bob);
+    positionManager.setUsingAsCollateralOnBehalfOf(
+      address(spoke1),
+      reserveId,
+      useAsCollateral,
+      alice
+    );
+
+    _assertEventsNotEmitted(
+      IConfigPositionManager.SetUsingAsCollateralOnBehalfOf.selector,
+      ISpoke.SetUsingAsCollateral.selector
+    );
+
+    (isCollateral, ) = spoke1.getUserReserveStatus(reserveId, alice);
+    assertEq(isCollateral, useAsCollateral);
+  }
+
   function test_setUsingAsCollateralOnBehalfOf_revertsWith_CallerNotAllowed() public {
     vm.expectRevert(IConfigPositionManager.DelegateeNotAllowed.selector);
     vm.prank(bob);

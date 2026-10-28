@@ -85,7 +85,7 @@ contract TakerPositionManagerPermitTest is TakerPositionManagerBaseTest {
     bytes memory signature = _sign(alicePk, _getTypedDataHash(positionManager, p));
 
     vm.expectEmit(address(positionManager));
-    emit ITakerPositionManager.WithdrawApproval(address(spoke1), reserveId, alice, spender, amount);
+    emit ITakerPositionManager.WithdrawApproval(address(spoke1), alice, spender, reserveId, amount);
     vm.prank(vm.randomAddress());
     positionManager.approveWithdrawWithSig(p, signature);
 
@@ -176,7 +176,7 @@ contract TakerPositionManagerPermitTest is TakerPositionManagerBaseTest {
     bytes memory signature = _sign(alicePk, _getTypedDataHash(positionManager, p));
 
     vm.expectEmit(address(positionManager));
-    emit ITakerPositionManager.BorrowApproval(address(spoke1), reserveId, alice, spender, amount);
+    emit ITakerPositionManager.BorrowApproval(address(spoke1), alice, spender, reserveId, amount);
     vm.prank(vm.randomAddress());
     positionManager.approveBorrowWithSig(p, signature);
 
