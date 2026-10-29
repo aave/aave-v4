@@ -298,6 +298,7 @@ contract SpokeDynamicConfigTriggersTest is Base {
     uint256 reserveId = _usdxReserveId(spoke1);
     _updateCollateralFactor(spoke1, reserveId, _randomCollateralFactor(spoke1, reserveId));
     configs = _getUserDynConfigKeys(spoke1, alice);
+
     SpokeActions.supply({
       spoke: spoke1,
       reserveId: _wethReserveId(spoke1),
@@ -306,19 +307,18 @@ contract SpokeDynamicConfigTriggersTest is Base {
       onBehalfOf: alice
     });
 
-    // when enabling, only the relevant asset is refreshed
-    vm.expectEmit(address(spoke1));
-    emit ISpoke.RefreshSingleUserDynamicConfig(alice, _wethReserveId(spoke1));
+    // when enabling, no refresh is needed because the dynamic config is already up to date
     vm.prank(alice);
     spoke1.setUsingAsCollateral(_wethReserveId(spoke1), true, alice);
 
     DynamicConfigEntry[] memory userConfig = _getUserDynConfigKeys(spoke1, alice);
     DynamicConfigEntry[] memory spokeConfig = _getSpokeDynConfigKeys(spoke1);
-    // weth is refreshed but not all
+
+    // weth is enabled and already has the latest dynamic config
     assertEq(userConfig[_wethReserveId(spoke1)], spokeConfig[_wethReserveId(spoke1)]);
     assertNotEq(abi.encode(userConfig), abi.encode(spokeConfig));
 
-    // when disabling all configs are refreshed
+    // when disabling, all configs are refreshed
     vm.expectEmit(address(spoke1));
     emit ISpoke.RefreshAllUserDynamicConfig(alice);
     vm.prank(alice);
@@ -326,7 +326,7 @@ contract SpokeDynamicConfigTriggersTest is Base {
 
     assertNotEq(_getUserDynConfigKeys(spoke1, alice), configs);
     assertEq(_getSpokeDynConfigKeys(spoke1), _getUserDynConfigKeys(spoke1, alice));
-  }
+}
 
   function test_updateUserDynamicConfig_triggers_dynamicConfigUpdate() public {
     SpokeActions.supplyCollateral({
