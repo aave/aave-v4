@@ -1,0 +1,67 @@
+tests/deployments/procedures/deploy/spoke/AaveV4SpokeImplementationDeployProcedure.t.sol
+  s_0cab52a9e9f0d6::t_34554aea1c857d 1-49
+tests/helpers/mocks/deployments/procedures/AaveV4SpokeImplementationDeployProcedureWrapper.sol
+  s_0cab52a9e9f0d6::t_422570836c4c76 1-23
+src/deployments/orchestration/AaveV4DeployOrchestration.sol
+  s_0cab52a9e9f0d6::t_1f89cab543e8d4 14,265,274-287,362,370-405,411
+tests/helpers/mocks/deployments/procedures/AaveV4SpokeDeployProcedureWrapper.sol
+  s_0cab52a9e9f0d6::t_836e410ce99246 9,12,14-15
+src/deployments/procedures/deploy/spoke/AaveV4SpokeDeployProcedure.sol
+  s_0cab52a9e9f0d6::t_c14fa797770363 9-11,13,16,18-19,22,24,27-55
+tests/deployments/procedures/deploy/spoke/AaveV4SpokeDeployProcedure.t.sol
+  s_0cab52a9e9f0d6::t_39a2ac8798f657 8-9,13-16,19-25,30,33,35,38,43,46,50-51,54
+tests/deployments/orchestration/AaveV4TestOrchestration.sol
+  s_0cab52a9e9f0d6::t_05d83aa9c802e0 25,397,405-406,413-425
+snapshots/TakerPositionManager.Operations.json
+  s_4f5261c6e21dbb::t_a39b715480dcdb 5
+src/deployments/batches/AaveV4SpokeInstanceBatch.sol
+  s_0cab52a9e9f0d6::t_589c1ec3acb5c1 11-14,20,25,28,31-32,35,40
+tests/deployments/batches/AaveV4AaveOracleBatch.t.sol
+  s_0cab52a9e9f0d6::t_1591e1f1f2c3b8 1-140
+src/deployments/batches/AaveV4AaveOracleBatch.sol
+  s_0cab52a9e9f0d6::t_4add0409f4cccf 1-66
+tests/deployments/batches/BatchBase.t.sol
+  s_0cab52a9e9f0d6::t_9110f36b850122 14,26,28,42-43
+tests/helpers/mocks/deployments/AaveV4DeployBaseWrapper.sol
+  s_0cab52a9e9f0d6::t_70dcf5b02d1c36 10,17,19
+snapshots/SignatureGateway.Operations.json
+  s_4f5261c6e21dbb::t_ae90635290f83a 3
+src/deployments/procedures/deploy/spoke/AaveV4SpokeImplementationDeployProcedure.sol
+  s_0cab52a9e9f0d6::t_774ca30b192b38 1-64
+tests/deployments/procedures/ProceduresBase.t.sol
+  s_0cab52a9e9f0d6::t_1881c78b37e432 19
+src/deployments/utils/libraries/Create2Utils.sol
+  s_0cab52a9e9f0d6::t_fd896c2bed21cd 47-74,76-78
+src/deployments/orchestration/AaveV4DeployBase.sol
+  s_0cab52a9e9f0d6::t_1cc541b7eb88c3 6,102-105,111-112,119,125,128,139-160
+tests/deployments/batches/AaveV4SpokeInstanceBatch.t.sol
+  s_0cab52a9e9f0d6::t_d7c5bdc95e6d1c 9-10,14-15,19,27-32,40,48-62,70-71,80-81,85-86,90-91,95-108,111-118
+src/deployments/libraries/BatchReports.sol
+  s_0cab52a9e9f0d6::t_9e3ce5feefdc97 23-31
+src/deployments/README.md
+  s_0cab52a9e9f0d6::t_5d5231a4c9b5c7 39,62,77-78,90,238-245,248-251
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "6f76ef62e54888f812cb3bae46580b0999ccab42",
+  "prompts": {},
+  "sessions": {
+    "s_0cab52a9e9f0d6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7bdfb8e7-33ad-4431-ab02-d6a823d15b89",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    },
+    "s_4f5261c6e21dbb": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "af35560e-00c7-4b1d-9586-dde333921e50",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "DhairyaSethi <55102840+DhairyaSethi@users.noreply.github.com>"
+    }
+  }
+}
