@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: LicenseRef-BUSL
 pragma solidity ^0.8.0;
 
-import {AaveV4DeployProcedureBase} from 'src/deployments/procedures/AaveV4DeployProcedureBase.sol';
 import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 import {SignatureGateway} from 'src/position-manager/SignatureGateway.sol';
 
 /// @title AaveV4SignatureGatewayDeployProcedure
 /// @author Aave Labs
 /// @notice Deploys the SignatureGateway contract.
-contract AaveV4SignatureGatewayDeployProcedure is AaveV4DeployProcedureBase {
+contract AaveV4SignatureGatewayDeployProcedure {
   /// @notice Deploys a new SignatureGateway instance via CREATE2.
   /// @param owner The owner of the SignatureGateway.
   /// @param salt The CREATE2 salt for deterministic deployment.

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: LicenseRef-BUSL
 pragma solidity ^0.8.0;
 
-import {AaveV4DeployProcedureBase} from 'src/deployments/procedures/AaveV4DeployProcedureBase.sol';
 import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 import {ITokenizationSpokeInstance} from 'src/deployments/utils/interfaces/ITokenizationSpokeInstance.sol';
 import {TokenizationSpokeInstance} from 'src/spoke/instances/TokenizationSpokeInstance.sol';
@@ -10,7 +9,7 @@ import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
 /// @title AaveV4TokenizationSpokeDeployProcedure
 /// @author Aave Labs
 /// @notice Deploys an upgradeable TokenizationSpoke instance behind a transparent proxy.
-contract AaveV4TokenizationSpokeDeployProcedure is AaveV4DeployProcedureBase {
+contract AaveV4TokenizationSpokeDeployProcedure {
   /// @notice Deploys a TokenizationSpoke implementation via CREATE2 and sets up a transparent proxy.
   /// @param hub The address of the Hub that the tokenization spoke connects to.
   /// @param underlying The address of the underlying asset to tokenize.
