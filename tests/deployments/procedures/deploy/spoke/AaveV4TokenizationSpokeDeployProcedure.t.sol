@@ -20,6 +20,7 @@ contract AaveV4TokenizationSpokeDeployProcedureTest is ProceduresBase {
       proxyAdminOwner_: admin,
       authority_: accessManager,
       hubImplementation_: Create2Utils.create2Deploy(salt, hubBytecode),
+      hubInitCodeHash_: keccak256(hubBytecode),
       salt_: salt
     });
     BatchReports.HubInstanceBatchReport memory hubReport = hubInstanceBatch.getReport();

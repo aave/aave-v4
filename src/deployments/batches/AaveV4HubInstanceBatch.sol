@@ -18,17 +18,20 @@ contract AaveV4HubInstanceBatch is
   /// @param proxyAdminOwner_ The owner of the proxy admin.
   /// @param authority_ The access-control authority for the Hub.
   /// @param hubImplementation_ The address of the deployed Hub implementation.
+  /// @param hubInitCodeHash_ The keccak256 hash of the Hub implementation creation bytecode.
   /// @param salt_ The CREATE2 salt for deterministic deployment.
   constructor(
     address proxyAdminOwner_,
     address authority_,
     address hubImplementation_,
+    bytes32 hubInitCodeHash_,
     bytes32 salt_
   ) {
     address hubProxy = _deployHubProxy({
       proxyAdminOwner: proxyAdminOwner_,
       authority: authority_,
       hubImplementation: hubImplementation_,
+      hubInitCodeHash: hubInitCodeHash_,
       salt: salt_
     });
     address irStrategy = _deployInterestRateStrategy({hub: hubProxy, salt: salt_});

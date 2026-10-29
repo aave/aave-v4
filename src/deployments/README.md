@@ -224,7 +224,7 @@ AaveV4DeployBatchBase.s.sol                         (Foundry script entry point)
     |     |           Create2Utils.create2Deploy() --> HubInstance (impl)
     |     |       _deployHubInstanceBatch()
     |     |         AaveV4DeployBase.deployHubInstanceBatch()
-    |     |           new AaveV4HubInstanceBatch(proxyAdmin, authority, hubImpl, salt)
+    |     |           new AaveV4HubInstanceBatch(proxyAdmin, authority, hubImpl, hubInitCodeHash, salt)
     |     |             AaveV4HubDeployProcedure._deployHubProxy()
     |     |               Create2Utils.proxify()    --> HubInstance (proxy)
     |     |             Create2Utils.create2Deploy() --> InterestRateStrategy

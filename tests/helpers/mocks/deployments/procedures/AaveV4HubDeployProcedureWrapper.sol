@@ -10,8 +10,9 @@ contract AaveV4HubDeployProcedureWrapper is AaveV4HubDeployProcedure {
     address proxyAdminOwner,
     address authority,
     address hubImplementation,
+    bytes32 hubInitCodeHash,
     bytes32 salt
   ) external returns (address) {
-    return _deployHubProxy(proxyAdminOwner, authority, hubImplementation, salt);
+    return _deployHubProxy(proxyAdminOwner, authority, hubImplementation, hubInitCodeHash, salt);
   }
 }

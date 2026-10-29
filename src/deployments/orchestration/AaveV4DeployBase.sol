@@ -81,18 +81,21 @@ library AaveV4DeployBase {
   /// @param proxyAdminOwner The owner of the proxy admin.
   /// @param authority The access-control authority for the Hub.
   /// @param hubImplementation The address of the deployed Hub implementation.
+  /// @param hubInitCodeHash The keccak256 hash of the Hub implementation creation bytecode.
   /// @param salt The CREATE2 salt for deterministic deployment.
   /// @return The Hub instance batch report.
   function deployHubInstanceBatch(
     address proxyAdminOwner,
     address authority,
     address hubImplementation,
+    bytes32 hubInitCodeHash,
     bytes32 salt
   ) internal returns (BatchReports.HubInstanceBatchReport memory) {
     AaveV4HubInstanceBatch hubInstanceBatch = new AaveV4HubInstanceBatch({
       proxyAdminOwner_: proxyAdminOwner,
       authority_: authority,
       hubImplementation_: hubImplementation,
+      hubInitCodeHash_: hubInitCodeHash,
       salt_: salt
     });
     return hubInstanceBatch.getReport();

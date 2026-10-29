@@ -209,6 +209,7 @@ library AaveV4DeployOrchestration {
       proxyAdminOwner: proxyAdminOwner,
       authority: authority,
       hubImplementation: hubImplementation,
+      hubInitCodeHash: keccak256(hubBytecode),
       salt: salt
     });
 
@@ -294,6 +295,7 @@ library AaveV4DeployOrchestration {
     address proxyAdminOwner,
     address authority,
     address hubImplementation,
+    bytes32 hubInitCodeHash,
     bytes32 salt
   ) internal returns (BatchReports.HubInstanceBatchReport memory report) {
     logger.logHeader1('deploying HubBatch');
@@ -301,6 +303,7 @@ library AaveV4DeployOrchestration {
       proxyAdminOwner: proxyAdminOwner,
       authority: authority,
       hubImplementation: hubImplementation,
+      hubInitCodeHash: hubInitCodeHash,
       salt: salt
     });
     return report;

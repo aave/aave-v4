@@ -18,6 +18,7 @@ contract AaveV4HubDeployProcedureTest is ProceduresBase {
       admin,
       accessManager,
       hubImplementation,
+      keccak256(hubBytecode),
       salt
     );
     assertNotEq(hubProxy, address(0));
@@ -33,6 +34,7 @@ contract AaveV4HubDeployProcedureTest is ProceduresBase {
       proxyAdminOwner: admin,
       authority: address(0),
       hubImplementation: hubImplementation,
+      hubInitCodeHash: keccak256(hubBytecode),
       salt: salt
     });
   }
@@ -43,6 +45,7 @@ contract AaveV4HubDeployProcedureTest is ProceduresBase {
       proxyAdminOwner: address(0),
       authority: accessManager,
       hubImplementation: hubImplementation,
+      hubInitCodeHash: keccak256(hubBytecode),
       salt: salt
     });
   }
@@ -53,6 +56,18 @@ contract AaveV4HubDeployProcedureTest is ProceduresBase {
       proxyAdminOwner: admin,
       authority: accessManager,
       hubImplementation: makeAddr('noCode'),
+      hubInitCodeHash: keccak256(hubBytecode),
+      salt: salt
+    });
+  }
+
+  function test_deployHubProxy_reverts_hubImplementationCodeMismatch() public {
+    vm.expectRevert('invalid hub implementation');
+    aaveV4HubDeployProcedureWrapper.deployHubProxy({
+      proxyAdminOwner: admin,
+      authority: accessManager,
+      hubImplementation: hubImplementation,
+      hubInitCodeHash: keccak256('otherBytecode'),
       salt: salt
     });
   }

@@ -389,6 +389,7 @@ library AaveV4TestOrchestration {
           hubBytecode: hubBytecode,
           salt: salt
         }),
+        hubInitCodeHash: keccak256(hubBytecode),
         salt: salt
       });
   }
