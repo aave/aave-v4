@@ -6,22 +6,14 @@ import {AaveV4SpokeDeployProcedure} from 'src/deployments/procedures/deploy/spok
 contract AaveV4SpokeDeployProcedureWrapper is AaveV4SpokeDeployProcedure {
   bool public IS_TEST = true;
 
-  function deployUpgradeableSpokeInstance(
+  function deploySpokeProxy(
     address proxyAdminOwner,
     address authority,
-    address oracle,
-    bytes memory spokeBytecode,
-    uint16 maxUserReservesLimit,
+    address spokeImplementation,
+    bytes32 spokeInitCodeHash,
     bytes32 salt
-  ) external returns (address spokeProxy, address spokeImplementation) {
+  ) external returns (address) {
     return
-      _deployUpgradeableSpokeInstance(
-        proxyAdminOwner,
-        authority,
-        oracle,
-        spokeBytecode,
-        maxUserReservesLimit,
-        salt
-      );
+      _deploySpokeProxy(proxyAdminOwner, authority, spokeImplementation, spokeInitCodeHash, salt);
   }
 }
