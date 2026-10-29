@@ -97,12 +97,12 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     OrchestrationReports.FullDeploymentReport memory report
   ) internal view {
     assertEq(
-      IAccessManaged(report.configuratorBatchReport.hubConfigurator).authority(),
+      IAccessManaged(report.hubConfiguratorBatchReport.hubConfigurator).authority(),
       report.authorityBatchReport.accessManager,
       'HubConfigurator authority'
     );
     assertEq(
-      IAccessManaged(report.configuratorBatchReport.spokeConfigurator).authority(),
+      IAccessManaged(report.spokeConfiguratorBatchReport.spokeConfigurator).authority(),
       report.authorityBatchReport.accessManager,
       'SpokeConfigurator authority'
     );
@@ -199,41 +199,45 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     }
     if (inputs.deployPositionManagers) {
       assertNotEq(
-        report.positionManagerBatchReport.giverPositionManager,
+        report.giverPositionManagerBatchReport.giverPositionManager,
         address(0),
         'GiverPositionManager'
       );
       assertNotEq(
-        report.positionManagerBatchReport.takerPositionManager,
+        report.takerPositionManagerBatchReport.takerPositionManager,
         address(0),
         'TakerPositionManager'
       );
       assertNotEq(
-        report.positionManagerBatchReport.configPositionManager,
+        report.configPositionManagerBatchReport.configPositionManager,
         address(0),
         'ConfigPositionManager'
       );
     } else {
       assertEq(
-        report.positionManagerBatchReport.giverPositionManager,
+        report.giverPositionManagerBatchReport.giverPositionManager,
         address(0),
         'Zero GiverPositionManager'
       );
       assertEq(
-        report.positionManagerBatchReport.takerPositionManager,
+        report.takerPositionManagerBatchReport.takerPositionManager,
         address(0),
         'Zero TakerPositionManager'
       );
       assertEq(
-        report.positionManagerBatchReport.configPositionManager,
+        report.configPositionManagerBatchReport.configPositionManager,
         address(0),
         'Zero ConfigPositionManager'
       );
     }
 
     assertNotEq(report.authorityBatchReport.accessManager, address(0), 'AccessManager');
-    assertNotEq(report.configuratorBatchReport.spokeConfigurator, address(0), 'SpokeConfigurator');
-    assertNotEq(report.configuratorBatchReport.hubConfigurator, address(0), 'HubConfigurator');
+    assertNotEq(
+      report.spokeConfiguratorBatchReport.spokeConfigurator,
+      address(0),
+      'SpokeConfigurator'
+    );
+    assertNotEq(report.hubConfiguratorBatchReport.hubConfigurator, address(0), 'HubConfigurator');
     assertNotEq(report.treasurySpokeBatchReport.treasurySpoke, address(0), 'TreasurySpoke');
     for (uint256 i = 0; i < report.hubInstanceBatchReports.length; i++) {
       assertNotEq(report.hubInstanceBatchReports[i].report.hubProxy, address(0), 'Hub');
@@ -506,7 +510,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
       );
       assertEq(
         accessManager.getRoleMember(Roles.SPOKE_CONFIGURATOR_ROLE, 1),
-        report.configuratorBatchReport.spokeConfigurator,
+        report.spokeConfiguratorBatchReport.spokeConfigurator,
         'SpokeConfiguratorRole member - spoke configurator'
       );
     } else {
@@ -529,7 +533,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
         );
 
         (bool allowed, uint32 delay) = accessManager.canCall(
-          report.configuratorBatchReport.spokeConfigurator,
+          report.spokeConfiguratorBatchReport.spokeConfigurator,
           report.spokeInstanceBatchReports[i].report.spokeProxy,
           _spokeConfiguratorRoleSelectors[j]
         );
@@ -696,7 +700,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
       );
       assertEq(
         accessManager.getRoleMember(Roles.HUB_CONFIGURATOR_ROLE, 1),
-        report.configuratorBatchReport.hubConfigurator,
+        report.hubConfiguratorBatchReport.hubConfigurator,
         'HubConfiguratorRole member - hub configurator'
       );
     } else {
@@ -720,7 +724,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
         uint32 delay;
 
         (allowed, delay) = accessManager.canCall(
-          report.configuratorBatchReport.hubConfigurator,
+          report.hubConfiguratorBatchReport.hubConfigurator,
           report.hubInstanceBatchReports[i].report.hubProxy,
           _hubConfiguratorRoleSelectors[j]
         );
@@ -747,12 +751,12 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     InputUtils.FullDeployInputs memory inputs
   ) internal view {
     assertEq(
-      IAccessManaged(report.configuratorBatchReport.hubConfigurator).authority(),
+      IAccessManaged(report.hubConfiguratorBatchReport.hubConfigurator).authority(),
       report.authorityBatchReport.accessManager,
       'HubConfigurator authority'
     );
     assertEq(
-      IAccessManaged(report.configuratorBatchReport.spokeConfigurator).authority(),
+      IAccessManaged(report.spokeConfiguratorBatchReport.spokeConfigurator).authority(),
       report.authorityBatchReport.accessManager,
       'SpokeConfigurator authority'
     );
@@ -770,7 +774,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     OrchestrationReports.FullDeploymentReport memory report,
     InputUtils.FullDeployInputs memory inputs
   ) internal view {
-    address hubConfigurator = report.configuratorBatchReport.hubConfigurator;
+    address hubConfigurator = report.hubConfiguratorBatchReport.hubConfigurator;
     bytes4[] memory selectors = Roles.getHubConfiguratorDomainAdminRoleSelectors();
 
     for (uint256 i; i < selectors.length; i++) {
@@ -798,7 +802,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     OrchestrationReports.FullDeploymentReport memory report,
     InputUtils.FullDeployInputs memory inputs
   ) internal view {
-    address spokeConfigurator = report.configuratorBatchReport.spokeConfigurator;
+    address spokeConfigurator = report.spokeConfiguratorBatchReport.spokeConfigurator;
     bytes4[] memory selectors = Roles.getSpokeConfiguratorDomainAdminRoleSelectors();
 
     for (uint256 i; i < selectors.length; i++) {
@@ -841,17 +845,17 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     }
     if (inputs.deployPositionManagers) {
       assertEq(
-        Ownable(report.positionManagerBatchReport.giverPositionManager).owner(),
+        Ownable(report.giverPositionManagerBatchReport.giverPositionManager).owner(),
         inputs.positionManagerOwner,
         'GiverPositionManager owner'
       );
       assertEq(
-        Ownable(report.positionManagerBatchReport.takerPositionManager).owner(),
+        Ownable(report.takerPositionManagerBatchReport.takerPositionManager).owner(),
         inputs.positionManagerOwner,
         'TakerPositionManager owner'
       );
       assertEq(
-        Ownable(report.positionManagerBatchReport.configPositionManager).owner(),
+        Ownable(report.configPositionManagerBatchReport.configPositionManager).owner(),
         inputs.positionManagerOwner,
         'ConfigPositionManager owner'
       );
@@ -866,8 +870,8 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     OrchestrationReports.FullDeploymentReport memory report
   ) internal view {
     _assertHasCode(report.authorityBatchReport.accessManager, 'accessManager');
-    _assertHasCode(report.configuratorBatchReport.hubConfigurator, 'hubConfigurator');
-    _assertHasCode(report.configuratorBatchReport.spokeConfigurator, 'spokeConfigurator');
+    _assertHasCode(report.hubConfiguratorBatchReport.hubConfigurator, 'hubConfigurator');
+    _assertHasCode(report.spokeConfiguratorBatchReport.spokeConfigurator, 'spokeConfigurator');
     _assertHasCode(report.treasurySpokeBatchReport.treasurySpoke, 'treasurySpoke');
 
     for (uint256 i; i < report.hubInstanceBatchReports.length; i++) {
@@ -908,21 +912,21 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     if (report.gatewaysBatchReport.signatureGateway != address(0)) {
       _assertHasCode(report.gatewaysBatchReport.signatureGateway, 'signatureGateway');
     }
-    if (report.positionManagerBatchReport.giverPositionManager != address(0)) {
+    if (report.giverPositionManagerBatchReport.giverPositionManager != address(0)) {
       _assertHasCode(
-        report.positionManagerBatchReport.giverPositionManager,
+        report.giverPositionManagerBatchReport.giverPositionManager,
         'giverPositionManager'
       );
     }
-    if (report.positionManagerBatchReport.takerPositionManager != address(0)) {
+    if (report.takerPositionManagerBatchReport.takerPositionManager != address(0)) {
       _assertHasCode(
-        report.positionManagerBatchReport.takerPositionManager,
+        report.takerPositionManagerBatchReport.takerPositionManager,
         'takerPositionManager'
       );
     }
-    if (report.positionManagerBatchReport.configPositionManager != address(0)) {
+    if (report.configPositionManagerBatchReport.configPositionManager != address(0)) {
       _assertHasCode(
-        report.positionManagerBatchReport.configPositionManager,
+        report.configPositionManagerBatchReport.configPositionManager,
         'configPositionManager'
       );
     }

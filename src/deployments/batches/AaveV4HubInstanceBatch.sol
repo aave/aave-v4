@@ -7,7 +7,7 @@ import {AaveV4InterestRateStrategyDeployProcedure} from 'src/deployments/procedu
 
 /// @title AaveV4HubInstanceBatch
 /// @author Aave Labs
-/// @notice Deploys a Hub (proxy + implementation) and its InterestRateStrategy, producing a batch report.
+/// @notice Deploys a Hub proxy in front of an already deployed implementation and its InterestRateStrategy, producing a batch report.
 contract AaveV4HubInstanceBatch is
   AaveV4HubDeployProcedure,
   AaveV4InterestRateStrategyDeployProcedure
@@ -17,24 +17,27 @@ contract AaveV4HubInstanceBatch is
   /// @dev Constructor.
   /// @param proxyAdminOwner_ The owner of the proxy admin.
   /// @param authority_ The access-control authority for the Hub.
-  /// @param hubBytecode_ The creation bytecode of the Hub implementation.
+  /// @param hubImplementation_ The address of the deployed Hub implementation.
+  /// @param hubInitCodeHash_ The keccak256 hash of the Hub implementation creation bytecode.
   /// @param salt_ The CREATE2 salt for deterministic deployment.
   constructor(
     address proxyAdminOwner_,
     address authority_,
-    bytes memory hubBytecode_,
+    address hubImplementation_,
+    bytes32 hubInitCodeHash_,
     bytes32 salt_
   ) {
-    (address hubProxy, address hubImplementation) = _deployUpgradeableHubInstance({
+    address hubProxy = _deployHubProxy({
       proxyAdminOwner: proxyAdminOwner_,
       authority: authority_,
-      hubBytecode: hubBytecode_,
+      hubImplementation: hubImplementation_,
+      hubInitCodeHash: hubInitCodeHash_,
       salt: salt_
     });
     address irStrategy = _deployInterestRateStrategy({hub: hubProxy, salt: salt_});
 
     _report = BatchReports.HubInstanceBatchReport({
-      hubImplementation: hubImplementation,
+      hubImplementation: hubImplementation_,
       hubProxy: hubProxy,
       irStrategy: irStrategy
     });

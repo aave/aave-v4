@@ -6,13 +6,19 @@ import 'tests/deployments/batches/BatchBase.t.sol';
 contract AaveV4HubInstanceBatchTest is BatchBaseTest {
   AaveV4HubInstanceBatch public hubInstanceBatch;
   BatchReports.HubInstanceBatchReport public report;
+  address public hubImplementation;
 
   function setUp() public override {
     super.setUp();
+    hubImplementation = AaveV4HubImplementationDeployProcedure.deployHubImplementation(
+      hubBytecode,
+      salt
+    );
     hubInstanceBatch = new AaveV4HubInstanceBatch({
       proxyAdminOwner_: admin,
       authority_: accessManager,
-      hubBytecode_: hubBytecode,
+      hubImplementation_: hubImplementation,
+      hubInitCodeHash_: keccak256(hubBytecode),
       salt_: salt
     });
     report = hubInstanceBatch.getReport();
@@ -20,9 +26,17 @@ contract AaveV4HubInstanceBatchTest is BatchBaseTest {
 
   function test_getReport() public view {
     assertNotEq(report.hubProxy, address(0));
-    assertNotEq(report.hubImplementation, address(0));
+    assertEq(report.hubImplementation, hubImplementation);
     assertNotEq(report.irStrategy, address(0));
     assertNotEq(report.hubProxy, report.hubImplementation);
+  }
+
+  function test_hubImplementation() public view {
+    assertEq(ProxyHelper.getImplementation(report.hubProxy), hubImplementation);
+    assertEq(
+      hubImplementation,
+      Create2Utils.computeCreate2Address({salt: salt, bytecode: hubBytecode})
+    );
   }
 
   function test_hubAuthority() public view {
@@ -38,7 +52,8 @@ contract AaveV4HubInstanceBatchTest is BatchBaseTest {
     new AaveV4HubInstanceBatch({
       proxyAdminOwner_: admin,
       authority_: address(0),
-      hubBytecode_: hubBytecode,
+      hubImplementation_: hubImplementation,
+      hubInitCodeHash_: keccak256(hubBytecode),
       salt_: salt
     });
   }
@@ -48,17 +63,57 @@ contract AaveV4HubInstanceBatchTest is BatchBaseTest {
     new AaveV4HubInstanceBatch({
       proxyAdminOwner_: address(0),
       authority_: accessManager,
-      hubBytecode_: hubBytecode,
+      hubImplementation_: hubImplementation,
+      hubInitCodeHash_: keccak256(hubBytecode),
+      salt_: salt
+    });
+  }
+
+  function test_revert_invalidHubImplementation() public {
+    vm.expectRevert('invalid hub implementation');
+    new AaveV4HubInstanceBatch({
+      proxyAdminOwner_: admin,
+      authority_: accessManager,
+      hubImplementation_: makeAddr('noCode'),
+      hubInitCodeHash_: keccak256(hubBytecode),
+      salt_: keccak256('differentSalt')
+    });
+  }
+
+  function test_revert_undeployedHubImplementation() public {
+    bytes32 otherSalt = keccak256('differentSalt');
+    vm.expectRevert('invalid hub implementation');
+    new AaveV4HubInstanceBatch({
+      proxyAdminOwner_: admin,
+      authority_: accessManager,
+      hubImplementation_: Create2Utils.computeCreate2Address(otherSalt, hubBytecode),
+      hubInitCodeHash_: keccak256(hubBytecode),
+      salt_: otherSalt
+    });
+  }
+
+  function test_revert_hubImplementationCodeMismatch() public {
+    vm.expectRevert('invalid hub implementation');
+    new AaveV4HubInstanceBatch({
+      proxyAdminOwner_: admin,
+      authority_: accessManager,
+      hubImplementation_: hubImplementation,
+      hubInitCodeHash_: keccak256('otherBytecode'),
       salt_: salt
     });
   }
 
   function test_differentSaltProducesDifferentAddress() public {
+    bytes32 otherSalt = keccak256('differentSalt');
     AaveV4HubInstanceBatch newBatch = new AaveV4HubInstanceBatch({
       proxyAdminOwner_: admin,
       authority_: accessManager,
-      hubBytecode_: hubBytecode,
-      salt_: keccak256('differentSalt')
+      hubImplementation_: AaveV4HubImplementationDeployProcedure.deployHubImplementation(
+        hubBytecode,
+        otherSalt
+      ),
+      hubInitCodeHash_: keccak256(hubBytecode),
+      salt_: otherSalt
     });
     assertNotEq(report.hubProxy, newBatch.getReport().hubProxy);
   }

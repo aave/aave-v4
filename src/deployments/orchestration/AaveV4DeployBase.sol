@@ -4,10 +4,13 @@ pragma solidity ^0.8.0;
 import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
 import {AaveV4AuthorityBatch} from 'src/deployments/batches/AaveV4AuthorityBatch.sol';
-import {AaveV4ConfiguratorBatch} from 'src/deployments/batches/AaveV4ConfiguratorBatch.sol';
+import {AaveV4HubConfiguratorBatch} from 'src/deployments/batches/AaveV4HubConfiguratorBatch.sol';
+import {AaveV4SpokeConfiguratorBatch} from 'src/deployments/batches/AaveV4SpokeConfiguratorBatch.sol';
 import {AaveV4GatewayBatch} from 'src/deployments/batches/AaveV4GatewayBatch.sol';
 import {AaveV4HubInstanceBatch} from 'src/deployments/batches/AaveV4HubInstanceBatch.sol';
-import {AaveV4PositionManagerBatch} from 'src/deployments/batches/AaveV4PositionManagerBatch.sol';
+import {AaveV4GiverPositionManagerBatch} from 'src/deployments/batches/AaveV4GiverPositionManagerBatch.sol';
+import {AaveV4TakerPositionManagerBatch} from 'src/deployments/batches/AaveV4TakerPositionManagerBatch.sol';
+import {AaveV4ConfigPositionManagerBatch} from 'src/deployments/batches/AaveV4ConfigPositionManagerBatch.sol';
 import {AaveV4SpokeInstanceBatch} from 'src/deployments/batches/AaveV4SpokeInstanceBatch.sol';
 import {AaveV4TokenizationSpokeBatch} from 'src/deployments/batches/AaveV4TokenizationSpokeBatch.sol';
 import {AaveV4TreasurySpokeBatch} from 'src/deployments/batches/AaveV4TreasurySpokeBatch.sol';
@@ -29,22 +32,34 @@ library AaveV4DeployBase {
     return authorityBatch.getReport();
   }
 
-  /// @notice Deploys the configurator batch containing HubConfigurator and SpokeConfigurator.
-  /// @param hubConfiguratorAuthority The authority for the HubConfigurator.
-  /// @param spokeConfiguratorAuthority The authority for the SpokeConfigurator.
+  /// @notice Deploys the HubConfigurator batch.
+  /// @param authority The authority for the HubConfigurator.
   /// @param salt The CREATE2 salt for deterministic deployment.
-  /// @return The configurator batch report.
-  function deployConfiguratorBatch(
-    address hubConfiguratorAuthority,
-    address spokeConfiguratorAuthority,
+  /// @return The HubConfigurator batch report.
+  function deployHubConfiguratorBatch(
+    address authority,
     bytes32 salt
-  ) internal returns (BatchReports.ConfiguratorBatchReport memory) {
-    AaveV4ConfiguratorBatch configuratorBatch = new AaveV4ConfiguratorBatch({
-      hubConfiguratorAuthority_: hubConfiguratorAuthority,
-      spokeConfiguratorAuthority_: spokeConfiguratorAuthority,
+  ) internal returns (BatchReports.HubConfiguratorBatchReport memory) {
+    AaveV4HubConfiguratorBatch hubConfiguratorBatch = new AaveV4HubConfiguratorBatch({
+      authority_: authority,
       salt_: salt
     });
-    return configuratorBatch.getReport();
+    return hubConfiguratorBatch.getReport();
+  }
+
+  /// @notice Deploys the SpokeConfigurator batch.
+  /// @param authority The authority for the SpokeConfigurator.
+  /// @param salt The CREATE2 salt for deterministic deployment.
+  /// @return The SpokeConfigurator batch report.
+  function deploySpokeConfiguratorBatch(
+    address authority,
+    bytes32 salt
+  ) internal returns (BatchReports.SpokeConfiguratorBatchReport memory) {
+    AaveV4SpokeConfiguratorBatch spokeConfiguratorBatch = new AaveV4SpokeConfiguratorBatch({
+      authority_: authority,
+      salt_: salt
+    });
+    return spokeConfiguratorBatch.getReport();
   }
 
   /// @notice Deploys the Treasury Spoke batch containing the TreasurySpoke proxy.
@@ -62,22 +77,25 @@ library AaveV4DeployBase {
     return treasurySpokeBatch.getReport();
   }
 
-  /// @notice Deploys the Hub instance batch containing the Hub proxy, implementation, and IR strategy.
+  /// @notice Deploys the Hub instance batch containing the Hub proxy and IR strategy.
   /// @param proxyAdminOwner The owner of the proxy admin.
   /// @param authority The access-control authority for the Hub.
-  /// @param hubBytecode The creation bytecode of the HubInstance contract.
+  /// @param hubImplementation The address of the deployed Hub implementation.
+  /// @param hubInitCodeHash The keccak256 hash of the Hub implementation creation bytecode.
   /// @param salt The CREATE2 salt for deterministic deployment.
   /// @return The Hub instance batch report.
   function deployHubInstanceBatch(
     address proxyAdminOwner,
     address authority,
-    bytes memory hubBytecode,
+    address hubImplementation,
+    bytes32 hubInitCodeHash,
     bytes32 salt
   ) internal returns (BatchReports.HubInstanceBatchReport memory) {
     AaveV4HubInstanceBatch hubInstanceBatch = new AaveV4HubInstanceBatch({
       proxyAdminOwner_: proxyAdminOwner,
       authority_: authority,
-      hubBytecode_: hubBytecode,
+      hubImplementation_: hubImplementation,
+      hubInitCodeHash_: hubInitCodeHash,
       salt_: salt
     });
     return hubInstanceBatch.getReport();
@@ -124,19 +142,49 @@ library AaveV4DeployBase {
     return AaveV4SpokeInstanceBatch(spokeInstanceBatch).getReport();
   }
 
-  /// @notice Deploys the position manager batch containing all three position manager contracts.
-  /// @param owner The owner of the position managers.
+  /// @notice Deploys the GiverPositionManager batch.
+  /// @param owner The owner of the GiverPositionManager.
   /// @param salt The CREATE2 salt for deterministic deployment.
-  /// @return The position manager batch report.
-  function deployPositionManagerBatch(
+  /// @return The GiverPositionManager batch report.
+  function deployGiverPositionManagerBatch(
     address owner,
     bytes32 salt
-  ) internal returns (BatchReports.PositionManagerBatchReport memory) {
-    AaveV4PositionManagerBatch positionManagerBatch = new AaveV4PositionManagerBatch({
-      owner_: owner,
-      salt_: salt
-    });
-    return positionManagerBatch.getReport();
+  ) internal returns (BatchReports.GiverPositionManagerBatchReport memory) {
+    AaveV4GiverPositionManagerBatch giverPositionManagerBatch = new AaveV4GiverPositionManagerBatch({
+        owner_: owner,
+        salt_: salt
+      });
+    return giverPositionManagerBatch.getReport();
+  }
+
+  /// @notice Deploys the TakerPositionManager batch.
+  /// @param owner The owner of the TakerPositionManager.
+  /// @param salt The CREATE2 salt for deterministic deployment.
+  /// @return The TakerPositionManager batch report.
+  function deployTakerPositionManagerBatch(
+    address owner,
+    bytes32 salt
+  ) internal returns (BatchReports.TakerPositionManagerBatchReport memory) {
+    AaveV4TakerPositionManagerBatch takerPositionManagerBatch = new AaveV4TakerPositionManagerBatch({
+        owner_: owner,
+        salt_: salt
+      });
+    return takerPositionManagerBatch.getReport();
+  }
+
+  /// @notice Deploys the ConfigPositionManager batch.
+  /// @param owner The owner of the ConfigPositionManager.
+  /// @param salt The CREATE2 salt for deterministic deployment.
+  /// @return The ConfigPositionManager batch report.
+  function deployConfigPositionManagerBatch(
+    address owner,
+    bytes32 salt
+  ) internal returns (BatchReports.ConfigPositionManagerBatchReport memory) {
+    AaveV4ConfigPositionManagerBatch configPositionManagerBatch = new AaveV4ConfigPositionManagerBatch({
+        owner_: owner,
+        salt_: salt
+      });
+    return configPositionManagerBatch.getReport();
   }
 
   /// @notice Deploys the gateways batch containing NativeTokenGateway and SignatureGateway.
