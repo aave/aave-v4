@@ -22,7 +22,8 @@ contract SpokeUtilsTest is Base {
       decimals: 6,
       collateralRisk: 10_00,
       flags: ReserveFlagsMap.create(false, false, true, true),
-      dynamicConfigKey: 0
+      dynamicConfigKey: 0,
+      collateralRiskTier: 0
     });
 
     reserve1 = ISpoke.Reserve({
@@ -32,7 +33,8 @@ contract SpokeUtilsTest is Base {
       decimals: 18,
       collateralRisk: 15_00,
       flags: ReserveFlagsMap.create(false, false, true, true),
-      dynamicConfigKey: 3
+      dynamicConfigKey: 3,
+      collateralRiskTier: 1
     });
 
     reserve2 = ISpoke.Reserve({
@@ -42,7 +44,8 @@ contract SpokeUtilsTest is Base {
       decimals: 18,
       collateralRisk: 20_00,
       flags: ReserveFlagsMap.create(false, false, true, true),
-      dynamicConfigKey: 1
+      dynamicConfigKey: 1,
+      collateralRiskTier: 2
     });
   }
 

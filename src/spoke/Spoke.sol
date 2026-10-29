@@ -13,9 +13,9 @@ import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {SpokeUtils} from 'src/spoke/libraries/SpokeUtils.sol';
 import {EIP712Hash} from 'src/spoke/libraries/EIP712Hash.sol';
-import {KeyValueList} from 'src/spoke/libraries/KeyValueList.sol';
 import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
 import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
+import {RiskTierList} from 'src/spoke/libraries/RiskTierList.sol';
 import {ReserveFlags, ReserveFlagsMap} from 'src/spoke/libraries/ReserveFlagsMap.sol';
 import {UserPositionUtils} from 'src/spoke/libraries/UserPositionUtils.sol';
 import {IntentConsumer} from 'src/utils/IntentConsumer.sol';
@@ -46,8 +46,8 @@ abstract contract Spoke is
   using WadRayMath for *;
   using SpokeUtils for *;
   using EIP712Hash for *;
-  using KeyValueList for KeyValueList.List;
   using PositionStatusMap for *;
+  using RiskTierList for RiskTierList.List;
   using ReserveFlagsMap for ReserveFlags;
   using UserPositionUtils for ISpoke.UserPosition;
 
@@ -153,9 +153,11 @@ abstract contract Spoke is
         initBorrowable: config.borrowable,
         initReceiveSharesEnabled: config.receiveSharesEnabled
       }),
-      dynamicConfigKey: dynamicConfigKey
+      dynamicConfigKey: dynamicConfigKey,
+      collateralRiskTier: 0
     });
     _dynamicConfig[reserveId][dynamicConfigKey] = dynamicConfig;
+    _updateCollateralRiskTiers();
 
     emit AddReserve(reserveId, assetId, hub);
     emit UpdateReserveConfig(reserveId, config);
@@ -171,7 +173,10 @@ abstract contract Spoke is
   ) external restricted {
     Reserve storage reserve = _reserves.get(reserveId);
     _validateReserveConfig(config);
-    reserve.collateralRisk = config.collateralRisk;
+    if (reserve.collateralRisk != config.collateralRisk) {
+      reserve.collateralRisk = config.collateralRisk;
+      _updateCollateralRiskTiers();
+    }
     reserve.flags = ReserveFlagsMap.create({
       initPaused: config.paused,
       initFrozen: config.frozen,
@@ -710,9 +715,7 @@ abstract contract Spoke is
     PositionStatus storage positionStatus = _positionStatus[user];
 
     uint256 reserveId = _reserveCount;
-    KeyValueList.List memory collateralInfo = KeyValueList.init(
-      positionStatus.collateralCount(reserveId)
-    );
+    RiskTierList.List memory collateralInfo = RiskTierList.init();
     bool borrowing;
     bool collateral;
     while (true) {
@@ -741,7 +744,7 @@ abstract contract Spoke is
               .toValue({decimals: assetDecimals, price: assetPrice});
             accountData.totalCollateralValue += userCollateralValue;
             collateralInfo.add(
-              accountData.activeCollateralCount,
+              reserve.collateralRiskTier,
               reserve.collateralRisk,
               userCollateralValue
             );
@@ -785,19 +788,14 @@ abstract contract Spoke is
         accountData.avgCollateralFactor.bpsToWad() / accountData.totalCollateralValue;
     }
 
-    // sort by collateral risk in ASC, collateral value in DESC
-    collateralInfo.sortByKey();
-
-    // runs until either the collateral or debt is exhausted
+    // runs in ascending collateral risk until either the collateral or debt is exhausted
     uint256 totalDebtValue = accountData.totalDebtValueRay.fromRayUp();
     uint256 debtValueLeftToCover = totalDebtValue;
 
-    for (uint256 index = 0; index < collateralInfo.length(); ++index) {
-      if (debtValueLeftToCover == 0) {
-        break;
-      }
-
-      (uint256 collateralRisk, uint256 userCollateralValue) = collateralInfo.uncheckedAt(index);
+    while (debtValueLeftToCover > 0) {
+      (bool found, uint256 collateralRisk, uint256 userCollateralValue) = collateralInfo
+        .popLowest();
+      if (!found) break;
       userCollateralValue = userCollateralValue.min(debtValueLeftToCover);
       accountData.riskPremium += userCollateralValue * collateralRisk;
       debtValueLeftToCover = debtValueLeftToCover.uncheckedSub(userCollateralValue);
@@ -810,6 +808,55 @@ abstract contract Spoke is
     }
 
     return accountData;
+  }
+
+  /// @notice Sets the collateral risk tier of every reserve to the dense rank of its collateral risk.
+  /// @dev Linear in the reserve count; runs only when the set of collateral risks can change.
+  function _updateCollateralRiskTiers() internal {
+    uint256 reserveCount = _reserveCount;
+    uint256[] memory risks = new uint256[](reserveCount);
+    uint256[] memory distinctRisks = new uint256[](reserveCount);
+    uint256 tierCount;
+    for (uint256 reserveId; reserveId < reserveCount; ++reserveId) {
+      uint256 risk = _reserves[reserveId].collateralRisk;
+      risks[reserveId] = risk;
+      uint256 index = _lowerBound(distinctRisks, tierCount, risk);
+      if (index == tierCount || distinctRisks[index] != risk) {
+        for (uint256 i = tierCount; i > index; --i) {
+          distinctRisks[i] = distinctRisks[i - 1];
+        }
+        distinctRisks[index] = risk;
+        ++tierCount;
+      }
+    }
+    require(tierCount <= RiskTierList.MAX_TIER + 1, MaxCollateralRiskTiersExceeded());
+
+    for (uint256 reserveId; reserveId < reserveCount; ++reserveId) {
+      uint8 tier = uint8(_lowerBound(distinctRisks, tierCount, risks[reserveId]));
+      Reserve storage reserve = _reserves[reserveId];
+      if (reserve.collateralRiskTier != tier) {
+        reserve.collateralRiskTier = tier;
+      }
+    }
+  }
+
+  /// @notice Returns the first index in the first `length` entries of ascending `sorted` not below `value`.
+  function _lowerBound(
+    uint256[] memory sorted,
+    uint256 length,
+    uint256 value
+  ) internal pure returns (uint256) {
+    uint256 low;
+    uint256 high = length;
+    while (low < high) {
+      uint256 mid = (low + high) >> 1;
+      if (sorted[mid] < value) {
+        low = mid + 1;
+      } else {
+        high = mid;
+      }
+    }
+    return low;
   }
 
   function _refreshDynamicConfig(address user, uint256 reserveId) internal {

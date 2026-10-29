@@ -29,5 +29,7 @@ contract SpokeInstance is Spoke {
       _liquidationConfig.targetHealthFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
       emit UpdateLiquidationConfig(_liquidationConfig);
     }
+    // backfills tiers of reserves listed before `collateralRiskTier` existed
+    _updateCollateralRiskTiers();
   }
 }
