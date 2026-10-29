@@ -41,6 +41,7 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @dev collateralRisk The risk associated with a collateral asset, expressed in BPS.
   /// @dev flags The packed boolean flags of the reserve (a wrapped uint8).
   /// @dev dynamicConfigKey The key of the last reserve dynamic config.
+  /// @dev collateralRiskTier The dense rank of `collateralRisk` among the distinct collateral risks of all reserves.
   struct Reserve {
     address underlying;
     //
@@ -50,6 +51,7 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
     uint24 collateralRisk;
     ReserveFlags flags;
     uint32 dynamicConfigKey;
+    uint8 collateralRiskTier;
   }
 
   /// @notice Reserve configuration. Subset of the `Reserve` struct.
@@ -380,6 +382,9 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
 
   /// @notice Thrown when a collateral risk exceeds the maximum allowed.
   error InvalidCollateralRisk();
+
+  /// @notice Thrown when the reserves use more distinct collateral risks than there are collateral risk tiers.
+  error MaxCollateralRiskTiersExceeded();
 
   /// @notice Thrown if a liquidation config is invalid when it is updated.
   error InvalidLiquidationConfig();
