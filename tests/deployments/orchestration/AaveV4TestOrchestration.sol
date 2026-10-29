@@ -419,6 +419,13 @@ library AaveV4TestOrchestration {
         maxUserReservesLimit: maxUserReservesLimit,
         salt: salt
       }),
+      spokeInitCodeHash: keccak256(
+        AaveV4SpokeImplementationDeployProcedure.getSpokeInstanceInitCode(
+          spokeBytecode,
+          aaveOracleReport.aaveOracle,
+          maxUserReservesLimit
+        )
+      ),
       salt: salt
     });
     AaveV4DeployBase.setAaveOracleSpoke({

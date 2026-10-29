@@ -6,14 +6,17 @@ import 'tests/deployments/procedures/ProceduresBase.t.sol';
 contract AaveV4SpokeDeployProcedureTest is ProceduresBase {
   AaveV4SpokeDeployProcedureWrapper public aaveV4SpokeDeployProcedureWrapper;
   address public spokeImplementation;
+  bytes32 public spokeInitCodeHash;
 
   function setUp() public override {
     super.setUp();
     aaveV4SpokeDeployProcedureWrapper = new AaveV4SpokeDeployProcedureWrapper();
-    spokeImplementation = Create2Utils.create2Deploy(
-      salt,
-      abi.encodePacked(spokeBytecode, abi.encode(aaveOracle, maxUserReservesLimit))
+    bytes memory spokeInitCode = abi.encodePacked(
+      spokeBytecode,
+      abi.encode(aaveOracle, maxUserReservesLimit)
     );
+    spokeImplementation = Create2Utils.create2Deploy(salt, spokeInitCode);
+    spokeInitCodeHash = keccak256(spokeInitCode);
   }
 
   function test_deploySpokeProxy() public {
@@ -21,6 +24,7 @@ contract AaveV4SpokeDeployProcedureTest is ProceduresBase {
       owner,
       accessManager,
       spokeImplementation,
+      spokeInitCodeHash,
       salt
     );
     assertNotEq(spokeProxy, address(0));
@@ -36,6 +40,7 @@ contract AaveV4SpokeDeployProcedureTest is ProceduresBase {
       proxyAdminOwner: address(0),
       authority: accessManager,
       spokeImplementation: spokeImplementation,
+      spokeInitCodeHash: spokeInitCodeHash,
       salt: salt
     });
 
@@ -44,6 +49,7 @@ contract AaveV4SpokeDeployProcedureTest is ProceduresBase {
       proxyAdminOwner: owner,
       authority: address(0),
       spokeImplementation: spokeImplementation,
+      spokeInitCodeHash: spokeInitCodeHash,
       salt: salt
     });
 
@@ -52,6 +58,16 @@ contract AaveV4SpokeDeployProcedureTest is ProceduresBase {
       proxyAdminOwner: owner,
       authority: accessManager,
       spokeImplementation: makeAddr('noCode'),
+      spokeInitCodeHash: spokeInitCodeHash,
+      salt: salt
+    });
+
+    vm.expectRevert('invalid spoke implementation');
+    aaveV4SpokeDeployProcedureWrapper.deploySpokeProxy({
+      proxyAdminOwner: owner,
+      authority: accessManager,
+      spokeImplementation: spokeImplementation,
+      spokeInitCodeHash: keccak256('otherBytecode'),
       salt: salt
     });
   }

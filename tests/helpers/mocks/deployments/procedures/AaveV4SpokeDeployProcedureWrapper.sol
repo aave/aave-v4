@@ -10,8 +10,10 @@ contract AaveV4SpokeDeployProcedureWrapper is AaveV4SpokeDeployProcedure {
     address proxyAdminOwner,
     address authority,
     address spokeImplementation,
+    bytes32 spokeInitCodeHash,
     bytes32 salt
   ) external returns (address) {
-    return _deploySpokeProxy(proxyAdminOwner, authority, spokeImplementation, salt);
+    return
+      _deploySpokeProxy(proxyAdminOwner, authority, spokeImplementation, spokeInitCodeHash, salt);
   }
 }

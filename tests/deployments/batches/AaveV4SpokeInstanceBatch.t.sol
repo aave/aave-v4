@@ -17,6 +17,7 @@ contract AaveV4SpokeInstanceBatchTest is BatchBaseTest {
       proxyAdminOwner_: admin,
       authority_: accessManager,
       spokeImplementation_: spokeImplementation,
+      spokeInitCodeHash_: _spokeInitCodeHash(aaveOracle),
       salt_: salt
     });
     report = spokeBatch.getReport();
@@ -50,6 +51,7 @@ contract AaveV4SpokeInstanceBatchTest is BatchBaseTest {
       proxyAdminOwner_: admin,
       authority_: address(0),
       spokeImplementation_: spokeImplementation,
+      spokeInitCodeHash_: _spokeInitCodeHash(aaveOracle),
       salt_: keccak256('zeroAuthoritySalt')
     });
   }
@@ -60,6 +62,7 @@ contract AaveV4SpokeInstanceBatchTest is BatchBaseTest {
       proxyAdminOwner_: address(0),
       authority_: accessManager,
       spokeImplementation_: spokeImplementation,
+      spokeInitCodeHash_: _spokeInitCodeHash(aaveOracle),
       salt_: keccak256('zeroProxyAdminOwnerSalt')
     });
   }
@@ -70,7 +73,32 @@ contract AaveV4SpokeInstanceBatchTest is BatchBaseTest {
       proxyAdminOwner_: admin,
       authority_: accessManager,
       spokeImplementation_: makeAddr('noCode'),
+      spokeInitCodeHash_: _spokeInitCodeHash(aaveOracle),
       salt_: keccak256('noCodeSalt')
+    });
+  }
+
+  function test_revert_undeployedSpokeImplementation() public {
+    bytes32 otherSalt = keccak256('undeployedSalt');
+    bytes32 initCodeHash = _spokeInitCodeHash(aaveOracle);
+    vm.expectRevert('invalid spoke implementation');
+    new AaveV4SpokeInstanceBatch({
+      proxyAdminOwner_: admin,
+      authority_: accessManager,
+      spokeImplementation_: Create2Utils.computeCreate2Address(otherSalt, initCodeHash),
+      spokeInitCodeHash_: initCodeHash,
+      salt_: otherSalt
+    });
+  }
+
+  function test_revert_spokeImplementationCodeMismatch() public {
+    vm.expectRevert('invalid spoke implementation');
+    new AaveV4SpokeInstanceBatch({
+      proxyAdminOwner_: admin,
+      authority_: accessManager,
+      spokeImplementation_: spokeImplementation,
+      spokeInitCodeHash_: _spokeInitCodeHash(makeAddr('otherOracle')),
+      salt_: salt
     });
   }
 
@@ -79,6 +107,17 @@ contract AaveV4SpokeInstanceBatchTest is BatchBaseTest {
       new AaveV4AaveOracleBatch({owner_: admin, oracleDecimals_: 8, salt_: salt_})
         .getReport()
         .aaveOracle;
+  }
+
+  function _spokeInitCodeHash(address oracle) internal view returns (bytes32) {
+    return
+      keccak256(
+        AaveV4SpokeImplementationDeployProcedure.getSpokeInstanceInitCode(
+          spokeBytecode,
+          oracle,
+          128
+        )
+      );
   }
 
   function _deploySpokeImplementation(address oracle, bytes32 salt_) internal returns (address) {

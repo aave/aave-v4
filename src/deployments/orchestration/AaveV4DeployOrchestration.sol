@@ -285,6 +285,13 @@ library AaveV4DeployOrchestration {
       proxyAdminOwner: proxyAdminOwner,
       authority: authority,
       spokeImplementation: spokeImplementation,
+      spokeInitCodeHash: keccak256(
+        AaveV4SpokeImplementationDeployProcedure.getSpokeInstanceInitCode(
+          spokeBytecode,
+          aaveOracleReport.aaveOracle,
+          maxUserReservesLimit
+        )
+      ),
       salt: salt
     });
     _setAaveOracleSpoke({
@@ -410,6 +417,7 @@ library AaveV4DeployOrchestration {
     address proxyAdminOwner,
     address authority,
     address spokeImplementation,
+    bytes32 spokeInitCodeHash,
     bytes32 salt
   ) internal returns (BatchReports.SpokeInstanceBatchReport memory report) {
     logger.logHeader1('deploying AaveV4SpokeInstanceBatch');
@@ -417,6 +425,7 @@ library AaveV4DeployOrchestration {
       proxyAdminOwner: proxyAdminOwner,
       authority: authority,
       spokeImplementation: spokeImplementation,
+      spokeInitCodeHash: spokeInitCodeHash,
       salt: salt
     });
     return report;

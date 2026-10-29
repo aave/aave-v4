@@ -120,6 +120,13 @@ contract AaveV4AaveOracleBatchTest is BatchBaseTest {
         proxyAdminOwner_: admin,
         authority_: accessManager,
         spokeImplementation_: implementation,
+        spokeInitCodeHash_: keccak256(
+          AaveV4SpokeImplementationDeployProcedure.getSpokeInstanceInitCode(
+            spokeBytecode,
+            oracle,
+            128
+          )
+        ),
         salt_: spokeSalt
       }).getReport().spokeProxy;
   }

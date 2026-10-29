@@ -139,18 +139,22 @@ library AaveV4DeployBase {
   /// @param proxyAdminOwner The owner of the proxy admin.
   /// @param authority The access-control authority for the Spoke.
   /// @param spokeImplementation The address of the deployed Spoke implementation.
+  /// @param spokeInitCodeHash The keccak256 hash of the Spoke implementation creation bytecode, constructor
+  ///        arguments included.
   /// @param salt The CREATE2 salt for deterministic deployment.
   /// @return The Spoke instance batch report.
   function deploySpokeInstanceBatch(
     address proxyAdminOwner,
     address authority,
     address spokeImplementation,
+    bytes32 spokeInitCodeHash,
     bytes32 salt
   ) internal returns (BatchReports.SpokeInstanceBatchReport memory) {
     AaveV4SpokeInstanceBatch spokeInstanceBatch = new AaveV4SpokeInstanceBatch({
       proxyAdminOwner_: proxyAdminOwner,
       authority_: authority,
       spokeImplementation_: spokeImplementation,
+      spokeInitCodeHash_: spokeInitCodeHash,
       salt_: salt
     });
     return spokeInstanceBatch.getReport();

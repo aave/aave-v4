@@ -17,17 +17,21 @@ contract AaveV4SpokeInstanceBatch is AaveV4SpokeDeployProcedure {
   /// @param proxyAdminOwner_ The owner of the proxy admin.
   /// @param authority_ The access-control authority for the Spoke.
   /// @param spokeImplementation_ The address of the deployed Spoke implementation.
+  /// @param spokeInitCodeHash_ The keccak256 hash of the Spoke implementation creation bytecode, constructor
+  ///        arguments included.
   /// @param salt_ The CREATE2 salt for deterministic deployment.
   constructor(
     address proxyAdminOwner_,
     address authority_,
     address spokeImplementation_,
+    bytes32 spokeInitCodeHash_,
     bytes32 salt_
   ) {
     address spokeProxy = _deploySpokeProxy({
       proxyAdminOwner: proxyAdminOwner_,
       authority: authority_,
       spokeImplementation: spokeImplementation_,
+      spokeInitCodeHash: spokeInitCodeHash_,
       salt: salt_
     });
 
