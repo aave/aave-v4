@@ -1,0 +1,37 @@
+src/deployments/README.md
+  s_311e49623c2408::t_13c2731b138e69 247
+src/deployments/batches/AaveV4SpokeInstanceBatch.sol
+  s_311e49623c2408::t_c540370de61dd9 20-21,27,34
+src/deployments/orchestration/AaveV4DeployBase.sol
+  s_311e49623c2408::t_b418d47374e692 142-143,150,157
+src/deployments/orchestration/AaveV4DeployOrchestration.sol
+  s_311e49623c2408::t_c5a8a556c6f161 288-294,420,428
+src/deployments/procedures/deploy/spoke/AaveV4SpokeDeployProcedure.sol
+  s_311e49623c2408::t_96bd603a995747 11-12,18-19,26,31-35
+tests/deployments/batches/AaveV4AaveOracleBatch.t.sol
+  s_311e49623c2408::t_d9f79147c13804 123-129
+tests/deployments/batches/AaveV4SpokeInstanceBatch.t.sol
+  s_311e49623c2408::t_607147eea6a49f 20,54,65,76,81-104,112-122
+tests/deployments/orchestration/AaveV4TestOrchestration.sol
+  s_311e49623c2408::t_f3c7845d8af9a2 422-428
+tests/deployments/procedures/deploy/spoke/AaveV4SpokeDeployProcedure.t.sol
+  s_311e49623c2408::t_2a7603a55e321a 9,14-16,18-19,27,43,52,61-70
+tests/helpers/mocks/deployments/procedures/AaveV4SpokeDeployProcedureWrapper.sol
+  s_311e49623c2408::t_3d280908413da2 13,16-17
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d07a88e7a0526b5e24a4a15bb8ed956e2669d632",
+  "prompts": {},
+  "sessions": {
+    "s_311e49623c2408": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ab0ee213-f6da-4aab-92e3-43fce833a068",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}
