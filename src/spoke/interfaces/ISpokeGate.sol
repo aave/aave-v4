@@ -16,5 +16,5 @@ interface ISpokeGate {
     address caller,
     address onBehalfOf,
     bytes calldata data
-  ) external view returns (bool);
+  ) external returns (bool);
 }

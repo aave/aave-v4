@@ -851,7 +851,7 @@ abstract contract Spoke is
     address caller,
     address user,
     bytes calldata data
-  ) internal view returns (bool) {
+  ) internal returns (bool) {
     return ISpokeGate(GATE).isCallAllowed({caller: caller, onBehalfOf: user, data: data});
   }
 
