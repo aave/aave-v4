@@ -985,6 +985,8 @@ abstract contract LegacySpoke is
 /// @author Aave Labs
 /// @notice Spoke revision 1 implementation.
 contract LegacySpokeInstance is LegacySpoke {
+  bool public constant IS_TEST = true;
+
   uint64 public constant SPOKE_REVISION = 1;
 
   /// @dev Constructor.
