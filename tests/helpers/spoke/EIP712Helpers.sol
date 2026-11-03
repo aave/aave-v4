@@ -106,11 +106,11 @@ abstract contract EIP712Helpers is Test {
     return _packNonce(key, nonce);
   }
 
-  function _randomNonceKey() internal returns (uint192) {
+  function _randomNonceKey() internal view returns (uint192) {
     return uint192(vm.randomUint());
   }
 
-  function _randomNonce() internal returns (uint64) {
+  function _randomNonce() internal view returns (uint64) {
     return uint64(vm.randomUint());
   }
 
