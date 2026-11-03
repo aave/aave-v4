@@ -78,7 +78,7 @@ abstract contract SetupHelpers is SpokeHelpers {
     ITokenizationSpoke vault,
     address who,
     uint256 deadline
-  ) internal returns (ITokenizationSpoke.TokenizedDeposit memory) {
+  ) internal view returns (ITokenizationSpoke.TokenizedDeposit memory) {
     return
       ITokenizationSpoke.TokenizedDeposit({
         depositor: who,
@@ -93,7 +93,7 @@ abstract contract SetupHelpers is SpokeHelpers {
     ITokenizationSpoke vault,
     address who,
     uint256 deadline
-  ) internal returns (ITokenizationSpoke.TokenizedMint memory) {
+  ) internal view returns (ITokenizationSpoke.TokenizedMint memory) {
     return
       ITokenizationSpoke.TokenizedMint({
         depositor: who,
@@ -108,7 +108,7 @@ abstract contract SetupHelpers is SpokeHelpers {
     ITokenizationSpoke vault,
     address who,
     uint256 deadline
-  ) internal returns (ITokenizationSpoke.TokenizedWithdraw memory) {
+  ) internal view returns (ITokenizationSpoke.TokenizedWithdraw memory) {
     return
       ITokenizationSpoke.TokenizedWithdraw({
         owner: who,
@@ -123,7 +123,7 @@ abstract contract SetupHelpers is SpokeHelpers {
     ITokenizationSpoke vault,
     address who,
     uint256 deadline
-  ) internal returns (ITokenizationSpoke.TokenizedRedeem memory) {
+  ) internal view returns (ITokenizationSpoke.TokenizedRedeem memory) {
     return
       ITokenizationSpoke.TokenizedRedeem({
         owner: who,
@@ -138,7 +138,7 @@ abstract contract SetupHelpers is SpokeHelpers {
     ITokenizationSpoke vault,
     address who,
     uint256 deadline
-  ) internal returns (EIP712Types.Permit memory) {
+  ) internal view returns (EIP712Types.Permit memory) {
     return
       EIP712Types.Permit({
         owner: who,

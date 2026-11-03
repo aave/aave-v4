@@ -15,7 +15,7 @@ abstract contract SetupHelpers is SpokeHelpers {
     address delegator,
     bool status,
     uint256 deadline
-  ) internal returns (IConfigPositionManager.SetGlobalPermissionPermit memory) {
+  ) internal view returns (IConfigPositionManager.SetGlobalPermissionPermit memory) {
     return
       IConfigPositionManager.SetGlobalPermissionPermit({
         spoke: address(spoke),
@@ -34,7 +34,11 @@ abstract contract SetupHelpers is SpokeHelpers {
     address delegator,
     bool status,
     uint256 deadline
-  ) internal returns (IConfigPositionManager.SetCanSetUsingAsCollateralPermissionPermit memory) {
+  )
+    internal
+    view
+    returns (IConfigPositionManager.SetCanSetUsingAsCollateralPermissionPermit memory)
+  {
     return
       IConfigPositionManager.SetCanSetUsingAsCollateralPermissionPermit({
         spoke: address(spoke),
@@ -53,7 +57,11 @@ abstract contract SetupHelpers is SpokeHelpers {
     address delegator,
     bool status,
     uint256 deadline
-  ) internal returns (IConfigPositionManager.SetCanUpdateUserRiskPremiumPermissionPermit memory) {
+  )
+    internal
+    view
+    returns (IConfigPositionManager.SetCanUpdateUserRiskPremiumPermissionPermit memory)
+  {
     return
       IConfigPositionManager.SetCanUpdateUserRiskPremiumPermissionPermit({
         spoke: address(spoke),
@@ -72,7 +80,11 @@ abstract contract SetupHelpers is SpokeHelpers {
     address delegator,
     bool status,
     uint256 deadline
-  ) internal returns (IConfigPositionManager.SetCanUpdateUserDynamicConfigPermissionPermit memory) {
+  )
+    internal
+    view
+    returns (IConfigPositionManager.SetCanUpdateUserDynamicConfigPermissionPermit memory)
+  {
     return
       IConfigPositionManager.SetCanUpdateUserDynamicConfigPermissionPermit({
         spoke: address(spoke),
