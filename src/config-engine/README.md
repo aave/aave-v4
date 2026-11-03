@@ -18,7 +18,15 @@ When governance calls `execute()`, the base contract loops through each action c
 
 ### Action categories
 
-The four groups, and the virtual functions in each, are listed below.
+The five groups, and the virtual functions in each, are listed below.
+
+#### Deployment actions (`_executeDeploymentActions`)
+
+| Function                     | Struct                    | Purpose                                                   |
+| ---------------------------- | ------------------------- | --------------------------------------------------------- |
+| `hubDeployments()`           | `HubDeployment`           | Deploy a Hub and its interest rate strategy via `FACTORY` |
+| `spokeDeployments()`         | `SpokeDeployment`         | Deploy a Spoke and its AaveOracle via `FACTORY`           |
+| `treasurySpokeDeployments()` | `TreasurySpokeDeployment` | Deploy a TreasurySpoke via `FACTORY`                      |
 
 #### Hub actions (`_executeHubActions`)
 
@@ -77,12 +85,19 @@ Override these to add custom logic (e.g. granting temporary permissions before t
 When `execute()` is called, actions run in the following fixed order:
 
 1. `_preExecute()`
-2. **AccessManager actions** (in order):
+2. **Deployment actions** (in order):
+   1. Hub deployments
+   2. Spoke deployments
+   3. TreasurySpoke deployments
+
+   Deployments run first so that every later action can target the new instances.
+
+3. **AccessManager actions** (in order):
    1. Role memberships (grants / revocations)
    2. Role updates (admin, guardian, grant delay, label)
    3. Target function role updates
    4. Target admin delay updates
-3. **Hub actions** (in order):
+4. **Hub actions** (in order):
    1. Asset listings
    2. Asset config updates
    3. Spoke-to-assets additions
@@ -92,20 +107,20 @@ When `execute()` is called, actions run in the following fixed order:
    7. Asset caps resets
    8. Spoke deactivations
    9. Spoke caps resets
-4. **Spoke actions** (in order):
+5. **Spoke actions** (in order):
    1. Reserve listings
    2. Reserve config updates
    3. Liquidation config updates
    4. Dynamic reserve config additions
    5. Dynamic reserve config updates
    6. Position manager updates
-5. **PositionManager actions** (in order):
+6. **PositionManager actions** (in order):
    1. Spoke PositionManager Role renouncements
    2. Spoke registrations
 
    Spoke PositionManager role renouncements run first because renouncing requires the Spoke to still be registered on the position manager — this allows renouncing and deregistering the same Spoke in one payload.
 
-6. `_postExecute()`
+7. `_postExecute()`
 
 ### The `KEEP_CURRENT` sentinel pattern
 
@@ -136,21 +151,64 @@ Several engine functions inspect which fields differ from `KEEP_CURRENT` and cho
 
 ### Delegatecall architecture
 
-`AaveV4ConfigEngine` stores four deployed sub-engine contract addresses as immutables:
+`AaveV4ConfigEngine` forwards each action to one of five sub-engines, external libraries linked into the engine at deployment:
 
-- `HUB_ENGINE` — handles all Hub configurator operations
-- `SPOKE_ENGINE` — handles all Spoke configurator operations
-- `ACCESS_MANAGER_ENGINE` — handles all AccessManager operations
-- `POSITION_MANAGER_ENGINE` — handles all PositionManager operations
+- `FactoryEngine` — handles all HubSpokeFactory deployments
+- `HubEngine` — handles all Hub configurator operations
+- `SpokeEngine` — handles all Spoke configurator operations
+- `AccessManagerEngine` — handles all AccessManager operations
+- `PositionManagerEngine` — handles all PositionManager operations
 
 When a payload calls `execute()`, `AaveV4Payload` delegate-calls into `AaveV4ConfigEngine`, which in turn delegate-calls into the appropriate sub-engine. This two-level delegatecall chain means:
 
 - Neither the config engine nor the sub-engines hold any storage, permissions, or admin keys.
-- All HubConfigurator, SpokeConfigurator, AccessManager, and PositionManager calls originate from the governance executor's address.
+- All HubSpokeFactory, HubConfigurator, SpokeConfigurator, AccessManager, and PositionManager calls originate from the governance executor's address.
 
-### TokenizationSpoke implementation
+### HubSpokeFactory deployments
 
-`AaveV4ConfigEngine` takes the canonical `TokenizationSpokeInstance` implementation in its constructor and exposes it as `TOKENIZATION_SPOKE_IMPLEMENTATION`. The implementation holds no Hub or asset specific state. A listing with tokenization set deploys only a `TransparentUpgradeableProxy` pointing to it, initialized with `initialize(hub, underlying, name, symbol)`. Proxy addresses are CREATE2-deterministic and can be pre-computed with `TokenizationSpokeDeployer.computeProxyAddress`.
+`AaveV4ConfigEngine` takes the `HubSpokeFactory` in its constructor and exposes it as `FACTORY`. `FactoryEngine` forwards the deployment actions to it, and `HubEngine` deploys TokenizationSpokes through it on listings with tokenization set. Every instance is a `TransparentUpgradeableProxy` pointing to one of the factory's canonical implementations. A new factory means a new engine deployment.
+
+The factory binds its caller, the governance Executor, into every CREATE2 salt. Later actions of the same payload reference the new instances by their predicted addresses: `FACTORY.predict*` with the Executor as deployer, and `FactoryEngine.predictTokenizationSpoke` for TokenizationSpokes, salted with `(hub, underlying, name, symbol)`.
+
+For example, a payload deploying a Spoke and setting its roles in the same proposal:
+
+```solidity
+function spokeDeployments()
+  public
+  view
+  override
+  returns (IAaveV4ConfigEngine.SpokeDeployment[] memory d)
+{
+  d = new IAaveV4ConfigEngine.SpokeDeployment[](1);
+  d[0] = IAaveV4ConfigEngine.SpokeDeployment({
+    salt: SALT,
+    authority: ACCESS_MANAGER,
+    proxyAdminOwner: PROXY_ADMIN_OWNER
+  });
+}
+
+function accessManagerTargetFunctionRoleUpdates()
+  public
+  view
+  override
+  returns (IAaveV4ConfigEngine.TargetFunctionRoleUpdate[] memory u)
+{
+  // address(this) is the Executor at execution time, i.e. the factory caller
+  address spoke = CONFIG_ENGINE
+    .FACTORY()
+    .predictSpoke(address(this), SALT, ACCESS_MANAGER, PROXY_ADMIN_OWNER)
+    .proxy;
+  u = new IAaveV4ConfigEngine.TargetFunctionRoleUpdate[](1);
+  u[0] = IAaveV4ConfigEngine.TargetFunctionRoleUpdate({
+    authority: ACCESS_MANAGER,
+    target: spoke,
+    selectors: Roles.getSpokeConfiguratorRoleSelectors(),
+    roleId: Roles.SPOKE_CONFIGURATOR_ROLE
+  });
+}
+```
+
+Each Spoke deployed and wired in a payload (deployment, roles, Hub registration, reserve listing) costs about 2.3M gas, so a payload fits about 5 of them under Ethereum's per-transaction gas cap (EIP-7825, 16,777,216 gas). See `tests/config-engine/FactoryEngine.t.sol` for the measured payloads.
 
 ### Execution context
 

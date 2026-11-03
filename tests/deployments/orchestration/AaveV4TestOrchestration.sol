@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 import 'forge-std/Vm.sol';
 
 import {TestTypes} from 'tests/utils/TestTypes.sol';
-import {DeployConstants} from 'src/deployments/utils/libraries/DeployConstants.sol';
 import {TestnetERC20} from 'tests/helpers/mocks/TestnetERC20.sol';
 import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
@@ -15,10 +14,11 @@ import {AaveV4HubRolesProcedure} from 'src/deployments/procedures/roles/AaveV4Hu
 import {AaveV4SpokeRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol';
 import {AaveV4HubConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubConfiguratorRolesProcedure.sol';
 import {AaveV4SpokeConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeConfiguratorRolesProcedure.sol';
-import {AaveV4TreasurySpokeBatch} from 'src/deployments/batches/AaveV4TreasurySpokeBatch.sol';
 import {AaveV4AuthorityBatch} from 'src/deployments/batches/AaveV4AuthorityBatch.sol';
-import {AaveV4HubInstanceBatch} from 'src/deployments/batches/AaveV4HubInstanceBatch.sol';
-import {AaveV4SpokeInstanceBatch} from 'src/deployments/batches/AaveV4SpokeInstanceBatch.sol';
+import {HubSpokeFactory} from 'src/deployments/factory/HubSpokeFactory.sol';
+import {IHubSpokeFactory} from 'src/deployments/factory/interfaces/IHubSpokeFactory.sol';
+import {TreasurySpokeInstance} from 'src/spoke/instances/TreasurySpokeInstance.sol';
+import {TokenizationSpokeInstance} from 'src/spoke/instances/TokenizationSpokeInstance.sol';
 import {TestTokensBatch} from 'tests/deployments/batches/TestTokensBatch.sol';
 import {AaveV4DeployBase} from 'src/deployments/orchestration/AaveV4DeployBase.sol';
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
@@ -65,49 +65,30 @@ library AaveV4TestOrchestration {
   ) external returns (TestTypes.TestEnvReport memory) {
     TestTypes.TestEnvReport memory report;
 
-    report.hubReports = new TestTypes.TestHubReport[](hubCount);
-    report.spokeReports = new TestTypes.TestSpokeReport[](spokeCount);
-
     // Deploy Access Batch
     report.accessManager = AaveV4DeployBase
       .deployAuthorityBatch({admin: admin, salt: salt})
       .accessManager;
 
-    // Deploy TreasurySpoke Batch (single instance for all hubs)
-    report.treasurySpoke = AaveV4DeployBase
-      .deployTreasurySpokeBatch({
-        owner: treasuryAdmin,
-        salt: keccak256(abi.encodePacked(salt, 'treasurySpoke'))
-      })
-      .treasurySpoke;
+    // Deploy canonical implementations and the HubSpokeFactory bound to them
+    IHubSpokeFactory factory = _deployTestEnvFactory(hubBytecode, spokeBytecode, salt);
 
-    // Deploy Hub Batches
-    for (uint256 i; i < hubCount; ++i) {
-      BatchReports.HubInstanceBatchReport memory hubReport = AaveV4DeployBase
-        .deployHubInstanceBatch({
-          proxyAdminOwner: admin,
-          authority: report.accessManager,
-          hubBytecode: hubBytecode,
-          salt: keccak256(abi.encodePacked(salt, 'hub-', string(abi.encode(i))))
-        });
-      report.hubReports[i].hub = hubReport.hubProxy;
-      report.hubReports[i].irStrategy = hubReport.irStrategy;
-    }
+    // Deploy TreasurySpoke (single instance for all hubs)
+    report.treasurySpoke = factory.deployTreasurySpoke({
+      salt: keccak256(abi.encodePacked(salt, 'treasurySpoke')),
+      owner: treasuryAdmin,
+      proxyAdminOwner: treasuryAdmin
+    });
 
-    // Deploy Spoke Instance Batches
-    for (uint256 i; i < spokeCount; ++i) {
-      BatchReports.SpokeInstanceBatchReport memory spokeReport = AaveV4DeployBase
-        .deploySpokeInstanceBatch({
-          proxyAdminOwner: admin,
-          authority: report.accessManager,
-          spokeBytecode: spokeBytecode,
-          oracleDecimals: DeployConstants.ORACLE_DECIMALS,
-          maxUserReservesLimit: DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT,
-          salt: keccak256(abi.encodePacked(salt, 'spoke-', string(abi.encode(i))))
-        });
-      report.spokeReports[i].spoke = spokeReport.spokeProxy;
-      report.spokeReports[i].aaveOracle = spokeReport.aaveOracle;
-    }
+    // Deploy Hubs and Spokes
+    report.hubReports = _deployTestEnvHubs(factory, report.accessManager, admin, hubCount, salt);
+    report.spokeReports = _deployTestEnvSpokes(
+      factory,
+      report.accessManager,
+      admin,
+      spokeCount,
+      salt
+    );
 
     // Deploy Configurator Batches with AccessManager as authority
     BatchReports.ConfiguratorBatchReport memory configuratorReport = AaveV4DeployBase
@@ -133,53 +114,122 @@ library AaveV4TestOrchestration {
     return report;
   }
 
+  function _deployTestEnvFactory(
+    bytes memory hubBytecode,
+    bytes memory spokeBytecode,
+    bytes32 salt
+  ) internal returns (IHubSpokeFactory) {
+    return
+      IHubSpokeFactory(
+        AaveV4DeployBase
+          .deployHubSpokeFactoryBatch({
+            hubImplementation: AaveV4DeployBase
+              .deployHubImplementationBatch({hubBytecode: hubBytecode, salt: salt})
+              .hubImplementation,
+            spokeImplementation: AaveV4DeployBase
+              .deploySpokeImplementationBatch({spokeBytecode: spokeBytecode, salt: salt})
+              .spokeImplementation,
+            tokenizationSpokeImplementation: AaveV4DeployBase
+              .deployTokenizationSpokeImplementationBatch({salt: salt})
+              .tokenizationSpokeImplementation,
+            salt: salt
+          })
+          .hubSpokeFactory
+      );
+  }
+
+  function _deployTestEnvHubs(
+    IHubSpokeFactory factory,
+    address accessManager,
+    address admin,
+    uint256 hubCount,
+    bytes32 salt
+  ) internal returns (TestTypes.TestHubReport[] memory hubReports) {
+    hubReports = new TestTypes.TestHubReport[](hubCount);
+    for (uint256 i; i < hubCount; ++i) {
+      IHubSpokeFactory.HubDeployment memory hubDeployment = factory.deployHub({
+        salt: keccak256(abi.encodePacked(salt, 'hub-', string(abi.encode(i)))),
+        authority: accessManager,
+        proxyAdminOwner: admin
+      });
+      hubReports[i].hub = hubDeployment.proxy;
+      hubReports[i].irStrategy = hubDeployment.irStrategy;
+    }
+  }
+
+  function _deployTestEnvSpokes(
+    IHubSpokeFactory factory,
+    address accessManager,
+    address admin,
+    uint256 spokeCount,
+    bytes32 salt
+  ) internal returns (TestTypes.TestSpokeReport[] memory spokeReports) {
+    spokeReports = new TestTypes.TestSpokeReport[](spokeCount);
+    for (uint256 i; i < spokeCount; ++i) {
+      IHubSpokeFactory.SpokeDeployment memory spokeDeployment = factory.deploySpoke({
+        salt: keccak256(abi.encodePacked(salt, 'spoke-', string(abi.encode(i)))),
+        authority: accessManager,
+        proxyAdminOwner: admin
+      });
+      spokeReports[i].spoke = spokeDeployment.proxy;
+      spokeReports[i].aaveOracle = spokeDeployment.oracle;
+    }
+  }
+
   function deployTestHub(
     address proxyAdminOwner,
     address accessManager,
-    bytes memory hubBytecode,
     string memory label,
     bytes32 salt
-  ) external returns (TestTypes.TestHubReport memory) {
-    TestTypes.TestHubReport memory report;
-    BatchReports.HubInstanceBatchReport memory hubReport = AaveV4DeployBase.deployHubInstanceBatch({
-      proxyAdminOwner: proxyAdminOwner,
+  ) external returns (TestTypes.TestHubReport memory report) {
+    IHubSpokeFactory.HubDeployment memory hubDeployment = deployTestFactory().deployHub({
+      salt: keccak256(abi.encodePacked(salt, 'hub-', label)),
       authority: accessManager,
-      hubBytecode: hubBytecode,
-      salt: keccak256(abi.encodePacked(salt, 'hub-', label))
+      proxyAdminOwner: proxyAdminOwner
     });
-    report.hub = hubReport.hubProxy;
-    report.irStrategy = hubReport.irStrategy;
-
-    return report;
+    report.hub = hubDeployment.proxy;
+    report.irStrategy = hubDeployment.irStrategy;
   }
 
   function deployTestSpoke(
     address proxyAdminOwner,
     address accessManager,
-    bytes memory spokeBytecode,
-    uint16 maxUserReservesLimit,
     bytes32 salt
-  ) external returns (TestTypes.TestSpokeReport memory) {
-    TestTypes.TestSpokeReport memory report;
-    BatchReports.SpokeInstanceBatchReport memory spokeReport = AaveV4DeployBase
-      .deploySpokeInstanceBatch({
-        proxyAdminOwner: proxyAdminOwner,
-        authority: accessManager,
-        spokeBytecode: spokeBytecode,
-        oracleDecimals: DeployConstants.ORACLE_DECIMALS,
-        maxUserReservesLimit: maxUserReservesLimit,
-        salt: salt
-      });
-    report.spoke = spokeReport.spokeProxy;
-    report.aaveOracle = spokeReport.aaveOracle;
-    return report;
+  ) external returns (TestTypes.TestSpokeReport memory report) {
+    IHubSpokeFactory.SpokeDeployment memory spokeDeployment = deployTestFactory().deploySpoke({
+      salt: salt,
+      authority: accessManager,
+      proxyAdminOwner: proxyAdminOwner
+    });
+    report.spoke = spokeDeployment.proxy;
+    report.aaveOracle = spokeDeployment.oracle;
   }
 
   function deployTestTreasurySpoke(
     address owner,
     bytes32 salt
   ) external returns (address treasurySpoke) {
-    return AaveV4DeployBase.deployTreasurySpokeBatch({owner: owner, salt: salt}).treasurySpoke;
+    return
+      deployTestFactory().deployTreasurySpoke({salt: salt, owner: owner, proxyAdminOwner: owner});
+  }
+
+  /// @dev Deploys, or returns when already deployed, a HubSpokeFactory bound to the canonical implementations.
+  function deployTestFactory() internal returns (IHubSpokeFactory) {
+    return
+      IHubSpokeFactory(
+        _create2Deploy(
+          '',
+          abi.encodePacked(
+            type(HubSpokeFactory).creationCode,
+            abi.encode(
+              deployHubImplementation(),
+              deploySpokeImplementation(),
+              _create2Deploy('', type(TreasurySpokeInstance).creationCode),
+              _create2Deploy('', type(TokenizationSpokeInstance).creationCode)
+            )
+          )
+        )
+      );
   }
 
   function configureHubsSpokes(ConfigData.AddSpokeParams[] memory paramsList) external {
@@ -398,23 +448,15 @@ library AaveV4TestOrchestration {
     return deployedAt;
   }
 
-  function deploySpokeImplementation(
-    address oracle,
-    uint16 maxUserReservesLimit
-  ) internal returns (ISpokeInstance) {
-    return deploySpokeImplementation(oracle, maxUserReservesLimit, '');
+  function deploySpokeImplementation() internal returns (ISpokeInstance) {
+    return deploySpokeImplementation('');
   }
 
-  function deploySpokeImplementation(
-    address oracle,
-    uint16 maxUserReservesLimit,
-    bytes32 salt
-  ) internal returns (ISpokeInstance) {
-    bytes memory initCode = abi.encodePacked(
-      vm.getCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance'),
-      abi.encode(oracle, maxUserReservesLimit)
-    );
-    return ISpokeInstance(_create2Deploy(salt, initCode));
+  function deploySpokeImplementation(bytes32 salt) internal returns (ISpokeInstance) {
+    return
+      ISpokeInstance(
+        _create2Deploy(salt, vm.getCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance'))
+      );
   }
 
   function deployHubImplementation() internal returns (IHubInstance) {

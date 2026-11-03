@@ -33,6 +33,7 @@ import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ITreasurySpoke} from 'src/spoke/interfaces/ITreasurySpoke.sol';
 import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
+import {IHubSpokeFactory} from 'src/deployments/factory/interfaces/IHubSpokeFactory.sol';
 import {INativeTokenGateway} from 'src/position-manager/interfaces/INativeTokenGateway.sol';
 
 contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
@@ -51,6 +52,8 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
   bool internal _skipNativeWrapperCheck;
   // Skip TokenizationSpoke implementation checks for reports predating the canonical implementation
   bool internal _skipTokenizationSpokeImplementationCheck;
+  // Skip HubSpokeFactory checks for reports predating the factory
+  bool internal _skipHubSpokeFactoryCheck;
 
   function setUp() public virtual {
     _spokePositionUpdaterRoleSelectors = Roles.getSpokePositionUpdaterRoleSelectors();
@@ -91,6 +94,9 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     OrchestrationReports.FullDeploymentReport memory report,
     InputUtils.FullDeployInputs memory inputs
   ) internal view {
+    if (!_skipHubSpokeFactoryCheck) {
+      _checkHubSpokeFactoryDeployment(report);
+    }
     _checkSpokeBatchDeployments({report: report, inputs: inputs});
     _checkHubBatchDeployments({report: report, inputs: inputs});
     _checkConfiguratorBatchDeployments({report: report});
@@ -169,22 +175,12 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     // Sync parallel arrays with spokeLabels length
     inputs.hubLabels = _hubLabels;
     inputs.spokeLabels = _spokeLabels;
-    inputs.spokeMaxReservesLimits = _defaultSpokeMaxReservesLimits(_spokeLabels.length);
     inputs.nativeWrapper = _weth9;
     inputs.deployNativeTokenGateway = true;
     inputs.deploySignatureGateway = true;
     inputs.deployPositionManagers = true;
 
     return inputs;
-  }
-
-  function _defaultSpokeMaxReservesLimits(
-    uint256 count
-  ) internal pure returns (uint16[] memory limits) {
-    limits = new uint16[](count);
-    for (uint256 i; i < count; i++) {
-      limits[i] = DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT;
-    }
   }
 
   function _checkFullReport(
@@ -276,6 +272,51 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     );
   }
 
+  function _checkHubSpokeFactoryDeployment(
+    OrchestrationReports.FullDeploymentReport memory report
+  ) internal view {
+    IHubSpokeFactory factory = IHubSpokeFactory(report.hubSpokeFactoryBatchReport.hubSpokeFactory);
+    assertEq(
+      factory.HUB_IMPLEMENTATION(),
+      report.hubImplementationBatchReport.hubImplementation,
+      'factory hub implementation'
+    );
+    assertEq(
+      factory.SPOKE_IMPLEMENTATION(),
+      report.spokeImplementationBatchReport.spokeImplementation,
+      'factory spoke implementation'
+    );
+    assertEq(
+      factory.TREASURY_SPOKE_IMPLEMENTATION(),
+      report.hubSpokeFactoryBatchReport.treasurySpokeImplementation,
+      'factory treasury spoke implementation'
+    );
+    assertEq(
+      factory.TOKENIZATION_SPOKE_IMPLEMENTATION(),
+      report.tokenizationSpokeImplementationBatchReport.tokenizationSpokeImplementation,
+      'factory tokenization spoke implementation'
+    );
+    assertEq(
+      ProxyHelper.getImplementation(report.treasurySpokeBatchReport.treasurySpoke),
+      factory.TREASURY_SPOKE_IMPLEMENTATION(),
+      'treasury spoke implementation'
+    );
+    for (uint256 i; i < report.hubInstanceBatchReports.length; ++i) {
+      assertEq(
+        report.hubInstanceBatchReports[i].report.hubImplementation,
+        factory.HUB_IMPLEMENTATION(),
+        'hub canonical implementation'
+      );
+    }
+    for (uint256 i; i < report.spokeInstanceBatchReports.length; ++i) {
+      assertEq(
+        report.spokeInstanceBatchReports[i].report.spokeImplementation,
+        factory.SPOKE_IMPLEMENTATION(),
+        'spoke canonical implementation'
+      );
+    }
+  }
+
   function _checkSpokeBatchDeployments(
     OrchestrationReports.FullDeploymentReport memory report,
     InputUtils.FullDeployInputs memory inputs
@@ -288,9 +329,6 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
       _checkSpokeDeployment({
         report: spokeReport,
         accessManager: report.authorityBatchReport.accessManager,
-        expectedMaxReservesLimit: inputs.spokeMaxReservesLimits.length > i
-          ? inputs.spokeMaxReservesLimits[i]
-          : DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT,
         label: label
       });
       _checkOracleDeployment({report: spokeReport, label: label});
@@ -300,7 +338,6 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
   function _checkSpokeDeployment(
     OrchestrationReports.SpokeDeploymentReport memory report,
     address accessManager,
-    uint16 expectedMaxReservesLimit,
     string memory label
   ) internal view {
     assertEq(
@@ -320,7 +357,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     );
     assertEq(
       ISpoke(report.report.spokeProxy).MAX_USER_RESERVES_LIMIT(),
-      expectedMaxReservesLimit,
+      DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT,
       string.concat(label, ' max user reserves limit')
     );
     assertEq(

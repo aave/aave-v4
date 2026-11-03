@@ -12,7 +12,7 @@ import {AaveV4HubConfiguratorRolesProcedure} from 'src/deployments/procedures/ro
 import {AaveV4SpokeConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeConfiguratorRolesProcedure.sol';
 import {InputUtils} from 'src/deployments/utils/libraries/InputUtils.sol';
 import {Logger} from 'src/deployments/utils/Logger.sol';
-import {DeployConstants} from 'src/deployments/utils/libraries/DeployConstants.sol';
+import {IHubSpokeFactory} from 'src/deployments/factory/interfaces/IHubSpokeFactory.sol';
 
 /// @title AaveV4DeployOrchestration Library
 /// @author Aave Labs
@@ -63,17 +63,21 @@ library AaveV4DeployOrchestration {
     // Setup Configurator Roles
     _setupConfiguratorRoles({logger: logger, report: report});
 
-    // Deploy TreasurySpoke Batch (single instance for all hubs)
-    report.treasurySpokeBatchReport = _deployTreasurySpokeBatch({
+    // Deploy canonical implementations and the HubSpokeFactory bound to them
+    _deployHubSpokeFactory({
       logger: logger,
-      treasurySpokeOwner: deployInputs.treasurySpokeOwner,
+      report: report,
+      hubBytecode: hubBytecode,
+      spokeBytecode: spokeBytecode,
       salt: salt
     });
+    IHubSpokeFactory factory = IHubSpokeFactory(report.hubSpokeFactoryBatchReport.hubSpokeFactory);
 
-    // Deploy canonical TokenizationSpoke implementation (shared by all TokenizationSpoke proxies)
-    report
-      .tokenizationSpokeImplementationBatchReport = _deployTokenizationSpokeImplementationBatch({
+    // Deploy TreasurySpoke (single instance for all hubs)
+    report.treasurySpokeBatchReport = _deployTreasurySpoke({
       logger: logger,
+      factory: factory,
+      treasurySpokeOwner: deployInputs.treasurySpokeOwner,
       salt: salt
     });
 
@@ -81,22 +85,23 @@ library AaveV4DeployOrchestration {
     InputUtils.validateUniqueLabels(deployInputs.hubLabels, 'hub');
     InputUtils.validateUniqueLabels(deployInputs.spokeLabels, 'spoke');
 
-    // Deploy Hub Batches
+    // Deploy Hubs
     report.hubInstanceBatchReports = _deployHubs({
       logger: logger,
+      factory: factory,
       proxyAdminOwner: deployInputs.proxyAdminOwner,
       authority: accessManager,
       hubLabels: deployInputs.hubLabels,
-      hubBytecode: hubBytecode,
       salt: salt
     });
 
-    // Deploy Spoke Instance Batches
+    // Deploy Spokes
     report.spokeInstanceBatchReports = _deploySpokes({
       logger: logger,
+      factory: factory,
+      proxyAdminOwner: deployInputs.proxyAdminOwner,
       authority: accessManager,
-      inputs: deployInputs,
-      spokeBytecode: spokeBytecode,
+      spokeLabels: deployInputs.spokeLabels,
       salt: salt
     });
 
@@ -156,128 +161,129 @@ library AaveV4DeployOrchestration {
     return report;
   }
 
-  function _deployHubs(
+  function _deployHubSpokeFactory(
     Logger logger,
-    address proxyAdminOwner,
-    address authority,
-    string[] memory hubLabels,
+    OrchestrationReports.FullDeploymentReport memory report,
     bytes memory hubBytecode,
+    bytes memory spokeBytecode,
     bytes32 salt
-  ) internal returns (OrchestrationReports.HubDeploymentReport[] memory hubInstanceBatchReports) {
-    uint256 hubCount = hubLabels.length;
-    hubInstanceBatchReports = new OrchestrationReports.HubDeploymentReport[](hubCount);
-    for (uint256 i; i < hubCount; ++i) {
-      bytes32 childSalt = _deriveChildSalt(salt, 'hub', hubLabels[i]);
-      hubInstanceBatchReports[i] = _deployHub({
-        logger: logger,
-        proxyAdminOwner: proxyAdminOwner,
-        authority: authority,
-        label: hubLabels[i],
-        hubBytecode: hubBytecode,
-        salt: childSalt
-      });
-    }
-    logger.logNewLine();
-    return hubInstanceBatchReports;
-  }
-
-  function _deployHub(
-    Logger logger,
-    address proxyAdminOwner,
-    address authority,
-    string memory label,
-    bytes memory hubBytecode,
-    bytes32 salt
-  ) internal returns (OrchestrationReports.HubDeploymentReport memory) {
-    OrchestrationReports.HubDeploymentReport memory hubReport;
-    hubReport.label = label;
-    hubReport.report = _deployHubInstanceBatch({
-      logger: logger,
-      proxyAdminOwner: proxyAdminOwner,
-      authority: authority,
+  ) internal {
+    logger.logHeader1('deploying HubImplementationBatch');
+    report.hubImplementationBatchReport = AaveV4DeployBase.deployHubImplementationBatch({
       hubBytecode: hubBytecode,
       salt: salt
     });
+    logger.log('HubImplementation', report.hubImplementationBatchReport.hubImplementation);
 
-    _logHubReport({logger: logger, report: hubReport.report, label: label});
-    _setupHubRoles({logger: logger, report: hubReport.report, accessManager: authority});
+    logger.logHeader1('deploying SpokeImplementationBatch');
+    report.spokeImplementationBatchReport = AaveV4DeployBase.deploySpokeImplementationBatch({
+      spokeBytecode: spokeBytecode,
+      salt: salt
+    });
+    logger.log('SpokeImplementation', report.spokeImplementationBatchReport.spokeImplementation);
 
-    return hubReport;
+    logger.logHeader1('deploying TokenizationSpokeImplementationBatch');
+    report.tokenizationSpokeImplementationBatchReport = AaveV4DeployBase
+      .deployTokenizationSpokeImplementationBatch({salt: salt});
+    logger.log(
+      'TokenizationSpokeImplementation',
+      report.tokenizationSpokeImplementationBatchReport.tokenizationSpokeImplementation
+    );
+
+    logger.logHeader1('deploying HubSpokeFactoryBatch');
+    report.hubSpokeFactoryBatchReport = AaveV4DeployBase.deployHubSpokeFactoryBatch({
+      hubImplementation: report.hubImplementationBatchReport.hubImplementation,
+      spokeImplementation: report.spokeImplementationBatchReport.spokeImplementation,
+      tokenizationSpokeImplementation: report
+        .tokenizationSpokeImplementationBatchReport
+        .tokenizationSpokeImplementation,
+      salt: salt
+    });
+    logger.log(
+      'TreasurySpokeImplementation',
+      report.hubSpokeFactoryBatchReport.treasurySpokeImplementation
+    );
+    logger.log('HubSpokeFactory', report.hubSpokeFactoryBatchReport.hubSpokeFactory);
+    logger.logNewLine();
+  }
+
+  function _deployTreasurySpoke(
+    Logger logger,
+    IHubSpokeFactory factory,
+    address treasurySpokeOwner,
+    bytes32 salt
+  ) internal returns (BatchReports.TreasurySpokeBatchReport memory report) {
+    require(treasurySpokeOwner != address(0), 'invalid owner');
+    logger.logHeader1('deploying TreasurySpoke');
+    report.treasurySpoke = factory.deployTreasurySpoke({
+      salt: salt,
+      owner: treasurySpokeOwner,
+      proxyAdminOwner: treasurySpokeOwner
+    });
+    logger.log('TreasurySpoke', report.treasurySpoke);
+    logger.logNewLine();
+  }
+
+  function _deployHubs(
+    Logger logger,
+    IHubSpokeFactory factory,
+    address proxyAdminOwner,
+    address authority,
+    string[] memory hubLabels,
+    bytes32 salt
+  ) internal returns (OrchestrationReports.HubDeploymentReport[] memory hubReports) {
+    uint256 hubCount = hubLabels.length;
+    hubReports = new OrchestrationReports.HubDeploymentReport[](hubCount);
+    for (uint256 i; i < hubCount; ++i) {
+      require(proxyAdminOwner != address(0), 'invalid proxy admin owner');
+      logger.logHeader1('deploying Hub');
+      IHubSpokeFactory.HubDeployment memory deployment = factory.deployHub({
+        salt: _deriveChildSalt(salt, 'hub', hubLabels[i]),
+        authority: authority,
+        proxyAdminOwner: proxyAdminOwner
+      });
+      hubReports[i].label = hubLabels[i];
+      hubReports[i].report = BatchReports.HubInstanceBatchReport({
+        hubProxy: deployment.proxy,
+        hubImplementation: factory.HUB_IMPLEMENTATION(),
+        irStrategy: deployment.irStrategy
+      });
+
+      _logHubReport({logger: logger, report: hubReports[i].report, label: hubLabels[i]});
+      _setupHubRoles({logger: logger, report: hubReports[i].report, accessManager: authority});
+    }
+    logger.logNewLine();
   }
 
   function _deploySpokes(
     Logger logger,
+    IHubSpokeFactory factory,
+    address proxyAdminOwner,
     address authority,
-    InputUtils.FullDeployInputs memory inputs,
-    bytes memory spokeBytecode,
+    string[] memory spokeLabels,
     bytes32 salt
-  ) internal returns (OrchestrationReports.SpokeDeploymentReport[] memory spokeBatchReports) {
-    uint256 spokeCount = inputs.spokeLabels.length;
-    uint256 limitsLen = inputs.spokeMaxReservesLimits.length;
-    require(limitsLen == spokeCount || limitsLen == 0, 'spoke labels/limits length mismatch');
-    spokeBatchReports = new OrchestrationReports.SpokeDeploymentReport[](spokeCount);
+  ) internal returns (OrchestrationReports.SpokeDeploymentReport[] memory spokeReports) {
+    uint256 spokeCount = spokeLabels.length;
+    spokeReports = new OrchestrationReports.SpokeDeploymentReport[](spokeCount);
     for (uint256 i; i < spokeCount; ++i) {
-      bytes32 childSalt = _deriveChildSalt(salt, 'spoke', inputs.spokeLabels[i]);
-      spokeBatchReports[i] = _deploySpoke({
-        logger: logger,
-        proxyAdminOwner: inputs.proxyAdminOwner,
+      require(proxyAdminOwner != address(0), 'invalid proxy admin owner');
+      logger.logHeader1('deploying Spoke');
+      IHubSpokeFactory.SpokeDeployment memory deployment = factory.deploySpoke({
+        salt: _deriveChildSalt(salt, 'spoke', spokeLabels[i]),
         authority: authority,
-        label: inputs.spokeLabels[i],
-        spokeBytecode: spokeBytecode,
-        maxUserReservesLimit: limitsLen > 0
-          ? inputs.spokeMaxReservesLimits[i]
-          : DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT,
-        oracleDecimals: DeployConstants.ORACLE_DECIMALS,
-        salt: childSalt
+        proxyAdminOwner: proxyAdminOwner
       });
+      spokeReports[i].label = spokeLabels[i];
+      spokeReports[i].report = BatchReports.SpokeInstanceBatchReport({
+        spokeProxy: deployment.proxy,
+        spokeImplementation: factory.SPOKE_IMPLEMENTATION(),
+        aaveOracle: deployment.oracle
+      });
+
+      _logSpokeReport({logger: logger, report: spokeReports[i].report, label: spokeLabels[i]});
+      _setupSpokeRoles({logger: logger, report: spokeReports[i].report, accessManager: authority});
     }
     logger.logNewLine();
-    return spokeBatchReports;
-  }
-
-  function _deploySpoke(
-    Logger logger,
-    address proxyAdminOwner,
-    address authority,
-    string memory label,
-    bytes memory spokeBytecode,
-    uint16 maxUserReservesLimit,
-    uint8 oracleDecimals,
-    bytes32 salt
-  ) internal returns (OrchestrationReports.SpokeDeploymentReport memory) {
-    OrchestrationReports.SpokeDeploymentReport memory spokeReport;
-
-    spokeReport.label = label;
-    spokeReport.report = _deploySpokeInstanceBatch({
-      logger: logger,
-      proxyAdminOwner: proxyAdminOwner,
-      authority: authority,
-      spokeBytecode: spokeBytecode,
-      oracleDecimals: oracleDecimals,
-      maxUserReservesLimit: maxUserReservesLimit,
-      salt: salt
-    });
-    _logSpokeReport({logger: logger, report: spokeReport.report, label: label});
-    _setupSpokeRoles({logger: logger, report: spokeReport.report, accessManager: authority});
-
-    return spokeReport;
-  }
-
-  function _deployHubInstanceBatch(
-    Logger logger,
-    address proxyAdminOwner,
-    address authority,
-    bytes memory hubBytecode,
-    bytes32 salt
-  ) internal returns (BatchReports.HubInstanceBatchReport memory report) {
-    logger.logHeader1('deploying HubBatch');
-    report = AaveV4DeployBase.deployHubInstanceBatch({
-      proxyAdminOwner: proxyAdminOwner,
-      authority: authority,
-      hubBytecode: hubBytecode,
-      salt: salt
-    });
-    return report;
   }
 
   function _deployAuthorityBatch(
@@ -310,50 +316,6 @@ library AaveV4DeployOrchestration {
 
     logger.log('HubConfigurator', report.hubConfigurator);
     logger.log('SpokeConfigurator', report.spokeConfigurator);
-    logger.logNewLine();
-    return report;
-  }
-
-  function _deploySpokeInstanceBatch(
-    Logger logger,
-    address proxyAdminOwner,
-    address authority,
-    bytes memory spokeBytecode,
-    uint8 oracleDecimals,
-    uint16 maxUserReservesLimit,
-    bytes32 salt
-  ) internal returns (BatchReports.SpokeInstanceBatchReport memory report) {
-    logger.logHeader1('deploying AaveV4SpokeInstanceBatch');
-    report = AaveV4DeployBase.deploySpokeInstanceBatch({
-      proxyAdminOwner: proxyAdminOwner,
-      authority: authority,
-      spokeBytecode: spokeBytecode,
-      oracleDecimals: oracleDecimals,
-      maxUserReservesLimit: maxUserReservesLimit,
-      salt: salt
-    });
-    return report;
-  }
-
-  function _deployTreasurySpokeBatch(
-    Logger logger,
-    address treasurySpokeOwner,
-    bytes32 salt
-  ) internal returns (BatchReports.TreasurySpokeBatchReport memory report) {
-    logger.logHeader1('deploying TreasurySpokeBatch');
-    report = AaveV4DeployBase.deployTreasurySpokeBatch({owner: treasurySpokeOwner, salt: salt});
-    logger.log('TreasurySpoke', report.treasurySpoke);
-    logger.logNewLine();
-    return report;
-  }
-
-  function _deployTokenizationSpokeImplementationBatch(
-    Logger logger,
-    bytes32 salt
-  ) internal returns (BatchReports.TokenizationSpokeImplementationBatchReport memory report) {
-    logger.logHeader1('deploying TokenizationSpokeImplementationBatch');
-    report = AaveV4DeployBase.deployTokenizationSpokeImplementationBatch({salt: salt});
-    logger.log('TokenizationSpokeImplementation', report.tokenizationSpokeImplementation);
     logger.logNewLine();
     return report;
   }

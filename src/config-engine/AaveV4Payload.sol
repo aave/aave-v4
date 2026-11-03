@@ -25,13 +25,49 @@ abstract contract AaveV4Payload {
   /// @notice Main execution entry point called by governance. Runs all configured actions.
   /// @dev Expected to be called by a governance executor. No on-chain access control is applied;
   /// the caller is responsible for authorization. Idempotency is not guaranteed.
+  /// @dev Deployments run first, so that later actions can target the deployed instances at their
+  /// predicted addresses.
   function execute() external {
     _preExecute();
+    _executeDeploymentActions();
     _executeAccessManagerActions();
     _executeHubActions();
     _executeSpokeActions();
     _executePositionManagerActions();
     _postExecute();
+  }
+
+  /// @notice Returns the Hub deployments to execute. Override to provide deployments.
+  /// @return An array of HubDeployment structs (empty by default).
+  function hubDeployments()
+    public
+    view
+    virtual
+    returns (IAaveV4ConfigEngine.HubDeployment[] memory)
+  {
+    return new IAaveV4ConfigEngine.HubDeployment[](0);
+  }
+
+  /// @notice Returns the Spoke deployments to execute. Override to provide deployments.
+  /// @return An array of SpokeDeployment structs (empty by default).
+  function spokeDeployments()
+    public
+    view
+    virtual
+    returns (IAaveV4ConfigEngine.SpokeDeployment[] memory)
+  {
+    return new IAaveV4ConfigEngine.SpokeDeployment[](0);
+  }
+
+  /// @notice Returns the TreasurySpoke deployments to execute. Override to provide deployments.
+  /// @return An array of TreasurySpokeDeployment structs (empty by default).
+  function treasurySpokeDeployments()
+    public
+    view
+    virtual
+    returns (IAaveV4ConfigEngine.TreasurySpokeDeployment[] memory)
+  {
+    return new IAaveV4ConfigEngine.TreasurySpokeDeployment[](0);
   }
 
   /// @notice Returns the Hub asset listings to execute. Override to provide listings.
@@ -368,6 +404,29 @@ abstract contract AaveV4Payload {
     if (pmUpdates.length > 0) {
       _delegateCallEngine(
         abi.encodeCall(IAaveV4ConfigEngine.executeSpokePositionManagerUpdates, (pmUpdates))
+      );
+    }
+  }
+
+  /// @notice Executes all deployment actions via delegatecall to the engine.
+  function _executeDeploymentActions() internal {
+    IAaveV4ConfigEngine.HubDeployment[] memory hubDeploys = hubDeployments();
+    if (hubDeploys.length > 0) {
+      _delegateCallEngine(abi.encodeCall(IAaveV4ConfigEngine.executeHubDeployments, (hubDeploys)));
+    }
+
+    IAaveV4ConfigEngine.SpokeDeployment[] memory spokeDeploys = spokeDeployments();
+    if (spokeDeploys.length > 0) {
+      _delegateCallEngine(
+        abi.encodeCall(IAaveV4ConfigEngine.executeSpokeDeployments, (spokeDeploys))
+      );
+    }
+
+    IAaveV4ConfigEngine.TreasurySpokeDeployment[]
+      memory treasuryDeploys = treasurySpokeDeployments();
+    if (treasuryDeploys.length > 0) {
+      _delegateCallEngine(
+        abi.encodeCall(IAaveV4ConfigEngine.executeTreasurySpokeDeployments, (treasuryDeploys))
       );
     }
   }

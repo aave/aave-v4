@@ -239,7 +239,7 @@ abstract contract SetupHelpers is CheckedActions, ConfigHelpers, MockHelpers {
     uint256 reserveId,
     uint256 debtAmount
   ) internal {
-    address mockSpoke = address(new MockSpoke(spoke.ORACLE(), MAX_ALLOWED_USER_RESERVES_LIMIT));
+    address mockSpoke = address(new MockSpoke());
 
     address implementation = _getImplementationAddress(address(spoke));
 
@@ -402,14 +402,14 @@ abstract contract SetupHelpers is CheckedActions, ConfigHelpers, MockHelpers {
     );
   }
 
-  /// @dev Helper to etch spoke's implementation with a new maxUserReservesLimit
+  /// @dev Helper to overwrite spoke's maxUserReservesLimit, packed after the oracle in slot 8.
   function _updateMaxUserReservesLimit(ISpoke spoke, uint16 newLimit) internal {
-    address currentImpl = _getImplementationAddress(address(spoke));
-    ISpokeInstance newImpl = AaveV4TestOrchestration.deploySpokeImplementation(
-      spoke.ORACLE(),
-      newLimit
-    );
-    vm.etch(currentImpl, address(newImpl).code);
+    bytes32 slot = bytes32(uint256(8));
+    uint256 value = uint256(vm.load(address(spoke), slot));
+    value = (value & ~(uint256(type(uint16).max) << 160)) | (uint256(newLimit) << 160);
+    vm.store(address(spoke), slot, bytes32(value));
+    assertEq(spoke.MAX_USER_RESERVES_LIMIT(), newLimit);
+    assertEq(spoke.ORACLE(), address(uint160(value)));
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -435,11 +435,12 @@ abstract contract SetupHelpers is CheckedActions, ConfigHelpers, MockHelpers {
 
     ISpoke spoke = ISpoke(
       AaveV4TestOrchestration.proxify(
-        address(
-          AaveV4TestOrchestration.deploySpokeImplementation(address(oracle), maxUserReservesLimit)
-        ),
+        address(AaveV4TestOrchestration.deploySpokeImplementation()),
         proxyAdminOwner,
-        abi.encodeCall(ISpokeInstance.initialize, (_accessManager))
+        abi.encodeCall(
+          ISpokeInstance.initialize,
+          (_accessManager, address(oracle), maxUserReservesLimit)
+        )
       )
     );
 
