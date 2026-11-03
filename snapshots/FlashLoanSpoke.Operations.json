@@ -1,0 +1,10 @@
+{
+  "flashLoan: 1 asset": "197273",
+  "flashLoan: 2 assets": "344789",
+  "flashLoan: same asset twice": "251161",
+  "flashLoanSimple": "193396",
+  "flashLoanSimple: authorized flash borrower": "171432",
+  "flashLoanSimple: authorized flash borrower, existing rounding debt": "145046",
+  "flashLoanSimple: nested, same asset": "282120",
+  "flashLoanSimple: restores rounding debt": "216327"
+}
