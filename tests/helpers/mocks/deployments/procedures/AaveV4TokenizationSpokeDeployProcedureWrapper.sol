@@ -9,25 +9,4 @@ contract AaveV4TokenizationSpokeDeployProcedureWrapper is AaveV4TokenizationSpok
   function deployTokenizationSpokeImplementation(bytes32 salt) external returns (address) {
     return _deployTokenizationSpokeImplementation(salt);
   }
-
-  function deployTokenizationSpokeProxy(
-    address implementation,
-    address hub,
-    address underlying,
-    address proxyAdminOwner,
-    string memory shareName,
-    string memory shareSymbol,
-    bytes32 salt
-  ) external returns (address) {
-    return
-      _deployTokenizationSpokeProxy(
-        implementation,
-        hub,
-        underlying,
-        proxyAdminOwner,
-        shareName,
-        shareSymbol,
-        salt
-      );
-  }
 }

@@ -25,12 +25,7 @@ contract MockSpoke is Spoke, Test {
     uint256[] accruedPremiumAmounts;
   }
 
-  constructor(
-    address oracle_,
-    uint16 maxUserReservesLimit_
-  ) Spoke(oracle_, maxUserReservesLimit_) {}
-
-  function initialize(address) external override {}
+  function initialize(address, address, uint16) external override {}
 
   // same as spoke's borrow, but without health factor check
   function borrowWithoutHfCheck(
@@ -48,8 +43,8 @@ contract MockSpoke is Spoke, Test {
     userPosition.drawnShares += drawnShares.toUint120();
     if (!positionStatus.isBorrowing(reserveId)) {
       require(
-        MAX_USER_RESERVES_LIMIT == MAX_ALLOWED_USER_RESERVES_LIMIT ||
-          positionStatus.borrowCount(_reserveCount) < MAX_USER_RESERVES_LIMIT,
+        _maxUserReservesLimit == MAX_ALLOWED_USER_RESERVES_LIMIT ||
+          positionStatus.borrowCount(_reserveCount) < _maxUserReservesLimit,
         MaximumUserReservesExceeded()
       );
       positionStatus.setBorrowing(reserveId, true);

@@ -6,12 +6,10 @@ import {AaveV4HubDeployProcedure} from 'src/deployments/procedures/deploy/hub/Aa
 contract AaveV4HubDeployProcedureWrapper is AaveV4HubDeployProcedure {
   bool public IS_TEST = true;
 
-  function deployHub(
-    address proxyAdminOwner,
-    address authority,
+  function deployHubImplementation(
     bytes memory hubBytecode,
     bytes32 salt
-  ) external returns (address hubProxy, address hubImplementation) {
-    return _deployUpgradeableHubInstance(proxyAdminOwner, authority, hubBytecode, salt);
+  ) external returns (address) {
+    return _deployHubImplementation(hubBytecode, salt);
   }
 }

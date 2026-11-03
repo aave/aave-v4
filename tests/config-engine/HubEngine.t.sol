@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 import 'tests/config-engine/BaseConfigEngine.t.sol';
-import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 import {ProxyHelper} from 'tests/utils/ProxyHelper.sol';
 
 contract HubEngineTest is BaseConfigEngineTest {
@@ -771,8 +770,9 @@ contract HubEngineTest is BaseConfigEngineTest {
     IHub.AssetConfig memory config = hub1().getAssetConfig(assetCountBefore);
     assertEq(config.feeReceiver, FEE_RECEIVER);
 
-    address predictedProxy = TokenizationSpokeDeployer.computeProxyAddress(
-      engine.TOKENIZATION_SPOKE_IMPLEMENTATION(),
+    address predictedProxy = FactoryEngine.predictTokenizationSpoke(
+      engine.FACTORY(),
+      address(engine),
       address(hub1()),
       address(newToken),
       'Tokenized NEW',
@@ -792,8 +792,8 @@ contract HubEngineTest is BaseConfigEngineTest {
 
     assertEq(
       ProxyHelper.getImplementation(predictedProxy),
-      engine.TOKENIZATION_SPOKE_IMPLEMENTATION(),
-      'TokenizationSpoke proxy should point to the engine implementation'
+      engine.FACTORY().TOKENIZATION_SPOKE_IMPLEMENTATION(),
+      'TokenizationSpoke proxy should point to the factory implementation'
     );
     ITokenizationSpoke tokenizationSpoke = ITokenizationSpoke(predictedProxy);
     assertEq(tokenizationSpoke.hub(), address(hub1()));
@@ -817,8 +817,9 @@ contract HubEngineTest is BaseConfigEngineTest {
     // the skip path must not deploy or register a TokenizationSpoke: only the fee receiver spoke exists
     assertEq(hub1().getSpokeCount(expectedAssetId), 1);
 
-    address predictedProxy = TokenizationSpokeDeployer.computeProxyAddress(
-      engine.TOKENIZATION_SPOKE_IMPLEMENTATION(),
+    address predictedProxy = FactoryEngine.predictTokenizationSpoke(
+      engine.FACTORY(),
+      address(engine),
       address(hub1()),
       address(newToken),
       '',
@@ -839,8 +840,9 @@ contract HubEngineTest is BaseConfigEngineTest {
       symbol: 'tNEW'
     });
 
-    address predictedProxy = TokenizationSpokeDeployer.computeProxyAddress(
-      engine.TOKENIZATION_SPOKE_IMPLEMENTATION(),
+    address predictedProxy = FactoryEngine.predictTokenizationSpoke(
+      engine.FACTORY(),
+      address(engine),
       address(hub1()),
       address(newToken),
       'Tokenized NEW',
@@ -855,7 +857,7 @@ contract HubEngineTest is BaseConfigEngineTest {
     assertEq(tsConfig.addCap, 1000);
   }
 
-  function test_executeHubAssetListings_tokenization_revertsWith_ContractAlreadyDeployed() public {
+  function test_executeHubAssetListings_tokenization_revertsWhenProxyAddressOccupied() public {
     IAaveV4ConfigEngine.AssetListing memory listing = _defaultAssetListing();
     listing.underlying = address(newToken);
     listing.tokenization = IAaveV4ConfigEngine.TokenizationSpokeConfig({
@@ -865,8 +867,9 @@ contract HubEngineTest is BaseConfigEngineTest {
       symbol: 'tNEW'
     });
 
-    address predictedProxy = TokenizationSpokeDeployer.computeProxyAddress(
-      engine.TOKENIZATION_SPOKE_IMPLEMENTATION(),
+    address predictedProxy = FactoryEngine.predictTokenizationSpoke(
+      engine.FACTORY(),
+      address(engine),
       address(hub1()),
       address(newToken),
       'Tokenized NEW',
@@ -876,7 +879,7 @@ contract HubEngineTest is BaseConfigEngineTest {
     vm.etch(predictedProxy, hex'00');
     uint256 assetCountBefore = hub1().getAssetCount();
 
-    vm.expectRevert(Create2Utils.ContractAlreadyDeployed.selector);
+    vm.expectRevert(IHubSpokeFactory.SaltAlreadyUsed.selector);
     engine.executeHubAssetListings(_toAssetListingArray(listing));
 
     assertEq(hub1().getAssetCount(), assetCountBefore);
@@ -965,8 +968,9 @@ contract HubEngineTest is BaseConfigEngineTest {
     uint256 assetCountBefore = hub1().getAssetCount();
     engine.executeHubAssetListings(_toAssetListingArray(listing));
 
-    address predictedProxy = TokenizationSpokeDeployer.computeProxyAddress(
-      engine.TOKENIZATION_SPOKE_IMPLEMENTATION(),
+    address predictedProxy = FactoryEngine.predictTokenizationSpoke(
+      engine.FACTORY(),
+      address(engine),
       address(hub1()),
       address(newToken),
       'Tokenized NEW',
@@ -1001,27 +1005,14 @@ contract HubEngineTest is BaseConfigEngineTest {
     assertEq(hub2().getAssetCount(), hub2CountBefore + 1);
   }
 
-  function test_constructor_setsTokenizationSpokeImplementation() public {
-    address impl = address(new TokenizationSpokeInstance());
-    assertEq(new AaveV4ConfigEngine(impl).TOKENIZATION_SPOKE_IMPLEMENTATION(), impl);
+  function test_constructor_setsFactory() public {
+    IHubSpokeFactory factory = engine.FACTORY();
+    assertEq(address(new AaveV4ConfigEngine(factory).FACTORY()), address(factory));
   }
 
-  function test_constructor_revertsWith_InvalidTokenizationSpokeImplementation() public {
-    vm.expectRevert(IAaveV4ConfigEngine.InvalidTokenizationSpokeImplementation.selector);
-    new AaveV4ConfigEngine(address(0));
-  }
-
-  function test_tokenizationSpokeDeployer_deploy_revertsOnZeroProxyAdminOwner() public {
-    address implementation = engine.TOKENIZATION_SPOKE_IMPLEMENTATION();
-    vm.expectRevert(TokenizationSpokeDeployer.InvalidProxyAdminOwner.selector);
-    TokenizationSpokeDeployer.deploy({
-      implementation: implementation,
-      hub: address(hub1()),
-      underlying: address(newToken),
-      name: 'Tokenized NEW',
-      symbol: 'tNEW',
-      proxyAdminOwner: address(0)
-    });
+  function test_constructor_revertsWith_InvalidFactory() public {
+    vm.expectRevert(IAaveV4ConfigEngine.InvalidFactory.selector);
+    new AaveV4ConfigEngine(IHubSpokeFactory(address(0)));
   }
 
   function test_executeHubSpokeToAssetsAdditions_revert_spokeAlreadyListed() public {

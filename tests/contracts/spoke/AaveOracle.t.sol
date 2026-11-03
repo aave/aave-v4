@@ -26,14 +26,7 @@ contract AaveOracleTest is Base {
 
     vm.startPrank(deployer);
     oracle = new AaveOracle(_oracleDecimals);
-    spoke1 = ISpoke(
-      address(
-        AaveV4TestOrchestration.deploySpokeImplementation(
-          address(oracle),
-          MAX_ALLOWED_USER_RESERVES_LIMIT
-        )
-      )
-    );
+    spoke1 = ISpoke(address(_deploySpoke(address(oracle))));
     oracle.setSpoke(address(spoke1));
     vm.stopPrank();
   }
@@ -83,12 +76,7 @@ contract AaveOracleTest is Base {
     vm.startPrank(deployer);
     oracle = new AaveOracle(_oracleDecimals);
 
-    address newSpoke = address(
-      AaveV4TestOrchestration.deploySpokeImplementation(
-        address(oracle),
-        MAX_ALLOWED_USER_RESERVES_LIMIT
-      )
-    );
+    address newSpoke = address(_deploySpoke(address(oracle)));
 
     vm.expectEmit(address(oracle));
     emit IAaveOracle.SetSpoke(address(newSpoke));
@@ -148,12 +136,7 @@ contract AaveOracleTest is Base {
 
     // set new spoke to a separate oracle
     address mismatchOracle = address(new AaveOracle(_oracleDecimals));
-    address newSpoke = address(
-      AaveV4TestOrchestration.deploySpokeImplementation(
-        mismatchOracle,
-        MAX_ALLOWED_USER_RESERVES_LIMIT
-      )
-    );
+    address newSpoke = address(_deploySpoke(mismatchOracle));
 
     vm.expectRevert(IAaveOracle.OracleMismatch.selector);
     newOracle.setSpoke(newSpoke);
@@ -243,5 +226,21 @@ contract AaveOracleTest is Base {
 
   function _mockSourceLatestAnswer(address source, int256 price) internal {
     vm.mockCall(source, abi.encodeCall(IPriceFeed.latestAnswer, ()), abi.encode(price));
+  }
+
+  function _deploySpoke(address aaveOracle) internal returns (ISpoke) {
+    return
+      ISpoke(
+        address(
+          new TransparentUpgradeableProxy(
+            address(AaveV4TestOrchestration.deploySpokeImplementation()),
+            ADMIN,
+            abi.encodeCall(
+              ISpokeInstance.initialize,
+              (address(accessManager), aaveOracle, MAX_ALLOWED_USER_RESERVES_LIMIT)
+            )
+          )
+        )
+      );
   }
 }

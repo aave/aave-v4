@@ -33,8 +33,11 @@ import {AccessManagerEngine} from 'src/config-engine/libraries/AccessManagerEngi
 import {HubEngine} from 'src/config-engine/libraries/HubEngine.sol';
 import {SpokeEngine} from 'src/config-engine/libraries/SpokeEngine.sol';
 import {PositionManagerEngine} from 'src/config-engine/libraries/PositionManagerEngine.sol';
-import {TokenizationSpokeDeployer} from 'src/config-engine/libraries/TokenizationSpokeDeployer.sol';
+import {FactoryEngine} from 'src/config-engine/libraries/FactoryEngine.sol';
+import {HubSpokeFactory} from 'src/deployments/factory/HubSpokeFactory.sol';
+import {IHubSpokeFactory} from 'src/deployments/factory/interfaces/IHubSpokeFactory.sol';
 import {TokenizationSpokeInstance} from 'src/spoke/instances/TokenizationSpokeInstance.sol';
+import {TreasurySpokeInstance} from 'src/spoke/instances/TreasurySpokeInstance.sol';
 import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
 
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
@@ -81,6 +84,7 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
   address internal PROXY_ADMIN_OWNER = makeAddr('PROXY_ADMIN_OWNER');
 
   MockGovernanceExecutor internal executor;
+  IHubSpokeFactory internal factory;
   AaveV4ConfigEngine internal engine;
   IAccessManager internal accessManager;
   IHubConfigurator internal hubConfigurator;
@@ -159,7 +163,13 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
     }
 
     executor = new MockGovernanceExecutor(PAYLOADS_CONTROLLER);
-    engine = new AaveV4ConfigEngine(address(new TokenizationSpokeInstance()));
+    factory = new HubSpokeFactory({
+      hubImplementation_: address(AaveV4TestOrchestration.deployHubImplementation()),
+      spokeImplementation_: address(AaveV4TestOrchestration.deploySpokeImplementation()),
+      treasurySpokeImplementation_: address(new TreasurySpokeInstance()),
+      tokenizationSpokeImplementation_: address(new TokenizationSpokeInstance())
+    });
+    engine = new AaveV4ConfigEngine(factory);
     positionManager = new PositionManagerBaseWrapper(address(engine));
 
     _setupRoles(report);
@@ -202,8 +212,6 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
     TestTypes.TestSpokeReport memory report = AaveV4TestOrchestration.deployTestSpoke(
       ADMIN,
       address(accessManager),
-      BytecodeHelper.getSpokeBytecode(),
-      type(uint16).max,
       keccak256(abi.encodePacked('new-spoke', gasleft()))
     );
     AaveV4SpokeRolesProcedure.setupSpokeAllRoles(address(accessManager), report.spoke);

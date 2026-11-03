@@ -136,7 +136,7 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
     uint256 borrowCount;
   }
 
-  /// @notice Emitted when the immutable variables of the Spoke are set.
+  /// @notice Emitted when the Spoke is bound to its oracle and max user reserves limit at initialization.
   /// @param oracle The address of the oracle.
   /// @param maxUserReservesLimit The max user reserves limit.
   event SetSpokeImmutables(address indexed oracle, uint16 maxUserReservesLimit);
@@ -372,10 +372,10 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @notice Thrown for an invalid zero address.
   error InvalidAddress();
 
-  /// @notice Thrown when the oracle decimals are not 8 in the constructor.
+  /// @notice Thrown when the oracle decimals are not 8 on initialization.
   error InvalidOracleDecimals();
 
-  /// @notice Thrown when the maximum user reserves limit is zero in the constructor.
+  /// @notice Thrown when the maximum user reserves limit is zero on initialization.
   error InvalidMaxUserReservesLimit();
 
   /// @notice Thrown when a collateral risk exceeds the maximum allowed.

@@ -30,7 +30,7 @@ contract AaveV4PayloadEmptyReturnsTest is BaseConfigEngineTest {
   }
 
   /// @dev Calling execute() on the minimal payload exercises _preExecute, _postExecute,
-  ///   _executeAccessManagerActions, _executeHubActions, _executeSpokeActions, and every
+  ///   _executeDeploymentActions, _executeAccessManagerActions, _executeHubActions, _executeSpokeActions, and every
   ///   base virtual getter (all returning empty arrays, so no delegatecalls are made).
   function test_minimalPayload_execute_noReverts() public {
     vm.expectEmit(address(minimal));
@@ -38,6 +38,18 @@ contract AaveV4PayloadEmptyReturnsTest is BaseConfigEngineTest {
     vm.expectEmit(address(minimal));
     emit MinimalAaveV4Payload.PostExecuteCalled();
     minimal.execute();
+  }
+
+  function test_hubDeployments_returnsEmpty() public view {
+    assertEq(minimal.hubDeployments().length, 0);
+  }
+
+  function test_spokeDeployments_returnsEmpty() public view {
+    assertEq(minimal.spokeDeployments().length, 0);
+  }
+
+  function test_treasurySpokeDeployments_returnsEmpty() public view {
+    assertEq(minimal.treasurySpokeDeployments().length, 0);
   }
 
   function test_hubAssetListings_returnsEmpty() public view {

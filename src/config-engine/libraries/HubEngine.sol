@@ -3,11 +3,12 @@ pragma solidity ^0.8.0;
 
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {EngineFlags} from 'src/config-engine/libraries/EngineFlags.sol';
-import {TokenizationSpokeDeployer} from 'src/config-engine/libraries/TokenizationSpokeDeployer.sol';
+import {FactoryEngine} from 'src/config-engine/libraries/FactoryEngine.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
+import {IHubSpokeFactory} from 'src/deployments/factory/interfaces/IHubSpokeFactory.sol';
 
 /// @title HubEngine
 /// @author Aave Labs
@@ -24,13 +25,13 @@ library HubEngine {
   error InvalidTokenizationSpokeConfig();
 
   /// @notice Lists new assets on Hubs via the HubConfigurator.
-  /// @dev When tokenization data is set, also deploys a TokenizationSpoke proxy via CREATE2 and
+  /// @dev When tokenization data is set, also deploys a TokenizationSpoke through the factory and
   /// registers it on the Hub for the listed asset.
   /// @param listings The asset listings to execute.
-  /// @param tokenizationSpokeImplementation The TokenizationSpokeInstance implementation for deployed proxies.
+  /// @param factory The HubSpokeFactory deploying the TokenizationSpokes.
   function executeHubAssetListings(
     IAaveV4ConfigEngine.AssetListing[] calldata listings,
-    address tokenizationSpokeImplementation
+    IHubSpokeFactory factory
   ) external {
     uint256 length = listings.length;
     for (uint256 i; i < length; ++i) {
@@ -44,7 +45,7 @@ library HubEngine {
         irData
       );
 
-      _deployAndRegisterTokenizationSpoke(listings[i], tokenizationSpokeImplementation);
+      _deployAndRegisterTokenizationSpoke(listings[i], factory);
     }
   }
 
@@ -223,12 +224,12 @@ library HubEngine {
     }
   }
 
-  /// @dev Deploys a TokenizationSpoke proxy via CREATE2 and registers it on the Hub.
+  /// @dev Deploys a TokenizationSpoke through the factory and registers it on the Hub.
   /// Skipped only when the tokenization config is fully unset; a partially set config reverts
   /// instead of being silently ignored.
   function _deployAndRegisterTokenizationSpoke(
     IAaveV4ConfigEngine.AssetListing calldata listing,
-    address tokenizationSpokeImplementation
+    IHubSpokeFactory factory
   ) private {
     IAaveV4ConfigEngine.TokenizationSpokeConfig calldata tokenization = listing.tokenization;
 
@@ -241,8 +242,8 @@ library HubEngine {
     }
     require(hasName && hasSymbol && hasProxyAdminOwner, InvalidTokenizationSpokeConfig());
 
-    address proxy = TokenizationSpokeDeployer.deploy({
-      implementation: tokenizationSpokeImplementation,
+    address proxy = FactoryEngine.deployTokenizationSpoke({
+      factory: factory,
       hub: listing.hub,
       underlying: listing.underlying,
       name: tokenization.name,

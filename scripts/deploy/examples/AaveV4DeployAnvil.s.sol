@@ -56,7 +56,6 @@ contract AaveV4DeployAnvil is AaveV4DeployBatchBaseScript {
       grantRoles: true,
       hubLabels: hubLabels,
       spokeLabels: spokeLabels,
-      spokeMaxReservesLimits: new uint16[](0),
       salt: keccak256('anvil-test')
     });
   }
