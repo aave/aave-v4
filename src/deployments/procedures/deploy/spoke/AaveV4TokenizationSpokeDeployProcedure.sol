@@ -9,9 +9,22 @@ import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
 
 /// @title AaveV4TokenizationSpokeDeployProcedure
 /// @author Aave Labs
-/// @notice Deploys an upgradeable TokenizationSpoke instance behind a transparent proxy.
+/// @notice Deploys the canonical TokenizationSpoke implementation and TokenizationSpoke transparent proxies.
 contract AaveV4TokenizationSpokeDeployProcedure is AaveV4DeployProcedureBase {
-  /// @notice Deploys a TokenizationSpoke implementation via CREATE2 and sets up a transparent proxy.
+  /// @notice Deploys the canonical TokenizationSpokeInstance implementation via CREATE2.
+  /// @dev The implementation holds no Hub or asset specific state and is shared by every TokenizationSpoke proxy.
+  /// @param salt The CREATE2 salt for deterministic deployment.
+  /// @return The address of the deployed TokenizationSpoke implementation contract.
+  function _deployTokenizationSpokeImplementation(bytes32 salt) internal returns (address) {
+    return
+      Create2Utils.create2Deploy({
+        salt: salt,
+        bytecode: type(TokenizationSpokeInstance).creationCode
+      });
+  }
+
+  /// @notice Deploys a TokenizationSpoke transparent proxy via CREATE2 pointing to `implementation`.
+  /// @param implementation The address of the TokenizationSpokeInstance implementation.
   /// @param hub The address of the Hub that the tokenization spoke connects to.
   /// @param underlying The address of the underlying asset to tokenize.
   /// @param proxyAdminOwner The owner of the proxy admin contract.
@@ -19,30 +32,29 @@ contract AaveV4TokenizationSpokeDeployProcedure is AaveV4DeployProcedureBase {
   /// @param shareSymbol The symbol of the share token.
   /// @param salt The CREATE2 salt for deterministic deployment.
   /// @return tokenizationSpokeProxy The address of the deployed transparent proxy.
-  /// @return tokenizationSpokeImplementation The address of the deployed TokenizationSpoke implementation contract.
-  function _deployUpgradeableTokenizationSpokeInstance(
+  function _deployTokenizationSpokeProxy(
+    address implementation,
     address hub,
     address underlying,
     address proxyAdminOwner,
     string memory shareName,
     string memory shareSymbol,
     bytes32 salt
-  ) internal returns (address tokenizationSpokeProxy, address tokenizationSpokeImplementation) {
+  ) internal returns (address tokenizationSpokeProxy) {
+    require(implementation != address(0), 'invalid implementation');
     require(hub != address(0), 'invalid hub');
     require(proxyAdminOwner != address(0), 'invalid proxy admin owner');
     require(bytes(shareName).length > 0, 'invalid share name');
     require(bytes(shareSymbol).length > 0, 'invalid share symbol');
 
-    tokenizationSpokeImplementation = Create2Utils.create2Deploy({
-      salt: salt,
-      bytecode: _getTokenizationSpokeInstanceInitCode(hub, underlying)
-    });
-
     tokenizationSpokeProxy = Create2Utils.proxify({
       salt: salt,
-      logic: tokenizationSpokeImplementation,
+      logic: implementation,
       initialOwner: proxyAdminOwner,
-      data: abi.encodeCall(ITokenizationSpokeInstance.initialize, (shareName, shareSymbol))
+      data: abi.encodeCall(
+        ITokenizationSpokeInstance.initialize,
+        (hub, underlying, shareName, shareSymbol)
+      )
     });
 
     require(
@@ -53,19 +65,5 @@ contract AaveV4TokenizationSpokeDeployProcedure is AaveV4DeployProcedureBase {
       ITokenizationSpoke(tokenizationSpokeProxy).asset() == underlying,
       'tokenization spoke underlying mismatch'
     );
-
-    return (tokenizationSpokeProxy, tokenizationSpokeImplementation);
-  }
-
-  /// @notice Returns the creation bytecode for a TokenizationSpokeInstance with constructor arguments appended.
-  /// @param hub The address of the Hub contract.
-  /// @param underlying The address of the underlying asset.
-  /// @return The ABI-encoded creation bytecode.
-  function _getTokenizationSpokeInstanceInitCode(
-    address hub,
-    address underlying
-  ) internal pure returns (bytes memory) {
-    return
-      abi.encodePacked(type(TokenizationSpokeInstance).creationCode, abi.encode(hub, underlying));
   }
 }

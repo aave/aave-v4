@@ -10,6 +10,7 @@ import {AaveV4HubInstanceBatch} from 'src/deployments/batches/AaveV4HubInstanceB
 import {AaveV4PositionManagerBatch} from 'src/deployments/batches/AaveV4PositionManagerBatch.sol';
 import {AaveV4SpokeInstanceBatch} from 'src/deployments/batches/AaveV4SpokeInstanceBatch.sol';
 import {AaveV4TokenizationSpokeBatch} from 'src/deployments/batches/AaveV4TokenizationSpokeBatch.sol';
+import {AaveV4TokenizationSpokeImplementationBatch} from 'src/deployments/batches/AaveV4TokenizationSpokeImplementationBatch.sol';
 import {AaveV4TreasurySpokeBatch} from 'src/deployments/batches/AaveV4TreasurySpokeBatch.sol';
 
 /// @title AaveV4DeployBase Library
@@ -148,7 +149,20 @@ library AaveV4DeployBase {
     return gatewayBatch.getReport();
   }
 
-  /// @notice Deploys the Tokenization Spoke batch containing the TokenizationSpoke proxy and implementation.
+  /// @notice Deploys the canonical TokenizationSpoke implementation batch.
+  /// @param salt The CREATE2 salt for deterministic deployment.
+  /// @return The TokenizationSpoke implementation batch report.
+  function deployTokenizationSpokeImplementationBatch(
+    bytes32 salt
+  ) internal returns (BatchReports.TokenizationSpokeImplementationBatchReport memory) {
+    AaveV4TokenizationSpokeImplementationBatch tokenizationSpokeImplementationBatch = new AaveV4TokenizationSpokeImplementationBatch({
+        salt_: salt
+      });
+    return tokenizationSpokeImplementationBatch.getReport();
+  }
+
+  /// @notice Deploys the Tokenization Spoke batch containing a TokenizationSpoke proxy pointing to `tokenizationSpokeImplementation`.
+  /// @param tokenizationSpokeImplementation The address of the canonical TokenizationSpoke implementation.
   /// @param hub The address of the Hub the tokenization spoke connects to.
   /// @param underlying The address of the underlying asset to tokenize.
   /// @param proxyAdminOwner The owner of the proxy admin.
@@ -157,6 +171,7 @@ library AaveV4DeployBase {
   /// @param salt The CREATE2 salt for deterministic deployment.
   /// @return The Tokenization Spoke batch report.
   function deployTokenizationSpokeBatch(
+    address tokenizationSpokeImplementation,
     address hub,
     address underlying,
     address proxyAdminOwner,
@@ -165,6 +180,7 @@ library AaveV4DeployBase {
     bytes32 salt
   ) internal returns (BatchReports.TokenizationSpokeBatchReport memory) {
     AaveV4TokenizationSpokeBatch tokenizationSpokeBatch = new AaveV4TokenizationSpokeBatch({
+      tokenizationSpokeImplementation_: tokenizationSpokeImplementation,
       hub_: hub,
       underlying_: underlying,
       proxyAdminOwner_: proxyAdminOwner,
