@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: LicenseRef-BUSL
 pragma solidity ^0.8.0;
 
+import {IOwnable} from 'src/interfaces/IOwnable.sol';
+
 /// @title ITreasurySpoke
 /// @author Aave Labs
 /// @notice Interface for the TreasurySpoke.
-interface ITreasurySpoke {
+interface ITreasurySpoke is IOwnable {
   /// @notice Supplies a specified amount of the underlying asset to the specified Hub.
   /// @dev The Spoke pulls the underlying asset from the caller, so prior approval is required.
   /// @param hub The address of the Hub.
