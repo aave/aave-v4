@@ -744,6 +744,14 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @return The user account data struct.
   function getUserAccountData(address user) external view returns (UserAccountData memory);
 
+  /// @notice Returns the user account data as if the user's dynamic configuration was refreshed.
+  /// @dev Does not update the user's stored dynamic config keys.
+  /// @param user The address of the user.
+  /// @return The user account data struct calculated with the latest dynamic reserve configurations.
+  function getUserAccountDataAfterDynamicConfigRefresh(
+    address user
+  ) external view returns (UserAccountData memory);
+
   /// @notice Returns the risk premium from the user's last position update.
   /// @param user The address of the user.
   /// @return The risk premium of the user from the last position update, expressed in BPS.
