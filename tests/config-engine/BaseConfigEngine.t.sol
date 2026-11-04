@@ -33,7 +33,10 @@ import {AccessManagerEngine} from 'src/config-engine/libraries/AccessManagerEngi
 import {HubEngine} from 'src/config-engine/libraries/HubEngine.sol';
 import {SpokeEngine} from 'src/config-engine/libraries/SpokeEngine.sol';
 import {PositionManagerEngine} from 'src/config-engine/libraries/PositionManagerEngine.sol';
+import {FeeSharesMinterEngine} from 'src/config-engine/libraries/FeeSharesMinterEngine.sol';
 import {TokenizationSpokeDeployer} from 'src/config-engine/libraries/TokenizationSpokeDeployer.sol';
+import {FeeSharesMinter} from 'src/utils/FeeSharesMinter.sol';
+import {IFeeSharesMinter} from 'src/utils/IFeeSharesMinter.sol';
 
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 import {TestnetERC20} from 'tests/helpers/mocks/TestnetERC20.sol';
@@ -667,6 +670,27 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
     arr[0] = item;
   }
 
+  function _toFeeSharesMinterConfigArray(
+    IAaveV4ConfigEngine.FeeSharesMinterConfig memory item
+  ) internal pure returns (IAaveV4ConfigEngine.FeeSharesMinterConfig[] memory arr) {
+    arr = new IAaveV4ConfigEngine.FeeSharesMinterConfig[](1);
+    arr[0] = item;
+  }
+
+  function _toFeeSharesMinterHubConfigArray(
+    IAaveV4ConfigEngine.FeeSharesMinterHubConfig memory item
+  ) internal pure returns (IAaveV4ConfigEngine.FeeSharesMinterHubConfig[] memory arr) {
+    arr = new IAaveV4ConfigEngine.FeeSharesMinterHubConfig[](1);
+    arr[0] = item;
+  }
+
+  function _toFeeSharesMinterWorkflowConfigArray(
+    IAaveV4ConfigEngine.FeeSharesMinterWorkflowConfig memory item
+  ) internal pure returns (IAaveV4ConfigEngine.FeeSharesMinterWorkflowConfig[] memory arr) {
+    arr = new IAaveV4ConfigEngine.FeeSharesMinterWorkflowConfig[](1);
+    arr[0] = item;
+  }
+
   function _keepCurrentIrData()
     internal
     pure
@@ -678,6 +702,22 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
         baseDrawnRate: EngineFlags.KEEP_CURRENT_UINT32,
         rateGrowthBeforeOptimal: EngineFlags.KEEP_CURRENT_UINT32,
         rateGrowthAfterOptimal: EngineFlags.KEEP_CURRENT_UINT32
+      });
+  }
+
+  function _deployFeeSharesMinter(address owner) internal returns (FeeSharesMinter minter) {
+    minter = new FeeSharesMinter(owner);
+    vm.prank(ADMIN);
+    accessManager.grantRole(Roles.HUB_FEE_MINTER_ROLE, address(minter), 0);
+  }
+
+  function _defaultWorkflowConfig() internal pure returns (IFeeSharesMinter.WorkflowConfig memory) {
+    return
+      IFeeSharesMinter.WorkflowConfig({
+        forwarder: address(0xF0F0),
+        owner: address(0x0FF0),
+        name: bytes10('fee-minter'),
+        isActive: true
       });
   }
 }

@@ -43,6 +43,11 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   IAaveV4ConfigEngine.TargetFunctionRoleUpdate[] private _accessManagerTargetFunctionRoleUpdates;
   IAaveV4ConfigEngine.TargetAdminDelayUpdate[] private _accessManagerTargetAdminDelayUpdates;
 
+  // FeeSharesMinter action storage
+  IAaveV4ConfigEngine.FeeSharesMinterConfig[] private _feeSharesMinterConfigs;
+  IAaveV4ConfigEngine.FeeSharesMinterHubConfig[] private _feeSharesMinterHubConfigs;
+  IAaveV4ConfigEngine.FeeSharesMinterWorkflowConfig[] private _feeSharesMinterWorkflowConfigs;
+
   constructor(IAaveV4ConfigEngine configEngine) AaveV4Payload(configEngine) {}
 
   // Hook overrides
@@ -220,6 +225,34 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
     delete _accessManagerTargetAdminDelayUpdates;
     for (uint256 i = 0; i < items.length; i++) {
       _accessManagerTargetAdminDelayUpdates.push(items[i]);
+    }
+  }
+
+  // FeeSharesMinter setters
+  function setFeeSharesMinterConfigs(
+    IAaveV4ConfigEngine.FeeSharesMinterConfig[] memory items
+  ) external {
+    delete _feeSharesMinterConfigs;
+    for (uint256 i = 0; i < items.length; i++) {
+      _feeSharesMinterConfigs.push(items[i]);
+    }
+  }
+
+  function setFeeSharesMinterHubConfigs(
+    IAaveV4ConfigEngine.FeeSharesMinterHubConfig[] memory items
+  ) external {
+    delete _feeSharesMinterHubConfigs;
+    for (uint256 i = 0; i < items.length; i++) {
+      _feeSharesMinterHubConfigs.push(items[i]);
+    }
+  }
+
+  function setFeeSharesMinterWorkflowConfigs(
+    IAaveV4ConfigEngine.FeeSharesMinterWorkflowConfig[] memory items
+  ) external {
+    delete _feeSharesMinterWorkflowConfigs;
+    for (uint256 i = 0; i < items.length; i++) {
+      _feeSharesMinterWorkflowConfigs.push(items[i]);
     }
   }
 
@@ -412,5 +445,32 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
     returns (IAaveV4ConfigEngine.PositionManagerRoleRenouncement[] memory)
   {
     return _positionManagerRoleRenouncements;
+  }
+
+  function feeSharesMinterConfigs()
+    public
+    view
+    override
+    returns (IAaveV4ConfigEngine.FeeSharesMinterConfig[] memory)
+  {
+    return _feeSharesMinterConfigs;
+  }
+
+  function feeSharesMinterHubConfigs()
+    public
+    view
+    override
+    returns (IAaveV4ConfigEngine.FeeSharesMinterHubConfig[] memory)
+  {
+    return _feeSharesMinterHubConfigs;
+  }
+
+  function feeSharesMinterWorkflowConfigs()
+    public
+    view
+    override
+    returns (IAaveV4ConfigEngine.FeeSharesMinterWorkflowConfig[] memory)
+  {
+    return _feeSharesMinterWorkflowConfigs;
   }
 }
