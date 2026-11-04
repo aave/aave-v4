@@ -8,6 +8,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
 
   address public user = makeAddr('user');
   address public liquidator = makeAddr('liquidator');
+  address public charlie = makeAddr('charlie');
 
   ISpoke public spoke;
 
@@ -49,10 +50,17 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
 
     for (uint256 reserveId = 0; reserveId < spoke.getReserveCount(); reserveId++) {
       _deal(spoke, reserveId, liquidator, MAX_SUPPLY_AMOUNT);
+      _deal(spoke, reserveId, charlie, MAX_SUPPLY_AMOUNT);
       SpokeActions.approve({
         spoke: spoke,
         reserveId: reserveId,
         owner: liquidator,
+        amount: MAX_SUPPLY_AMOUNT
+      });
+      SpokeActions.approve({
+        spoke: spoke,
+        reserveId: reserveId,
+        owner: charlie,
         amount: MAX_SUPPLY_AMOUNT
       });
     }
@@ -446,6 +454,96 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
         receiveShares: receiveShares
       })
     );
+  }
+
+  /// @dev receiving shares can improve an unhealthy liquidator's position.
+  function test_liquidationCall_liquidatorReceivesSharesAndImprovesHealthFactor() public {
+    uint256 collateralReserveId = _wethReserveId(spoke);
+    uint256 debtReserveId = _daiReserveId(spoke);
+
+    _increaseCollateralSupply(
+      spoke,
+      collateralReserveId,
+      _convertValueToAmount(spoke, collateralReserveId, 1_000e26),
+      liquidator
+    );
+    _openSupplyPosition(
+      spoke,
+      debtReserveId,
+      _convertValueToAmount(spoke, debtReserveId, 10_000e26)
+    );
+    _borrowToBeAtHf(spoke, liquidator, debtReserveId, 0.99e18);
+
+    uint256 liquidatorHealthFactorBefore = spoke.getUserAccountData(liquidator).healthFactor;
+    assertLt(liquidatorHealthFactorBefore, HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+
+    _increaseCollateralSupply(
+      spoke,
+      collateralReserveId,
+      _convertValueToAmount(spoke, collateralReserveId, 5_000e26),
+      user
+    );
+    _makeUserLiquidatable(spoke, user, debtReserveId, 0.95e18);
+
+    _checkedLiquidationCall(
+      CheckedLiquidationCallParams({
+        spoke: spoke,
+        collateralReserveId: collateralReserveId,
+        debtReserveId: debtReserveId,
+        user: user,
+        debtToCover: UINT256_MAX,
+        liquidator: liquidator,
+        isSolvent: true,
+        receiveShares: true
+      })
+    );
+
+    uint256 liquidatorHealthFactorAfter = spoke.getUserAccountData(liquidator).healthFactor;
+    assertGt(liquidatorHealthFactorAfter, liquidatorHealthFactorBefore);
+    assertGt(liquidatorHealthFactorAfter, HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+  }
+
+  /// @dev an unhealthy liquidator can be liquidated before receiving shares from another liquidation.
+  function test_liquidationCall_liquidatorCanBeLiquidatedBeforeReceivingShares() public {
+    uint256 collateralReserveId = _wethReserveId(spoke);
+    uint256 debtReserveId = _daiReserveId(spoke);
+
+    _increaseCollateralSupply(
+      spoke,
+      collateralReserveId,
+      _convertValueToAmount(spoke, collateralReserveId, 1_000e26),
+      liquidator
+    );
+    _openSupplyPosition(
+      spoke,
+      debtReserveId,
+      _convertValueToAmount(spoke, debtReserveId, 10_000e26)
+    );
+    _borrowToBeAtHf(spoke, liquidator, debtReserveId, 0.99e18);
+
+    uint256 liquidatorHealthFactorBefore = spoke.getUserAccountData(liquidator).healthFactor;
+    uint256 liquidatorCollateralBefore = spoke.getUserSuppliedAssets(
+      collateralReserveId,
+      liquidator
+    );
+    uint256 liquidatorDebtBefore = spoke.getUserTotalDebt(debtReserveId, liquidator);
+
+    assertLt(liquidatorHealthFactorBefore, HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+
+    vm.prank(charlie);
+    spoke.liquidationCall({
+      collateralReserveId: collateralReserveId,
+      debtReserveId: debtReserveId,
+      user: liquidator,
+      debtToCover: UINT256_MAX,
+      receiveShares: false
+    });
+
+    assertLt(
+      spoke.getUserSuppliedAssets(collateralReserveId, liquidator),
+      liquidatorCollateralBefore
+    );
+    assertLt(spoke.getUserTotalDebt(debtReserveId, liquidator), liquidatorDebtBefore);
   }
 
   // When liquidation bonus is 0, effective collateral liquidated must be less than effective debt liquidated.
