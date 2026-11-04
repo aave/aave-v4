@@ -16,7 +16,7 @@ contract AaveV4InterestRateStrategyDeployProcedure is AaveV4DeployProcedureBase 
   function _deployInterestRateStrategy(address hub, bytes32 salt) internal returns (address) {
     require(hub != address(0), 'invalid hub');
     return
-      Create2Utils.create2Deploy(
+      Create2Utils.create2DeployIdempotent(
         salt,
         abi.encodePacked(type(AssetInterestRateStrategy).creationCode, abi.encode(hub))
       );

@@ -10,6 +10,15 @@ library Create2Utils {
   // https://github.com/safe-global/safe-singleton-factory
   address public constant CREATE2_FACTORY = 0x914d7Fec6aaC8cd542e72Bca78B30650d45643d7;
 
+  /// @notice Emitted when a contract already present at the computed CREATE2 address is adopted
+  ///         instead of being deployed again.
+  /// @dev Absence of this event on a deployment step means the contract was freshly deployed.
+  ///      Its presence means the step was a no-op adoption, which is the signal an operator needs
+  ///      to notice an accidental re-run or a third party having occupied the address first.
+  /// @param deployed The address that was adopted.
+  /// @param salt The CREATE2 salt the address was derived from.
+  event Create2DeploymentAdopted(address indexed deployed, bytes32 salt);
+
   error MissingCreate2Factory();
   error Create2AddressDerivationFailure();
   error FailedCreate2FactoryCall();
@@ -32,7 +41,31 @@ library Create2Utils {
     return deployedAt;
   }
 
+  /// @notice Deploys a contract via CREATE2, returning the existing address if it is already
+  ///         deployed instead of reverting.
+  /// @dev Safe because a CREATE2 address commits to `keccak256(bytecode)`: any contract living at
+  ///      the computed address must have been created by this factory running this exact creation
+  ///      code, so its runtime code is necessarily identical to what this call would produce.
+  ///      Use this for steps that must be idempotent and must not be blockable by a third party
+  ///      occupying the deterministic address first.
+  /// @param salt The CREATE2 salt.
+  /// @param bytecode The contract creation bytecode.
+  /// @return The deployed contract address.
+  function create2DeployIdempotent(bytes32 salt, bytes memory bytecode) internal returns (address) {
+    address computed = computeCreate2Address({salt: salt, bytecode: bytecode});
+    if (isContractDeployed(computed)) {
+      emit Create2DeploymentAdopted(computed, salt);
+      return computed;
+    }
+    return create2Deploy({salt: salt, bytecode: bytecode});
+  }
+
   /// @notice Deploys a TransparentUpgradeableProxy via CREATE2.
+  /// @dev Idempotent, matching the deployment procedures. The proxy admin owner and the
+  ///      initializer calldata are both constructor arguments, so they are covered by the init
+  ///      code hash the CREATE2 address commits to. No protocol initializer reads `msg.sender`,
+  ///      block data or any other environment value, so a proxy already present at the computed
+  ///      address is state-equivalent to the one this call would create.
   /// @param salt The CREATE2 salt.
   /// @param logic The implementation contract address.
   /// @param initialOwner The initial proxy admin owner.
@@ -45,7 +78,7 @@ library Create2Utils {
     bytes memory data
   ) internal returns (address) {
     return
-      create2Deploy(
+      create2DeployIdempotent(
         salt,
         abi.encodePacked(
           type(TransparentUpgradeableProxy).creationCode,

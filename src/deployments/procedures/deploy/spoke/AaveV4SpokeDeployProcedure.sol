@@ -30,7 +30,7 @@ contract AaveV4SpokeDeployProcedure is AaveV4DeployProcedureBase {
     require(authority != address(0), 'invalid authority');
     require(oracle != address(0), 'invalid oracle');
     require(maxUserReservesLimit > 0, 'invalid max user reserves limit');
-    spokeImplementation = Create2Utils.create2Deploy({
+    spokeImplementation = Create2Utils.create2DeployIdempotent({
       salt: salt,
       bytecode: _getSpokeInstanceInitCode(spokeBytecode, oracle, maxUserReservesLimit)
     });
