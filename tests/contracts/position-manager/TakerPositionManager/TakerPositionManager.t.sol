@@ -813,9 +813,10 @@ contract TakerPositionManagerTest is TakerPositionManagerBaseTest {
         entries[i].topics[3] == bytes32(uint256(uint160(spender)))
       ) {
         (uint256 logReserveId, uint256 logAmount) = abi.decode(entries[i].data, (uint256, uint256));
-        assertEq(logReserveId, reserveId);
-        assertEq(logAmount, amount);
-        return;
+        if (logReserveId == reserveId) {
+          assertEq(logAmount, amount);
+          return;
+        }
       }
     }
     revert('WithdrawApproval event not emitted');
@@ -838,9 +839,10 @@ contract TakerPositionManagerTest is TakerPositionManagerBaseTest {
         entries[i].topics[3] == bytes32(uint256(uint160(spender)))
       ) {
         (uint256 logReserveId, uint256 logAmount) = abi.decode(entries[i].data, (uint256, uint256));
-        assertEq(logReserveId, reserveId);
-        assertEq(logAmount, amount);
-        return;
+        if (logReserveId == reserveId) {
+          assertEq(logAmount, amount);
+          return;
+        }
       }
     }
     revert('BorrowApproval event not emitted');
