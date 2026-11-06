@@ -169,6 +169,7 @@ interface ITakerPositionManager is IPositionManagerIntentBase {
 
   /// @notice Executes a withdraw on behalf of a user.
   /// @dev The caller must have sufficient withdraw allowance from `onBehalfOf`.
+  /// @dev Using `type(uint256).max` to withdraw the full position requires an infinite allowance.
   /// @dev The caller receives the withdrawn assets.
   /// @dev Contract must be an active and approved user position manager of `onBehalfOf`.
   /// @param spoke The address of the Spoke.
