@@ -270,7 +270,11 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerIntentB
       DelegateeNotAllowed()
     );
 
+    (bool isUsingAsCollateral, ) = ISpoke(spoke).getUserReserveStatus(reserveId, onBehalfOf);
     ISpoke(spoke).setUsingAsCollateral(reserveId, usingAsCollateral, onBehalfOf);
+    if (isUsingAsCollateral == usingAsCollateral) {
+      return;
+    }
 
     emit SetUsingAsCollateralOnBehalfOf(
       spoke,

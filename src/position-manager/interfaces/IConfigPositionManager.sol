@@ -229,6 +229,7 @@ interface IConfigPositionManager is IPositionManagerIntentBase {
   /// @notice Sets the using as collateral status on behalf of a user for a specified reserve.
   /// @dev The `msg.sender` must be the delegatee to perform this action on behalf of the user.
   /// @dev Contract must be an active and approved user position manager of `onBehalfOf`.
+  /// @dev No event is emitted if the using as collateral status is unchanged.
   /// @param spoke The address of the Spoke.
   /// @param reserveId The id of the reserve.
   /// @param usingAsCollateral The new using as collateral status.
