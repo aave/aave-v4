@@ -96,7 +96,8 @@ contract SpokeSupplyTest is Base {
 
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(spoke1),
-      ISpoke.supply.selector
+      ISpoke.supply.selector,
+      REENTRANCY_GUARD_SLOT
     );
 
     vm.mockFunction(

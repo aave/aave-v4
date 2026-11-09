@@ -91,7 +91,8 @@ contract SpokeSetUsingAsCollateralTest is Base {
 
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(spoke1),
-      ISpoke.setUsingAsCollateral.selector
+      ISpoke.setUsingAsCollateral.selector,
+      REENTRANCY_GUARD_SLOT
     );
 
     // reentrant hub.refreshPremium call

@@ -23,7 +23,8 @@ contract SpokeBorrowTest is Base {
 
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(spoke1),
-      ISpoke.borrow.selector
+      ISpoke.borrow.selector,
+      REENTRANCY_GUARD_SLOT
     );
 
     vm.mockFunction(
@@ -48,7 +49,8 @@ contract SpokeBorrowTest is Base {
 
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(spoke1),
-      ISpoke.borrow.selector
+      ISpoke.borrow.selector,
+      REENTRANCY_GUARD_SLOT
     );
 
     vm.mockFunction(

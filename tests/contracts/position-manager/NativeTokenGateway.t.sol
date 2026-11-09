@@ -110,7 +110,8 @@ contract NativeTokenGatewayTest is Base {
     uint256 amount = 100e18;
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(nativeTokenGateway),
-      INativeTokenGateway.supplyNative.selector
+      INativeTokenGateway.supplyNative.selector,
+      REENTRANCY_GUARD_SLOT
     );
 
     vm.mockFunction(
@@ -130,7 +131,8 @@ contract NativeTokenGatewayTest is Base {
     uint256 amount = 100e18;
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(nativeTokenGateway),
-      INativeTokenGateway.supplyNative.selector
+      INativeTokenGateway.supplyNative.selector,
+      REENTRANCY_GUARD_SLOT
     );
 
     vm.mockFunction(
@@ -410,7 +412,8 @@ contract NativeTokenGatewayTest is Base {
     uint256 amount = 100e18;
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(nativeTokenGateway),
-      INativeTokenGateway.withdrawNative.selector
+      INativeTokenGateway.withdrawNative.selector,
+      REENTRANCY_GUARD_SLOT
     );
 
     vm.mockFunction(
@@ -430,7 +433,8 @@ contract NativeTokenGatewayTest is Base {
     uint256 amount = 100e18;
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(nativeTokenGateway),
-      INativeTokenGateway.withdrawNative.selector
+      INativeTokenGateway.withdrawNative.selector,
+      REENTRANCY_GUARD_SLOT
     );
 
     vm.mockFunction(
@@ -544,7 +548,8 @@ contract NativeTokenGatewayTest is Base {
     uint256 amount = 100e18;
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(nativeTokenGateway),
-      INativeTokenGateway.borrowNative.selector
+      INativeTokenGateway.borrowNative.selector,
+      REENTRANCY_GUARD_SLOT
     );
 
     vm.mockFunction(
@@ -564,7 +569,8 @@ contract NativeTokenGatewayTest is Base {
     uint256 amount = 100e18;
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(nativeTokenGateway),
-      INativeTokenGateway.borrowNative.selector
+      INativeTokenGateway.borrowNative.selector,
+      REENTRANCY_GUARD_SLOT
     );
 
     vm.mockFunction(
@@ -876,7 +882,8 @@ contract NativeTokenGatewayTest is Base {
     uint256 amount = 100e18;
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(nativeTokenGateway),
-      INativeTokenGateway.repayNative.selector
+      INativeTokenGateway.repayNative.selector,
+      REENTRANCY_GUARD_SLOT
     );
 
     vm.mockFunction(
@@ -896,7 +903,8 @@ contract NativeTokenGatewayTest is Base {
     uint256 amount = 100e18;
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(nativeTokenGateway),
-      INativeTokenGateway.repayNative.selector
+      INativeTokenGateway.repayNative.selector,
+      REENTRANCY_GUARD_SLOT
     );
 
     vm.mockFunction(

@@ -129,7 +129,7 @@ import {MockSpokeInstance} from 'tests/helpers/mocks/MockSpokeInstance.sol';
 import {MockTreasurySpokeInstance} from 'tests/helpers/mocks/MockTreasurySpokeInstance.sol';
 import {MockSkimSpoke} from 'tests/helpers/mocks/MockSkimSpoke.sol';
 import {MockReentrantCaller} from 'tests/helpers/mocks/MockReentrantCaller.sol';
-import {MockReentrancyGuardLocker} from 'tests/helpers/mocks/MockReentrancyGuardLocker.sol';
+import {MockTransientStoreCaller} from 'tests/helpers/mocks/MockTransientStoreCaller.sol';
 import {IHubInstance} from 'src/deployments/utils/interfaces/IHubInstance.sol';
 import {ISpokeInstance} from 'src/deployments/utils/interfaces/ISpokeInstance.sol';
 import {AaveV4TestOrchestrationWrapper} from 'tests/helpers/mocks/AaveV4TestOrchestrationWrapper.sol';
@@ -262,9 +262,9 @@ abstract contract Base is BaseHelpers, BatchTestProcedures {
   }
 
   function _assertRevertsWhenReentrancyGuardEntered(address target, bytes memory data) internal {
-    MockReentrancyGuardLocker locker = new MockReentrancyGuardLocker();
+    MockTransientStoreCaller caller = new MockTransientStoreCaller();
     vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
-    locker.lockAndCall(target, data);
+    caller.storeAndCall(target, REENTRANCY_GUARD_SLOT, REENTRANCY_GUARD_ENTERED, data);
   }
 
   function _initEnvironment() internal {

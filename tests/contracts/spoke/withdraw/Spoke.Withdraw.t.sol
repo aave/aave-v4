@@ -53,7 +53,8 @@ contract SpokeWithdrawTest is Base {
 
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(spoke1),
-      ISpoke.withdraw.selector
+      ISpoke.withdraw.selector,
+      REENTRANCY_GUARD_SLOT
     );
 
     vm.mockFunction(
@@ -85,7 +86,8 @@ contract SpokeWithdrawTest is Base {
 
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(spoke1),
-      ISpoke.withdraw.selector
+      ISpoke.withdraw.selector,
+      REENTRANCY_GUARD_SLOT
     );
 
     vm.mockFunction(

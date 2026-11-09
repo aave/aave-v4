@@ -130,7 +130,8 @@ contract SpokeRepayTest is Base {
 
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(spoke1),
-      ISpoke.repay.selector
+      ISpoke.repay.selector,
+      REENTRANCY_GUARD_SLOT
     );
     vm.mockFunction(
       address(_hub(spoke1, _daiReserveId(spoke1))),

@@ -32,7 +32,8 @@ contract SpokeUpdateUserRiskPremiumTest is Base {
 
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(spoke1),
-      ISpoke.updateUserRiskPremium.selector
+      ISpoke.updateUserRiskPremium.selector,
+      REENTRANCY_GUARD_SLOT
     );
 
     // reentrant hub.refreshPremium call

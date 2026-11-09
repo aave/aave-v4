@@ -32,7 +32,8 @@ contract SpokeUpdateUserDynamicConfigTest is Base {
 
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(spoke1),
-      ISpoke.updateUserDynamicConfig.selector
+      ISpoke.updateUserDynamicConfig.selector,
+      REENTRANCY_GUARD_SLOT
     );
 
     // reentrant hub.refreshPremium call
