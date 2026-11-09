@@ -1,0 +1,23 @@
+snapshots/PositionManagerBase.Operations.json
+  s_311e49623c2408::t_2fa93d49d03ba7 2
+snapshots/SignatureGateway.Operations.json
+  s_311e49623c2408::t_91301654ba5b55 4,10
+snapshots/TakerPositionManager.Operations.json
+  s_311e49623c2408::t_dea42983a97c10 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "78077764dab8d61a70659b58eeea364e57cd377e",
+  "prompts": {},
+  "sessions": {
+    "s_311e49623c2408": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ab0ee213-f6da-4aab-92e3-43fce833a068",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}

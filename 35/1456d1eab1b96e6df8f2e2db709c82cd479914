@@ -1,0 +1,19 @@
+src/deployments/utils/libraries/Roles.sol
+  s_fc91ef8d0d2609::t_33b8f2eb3bc27f 71-90
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "351456d1eab1b96e6df8f2e2db709c82cd479914",
+  "prompts": {},
+  "sessions": {
+    "s_fc91ef8d0d2609": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "cbb51ac2-af29-4698-8cb4-69c0cad87ceb",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}

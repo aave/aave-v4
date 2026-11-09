@@ -1,0 +1,21 @@
+src/deployments/procedures/deploy/spoke/AaveV4SpokeDeployProcedure.sol
+  s_0cab52a9e9f0d6::t_dcf57077407eec 34
+src/deployments/procedures/deploy/spoke/AaveV4TokenizationSpokeDeployProcedure.sol
+  s_0cab52a9e9f0d6::t_3f7d801f04dd2a 37-40
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a3a955a17e15d4cd48dafbca83d4b944b32efd85",
+  "prompts": {},
+  "sessions": {
+    "s_0cab52a9e9f0d6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7bdfb8e7-33ad-4431-ab02-d6a823d15b89",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}
