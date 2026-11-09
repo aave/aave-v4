@@ -58,6 +58,16 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     }
   }
 
+  function test_liquidationCall_revertsWith_ReentrancyGuardReentrantCall_guardEntered() public {
+    _assertRevertsWhenReentrancyGuardEntered(
+      address(spoke1),
+      abi.encodeCall(
+        ISpoke.liquidationCall,
+        (_wethReserveId(spoke1), _daiReserveId(spoke1), bob, 1e18, false)
+      )
+    );
+  }
+
   function test_liquidationCall_revertsWith_ReentrancyGuardReentrantCall_hubRemove() public {
     uint256 collateralReserveId = _daiReserveId(spoke);
     uint256 debtReserveId = _wethReserveId(spoke);

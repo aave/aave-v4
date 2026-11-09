@@ -4,6 +4,15 @@ pragma solidity ^0.8.0;
 import 'tests/setup/Base.t.sol';
 
 contract SpokeUpdateUserRiskPremiumTest is Base {
+  function test_updateUserRiskPremium_revertsWith_ReentrancyGuardReentrantCall_guardEntered()
+    public
+  {
+    _assertRevertsWhenReentrancyGuardEntered(
+      address(spoke1),
+      abi.encodeCall(ISpoke.updateUserRiskPremium, (bob))
+    );
+  }
+
   function test_updateUserRiskPremium_revertsWith_ReentrancyGuardReentrantCall() public {
     SpokeActions.supplyCollateral({
       spoke: spoke1,

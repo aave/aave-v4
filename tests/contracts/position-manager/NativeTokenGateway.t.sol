@@ -81,6 +81,28 @@ contract NativeTokenGatewayTest is Base {
     assertFalse(_isUsingAsCollateral(spoke1, _wethReserveId(spoke1), bob));
   }
 
+  function test_supplyNative_revertsWith_ReentrancyGuardReentrantCall_guardEntered() public {
+    _assertRevertsWhenReentrancyGuardEntered(
+      address(nativeTokenGateway),
+      abi.encodeCall(
+        INativeTokenGateway.supplyNative,
+        (address(spoke1), _wethReserveId(spoke1), 1e18)
+      )
+    );
+  }
+
+  function test_supplyAsCollateralNative_revertsWith_ReentrancyGuardReentrantCall_guardEntered()
+    public
+  {
+    _assertRevertsWhenReentrancyGuardEntered(
+      address(nativeTokenGateway),
+      abi.encodeCall(
+        INativeTokenGateway.supplyAsCollateralNative,
+        (address(spoke1), _wethReserveId(spoke1), 1e18)
+      )
+    );
+  }
+
   function test_supplyNative_revertsWith_ReentrancyGuardReentrantCall_spokeSupply() public {
     vm.prank(bob);
     spoke1.setUserPositionManager(address(nativeTokenGateway), true);
@@ -371,6 +393,16 @@ contract NativeTokenGatewayTest is Base {
     _checkFinalBalances();
   }
 
+  function test_withdrawNative_revertsWith_ReentrancyGuardReentrantCall_guardEntered() public {
+    _assertRevertsWhenReentrancyGuardEntered(
+      address(nativeTokenGateway),
+      abi.encodeCall(
+        INativeTokenGateway.withdrawNative,
+        (address(spoke1), _wethReserveId(spoke1), 1e18)
+      )
+    );
+  }
+
   function test_withdrawNative_revertsWith_ReentrancyGuardReentrantCall_spokeWithdraw() public {
     vm.prank(bob);
     spoke1.setUserPositionManager(address(nativeTokenGateway), true);
@@ -493,6 +525,16 @@ contract NativeTokenGatewayTest is Base {
     assertEq(tokenList.weth.balanceOf(address(hub1)), prevHubBalance - borrowAmount);
     assertEq(bob.balance, prevUserBalance + borrowAmount);
     _checkFinalBalances();
+  }
+
+  function test_borrowNative_revertsWith_ReentrancyGuardReentrantCall_guardEntered() public {
+    _assertRevertsWhenReentrancyGuardEntered(
+      address(nativeTokenGateway),
+      abi.encodeCall(
+        INativeTokenGateway.borrowNative,
+        (address(spoke1), _wethReserveId(spoke1), 1e18)
+      )
+    );
   }
 
   function test_borrowNative_revertsWith_ReentrancyGuardReentrantCall_spokeBorrow() public {
@@ -815,6 +857,16 @@ contract NativeTokenGatewayTest is Base {
     assertEq(tokenList.weth.balanceOf(address(hub1)), prevHubBalance + totalRepaid);
     assertEq(bob.balance, prevUserBalance - totalRepaid);
     _checkFinalBalances();
+  }
+
+  function test_repayNative_revertsWith_ReentrancyGuardReentrantCall_guardEntered() public {
+    _assertRevertsWhenReentrancyGuardEntered(
+      address(nativeTokenGateway),
+      abi.encodeCall(
+        INativeTokenGateway.repayNative,
+        (address(spoke1), _wethReserveId(spoke1), 1e18)
+      )
+    );
   }
 
   function test_repayNative_revertsWith_ReentrancyGuardReentrantCall_spokeRepay() public {

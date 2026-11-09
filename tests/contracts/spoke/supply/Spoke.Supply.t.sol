@@ -84,6 +84,13 @@ contract SpokeSupplyTest is Base {
     spoke1.supply(_daiReserveId(spoke1), amount, bob);
   }
 
+  function test_supply_revertsWith_ReentrancyGuardReentrantCall_guardEntered() public {
+    _assertRevertsWhenReentrancyGuardEntered(
+      address(spoke1),
+      abi.encodeCall(ISpoke.supply, (_daiReserveId(spoke1), 1e18, bob))
+    );
+  }
+
   function test_supply_revertsWith_ReentrancyGuardReentrantCall() public {
     uint256 amount = 100e18;
 

@@ -102,6 +102,13 @@ contract SpokeRepayTest is Base {
     vm.stopPrank();
   }
 
+  function test_repay_revertsWith_ReentrancyGuardReentrantCall_guardEntered() public {
+    _assertRevertsWhenReentrancyGuardEntered(
+      address(spoke1),
+      abi.encodeCall(ISpoke.repay, (_daiReserveId(spoke1), 1e18, bob))
+    );
+  }
+
   function test_repay_revertsWith_ReentrancyGuardReentrantCall() public {
     uint256 amount = 100e18;
 

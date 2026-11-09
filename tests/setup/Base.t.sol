@@ -129,6 +129,7 @@ import {MockSpokeInstance} from 'tests/helpers/mocks/MockSpokeInstance.sol';
 import {MockTreasurySpokeInstance} from 'tests/helpers/mocks/MockTreasurySpokeInstance.sol';
 import {MockSkimSpoke} from 'tests/helpers/mocks/MockSkimSpoke.sol';
 import {MockReentrantCaller} from 'tests/helpers/mocks/MockReentrantCaller.sol';
+import {MockReentrancyGuardLocker} from 'tests/helpers/mocks/MockReentrancyGuardLocker.sol';
 import {IHubInstance} from 'src/deployments/utils/interfaces/IHubInstance.sol';
 import {ISpokeInstance} from 'src/deployments/utils/interfaces/ISpokeInstance.sol';
 import {AaveV4TestOrchestrationWrapper} from 'tests/helpers/mocks/AaveV4TestOrchestrationWrapper.sol';
@@ -258,6 +259,12 @@ abstract contract Base is BaseHelpers, BatchTestProcedures {
     AaveV4SpokeRolesProcedure.setupSpokeAllRoles(address(manager), address(spoke));
 
     IAccessManager(address(manager)).renounceRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, address(this));
+  }
+
+  function _assertRevertsWhenReentrancyGuardEntered(address target, bytes memory data) internal {
+    MockReentrancyGuardLocker locker = new MockReentrancyGuardLocker();
+    vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
+    locker.lockAndCall(target, data);
   }
 
   function _initEnvironment() internal {

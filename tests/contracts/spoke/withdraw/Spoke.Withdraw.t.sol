@@ -34,6 +34,13 @@ contract SpokeWithdrawTest is Base {
     uint256 skipTime;
   }
 
+  function test_withdraw_revertsWith_ReentrancyGuardReentrantCall_guardEntered() public {
+    _assertRevertsWhenReentrancyGuardEntered(
+      address(spoke1),
+      abi.encodeCall(ISpoke.withdraw, (_daiReserveId(spoke1), 1e18, bob))
+    );
+  }
+
   function test_withdraw_revertsWith_ReentrancyGuardReentrantCall_hubRemove() public {
     uint256 amount = 100e18;
     SpokeActions.supplyCollateral({
