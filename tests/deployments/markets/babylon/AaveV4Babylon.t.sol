@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {Create2TestHelper} from 'tests/utils/Create2TestHelper.sol';
-import {AaveV4DeployBabylon} from 'scripts/markets/babylon/AaveV4DeployBabylon.s.sol';
+import {AaveV4DeployBabylon, ICreateX} from 'scripts/markets/babylon/AaveV4DeployBabylon.s.sol';
 import {AaveV4BabylonHandover} from 'scripts/markets/babylon/AaveV4BabylonHandover.s.sol';
 import {AaveV4BabylonConfigure} from 'scripts/markets/babylon/AaveV4BabylonConfigure.s.sol';
 import {AaveV4BabylonConfig} from 'scripts/markets/babylon/AaveV4BabylonConfig.sol';
@@ -15,6 +15,7 @@ import {MetadataLogger} from 'src/deployments/utils/MetadataLogger.sol';
 import {BytecodeHelper} from 'src/deployments/utils/libraries/BytecodeHelper.sol';
 import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
+import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 import {IAccessManagerEnumerable} from 'src/access/interfaces/IAccessManagerEnumerable.sol';
 import {ProxyAdmin} from 'src/dependencies/openzeppelin/ProxyAdmin.sol';
 import {Ownable2StepUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/Ownable2StepUpgradeable.sol';
@@ -43,6 +44,10 @@ contract AaveV4DeployBabylonHarness is AaveV4DeployBabylon {
     super._requireConfigLibraries(librarySalt);
   }
 
+  function requireLiquidationManager(AaveV4BabylonConfig.Config memory config) external view {
+    super._requireLiquidationManager(config);
+  }
+
   function containsAddress(bytes memory code, address target) external pure returns (bool) {
     return _containsAddress(code, target);
   }
@@ -53,6 +58,9 @@ contract AaveV4DeployBabylonHarness is AaveV4DeployBabylon {
 
   /// @dev Tests link the libraries foundry deploys, not the ones at the config salt.
   function _requireConfigLibraries(bytes32) internal view override {}
+
+  /// @dev CreateX is not deployed in tests, `requireLiquidationManager` covers the check.
+  function _requireLiquidationManager(AaveV4BabylonConfig.Config memory) internal view override {}
 
   function _executeUserPrompt() internal override {}
 }
@@ -155,6 +163,13 @@ contract AaveV4BabylonTest is Create2TestHelper {
   address internal constant SEPOLIA_USD_FEED = 0xdd04B859B3bF9aAfBb3cBe175E6159b1ED998765;
   address internal constant SEPOLIA_BTC_FEED = 0xF9C48C4C694cb1101081c4402F95Cf5Dd33fb316;
   string internal constant SEPOLIA_CONFIG = 'scripts/markets/babylon/config/sepolia.json';
+  address internal constant BABYLON_TEST_DEPLOYER = 0x2045C7414b28A37EDe726498920E06Ad07894Ac1;
+  address internal constant SEPOLIA_BABYLON_DEPLOYER = 0x445Dfdc71003f000455BF3f7f1EcBA5D46CBBB91;
+  address internal constant CREATEX = 0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed;
+  /// @dev CreateX's guarded salt of the Sepolia AaveAdapter proxy, which CreateX on Sepolia maps to
+  /// `SEPOLIA_AAVE_ADAPTER`.
+  bytes32 internal constant SEPOLIA_ADAPTER_GUARDED_SALT =
+    0x4caf100053574dceefa50d90c3de863dc3d04a7c728813d8ad2daae76037bdd8;
 
   address internal _deployer = DEFAULT_SENDER;
   address internal _admin = makeAddr('admin');
@@ -170,11 +185,16 @@ contract AaveV4BabylonTest is Create2TestHelper {
       chainId: block.chainid,
       salt: keccak256('aave-v4-babylon-v2'),
       librarySalt: CANONICAL_LIBRARY_SALT,
+      deployer: _deployer,
       hubLabels: hubLabels,
       babylonSpokeLabel: 'babylon',
       liquidationManager: _liquidationManager,
+      liquidationManagerDeployer: address(0),
+      liquidationManagerSalt: bytes32(0),
       managedCollateralReserveId: 0,
       admin: _admin,
+      authority: address(0),
+      feeReceiver: address(0),
       report: string.concat(OUTPUT_DIR, vm.toString(block.chainid), '-', REPORT_NAME, '.json')
     });
   }
@@ -189,9 +209,14 @@ contract AaveV4BabylonTest is Create2TestHelper {
     assertEq(config.hubLabels[0], 'babylon-btc');
     assertEq(config.hubLabels[1], 'babylon-stables');
     assertEq(config.babylonSpokeLabel, 'babylon');
+    assertEq(config.deployer, BABYLON_TEST_DEPLOYER);
     assertEq(config.liquidationManager, SEPOLIA_AAVE_ADAPTER);
+    assertEq(config.liquidationManagerDeployer, SEPOLIA_BABYLON_DEPLOYER);
+    assertEq(config.liquidationManagerSalt, keccak256('testnet-3.sepolia'));
     assertEq(config.managedCollateralReserveId, 0);
     assertEq(config.admin, SEPOLIA_ADMIN);
+    assertEq(config.authority, address(0));
+    assertEq(config.feeReceiver, address(0));
   }
 
   function test_mainnetTestConfig() public {
@@ -204,9 +229,14 @@ contract AaveV4BabylonTest is Create2TestHelper {
     assertEq(config.hubLabels[0], 'babylon-btc');
     assertEq(config.hubLabels[1], 'babylon-stables');
     assertEq(config.babylonSpokeLabel, 'babylon');
+    assertEq(config.deployer, BABYLON_TEST_DEPLOYER);
     assertEq(config.liquidationManager, MAINNET_TEST_AAVE_ADAPTER);
+    assertEq(config.liquidationManagerDeployer, address(0));
+    assertEq(config.liquidationManagerSalt, bytes32(0));
     assertEq(config.managedCollateralReserveId, 0);
     assertEq(config.admin, SEPOLIA_ADMIN);
+    assertEq(config.authority, address(0));
+    assertEq(config.feeReceiver, address(0));
     assertEq(config.report, 'scripts/markets/babylon/reports/mainnet-test.json');
   }
 
@@ -240,10 +270,9 @@ contract AaveV4BabylonTest is Create2TestHelper {
 
   function test_sepoliaConfig_deploy() public {
     vm.chainId(SEPOLIA_CHAIN_ID);
+    AaveV4BabylonConfig.Config memory config = AaveV4BabylonConfig.read('sepolia');
     OrchestrationReports.FullDeploymentReport memory report = this.deploy(
-      new AaveV4DeployBabylonHarness(AaveV4BabylonConfig.read('sepolia')).sanitizedDeployInputs(
-        _deployer
-      )
+      new AaveV4DeployBabylonHarness(config).sanitizedDeployInputs(config.deployer)
     );
 
     IBabylonSpoke babylonSpoke = IBabylonSpoke(
@@ -921,21 +950,27 @@ contract AaveV4BabylonTest is Create2TestHelper {
     AaveV4BabylonConfig.Deployment memory deployment,
     string memory json
   ) external view {
-    AaveV4BabylonVerification.verifyMarketConfig(
-      deployment,
-      AaveV4BabylonConfig.parseMarketConfig({json: json, config: _config, deployment: deployment})
-    );
+    AaveV4BabylonVerification.verifyMarketConfig({
+      deployment: deployment,
+      marketConfig: AaveV4BabylonConfig.parseMarketConfig({
+        json: json,
+        config: _config,
+        deployment: deployment
+      }),
+      feeReceiver: deployment.treasurySpoke
+    });
   }
 
   function verifyMarketConfig(AaveV4BabylonConfig.Deployment memory deployment) external view {
-    AaveV4BabylonVerification.verifyMarketConfig(
-      deployment,
-      AaveV4BabylonConfig.parseMarketConfig({
+    AaveV4BabylonVerification.verifyMarketConfig({
+      deployment: deployment,
+      marketConfig: AaveV4BabylonConfig.parseMarketConfig({
         json: vm.readFile(SEPOLIA_CONFIG),
         config: _config,
         deployment: deployment
-      })
-    );
+      }),
+      feeReceiver: deployment.treasurySpoke
+    });
   }
 
   function readConfig(
@@ -1249,5 +1284,526 @@ contract AaveV4BabylonTest is Create2TestHelper {
     );
     assertEq(members.length, 1);
     assertEq(members[0], member);
+  }
+
+  address internal constant ETHEREUM_AAVE_ADAPTER = 0xadca531564f3B26d0aAF48a044d741fD6cD571Ea;
+  address internal constant ETHEREUM_V4_SECURITY_COUNCIL =
+    0x187AAE17d4931310B3fc75743e7F16Bdc9eD77e9;
+  address internal constant ETHEREUM_ACCESS_MANAGER = 0x08aE3BE30958cDd1847ec58fFfd4C451a87fDF01;
+  address internal constant ETHEREUM_TREASURY_SPOKE = 0xB9B0b8616f6Bf6841972a52058132BE08d723155;
+  address internal constant ETHEREUM_CORE_HUB = 0xCca852Bc40e560adC3b1Cc58CA5b55638ce826c9;
+  address internal constant ETHEREUM_USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
+  address internal constant ETHEREUM_USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+  address internal constant ETHEREUM_GHO = 0x40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f;
+  address internal constant ETHEREUM_WBTC = 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;
+  address internal constant ETHEREUM_USDG = 0xe343167631d89B6Ffc58B88d6b7fB0228795491D;
+  address internal constant ETHEREUM_RLUSD = 0x8292Bb45bf1Ee4d140127049757C2E0fF06317eD;
+  address internal constant ETHEREUM_BTC_USD_SVR_FEED = 0xb41E773f507F7a7EA890b1afB7d2b660c30C8B0A;
+  address internal constant ETHEREUM_USDT_FEED = 0x260326c220E469358846b187eE53328303Efe19C;
+  address internal constant ETHEREUM_USDC_FEED = 0x3f73F03aa83B2A48ed27E964eD0fDb590332095B;
+  address internal constant ETHEREUM_GHO_FEED = 0xD110cac5d8682A3b045D5524a9903E031d70FCCd;
+  address internal constant ETHEREUM_WBTC_FEED = 0xDaa4B74C6bAc4e25188e64ebc68DB5050b690cAc;
+  address internal constant ETHEREUM_USDG_FEED = 0x83D20dEEdcd4aC1313496c8CBcAad0fa298c0CE4;
+  address internal constant ETHEREUM_RLUSD_FEED = 0xf0eaC18E908B34770FDEe46d069c846bDa866759;
+  string internal constant MAINNET_CONFIG = 'scripts/markets/babylon/config/mainnet.json';
+
+  address internal _governance = makeAddr('governance');
+
+  /// @dev The production market from the LlamaRisk parameters, with the Babylon AaveAdapter Babylon precomputed.
+  function test_mainnetConfig() public {
+    vm.chainId(1);
+    AaveV4BabylonConfig.Config memory config = AaveV4BabylonConfig.read('mainnet');
+    assertEq(config.chainId, 1);
+    assertEq(config.salt, keccak256('aave-v4-babylon-mainnet-v1'));
+    // the canonical salt, so LiquidationLogic is the live AaveV4EthereumExternalLibraries.LIQUIDATION_LOGIC
+    assertEq(config.librarySalt, CANONICAL_LIBRARY_SALT);
+    assertEq(config.deployer, BABYLON_TEST_DEPLOYER);
+    assertEq(config.hubLabels.length, 1);
+    assertEq(config.hubLabels[0], 'babylon');
+    assertEq(config.babylonSpokeLabel, 'babylon');
+    assertEq(config.liquidationManager, ETHEREUM_AAVE_ADAPTER);
+    assertEq(config.managedCollateralReserveId, 0);
+    assertEq(config.admin, ETHEREUM_V4_SECURITY_COUNCIL);
+    assertEq(config.authority, ETHEREUM_ACCESS_MANAGER);
+    assertEq(config.feeReceiver, ETHEREUM_TREASURY_SPOKE);
+    assertEq(config.report, 'scripts/markets/babylon/reports/mainnet.json');
+  }
+
+  /// @dev Every reserve against the LlamaRisk tables, with the Babylon Hub spoke configs inactive.
+  function test_mainnetMarketConfig() public {
+    address vaultBtc = makeAddr('vaultBTC');
+    _useMainnetHubLabels();
+    AaveV4BabylonConfig.Deployment memory deployment;
+    deployment.hubs = new address[](1);
+    deployment.hubs[0] = makeAddr('babylon hub');
+    deployment.irStrategies = new address[](1);
+    deployment.irStrategies[0] = makeAddr('babylon hub irStrategy');
+    AaveV4BabylonConfig.MarketConfig memory marketConfig = this.parseMarketConfig(
+      _mainnetJsonWithVaultBtc(vaultBtc),
+      deployment
+    );
+
+    IAssetInterestRateStrategy.InterestRateData memory stables = IAssetInterestRateStrategy
+      .InterestRateData({
+        optimalUsageRatio: 92_00,
+        baseDrawnRate: 0,
+        rateGrowthBeforeOptimal: 4_50,
+        rateGrowthAfterOptimal: 20_00
+      });
+    AaveV4BabylonConfig.ReserveListing[] memory expected = new AaveV4BabylonConfig.ReserveListing[](
+      5
+    );
+    expected[0] = _mainnetListing({
+      deployment: deployment,
+      underlying: vaultBtc,
+      priceSource: ETHEREUM_BTC_USD_SVR_FEED,
+      liquidityFee: 0,
+      irData: IAssetInterestRateStrategy.InterestRateData({
+        optimalUsageRatio: 99_00,
+        baseDrawnRate: 0,
+        rateGrowthBeforeOptimal: 0,
+        rateGrowthAfterOptimal: 0
+      }),
+      addCap: 300,
+      drawCap: 0,
+      borrowable: false,
+      collateralFactor: 78_00,
+      maxLiquidationBonus: 105_55
+    });
+    expected[1] = _mainnetListing({
+      deployment: deployment,
+      underlying: ETHEREUM_USDT,
+      priceSource: ETHEREUM_USDT_FEED,
+      liquidityFee: 10_00,
+      irData: stables,
+      addCap: 5_000_000,
+      drawCap: 5_000_000,
+      borrowable: true,
+      collateralFactor: 0,
+      maxLiquidationBonus: 100_00
+    });
+    expected[2] = _mainnetListing({
+      deployment: deployment,
+      underlying: ETHEREUM_USDC,
+      priceSource: ETHEREUM_USDC_FEED,
+      liquidityFee: 10_00,
+      irData: stables,
+      addCap: 5_000_000,
+      drawCap: 5_000_000,
+      borrowable: true,
+      collateralFactor: 0,
+      maxLiquidationBonus: 100_00
+    });
+    expected[3] = _mainnetListing({
+      deployment: deployment,
+      underlying: ETHEREUM_GHO,
+      priceSource: ETHEREUM_GHO_FEED,
+      liquidityFee: 10_00,
+      irData: stables,
+      addCap: 1_000_000,
+      drawCap: 1_000_000,
+      borrowable: true,
+      collateralFactor: 0,
+      maxLiquidationBonus: 100_00
+    });
+    expected[4] = _mainnetListing({
+      deployment: deployment,
+      underlying: ETHEREUM_WBTC,
+      priceSource: ETHEREUM_WBTC_FEED,
+      liquidityFee: 20_00,
+      irData: IAssetInterestRateStrategy.InterestRateData({
+        optimalUsageRatio: 80_00,
+        baseDrawnRate: 25,
+        rateGrowthBeforeOptimal: 4_00,
+        rateGrowthAfterOptimal: 60_00
+      }),
+      addCap: 100,
+      drawCap: 100,
+      borrowable: true,
+      collateralFactor: 0,
+      maxLiquidationBonus: 100_00
+    });
+    _assertListings(marketConfig.reserves, expected);
+
+    // the Core Hub credit lines, WBTC excluded since the exit reserve is the Babylon Hub WBTC
+    address[5] memory externalUnderlyings = [
+      ETHEREUM_USDT,
+      ETHEREUM_USDC,
+      ETHEREUM_GHO,
+      ETHEREUM_USDG,
+      ETHEREUM_RLUSD
+    ];
+    address[5] memory externalFeeds = [
+      ETHEREUM_USDT_FEED,
+      ETHEREUM_USDC_FEED,
+      ETHEREUM_GHO_FEED,
+      ETHEREUM_USDG_FEED,
+      ETHEREUM_RLUSD_FEED
+    ];
+    assertEq(marketConfig.externalReserves.length, 5);
+    for (uint256 i; i < 5; ++i) {
+      assertEq(
+        abi.encode(marketConfig.externalReserves[i]),
+        abi.encode(
+          AaveV4BabylonConfig.ExternalReserve({
+            hub: ETHEREUM_CORE_HUB,
+            underlying: externalUnderlyings[i],
+            priceSource: externalFeeds[i],
+            reserveConfig: ISpoke.ReserveConfig({
+              collateralRisk: 0,
+              paused: false,
+              frozen: false,
+              borrowable: true,
+              receiveSharesEnabled: false
+            }),
+            dynamicConfig: ISpoke.DynamicReserveConfig({
+              collateralFactor: 0,
+              maxLiquidationBonus: 100_00,
+              liquidationFee: 0
+            })
+          })
+        )
+      );
+    }
+
+    assertEq(marketConfig.externalSpokes.length, 0);
+    assertEq(marketConfig.liquidationConfig.targetHealthFactor, 1e18);
+    assertEq(marketConfig.liquidationConfig.healthFactorForMaxBonus, 0.9e18);
+    assertEq(marketConfig.liquidationConfig.liquidationBonusFactor, 90_00);
+  }
+
+  function test_mainnetMarketConfig_revertsWith_vaultBtcUnset() public {
+    _useMainnetHubLabels();
+    AaveV4BabylonConfig.Deployment memory deployment;
+    deployment.hubs = new address[](1);
+    deployment.irStrategies = new address[](1);
+    vm.expectRevert('reserve address unset');
+    this.parseMarketConfig(vm.readFile(MAINNET_CONFIG), deployment);
+  }
+
+  function test_requireLiquidationManager() public {
+    AaveV4BabylonConfig.Config memory config = _sepoliaAdapterConfig();
+    _mockCreateX(SEPOLIA_ADAPTER_GUARDED_SALT, SEPOLIA_AAVE_ADAPTER);
+    new AaveV4DeployBabylonHarness(config).requireLiquidationManager(config);
+  }
+
+  function test_requireLiquidationManager_revertsWith_notCreateXAddress() public {
+    AaveV4BabylonConfig.Config memory config = _sepoliaAdapterConfig();
+    config.liquidationManager = makeAddr('other adapter');
+    _mockCreateX(SEPOLIA_ADAPTER_GUARDED_SALT, SEPOLIA_AAVE_ADAPTER);
+    AaveV4DeployBabylonHarness harness = new AaveV4DeployBabylonHarness(config);
+    vm.expectRevert('liquidation manager is not the createx address');
+    harness.requireLiquidationManager(config);
+  }
+
+  function test_requireLiquidationManager_revertsWith_deployerUnsetOnEthereum() public {
+    AaveV4DeployBabylonHarness harness = new AaveV4DeployBabylonHarness(_config);
+    vm.chainId(1);
+    vm.expectRevert('liquidation manager deployer unset');
+    harness.requireLiquidationManager(_config);
+  }
+
+  function test_requireLiquidationManager_skipsUnsetDeployerOffEthereum() public {
+    new AaveV4DeployBabylonHarness(_config).requireLiquidationManager(_config);
+  }
+
+  function test_deploy_revertsWith_broadcasterNotDeployer() public {
+    AaveV4DeployBabylonHarness harness = new AaveV4DeployBabylonHarness(_config);
+    vm.expectRevert('broadcaster is not the config deployer');
+    harness.sanitizedDeployInputs(makeAddr('other deployer'));
+  }
+
+  function test_configure_revertsWith_broadcasterNotDeployer() public {
+    _deployAndWriteReport();
+    _deploySepoliaTokensAndFeeds();
+    _config.deployer = makeAddr('other deployer');
+    AaveV4BabylonConfigureHarness configure = new AaveV4BabylonConfigureHarness(
+      _config,
+      vm.readFile(SEPOLIA_CONFIG)
+    );
+    vm.expectRevert('broadcaster is not the config deployer');
+    configure.run();
+  }
+
+  function test_handover_revertsWith_broadcasterNotDeployer() public {
+    _deployAndWriteReport();
+    _config.deployer = makeAddr('other deployer');
+    AaveV4BabylonHandoverHarness handover = new AaveV4BabylonHandoverHarness(_config);
+    vm.expectRevert('broadcaster is not the config deployer');
+    handover.run();
+  }
+
+  /// @dev The production flow on a local stand-in for Ethereum: reserves on an external Hub, fee
+  /// receiver and AccessManager of the external market, then the move to that AccessManager.
+  function test_authority_configureHandoverVerify() public {
+    (
+      address externalHub,
+      address externalAccessManager,
+      address externalTreasury
+    ) = _deployExternalMarket();
+    _config.authority = externalAccessManager;
+    _config.feeReceiver = externalTreasury;
+    string memory json = _sepoliaJsonWithExternalReserves(externalHub);
+
+    _deployAndWriteReport();
+    new AaveV4BabylonConfigureHarness(_config, json).run();
+    AaveV4BabylonConfig.Deployment memory deployment = AaveV4BabylonConfig.readDeployment(_config);
+
+    ISpoke spoke = ISpoke(deployment.babylonSpoke);
+    assertEq(spoke.getReserveCount(), 8);
+    assertEq(address(spoke.getReserve(6).hub), externalHub);
+    assertEq(spoke.getReserve(6).underlying, SEPOLIA_USDC);
+    assertEq(address(spoke.getReserve(7).hub), externalHub);
+    assertEq(spoke.getReserve(7).underlying, SEPOLIA_WBTC);
+    assertFalse(IHub(externalHub).isSpokeListed(0, address(spoke)));
+    for (uint256 i; i < deployment.hubs.length; ++i) {
+      assertEq(IHub(deployment.hubs[i]).getAsset(0).feeReceiver, externalTreasury);
+    }
+
+    new AaveV4BabylonHandoverHarness(_config).run();
+
+    IAccessManagerEnumerable accessManager = IAccessManagerEnumerable(deployment.accessManager);
+    for (uint256 i; i < deployment.hubs.length; ++i) {
+      assertEq(IAccessManaged(deployment.hubs[i]).authority(), externalAccessManager);
+      assertEq(_proxyAdmin(deployment.hubs[i]).owner(), _admin);
+    }
+    assertEq(IAccessManaged(deployment.babylonSpoke).authority(), externalAccessManager);
+    assertEq(_proxyAdmin(deployment.babylonSpoke).owner(), _admin);
+    // the deployed TreasurySpoke is unused, the fee receiver is the external one
+    assertEq(_proxyAdmin(deployment.treasurySpoke).owner(), _deployer);
+    assertEq(Ownable2StepUpgradeable(deployment.treasurySpoke).owner(), _deployer);
+    assertEq(Ownable2StepUpgradeable(deployment.treasurySpoke).pendingOwner(), address(0));
+
+    (bool deployerIsAdmin, ) = accessManager.hasRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, _deployer);
+    assertFalse(deployerIsAdmin);
+    (bool adminIsAdmin, ) = accessManager.hasRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, _admin);
+    assertFalse(adminIsAdmin);
+    for (uint256 i; i < accessManager.getRoleCount(); ++i) {
+      (bool hasRole, ) = accessManager.hasRole(accessManager.getRole(i), _deployer);
+      assertFalse(hasRole);
+    }
+
+    // the deployer lost the market, the external AccessManager admin holds it
+    IHub.SpokeConfig memory spokeConfig = IHub(deployment.hubs[0]).getSpokeConfig(
+      0,
+      deployment.babylonSpoke
+    );
+    spokeConfig.active = false;
+    vm.prank(_deployer);
+    vm.expectRevert();
+    IHub(deployment.hubs[0]).updateSpokeConfig(0, deployment.babylonSpoke, spokeConfig);
+    vm.prank(_governance);
+    IHub(deployment.hubs[0]).updateSpokeConfig(0, deployment.babylonSpoke, spokeConfig);
+    spokeConfig.active = true;
+    vm.prank(_governance);
+    IHub(deployment.hubs[0]).updateSpokeConfig(0, deployment.babylonSpoke, spokeConfig);
+
+    new AaveV4BabylonVerifyHarness(_config, json).run();
+  }
+
+  function test_handover_revertsWith_authorityIsTheDeployedOne() public {
+    OrchestrationReports.FullDeploymentReport memory report = _deployAndWriteReport();
+    _config.authority = report.authorityBatchReport.accessManager;
+    AaveV4BabylonHandoverHarness handover = new AaveV4BabylonHandoverHarness(_config);
+    vm.expectRevert('authority is the deployed one');
+    handover.run();
+  }
+
+  function test_handover_revertsWith_authorityWithoutCode() public {
+    _deployAndWriteReport();
+    _config.authority = makeAddr('no code');
+    AaveV4BabylonHandoverHarness handover = new AaveV4BabylonHandoverHarness(_config);
+    vm.expectRevert('authority code');
+    handover.run();
+  }
+
+  function test_verify_revertsWith_authorityNotSwitched() public {
+    _configureHandoverAndAccept();
+    (, address externalAccessManager, ) = _deployExternalMarket();
+    _config.authority = externalAccessManager;
+    AaveV4BabylonVerifyHarness verifier = _verifier();
+    vm.expectRevert('hub authority');
+    verifier.run();
+  }
+
+  function test_handover_authority_revertsWith_strayRoleMember() public {
+    (
+      address externalHub,
+      address externalAccessManager,
+      address externalTreasury
+    ) = _deployExternalMarket();
+    _config.authority = externalAccessManager;
+    _config.feeReceiver = externalTreasury;
+    _deployAndWriteReport();
+    new AaveV4BabylonConfigureHarness(_config, _sepoliaJsonWithExternalReserves(externalHub)).run();
+    AaveV4BabylonConfig.Deployment memory deployment = AaveV4BabylonConfig.readDeployment(_config);
+    vm.prank(_deployer);
+    IAccessManager(deployment.accessManager).grantRole(
+      Roles.HUB_FEE_MINTER_ROLE,
+      makeAddr('stray'),
+      0
+    );
+    AaveV4BabylonHandoverHarness handover = new AaveV4BabylonHandoverHarness(_config);
+    vm.expectRevert('unexpected role members: 102');
+    handover.run();
+  }
+
+  function _useMainnetHubLabels() internal {
+    string[] memory hubLabels = new string[](1);
+    hubLabels[0] = 'babylon';
+    _config.hubLabels = hubLabels;
+  }
+
+  function _mainnetListing(
+    AaveV4BabylonConfig.Deployment memory deployment,
+    address underlying,
+    address priceSource,
+    uint16 liquidityFee,
+    IAssetInterestRateStrategy.InterestRateData memory irData,
+    uint40 addCap,
+    uint40 drawCap,
+    bool borrowable,
+    uint16 collateralFactor,
+    uint32 maxLiquidationBonus
+  ) internal pure returns (AaveV4BabylonConfig.ReserveListing memory listing) {
+    listing = _listing({
+      hub: deployment.hubs[0],
+      irStrategy: deployment.irStrategies[0],
+      underlying: underlying,
+      priceSource: priceSource,
+      liquidityFee: liquidityFee,
+      irData: irData,
+      addCap: addCap,
+      drawCap: drawCap,
+      borrowable: borrowable,
+      collateralFactor: collateralFactor,
+      maxLiquidationBonus: maxLiquidationBonus
+    });
+    listing.spokeConfig.riskPremiumThreshold = 0;
+    listing.spokeConfig.active = false;
+  }
+
+  function _mainnetJsonWithVaultBtc(address vaultBtc) internal view returns (string memory) {
+    string memory json = vm.readFile(MAINNET_CONFIG);
+    string memory placeholder = '"underlying": "0x0000000000000000000000000000000000000000"';
+    assertEq(vm.split(json, placeholder).length, 2);
+    return
+      vm.replace(json, placeholder, string.concat('"underlying": "', vm.toString(vaultBtc), '"'));
+  }
+
+  function _sepoliaAdapterConfig()
+    internal
+    view
+    returns (AaveV4BabylonConfig.Config memory config)
+  {
+    config = _config;
+    config.liquidationManager = SEPOLIA_AAVE_ADAPTER;
+    config.liquidationManagerDeployer = SEPOLIA_BABYLON_DEPLOYER;
+    config.liquidationManagerSalt = keccak256('testnet-3.sepolia');
+  }
+
+  function _mockCreateX(bytes32 guardedSalt, address computed) internal {
+    vm.etch(CREATEX, hex'00');
+    vm.mockCall(
+      CREATEX,
+      abi.encodeCall(ICreateX.computeCreate3Address, (guardedSalt)),
+      abi.encode(computed)
+    );
+  }
+
+  /// @dev A one-Hub market of another deployer listing USDC and WBTC, standing in for the Core Hub.
+  /// The governance deployer keeps the AccessManager admin role.
+  function _deployExternalMarket()
+    internal
+    returns (address hub, address accessManager, address treasurySpoke)
+  {
+    _deploySepoliaTokensAndFeeds();
+    AaveV4BabylonConfig.Config memory externalConfig = _config;
+    externalConfig.salt = keccak256('external market');
+    externalConfig.deployer = _governance;
+    string[] memory hubLabels = new string[](1);
+    hubLabels[0] = 'core';
+    externalConfig.hubLabels = hubLabels;
+    externalConfig.babylonSpokeLabel = 'external';
+    OrchestrationReports.FullDeploymentReport memory report = this.deployAs(
+      new AaveV4DeployBabylonHarness(externalConfig).sanitizedDeployInputs(_governance),
+      _governance
+    );
+    hub = report.hubInstanceBatchReports[0].report.hubProxy;
+    accessManager = report.authorityBatchReport.accessManager;
+    treasurySpoke = report.treasurySpokeBatchReport.treasurySpoke;
+    bytes memory irData = abi.encode(
+      IAssetInterestRateStrategy.InterestRateData({
+        optimalUsageRatio: 90_00,
+        baseDrawnRate: 0,
+        rateGrowthBeforeOptimal: 0,
+        rateGrowthAfterOptimal: 0
+      })
+    );
+    address irStrategy = report.hubInstanceBatchReports[0].report.irStrategy;
+    vm.startPrank(_governance);
+    IAccessManager(accessManager).grantRole(Roles.HUB_CONFIGURATOR_ROLE, _governance, 0);
+    IHub(hub).addAsset(SEPOLIA_USDT, 6, treasurySpoke, irStrategy, irData);
+    IHub(hub).addAsset(SEPOLIA_USDC, 6, treasurySpoke, irStrategy, irData);
+    IHub(hub).addAsset(SEPOLIA_WBTC, 8, treasurySpoke, irStrategy, irData);
+    vm.stopPrank();
+  }
+
+  function deployAs(
+    InputUtils.FullDeployInputs memory inputs,
+    address deployer
+  ) external returns (OrchestrationReports.FullDeploymentReport memory report) {
+    MetadataLogger logger = new MetadataLogger(OUTPUT_DIR);
+    bytes memory hubBytecode = BytecodeHelper.getHubBytecode();
+    bytes memory spokeBytecode = BytecodeHelper.getSpokeBytecode();
+    bytes memory babylonSpokeBytecode = BytecodeHelper.getBabylonSpokeBytecode();
+    vm.startPrank(deployer);
+    report = AaveV4DeployOrchestration.deployAaveV4({
+      logger: logger,
+      deployer: deployer,
+      deployInputs: inputs,
+      hubBytecode: hubBytecode,
+      spokeBytecode: spokeBytecode,
+      babylonSpokeBytecode: babylonSpokeBytecode
+    });
+    vm.stopPrank();
+  }
+
+  /// @dev The Sepolia config with external reserves on USDC and WBTC of `externalHub`.
+  function _sepoliaJsonWithExternalReserves(
+    address externalHub
+  ) internal view returns (string memory) {
+    return
+      vm.replace(
+        vm.readFile(SEPOLIA_CONFIG),
+        '"liquidationConfig"',
+        string.concat(
+          '"externalReserves": [',
+          _externalReserveJson(externalHub, SEPOLIA_USDC, SEPOLIA_USD_FEED, true),
+          ', ',
+          _externalReserveJson(externalHub, SEPOLIA_WBTC, SEPOLIA_BTC_FEED, false),
+          '],\n  "liquidationConfig"'
+        )
+      );
+  }
+
+  function _externalReserveJson(
+    address hub,
+    address underlying,
+    address priceSource,
+    bool borrowable
+  ) internal pure returns (string memory) {
+    return
+      string.concat(
+        '{"hub": "',
+        vm.toString(hub),
+        '", "underlying": "',
+        vm.toString(underlying),
+        '", "priceSource": "',
+        vm.toString(priceSource),
+        '", "reserveConfig": {"collateralRisk": 0, "paused": false, "frozen": false, "borrowable": ',
+        borrowable ? 'true' : 'false',
+        ', "receiveSharesEnabled": false}, "dynamicConfig": {"collateralFactor": 0, "maxLiquidationBonus": 10000, "liquidationFee": 0}}'
+      );
   }
 }

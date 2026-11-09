@@ -28,6 +28,9 @@ import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 /// | 301 SPOKE_CONFIGURATOR_ROLE         | the SpokeConfigurator |
 /// | 400 SPOKE_CONFIGURATOR_DOMAIN_ADMIN | admin                 |
 /// | every other role                    | nobody                |
+///
+/// When the config sets `authority`, the Hubs and the BabylonSpoke move to it and the deployed
+/// AccessManager is left with no admin, see `verifyAbandonedAccessManager`.
 library AaveV4BabylonVerification {
   Vm internal constant vm = Vm(address(uint160(uint256(keccak256('hevm cheat code')))));
 
@@ -41,9 +44,11 @@ library AaveV4BabylonVerification {
   /// @notice Reverts unless every deployed contract exists and is wired to the others as configured.
   /// @param config The Babylon market config.
   /// @param deployment The deployed Babylon market.
+  /// @param authority The expected AccessManager of the Hubs and the BabylonSpoke.
   function verifyDeployment(
     AaveV4BabylonConfig.Config memory config,
-    AaveV4BabylonConfig.Deployment memory deployment
+    AaveV4BabylonConfig.Deployment memory deployment,
+    address authority
   ) internal view {
     address accessManager = deployment.accessManager;
     _requireCode(accessManager, 'access manager code');
@@ -59,7 +64,7 @@ library AaveV4BabylonVerification {
     );
 
     for (uint256 i; i < deployment.hubs.length; ++i) {
-      require(IAccessManaged(deployment.hubs[i]).authority() == accessManager, 'hub authority');
+      require(IAccessManaged(deployment.hubs[i]).authority() == authority, 'hub authority');
       require(
         _implementation(deployment.hubs[i]) == deployment.hubImplementations[i],
         'hub implementation'
@@ -72,7 +77,7 @@ library AaveV4BabylonVerification {
 
     IBabylonSpoke babylonSpoke = IBabylonSpoke(deployment.babylonSpoke);
     require(
-      IAccessManaged(deployment.babylonSpoke).authority() == accessManager,
+      IAccessManaged(deployment.babylonSpoke).authority() == authority,
       'babylon spoke authority'
     );
     require(
@@ -129,18 +134,52 @@ library AaveV4BabylonVerification {
     }
   }
 
+  /// @notice Reverts unless the deployed AccessManager, left behind when the Hubs and the BabylonSpoke
+  /// moved to `config.authority`, has no holder except the configurators on their own roles.
+  /// @dev The admin role is not enumerated, so `admin` and `deployer` are checked by address.
+  /// @param deployment The deployed Babylon market.
+  /// @param admin The address the market is handed over to.
+  /// @param deployer The deployer.
+  function verifyAbandonedAccessManager(
+    AaveV4BabylonConfig.Deployment memory deployment,
+    address admin,
+    address deployer
+  ) internal view {
+    IAccessManagerEnumerable accessManager = IAccessManagerEnumerable(deployment.accessManager);
+    (bool adminIsAdmin, ) = accessManager.hasRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, admin);
+    require(!adminIsAdmin, 'admin holds the deployed access manager');
+    (bool deployerIsAdmin, ) = accessManager.hasRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, deployer);
+    require(!deployerIsAdmin, 'deployer holds the deployed access manager');
+
+    uint256 roleCount = accessManager.getRoleCount();
+    for (uint256 i; i < roleCount; ++i) {
+      uint64 role = accessManager.getRole(i);
+      if (role == Roles.HUB_CONFIGURATOR_ROLE) {
+        _requireAtMostMember(accessManager, role, deployment.hubConfigurator);
+      } else if (role == Roles.SPOKE_CONFIGURATOR_ROLE) {
+        _requireAtMostMember(accessManager, role, deployment.spokeConfigurator);
+      } else {
+        _requireNoMembers(accessManager, role);
+      }
+    }
+  }
+
   /// @notice Reverts unless every ProxyAdmin in the market is owned by `owner`.
   /// @dev Walks every spoke registered on each Hub asset too, so a spoke connected later is covered.
   /// @param deployment The deployed Babylon market.
   /// @param owner The expected owner of every ProxyAdmin.
   /// @param externalSpokes The configured external spokes, which this market does not own.
+  /// @param externalFeeReceiver The configured fee receiver when it is outside this market, else zero.
+  /// @param treasurySpokeOwner The expected owner of the deployed TreasurySpoke's ProxyAdmin.
   function verifyProxyAdmins(
     AaveV4BabylonConfig.Deployment memory deployment,
     address owner,
-    AaveV4BabylonConfig.ExternalSpoke[] memory externalSpokes
+    AaveV4BabylonConfig.ExternalSpoke[] memory externalSpokes,
+    address externalFeeReceiver,
+    address treasurySpokeOwner
   ) internal view {
     _requireProxyAdminOwner(deployment.babylonSpoke, owner);
-    _requireProxyAdminOwner(deployment.treasurySpoke, owner);
+    _requireProxyAdminOwner(deployment.treasurySpoke, treasurySpokeOwner);
     for (uint256 i; i < deployment.hubs.length; ++i) {
       IHub hub = IHub(deployment.hubs[i]);
       _requireProxyAdminOwner(address(hub), owner);
@@ -149,7 +188,11 @@ library AaveV4BabylonVerification {
         uint256 spokeCount = hub.getSpokeCount(assetId);
         for (uint256 j; j < spokeCount; ++j) {
           address spoke = hub.getSpokeAddress(assetId, j);
-          if (!_isExternalSpoke(externalSpokes, address(hub), spoke)) {
+          if (
+            spoke != externalFeeReceiver &&
+            spoke != deployment.treasurySpoke &&
+            !_isExternalSpoke(externalSpokes, address(hub), spoke)
+          ) {
             _requireProxyAdminOwner(spoke, owner);
           }
         }
@@ -178,12 +221,18 @@ library AaveV4BabylonVerification {
   /// @notice Reverts unless the Hubs and the BabylonSpoke hold exactly the configured market.
   /// @param deployment The deployed Babylon market.
   /// @param marketConfig The configured market.
+  /// @param feeReceiver The expected fee receiver of every listed asset.
   function verifyMarketConfig(
     AaveV4BabylonConfig.Deployment memory deployment,
-    AaveV4BabylonConfig.MarketConfig memory marketConfig
+    AaveV4BabylonConfig.MarketConfig memory marketConfig,
+    address feeReceiver
   ) internal view {
     ISpoke spoke = ISpoke(deployment.babylonSpoke);
-    require(spoke.getReserveCount() == marketConfig.reserves.length, 'reserve count');
+    require(
+      spoke.getReserveCount() ==
+        marketConfig.reserves.length + marketConfig.externalReserves.length,
+      'reserve count'
+    );
     for (uint256 i; i < deployment.hubs.length; ++i) {
       require(
         IHub(deployment.hubs[i]).getAssetCount() == _listingCount(marketConfig, deployment.hubs[i]),
@@ -196,7 +245,16 @@ library AaveV4BabylonVerification {
         deployment: deployment,
         listing: marketConfig.reserves[i],
         reserveId: i,
-        externalSpokes: marketConfig.externalSpokes
+        externalSpokes: marketConfig.externalSpokes,
+        feeReceiver: feeReceiver
+      });
+    }
+
+    for (uint256 i; i < marketConfig.externalReserves.length; ++i) {
+      _verifyExternalReserve({
+        deployment: deployment,
+        externalReserve: marketConfig.externalReserves[i],
+        reserveId: marketConfig.reserves.length + i
       });
     }
 
@@ -223,7 +281,8 @@ library AaveV4BabylonVerification {
     AaveV4BabylonConfig.Deployment memory deployment,
     AaveV4BabylonConfig.ReserveListing memory listing,
     uint256 reserveId,
-    AaveV4BabylonConfig.ExternalSpoke[] memory externalSpokes
+    AaveV4BabylonConfig.ExternalSpoke[] memory externalSpokes,
+    address feeReceiver
   ) private view {
     ISpoke spoke = ISpoke(deployment.babylonSpoke);
     ISpoke.Reserve memory reserve = spoke.getReserve(reserveId);
@@ -248,7 +307,7 @@ library AaveV4BabylonVerification {
     IHub hub = IHub(listing.hub);
     IHub.Asset memory asset = hub.getAsset(reserve.assetId);
     require(asset.underlying == listing.underlying, 'asset underlying');
-    require(asset.feeReceiver == deployment.treasurySpoke, 'asset fee receiver');
+    require(asset.feeReceiver == feeReceiver, 'asset fee receiver');
     require(asset.liquidityFee == listing.liquidityFee, 'asset liquidity fee');
     require(asset.irStrategy == listing.irStrategy, 'asset ir strategy');
     require(asset.reinvestmentController == address(0), 'asset reinvestment controller');
@@ -261,7 +320,7 @@ library AaveV4BabylonVerification {
       'asset ir data'
     );
 
-    // the BabylonSpoke, the TreasurySpoke added by `addAsset` as fee receiver and the external spokes
+    // the BabylonSpoke, the fee receiver added by `addAsset` and the external spokes
     require(
       hub.getSpokeCount(reserve.assetId) ==
         2 + _externalSpokeCount(externalSpokes, listing.hub, listing.underlying),
@@ -273,7 +332,7 @@ library AaveV4BabylonVerification {
       'babylon spoke config'
     );
     require(
-      keccak256(abi.encode(hub.getSpokeConfig(reserve.assetId, deployment.treasurySpoke))) ==
+      keccak256(abi.encode(hub.getSpokeConfig(reserve.assetId, feeReceiver))) ==
         keccak256(
           abi.encode(
             IHub.SpokeConfig({
@@ -285,7 +344,41 @@ library AaveV4BabylonVerification {
             })
           )
         ),
-      'treasury spoke config'
+      'fee receiver config'
+    );
+  }
+
+  /// @dev The BabylonSpoke side only. The Hub connects the BabylonSpoke through governance.
+  function _verifyExternalReserve(
+    AaveV4BabylonConfig.Deployment memory deployment,
+    AaveV4BabylonConfig.ExternalReserve memory externalReserve,
+    uint256 reserveId
+  ) private view {
+    ISpoke spoke = ISpoke(deployment.babylonSpoke);
+    ISpoke.Reserve memory reserve = spoke.getReserve(reserveId);
+    require(address(reserve.hub) == externalReserve.hub, 'external reserve hub');
+    require(reserve.underlying == externalReserve.underlying, 'external reserve underlying');
+    require(
+      reserve.assetId == IHub(externalReserve.hub).getAssetId(externalReserve.underlying),
+      'external reserve asset id'
+    );
+    require(
+      spoke.getReserveId(externalReserve.hub, reserve.assetId) == reserveId,
+      'external reserve id'
+    );
+    require(
+      IAaveOracle(deployment.oracle).getReserveSource(reserveId) == externalReserve.priceSource,
+      'external reserve price source'
+    );
+    require(
+      keccak256(abi.encode(spoke.getReserveConfig(reserveId))) ==
+        keccak256(abi.encode(externalReserve.reserveConfig)),
+      'external reserve config'
+    );
+    require(
+      keccak256(abi.encode(spoke.getDynamicReserveConfig(reserveId, reserve.dynamicConfigKey))) ==
+        keccak256(abi.encode(externalReserve.dynamicConfig)),
+      'external dynamic reserve config'
     );
   }
 
@@ -333,6 +426,19 @@ library AaveV4BabylonVerification {
     (bool isMember, ) = accessManager.hasRole(role, account);
     require(
       isMember && accessManager.getRoleMemberCount(role) == 1,
+      string.concat('unexpected role members: ', vm.toString(role))
+    );
+  }
+
+  function _requireAtMostMember(
+    IAccessManagerEnumerable accessManager,
+    uint64 role,
+    address account
+  ) private view {
+    uint256 memberCount = accessManager.getRoleMemberCount(role);
+    (bool isMember, ) = accessManager.hasRole(role, account);
+    require(
+      memberCount == 0 || (memberCount == 1 && isMember),
       string.concat('unexpected role members: ', vm.toString(role))
     );
   }

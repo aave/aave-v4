@@ -21,21 +21,33 @@ library AaveV4BabylonConfig {
   /// @dev chainId The chain the config is for.
   /// @dev salt The user-provided deploy salt.
   /// @dev librarySalt The CREATE2 salt of LiquidationLogic and BabylonLiquidationLogic.
+  /// @dev deployer The account every step broadcasts from. Deployed addresses depend on it.
   /// @dev hubLabels The labels of the Babylon Hubs.
   /// @dev babylonSpokeLabel The label of the BabylonSpoke.
   /// @dev liquidationManager The only address allowed to liquidate on the BabylonSpoke.
+  /// @dev liquidationManagerDeployer The CreateX deployer of the liquidation manager, zero if it is not
+  /// checked.
+  /// @dev liquidationManagerSalt The global salt the liquidation manager is deployed with through CreateX.
   /// @dev managedCollateralReserveId The identifier of the only reserve usable as collateral.
-  /// @dev admin The address receiving every role and ownership at handover.
+  /// @dev admin The address receiving every ownership at handover, and every role unless `authority` is set.
+  /// @dev authority The AccessManager the Hubs and the BabylonSpoke move to at handover, zero to keep the
+  /// deployed one.
+  /// @dev feeReceiver The fee receiver of every listed asset, zero for the deployed TreasurySpoke.
   /// @dev report The deployment report written by the deploy script.
   struct Config {
     uint256 chainId;
     bytes32 salt;
     bytes32 librarySalt;
+    address deployer;
     string[] hubLabels;
     string babylonSpokeLabel;
     address liquidationManager;
+    address liquidationManagerDeployer;
+    bytes32 liquidationManagerSalt;
     uint256 managedCollateralReserveId;
     address admin;
+    address authority;
+    address feeReceiver;
     string report;
   }
 
@@ -83,11 +95,27 @@ library AaveV4BabylonConfig {
     IHub.SpokeConfig spokeConfig;
   }
 
-  /// @dev reserves The reserves in BabylonSpoke reserve identifier order.
+  /// @dev A BabylonSpoke reserve on an asset of a Hub outside this market, added without connecting the
+  /// BabylonSpoke on that Hub.
+  /// @dev hub The Hub listing the asset.
+  /// @dev underlying The underlying asset.
+  /// @dev priceSource The price source of the reserve.
+  struct ExternalReserve {
+    address hub;
+    address underlying;
+    address priceSource;
+    ISpoke.ReserveConfig reserveConfig;
+    ISpoke.DynamicReserveConfig dynamicConfig;
+  }
+
+  /// @dev reserves The reserves on the market's Hubs, in BabylonSpoke reserve identifier order.
+  /// @dev externalReserves The reserves on Hubs outside the market, in reserve identifier order after
+  /// `reserves`.
   /// @dev externalSpokes The spokes connected to listed assets besides the BabylonSpoke.
   /// @dev liquidationConfig The BabylonSpoke liquidation config.
   struct MarketConfig {
     ReserveListing[] reserves;
+    ExternalReserve[] externalReserves;
     ExternalSpoke[] externalSpokes;
     ISpoke.LiquidationConfig liquidationConfig;
   }
@@ -123,13 +151,52 @@ library AaveV4BabylonConfig {
         chainId: vm.parseJsonUint(json, '.chainId'),
         salt: vm.parseJsonBytes32(json, '.salt'),
         librarySalt: vm.parseJsonBytes32(json, '.librarySalt'),
+        deployer: vm.parseJsonAddress(json, '.deployer'),
         hubLabels: vm.parseJsonStringArray(json, '.hubLabels'),
         babylonSpokeLabel: vm.parseJsonString(json, '.babylonSpokeLabel'),
         liquidationManager: vm.parseJsonAddress(json, '.liquidationManager'),
+        liquidationManagerDeployer: vm.parseJsonAddress(json, '.liquidationManagerDeployer'),
+        liquidationManagerSalt: vm.parseJsonBytes32(json, '.liquidationManagerSalt'),
         managedCollateralReserveId: vm.parseJsonUint(json, '.managedCollateralReserveId'),
         admin: vm.parseJsonAddress(json, '.admin'),
+        authority: vm.parseJsonAddress(json, '.authority'),
+        feeReceiver: vm.parseJsonAddress(json, '.feeReceiver'),
         report: vm.parseJsonString(json, '.report')
       });
+  }
+
+  /// @notice Reverts unless `broadcaster` is the config's deployer.
+  /// @param config The Babylon market config.
+  /// @param broadcaster The account the script broadcasts from.
+  function requireDeployer(Config memory config, address broadcaster) internal pure {
+    require(broadcaster == config.deployer, 'broadcaster is not the config deployer');
+  }
+
+  /// @notice Returns the fee receiver of every listed asset.
+  /// @param config The Babylon market config.
+  /// @param deployment The deployed Babylon market.
+  function feeReceiver(
+    Config memory config,
+    Deployment memory deployment
+  ) internal pure returns (address) {
+    return config.feeReceiver == address(0) ? deployment.treasurySpoke : config.feeReceiver;
+  }
+
+  /// @notice Returns the owner of the deployed TreasurySpoke and its ProxyAdmin after the handover.
+  /// @dev With a configured fee receiver the deployed TreasurySpoke is unused and stays with the deployer.
+  /// @param config The Babylon market config.
+  function treasurySpokeOwner(Config memory config) internal pure returns (address) {
+    return config.feeReceiver == address(0) ? config.admin : config.deployer;
+  }
+
+  /// @notice Returns the AccessManager of the Hubs and the BabylonSpoke after the handover.
+  /// @param config The Babylon market config.
+  /// @param deployment The deployed Babylon market.
+  function finalAuthority(
+    Config memory config,
+    Deployment memory deployment
+  ) internal pure returns (address) {
+    return config.authority == address(0) ? deployment.accessManager : config.authority;
   }
 
   /// @notice Builds the deploy inputs: the Hubs and one BabylonSpoke, roles deferred to the handover.
@@ -291,18 +358,8 @@ library AaveV4BabylonConfig {
           rateGrowthAfterOptimal: _uint(json, key, '.irData.rateGrowthAfterOptimal').toUint32()
         }),
         spokeConfig: _spokeConfig(json, key),
-        reserveConfig: ISpoke.ReserveConfig({
-          collateralRisk: _uint(json, key, '.reserveConfig.collateralRisk').toUint24(),
-          paused: _bool(json, key, '.reserveConfig.paused'),
-          frozen: _bool(json, key, '.reserveConfig.frozen'),
-          borrowable: _bool(json, key, '.reserveConfig.borrowable'),
-          receiveSharesEnabled: _bool(json, key, '.reserveConfig.receiveSharesEnabled')
-        }),
-        dynamicConfig: ISpoke.DynamicReserveConfig({
-          collateralFactor: _uint(json, key, '.dynamicConfig.collateralFactor').toUint16(),
-          maxLiquidationBonus: _uint(json, key, '.dynamicConfig.maxLiquidationBonus').toUint32(),
-          liquidationFee: _uint(json, key, '.dynamicConfig.liquidationFee').toUint16()
-        })
+        reserveConfig: _reserveConfig(json, key),
+        dynamicConfig: _dynamicConfig(json, key)
       });
       require(
         reserves[i].underlying != address(0) && reserves[i].priceSource != address(0),
@@ -312,6 +369,7 @@ library AaveV4BabylonConfig {
     return
       MarketConfig({
         reserves: reserves,
+        externalReserves: parseExternalReserves(json),
         externalSpokes: parseExternalSpokes({json: json, config: config, deployment: deployment}),
         liquidationConfig: ISpoke.LiquidationConfig({
           targetHealthFactor: _uint(json, '.liquidationConfig', '.targetHealthFactor').toUint128(),
@@ -320,6 +378,61 @@ library AaveV4BabylonConfig {
           liquidationBonusFactor: _uint(json, '.liquidationConfig', '.liquidationBonusFactor')
             .toUint16()
         })
+      });
+  }
+
+  /// @notice Parses the optional `externalReserves` of a config JSON.
+  /// @param json The config JSON.
+  function parseExternalReserves(
+    string memory json
+  ) internal view returns (ExternalReserve[] memory) {
+    uint256 count;
+    while (vm.keyExistsJson(json, string.concat('.externalReserves[', vm.toString(count), ']'))) {
+      ++count;
+    }
+    ExternalReserve[] memory externalReserves = new ExternalReserve[](count);
+    for (uint256 i; i < count; ++i) {
+      string memory key = string.concat('.externalReserves[', vm.toString(i), ']');
+      externalReserves[i] = ExternalReserve({
+        hub: vm.parseJsonAddress(json, string.concat(key, '.hub')),
+        underlying: vm.parseJsonAddress(json, string.concat(key, '.underlying')),
+        priceSource: vm.parseJsonAddress(json, string.concat(key, '.priceSource')),
+        reserveConfig: _reserveConfig(json, key),
+        dynamicConfig: _dynamicConfig(json, key)
+      });
+      require(
+        externalReserves[i].hub != address(0) &&
+          externalReserves[i].underlying != address(0) &&
+          externalReserves[i].priceSource != address(0),
+        'external reserve address unset'
+      );
+    }
+    return externalReserves;
+  }
+
+  function _reserveConfig(
+    string memory json,
+    string memory key
+  ) private pure returns (ISpoke.ReserveConfig memory) {
+    return
+      ISpoke.ReserveConfig({
+        collateralRisk: _uint(json, key, '.reserveConfig.collateralRisk').toUint24(),
+        paused: _bool(json, key, '.reserveConfig.paused'),
+        frozen: _bool(json, key, '.reserveConfig.frozen'),
+        borrowable: _bool(json, key, '.reserveConfig.borrowable'),
+        receiveSharesEnabled: _bool(json, key, '.reserveConfig.receiveSharesEnabled')
+      });
+  }
+
+  function _dynamicConfig(
+    string memory json,
+    string memory key
+  ) private pure returns (ISpoke.DynamicReserveConfig memory) {
+    return
+      ISpoke.DynamicReserveConfig({
+        collateralFactor: _uint(json, key, '.dynamicConfig.collateralFactor').toUint16(),
+        maxLiquidationBonus: _uint(json, key, '.dynamicConfig.maxLiquidationBonus').toUint32(),
+        liquidationFee: _uint(json, key, '.dynamicConfig.liquidationFee').toUint16()
       });
   }
 

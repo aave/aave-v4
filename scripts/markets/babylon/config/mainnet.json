@@ -1,0 +1,265 @@
+{
+  "chainId": 1,
+  "salt": "0x33a846d4b87a3624efb401b95093037d9e2200be5c427a6dbda2aabdfdc13afb",
+  "librarySalt": "0x0000000000000000000000000000000000000000000000000000000000002bdf",
+  "deployer": "0x2045C7414b28A37EDe726498920E06Ad07894Ac1",
+  "hubLabels": ["babylon"],
+  "babylonSpokeLabel": "babylon",
+  "liquidationManager": "0xadca531564f3B26d0aAF48a044d741fD6cD571Ea",
+  "liquidationManagerDeployer": "0x0000000000000000000000000000000000000000",
+  "liquidationManagerSalt": "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "managedCollateralReserveId": 0,
+  "admin": "0x187AAE17d4931310B3fc75743e7F16Bdc9eD77e9",
+  "authority": "0x08aE3BE30958cDd1847ec58fFfd4C451a87fDF01",
+  "feeReceiver": "0xB9B0b8616f6Bf6841972a52058132BE08d723155",
+  "report": "scripts/markets/babylon/reports/mainnet.json",
+  "reserves": [
+    {
+      "hub": "babylon",
+      "underlying": "0x0000000000000000000000000000000000000000",
+      "priceSource": "0xb41E773f507F7a7EA890b1afB7d2b660c30C8B0A",
+      "liquidityFee": 0,
+      "irData": {
+        "optimalUsageRatio": 9900,
+        "baseDrawnRate": 0,
+        "rateGrowthBeforeOptimal": 0,
+        "rateGrowthAfterOptimal": 0
+      },
+      "spokeConfig": {
+        "addCap": 300,
+        "drawCap": 0,
+        "riskPremiumThreshold": 0,
+        "active": false,
+        "halted": false
+      },
+      "reserveConfig": {
+        "collateralRisk": 0,
+        "paused": false,
+        "frozen": false,
+        "borrowable": false,
+        "receiveSharesEnabled": false
+      },
+      "dynamicConfig": {
+        "collateralFactor": 7800,
+        "maxLiquidationBonus": 10555,
+        "liquidationFee": 0
+      }
+    },
+    {
+      "hub": "babylon",
+      "underlying": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+      "priceSource": "0x260326c220E469358846b187eE53328303Efe19C",
+      "liquidityFee": 1000,
+      "irData": {
+        "optimalUsageRatio": 9200,
+        "baseDrawnRate": 0,
+        "rateGrowthBeforeOptimal": 450,
+        "rateGrowthAfterOptimal": 2000
+      },
+      "spokeConfig": {
+        "addCap": 5000000,
+        "drawCap": 5000000,
+        "riskPremiumThreshold": 0,
+        "active": false,
+        "halted": false
+      },
+      "reserveConfig": {
+        "collateralRisk": 0,
+        "paused": false,
+        "frozen": false,
+        "borrowable": true,
+        "receiveSharesEnabled": false
+      },
+      "dynamicConfig": {
+        "collateralFactor": 0,
+        "maxLiquidationBonus": 10000,
+        "liquidationFee": 0
+      }
+    },
+    {
+      "hub": "babylon",
+      "underlying": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "priceSource": "0x3f73F03aa83B2A48ed27E964eD0fDb590332095B",
+      "liquidityFee": 1000,
+      "irData": {
+        "optimalUsageRatio": 9200,
+        "baseDrawnRate": 0,
+        "rateGrowthBeforeOptimal": 450,
+        "rateGrowthAfterOptimal": 2000
+      },
+      "spokeConfig": {
+        "addCap": 5000000,
+        "drawCap": 5000000,
+        "riskPremiumThreshold": 0,
+        "active": false,
+        "halted": false
+      },
+      "reserveConfig": {
+        "collateralRisk": 0,
+        "paused": false,
+        "frozen": false,
+        "borrowable": true,
+        "receiveSharesEnabled": false
+      },
+      "dynamicConfig": {
+        "collateralFactor": 0,
+        "maxLiquidationBonus": 10000,
+        "liquidationFee": 0
+      }
+    },
+    {
+      "hub": "babylon",
+      "underlying": "0x40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f",
+      "priceSource": "0xD110cac5d8682A3b045D5524a9903E031d70FCCd",
+      "liquidityFee": 1000,
+      "irData": {
+        "optimalUsageRatio": 9200,
+        "baseDrawnRate": 0,
+        "rateGrowthBeforeOptimal": 450,
+        "rateGrowthAfterOptimal": 2000
+      },
+      "spokeConfig": {
+        "addCap": 1000000,
+        "drawCap": 1000000,
+        "riskPremiumThreshold": 0,
+        "active": false,
+        "halted": false
+      },
+      "reserveConfig": {
+        "collateralRisk": 0,
+        "paused": false,
+        "frozen": false,
+        "borrowable": true,
+        "receiveSharesEnabled": false
+      },
+      "dynamicConfig": {
+        "collateralFactor": 0,
+        "maxLiquidationBonus": 10000,
+        "liquidationFee": 0
+      }
+    },
+    {
+      "hub": "babylon",
+      "underlying": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+      "priceSource": "0xDaa4B74C6bAc4e25188e64ebc68DB5050b690cAc",
+      "liquidityFee": 2000,
+      "irData": {
+        "optimalUsageRatio": 8000,
+        "baseDrawnRate": 25,
+        "rateGrowthBeforeOptimal": 400,
+        "rateGrowthAfterOptimal": 6000
+      },
+      "spokeConfig": {
+        "addCap": 100,
+        "drawCap": 100,
+        "riskPremiumThreshold": 0,
+        "active": false,
+        "halted": false
+      },
+      "reserveConfig": {
+        "collateralRisk": 0,
+        "paused": false,
+        "frozen": false,
+        "borrowable": true,
+        "receiveSharesEnabled": false
+      },
+      "dynamicConfig": {
+        "collateralFactor": 0,
+        "maxLiquidationBonus": 10000,
+        "liquidationFee": 0
+      }
+    }
+  ],
+  "externalReserves": [
+    {
+      "hub": "0xCca852Bc40e560adC3b1Cc58CA5b55638ce826c9",
+      "underlying": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+      "priceSource": "0x260326c220E469358846b187eE53328303Efe19C",
+      "reserveConfig": {
+        "collateralRisk": 0,
+        "paused": false,
+        "frozen": false,
+        "borrowable": true,
+        "receiveSharesEnabled": false
+      },
+      "dynamicConfig": {
+        "collateralFactor": 0,
+        "maxLiquidationBonus": 10000,
+        "liquidationFee": 0
+      }
+    },
+    {
+      "hub": "0xCca852Bc40e560adC3b1Cc58CA5b55638ce826c9",
+      "underlying": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "priceSource": "0x3f73F03aa83B2A48ed27E964eD0fDb590332095B",
+      "reserveConfig": {
+        "collateralRisk": 0,
+        "paused": false,
+        "frozen": false,
+        "borrowable": true,
+        "receiveSharesEnabled": false
+      },
+      "dynamicConfig": {
+        "collateralFactor": 0,
+        "maxLiquidationBonus": 10000,
+        "liquidationFee": 0
+      }
+    },
+    {
+      "hub": "0xCca852Bc40e560adC3b1Cc58CA5b55638ce826c9",
+      "underlying": "0x40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f",
+      "priceSource": "0xD110cac5d8682A3b045D5524a9903E031d70FCCd",
+      "reserveConfig": {
+        "collateralRisk": 0,
+        "paused": false,
+        "frozen": false,
+        "borrowable": true,
+        "receiveSharesEnabled": false
+      },
+      "dynamicConfig": {
+        "collateralFactor": 0,
+        "maxLiquidationBonus": 10000,
+        "liquidationFee": 0
+      }
+    },
+    {
+      "hub": "0xCca852Bc40e560adC3b1Cc58CA5b55638ce826c9",
+      "underlying": "0xe343167631d89B6Ffc58B88d6b7fB0228795491D",
+      "priceSource": "0x83D20dEEdcd4aC1313496c8CBcAad0fa298c0CE4",
+      "reserveConfig": {
+        "collateralRisk": 0,
+        "paused": false,
+        "frozen": false,
+        "borrowable": true,
+        "receiveSharesEnabled": false
+      },
+      "dynamicConfig": {
+        "collateralFactor": 0,
+        "maxLiquidationBonus": 10000,
+        "liquidationFee": 0
+      }
+    },
+    {
+      "hub": "0xCca852Bc40e560adC3b1Cc58CA5b55638ce826c9",
+      "underlying": "0x8292Bb45bf1Ee4d140127049757C2E0fF06317eD",
+      "priceSource": "0xf0eaC18E908B34770FDEe46d069c846bDa866759",
+      "reserveConfig": {
+        "collateralRisk": 0,
+        "paused": false,
+        "frozen": false,
+        "borrowable": true,
+        "receiveSharesEnabled": false
+      },
+      "dynamicConfig": {
+        "collateralFactor": 0,
+        "maxLiquidationBonus": 10000,
+        "liquidationFee": 0
+      }
+    }
+  ],
+  "liquidationConfig": {
+    "targetHealthFactor": "1000000000000000000",
+    "healthFactorForMaxBonus": "900000000000000000",
+    "liquidationBonusFactor": 9000
+  }
+}

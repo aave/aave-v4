@@ -2,11 +2,16 @@
   "chainId": 1,
   "salt": "0x551c9d3862436cd2ee203a88a2fb6c7a4db023d6c8ad17762cde739d5e5ac51d",
   "librarySalt": "0x3d92f025fdb34dc3fc7e28b2f1dd5db6a99692474fb6195323c850ee42d300fe",
+  "deployer": "0x2045C7414b28A37EDe726498920E06Ad07894Ac1",
   "hubLabels": ["babylon-btc", "babylon-stables"],
   "babylonSpokeLabel": "babylon",
   "liquidationManager": "0xF93892D520630d3eB0ed9A2157746E0a63a9E6f2",
+  "liquidationManagerDeployer": "0x0000000000000000000000000000000000000000",
+  "liquidationManagerSalt": "0x0000000000000000000000000000000000000000000000000000000000000000",
   "managedCollateralReserveId": 0,
   "admin": "0x66501C33b8fA9DD06348469bA34d96D3dE7F2239",
+  "authority": "0x0000000000000000000000000000000000000000",
+  "feeReceiver": "0x0000000000000000000000000000000000000000",
   "report": "scripts/markets/babylon/reports/mainnet-test.json",
   "reserves": [
     {

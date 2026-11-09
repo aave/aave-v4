@@ -9,7 +9,7 @@ import {AaveV4BabylonVerification} from 'scripts/markets/babylon/AaveV4BabylonVe
 /// @title AaveV4BabylonVerify
 /// @author Aave Labs
 /// @notice Asserts that the deployed, configured and handed-over Babylon market matches its config.
-/// @dev Read-only. Run last, after the admin accepted TreasurySpoke ownership.
+/// @dev Read-only. Run last, after the admin accepted TreasurySpoke ownership when it was transferred.
 contract AaveV4BabylonVerify is Script {
   function run() external view {
     AaveV4BabylonConfig.Config memory config = _config();
@@ -17,19 +17,37 @@ contract AaveV4BabylonVerify is Script {
     AaveV4BabylonConfig.Deployment memory deployment = AaveV4BabylonConfig.readDeployment(config);
     AaveV4BabylonConfig.MarketConfig memory marketConfig = _marketConfig(config, deployment);
 
-    AaveV4BabylonVerification.verifyDeployment(config, deployment);
-    AaveV4BabylonVerification.verifyRoles(deployment, config.admin);
+    AaveV4BabylonVerification.verifyDeployment({
+      config: config,
+      deployment: deployment,
+      authority: AaveV4BabylonConfig.finalAuthority(config, deployment)
+    });
+    if (config.authority == address(0)) {
+      AaveV4BabylonVerification.verifyRoles(deployment, config.admin);
+    } else {
+      AaveV4BabylonVerification.verifyAbandonedAccessManager({
+        deployment: deployment,
+        admin: config.admin,
+        deployer: config.deployer
+      });
+    }
     AaveV4BabylonVerification.verifyProxyAdmins({
       deployment: deployment,
       owner: config.admin,
-      externalSpokes: marketConfig.externalSpokes
+      externalSpokes: marketConfig.externalSpokes,
+      externalFeeReceiver: config.feeReceiver,
+      treasurySpokeOwner: AaveV4BabylonConfig.treasurySpokeOwner(config)
     });
     AaveV4BabylonVerification.verifyTreasurySpokeOwner({
       deployment: deployment,
-      owner: config.admin,
+      owner: AaveV4BabylonConfig.treasurySpokeOwner(config),
       allowPending: false
     });
-    AaveV4BabylonVerification.verifyMarketConfig(deployment, marketConfig);
+    AaveV4BabylonVerification.verifyMarketConfig({
+      deployment: deployment,
+      marketConfig: marketConfig,
+      feeReceiver: AaveV4BabylonConfig.feeReceiver(config, deployment)
+    });
   }
 
   function _config() internal view virtual returns (AaveV4BabylonConfig.Config memory) {

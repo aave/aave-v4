@@ -21,23 +21,33 @@ import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 /// @notice Lists the configured assets on the Babylon Hubs and adds them as BabylonSpoke reserves.
 /// @dev Run by the deployer before `AaveV4BabylonHandover`. Grants the deployer the configurator
 /// domain admin roles and the configurators their Hub and Spoke roles. The handover revokes the
-/// deployer roles. Every asset's fee receiver is the TreasurySpoke. External spokes are connected
-/// after the reserves.
+/// deployer roles. Every asset's fee receiver is the config's fee receiver. External reserves are
+/// added after the reserves, then external spokes are connected.
 contract AaveV4BabylonConfigure is Script {
   function run() external {
     AaveV4BabylonConfig.Config memory config = _config();
     AaveV4BabylonConfig.Deployment memory deployment = AaveV4BabylonConfig.readDeployment(config);
     AaveV4BabylonConfig.MarketConfig memory marketConfig = _marketConfig(config, deployment);
-    AaveV4BabylonVerification.verifyDeployment(config, deployment);
+    address feeReceiver = AaveV4BabylonConfig.feeReceiver(config, deployment);
+    AaveV4BabylonVerification.verifyDeployment({
+      config: config,
+      deployment: deployment,
+      authority: deployment.accessManager
+    });
     _requireNoDelays(deployment.accessManager);
 
     vm.startBroadcast();
     (, address deployer, ) = vm.readCallers();
+    AaveV4BabylonConfig.requireDeployer(config, deployer);
     _grantRoles(deployment, deployer);
-    _configure(deployment, marketConfig);
+    _configure({deployment: deployment, marketConfig: marketConfig, feeReceiver: feeReceiver});
     vm.stopBroadcast();
 
-    AaveV4BabylonVerification.verifyMarketConfig(deployment, marketConfig);
+    AaveV4BabylonVerification.verifyMarketConfig({
+      deployment: deployment,
+      marketConfig: marketConfig,
+      feeReceiver: feeReceiver
+    });
   }
 
   function _config() internal view virtual returns (AaveV4BabylonConfig.Config memory) {
@@ -92,7 +102,8 @@ contract AaveV4BabylonConfigure is Script {
 
   function _configure(
     AaveV4BabylonConfig.Deployment memory deployment,
-    AaveV4BabylonConfig.MarketConfig memory marketConfig
+    AaveV4BabylonConfig.MarketConfig memory marketConfig,
+    address feeReceiver
   ) internal {
     require(ISpoke(deployment.babylonSpoke).getReserveCount() == 0, 'babylon spoke has reserves');
     IHubConfigurator hubConfigurator = IHubConfigurator(deployment.hubConfigurator);
@@ -103,7 +114,7 @@ contract AaveV4BabylonConfigure is Script {
       uint256 assetId = hubConfigurator.addAsset({
         hub: listing.hub,
         underlying: listing.underlying,
-        feeReceiver: deployment.treasurySpoke,
+        feeReceiver: feeReceiver,
         liquidityFee: listing.liquidityFee,
         irStrategy: listing.irStrategy,
         irData: abi.encode(listing.irData)
@@ -123,6 +134,20 @@ contract AaveV4BabylonConfigure is Script {
         dynamicConfig: listing.dynamicConfig
       });
       require(reserveId == i, 'unexpected reserve id');
+    }
+
+    for (uint256 i; i < marketConfig.externalReserves.length; ++i) {
+      AaveV4BabylonConfig.ExternalReserve memory externalReserve = marketConfig.externalReserves[i];
+      uint256 assetId = IHub(externalReserve.hub).getAssetId(externalReserve.underlying);
+      uint256 reserveId = spokeConfigurator.addReserve({
+        spoke: deployment.babylonSpoke,
+        hub: externalReserve.hub,
+        assetId: assetId,
+        priceSource: externalReserve.priceSource,
+        config: externalReserve.reserveConfig,
+        dynamicConfig: externalReserve.dynamicConfig
+      });
+      require(reserveId == marketConfig.reserves.length + i, 'unexpected reserve id');
     }
 
     for (uint256 i; i < marketConfig.externalSpokes.length; ++i) {
