@@ -504,10 +504,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
     (bool isCollateral, ) = spoke1.getUserReserveStatus(reserveId, alice);
     assertEq(isCollateral, useAsCollateral);
 
-    vm.expectCall(
-      address(spoke1),
-      abi.encodeCall(ISpoke.setUsingAsCollateral, (reserveId, useAsCollateral, alice))
-    );
+    vm.expectCall(address(spoke1), abi.encodeWithSelector(ISpoke.setUsingAsCollateral.selector), 0);
     vm.recordLogs();
     vm.prank(bob);
     positionManager.setUsingAsCollateralOnBehalfOf(
@@ -526,7 +523,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
     assertEq(isCollateral, useAsCollateral);
   }
 
-  function test_setUsingAsCollateralOnBehalfOf_revertsWith_Unauthorized_whenStatusUnchanged_positionManagerRevoked(
+  function test_setUsingAsCollateralOnBehalfOf_noop_whenStatusUnchanged_positionManagerRevoked(
     bool useAsCollateral
   ) public {
     uint256 reserveId = _daiReserveId(spoke1);
@@ -539,7 +536,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
     spoke1.setUserPositionManager(address(positionManager), false);
     vm.stopPrank();
 
-    vm.expectRevert(ISpoke.Unauthorized.selector);
+    vm.expectCall(address(spoke1), abi.encodeWithSelector(ISpoke.setUsingAsCollateral.selector), 0);
     vm.prank(bob);
     positionManager.setUsingAsCollateralOnBehalfOf(
       address(spoke1),
@@ -549,7 +546,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
     );
   }
 
-  function test_setUsingAsCollateralOnBehalfOf_revertsWith_Unauthorized_whenStatusUnchanged_positionManagerDeactivated(
+  function test_setUsingAsCollateralOnBehalfOf_noop_whenStatusUnchanged_positionManagerDeactivated(
     bool useAsCollateral
   ) public {
     uint256 reserveId = _daiReserveId(spoke1);
@@ -563,7 +560,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
     vm.prank(SPOKE_ADMIN);
     spoke1.updatePositionManager(address(positionManager), false);
 
-    vm.expectRevert(ISpoke.Unauthorized.selector);
+    vm.expectCall(address(spoke1), abi.encodeWithSelector(ISpoke.setUsingAsCollateral.selector), 0);
     vm.prank(bob);
     positionManager.setUsingAsCollateralOnBehalfOf(
       address(spoke1),
