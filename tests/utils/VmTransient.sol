@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 /// @dev Transient storage cheatcodes shipped in forge 1.9.0; drop once forge-std declares them in `Vm`.

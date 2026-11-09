@@ -60,10 +60,10 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
 
   function test_liquidationCall_revertsWith_ReentrancyGuardReentrantCall_guardEntered() public {
     _assertRevertsWhenReentrancyGuardEntered(
-      address(spoke1),
+      address(spoke),
       abi.encodeCall(
         ISpoke.liquidationCall,
-        (_wethReserveId(spoke1), _daiReserveId(spoke1), bob, 1e18, false)
+        (_wethReserveId(spoke), _daiReserveId(spoke), bob, 1e18, false)
       )
     );
   }
