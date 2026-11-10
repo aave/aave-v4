@@ -25,6 +25,7 @@ abstract contract AaveV4Payload {
   /// @notice Main execution entry point called by governance. Runs all configured actions.
   /// @dev Expected to be called by a governance executor. No on-chain access control is applied;
   /// the caller is responsible for authorization. Idempotency is not guaranteed.
+  /// Every role the executor exercises through the engine must have a zero execution delay.
   function execute() external {
     _preExecute();
     _executeAccessManagerActions();

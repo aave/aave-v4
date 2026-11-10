@@ -105,6 +105,8 @@ contract PostDeploymentVerificationTest is PostDeploymentVerificationBase, AaveV
   function test_withoutRoles() public {
     InputUtils.FullDeployInputs memory inputs = _defaultInputs();
     inputs.grantRoles = false;
+    inputs.proxyAdminOwner = address(0);
+    inputs.treasurySpokeOwner = address(0);
     _sanitizeAndDeploy(inputs);
   }
 
@@ -149,6 +151,8 @@ contract PostDeploymentVerificationTest is PostDeploymentVerificationBase, AaveV
     inputs.deploySignatureGateway = false;
     inputs.deployPositionManagers = false;
     inputs.grantRoles = false;
+    inputs.proxyAdminOwner = address(0);
+    inputs.treasurySpokeOwner = address(0);
     _sanitizeAndDeploy(inputs);
   }
 
@@ -179,6 +183,8 @@ contract PostDeploymentVerificationTest is PostDeploymentVerificationBase, AaveV
     inputs.deploySignatureGateway = true;
     inputs.deployPositionManagers = false;
     inputs.grantRoles = false;
+    inputs.proxyAdminOwner = address(0);
+    inputs.treasurySpokeOwner = address(0);
     _sanitizeAndDeploy(inputs);
   }
 
@@ -220,9 +226,10 @@ contract PostDeploymentVerificationTest is PostDeploymentVerificationBase, AaveV
       salt: params.salt
     });
 
-    // Invalid input combinations revert during deployment
-    if (_shouldExpectRevert(inputs)) {
-      vm.expectRevert();
+    // Invalid input combinations revert during sanitization
+    bytes memory expectedRevert = _expectedRevert(inputs);
+    if (expectedRevert.length > 0) {
+      vm.expectRevert(expectedRevert);
       this.externalSanitizeAndDeploy(inputs);
     } else {
       _sanitizeAndDeploy(inputs);
@@ -234,11 +241,22 @@ contract PostDeploymentVerificationTest is PostDeploymentVerificationBase, AaveV
     _sanitizeAndDeploy(rawInputs);
   }
 
-  function _shouldExpectRevert(
+  /// @dev Mirrors the check order in _loadWarningsAndSanitizeInputs; empty when no revert is expected.
+  function _expectedRevert(
     InputUtils.FullDeployInputs memory inputs
-  ) internal pure returns (bool) {
-    if (inputs.deployNativeTokenGateway && inputs.nativeWrapper == address(0)) return true;
-    return false;
+  ) internal view returns (bytes memory) {
+    if (inputs.deployNativeTokenGateway && inputs.nativeWrapper == address(0)) {
+      return abi.encodeWithSelector(NativeWrapperRequired.selector);
+    }
+    if (!inputs.grantRoles) {
+      if (inputs.treasurySpokeOwner != address(0) && inputs.treasurySpokeOwner != _deployer) {
+        return abi.encodeWithSelector(TreasurySpokeOwnerMustBeDeployer.selector);
+      }
+      if (inputs.proxyAdminOwner != address(0) && inputs.proxyAdminOwner != _deployer) {
+        return abi.encodeWithSelector(ProxyAdminOwnerMustBeDeployer.selector);
+      }
+    }
+    return '';
   }
 
   /// default inputs for the base case
