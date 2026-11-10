@@ -48,6 +48,11 @@ contract AaveV4BabylonVerify is Script {
       marketConfig: marketConfig,
       feeReceiver: AaveV4BabylonConfig.feeReceiver(config, deployment)
     });
+    AaveV4BabylonVerification.verifyTokenizationSpokes({
+      config: config,
+      marketConfig: marketConfig,
+      owner: config.admin
+    });
   }
 
   function _config() internal view virtual returns (AaveV4BabylonConfig.Config memory) {

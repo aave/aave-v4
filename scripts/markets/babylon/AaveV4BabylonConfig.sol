@@ -65,12 +65,14 @@ library AaveV4BabylonConfig {
     address oracle;
   }
 
-  /// @dev An asset listed on a Hub, connected to the BabylonSpoke and added as a BabylonSpoke reserve.
+  /// @dev An asset listed on a Hub and added as a BabylonSpoke reserve, connecting the BabylonSpoke on
+  /// the Hub when the config sets `spokeConfig`.
   /// @dev hub The Hub listing the asset.
   /// @dev irStrategy The interest rate strategy of the Hub.
   /// @dev underlying The underlying asset.
   /// @dev priceSource The price source of the reserve.
   /// @dev liquidityFee The liquidity fee of the asset, expressed in BPS.
+  /// @dev connected Whether the BabylonSpoke is connected on the Hub asset with `spokeConfig`.
   struct ReserveListing {
     address hub;
     address irStrategy;
@@ -78,6 +80,7 @@ library AaveV4BabylonConfig {
     address priceSource;
     uint16 liquidityFee;
     IAssetInterestRateStrategy.InterestRateData irData;
+    bool connected;
     IHub.SpokeConfig spokeConfig;
     ISpoke.ReserveConfig reserveConfig;
     ISpoke.DynamicReserveConfig dynamicConfig;
@@ -108,15 +111,30 @@ library AaveV4BabylonConfig {
     ISpoke.DynamicReserveConfig dynamicConfig;
   }
 
+  /// @dev A TokenizationSpoke on an asset a reserve lists on `hub`, deployed with the config admin as
+  /// ProxyAdmin owner and not connected on the Hub.
+  /// @dev hub The Hub listing the asset.
+  /// @dev underlying The underlying asset.
+  /// @dev name The share token name.
+  /// @dev symbol The share token symbol, also the key of the TokenizationSpoke in the report.
+  struct TokenizationSpoke {
+    address hub;
+    address underlying;
+    string name;
+    string symbol;
+  }
+
   /// @dev reserves The reserves on the market's Hubs, in BabylonSpoke reserve identifier order.
   /// @dev externalReserves The reserves on Hubs outside the market, in reserve identifier order after
   /// `reserves`.
   /// @dev externalSpokes The spokes connected to listed assets besides the BabylonSpoke.
+  /// @dev tokenizationSpokes The TokenizationSpokes on listed assets.
   /// @dev liquidationConfig The BabylonSpoke liquidation config.
   struct MarketConfig {
     ReserveListing[] reserves;
     ExternalReserve[] externalReserves;
     ExternalSpoke[] externalSpokes;
+    TokenizationSpoke[] tokenizationSpokes;
     ISpoke.LiquidationConfig liquidationConfig;
   }
 
@@ -339,6 +357,7 @@ library AaveV4BabylonConfig {
     for (uint256 i; i < count; ++i) {
       string memory key = string.concat('.reserves[', vm.toString(i), ']');
       uint256 hubIndex = _hubIndex(config, vm.parseJsonString(json, string.concat(key, '.hub')));
+      bool connected = vm.keyExistsJson(json, string.concat(key, '.spokeConfig'));
       reserves[i] = ReserveListing({
         hub: deployment.hubs[hubIndex],
         irStrategy: deployment.irStrategies[hubIndex],
@@ -351,7 +370,8 @@ library AaveV4BabylonConfig {
           rateGrowthBeforeOptimal: _uint(json, key, '.irData.rateGrowthBeforeOptimal').toUint32(),
           rateGrowthAfterOptimal: _uint(json, key, '.irData.rateGrowthAfterOptimal').toUint32()
         }),
-        spokeConfig: _spokeConfig(json, key),
+        connected: connected,
+        spokeConfig: connected ? _spokeConfig(json, key) : _emptySpokeConfig(),
         reserveConfig: _reserveConfig(json, key),
         dynamicConfig: _dynamicConfig(json, key)
       });
@@ -365,6 +385,11 @@ library AaveV4BabylonConfig {
         reserves: reserves,
         externalReserves: parseExternalReserves(json),
         externalSpokes: parseExternalSpokes({json: json, config: config, deployment: deployment}),
+        tokenizationSpokes: parseTokenizationSpokes({
+          json: json,
+          config: config,
+          deployment: deployment
+        }),
         liquidationConfig: ISpoke.LiquidationConfig({
           targetHealthFactor: _uint(json, '.liquidationConfig', '.targetHealthFactor').toUint128(),
           healthFactorForMaxBonus: _uint(json, '.liquidationConfig', '.healthFactorForMaxBonus')
@@ -373,6 +398,68 @@ library AaveV4BabylonConfig {
             .toUint16()
         })
       });
+  }
+
+  /// @notice Parses the optional `tokenizationSpokes` of a config JSON.
+  /// @param json The config JSON.
+  /// @param config The Babylon market config.
+  /// @param deployment The deployed Babylon market.
+  function parseTokenizationSpokes(
+    string memory json,
+    Config memory config,
+    Deployment memory deployment
+  ) internal view returns (TokenizationSpoke[] memory) {
+    uint256 count;
+    while (vm.keyExistsJson(json, string.concat('.tokenizationSpokes[', vm.toString(count), ']'))) {
+      ++count;
+    }
+    TokenizationSpoke[] memory tokenizationSpokes = new TokenizationSpoke[](count);
+    for (uint256 i; i < count; ++i) {
+      string memory key = string.concat('.tokenizationSpokes[', vm.toString(i), ']');
+      tokenizationSpokes[i] = TokenizationSpoke({
+        hub: deployment.hubs[
+          _hubIndex(config, vm.parseJsonString(json, string.concat(key, '.hub')))
+        ],
+        underlying: vm.parseJsonAddress(json, string.concat(key, '.underlying')),
+        name: vm.parseJsonString(json, string.concat(key, '.name')),
+        symbol: vm.parseJsonString(json, string.concat(key, '.symbol'))
+      });
+      require(tokenizationSpokes[i].underlying != address(0), 'tokenization spoke address unset');
+      require(
+        bytes(tokenizationSpokes[i].name).length > 0 &&
+          bytes(tokenizationSpokes[i].symbol).length > 0,
+        'tokenization spoke name unset'
+      );
+      for (uint256 j; j < i; ++j) {
+        require(
+          keccak256(bytes(tokenizationSpokes[j].symbol)) !=
+            keccak256(bytes(tokenizationSpokes[i].symbol)),
+          'duplicate tokenization spoke symbol'
+        );
+      }
+    }
+    return tokenizationSpokes;
+  }
+
+  /// @notice Reads a TokenizationSpoke and its implementation from the deployment report.
+  /// @param config The Babylon market config.
+  /// @param symbol The share token symbol keying the TokenizationSpoke.
+  /// @return proxy The TokenizationSpoke, zero when the report has none for `symbol`.
+  /// @return implementation The TokenizationSpoke implementation, zero when the report has none.
+  function readTokenizationSpoke(
+    Config memory config,
+    string memory symbol
+  ) internal view returns (address proxy, address implementation) {
+    string memory json = vm.readFile(config.report);
+    string memory key = string.concat('.tokenizationSpoke.', symbol);
+    if (!vm.keyExistsJson(json, key)) {
+      return (address(0), address(0));
+    }
+    proxy = vm.parseJsonAddress(json, key);
+    implementation = vm.parseJsonAddress(
+      json,
+      string.concat('.tokenizationSpokeImplementation.', symbol)
+    );
   }
 
   /// @notice Parses the optional `externalReserves` of a config JSON.
@@ -441,6 +528,17 @@ library AaveV4BabylonConfig {
         riskPremiumThreshold: _uint(json, key, '.spokeConfig.riskPremiumThreshold').toUint24(),
         active: _bool(json, key, '.spokeConfig.active'),
         halted: _bool(json, key, '.spokeConfig.halted')
+      });
+  }
+
+  function _emptySpokeConfig() private pure returns (IHub.SpokeConfig memory) {
+    return
+      IHub.SpokeConfig({
+        addCap: 0,
+        drawCap: 0,
+        riskPremiumThreshold: 0,
+        active: false,
+        halted: false
       });
   }
 

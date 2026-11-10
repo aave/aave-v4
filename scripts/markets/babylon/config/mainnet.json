@@ -25,13 +25,6 @@
         "rateGrowthBeforeOptimal": 0,
         "rateGrowthAfterOptimal": 0
       },
-      "spokeConfig": {
-        "addCap": 300,
-        "drawCap": 0,
-        "riskPremiumThreshold": 0,
-        "active": false,
-        "halted": false
-      },
       "reserveConfig": {
         "collateralRisk": 0,
         "paused": false,
@@ -55,13 +48,6 @@
         "baseDrawnRate": 0,
         "rateGrowthBeforeOptimal": 450,
         "rateGrowthAfterOptimal": 2000
-      },
-      "spokeConfig": {
-        "addCap": 5000000,
-        "drawCap": 5000000,
-        "riskPremiumThreshold": 0,
-        "active": false,
-        "halted": false
       },
       "reserveConfig": {
         "collateralRisk": 0,
@@ -87,13 +73,6 @@
         "rateGrowthBeforeOptimal": 450,
         "rateGrowthAfterOptimal": 2000
       },
-      "spokeConfig": {
-        "addCap": 5000000,
-        "drawCap": 5000000,
-        "riskPremiumThreshold": 0,
-        "active": false,
-        "halted": false
-      },
       "reserveConfig": {
         "collateralRisk": 0,
         "paused": false,
@@ -118,13 +97,6 @@
         "rateGrowthBeforeOptimal": 450,
         "rateGrowthAfterOptimal": 2000
       },
-      "spokeConfig": {
-        "addCap": 1000000,
-        "drawCap": 1000000,
-        "riskPremiumThreshold": 0,
-        "active": false,
-        "halted": false
-      },
       "reserveConfig": {
         "collateralRisk": 0,
         "paused": false,
@@ -148,13 +120,6 @@
         "baseDrawnRate": 25,
         "rateGrowthBeforeOptimal": 400,
         "rateGrowthAfterOptimal": 6000
-      },
-      "spokeConfig": {
-        "addCap": 100,
-        "drawCap": 100,
-        "riskPremiumThreshold": 0,
-        "active": false,
-        "halted": false
       },
       "reserveConfig": {
         "collateralRisk": 0,
@@ -255,6 +220,32 @@
         "maxLiquidationBonus": 10000,
         "liquidationFee": 0
       }
+    }
+  ],
+  "tokenizationSpokes": [
+    {
+      "hub": "babylon",
+      "underlying": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+      "name": "Wrapped Aave Babylon USDT",
+      "symbol": "waBabylonUSDT"
+    },
+    {
+      "hub": "babylon",
+      "underlying": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "name": "Wrapped Aave Babylon USDC",
+      "symbol": "waBabylonUSDC"
+    },
+    {
+      "hub": "babylon",
+      "underlying": "0x40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f",
+      "name": "Wrapped Aave Babylon GHO",
+      "symbol": "waBabylonGHO"
+    },
+    {
+      "hub": "babylon",
+      "underlying": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+      "name": "Wrapped Aave Babylon WBTC",
+      "symbol": "waBabylonWBTC"
     }
   ],
   "liquidationConfig": {

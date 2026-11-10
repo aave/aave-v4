@@ -14,6 +14,7 @@ import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {IBabylonSpoke} from 'src/spoke/interfaces/IBabylonSpoke.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
+import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
 
 /// @title AaveV4BabylonVerification
 /// @author Aave Labs
@@ -277,6 +278,48 @@ library AaveV4BabylonVerification {
     );
   }
 
+  /// @notice Reverts unless every configured TokenizationSpoke is in the report, wraps its asset on
+  /// its Hub with the configured name and symbol, has its ProxyAdmin owned by `owner` and is not
+  /// connected on the Hub.
+  /// @param config The Babylon market config.
+  /// @param marketConfig The market config.
+  /// @param owner The expected owner of every TokenizationSpoke ProxyAdmin.
+  function verifyTokenizationSpokes(
+    AaveV4BabylonConfig.Config memory config,
+    AaveV4BabylonConfig.MarketConfig memory marketConfig,
+    address owner
+  ) internal view {
+    for (uint256 i; i < marketConfig.tokenizationSpokes.length; ++i) {
+      AaveV4BabylonConfig.TokenizationSpoke memory expected = marketConfig.tokenizationSpokes[i];
+      (address proxy, address implementation) = AaveV4BabylonConfig.readTokenizationSpoke(
+        config,
+        expected.symbol
+      );
+      require(proxy != address(0), 'tokenization spoke not deployed');
+      _requireCode(proxy, 'tokenization spoke');
+      _requireCode(implementation, 'tokenization spoke implementation');
+      require(_implementation(proxy) == implementation, 'tokenization spoke implementation');
+      _requireProxyAdminOwner(proxy, owner);
+      require(_isListedReserve(marketConfig, expected), 'tokenization spoke asset not a reserve');
+
+      ITokenizationSpoke tokenizationSpoke = ITokenizationSpoke(proxy);
+      IHub hub = IHub(expected.hub);
+      uint256 assetId = hub.getAssetId(expected.underlying);
+      require(tokenizationSpoke.hub() == expected.hub, 'tokenization spoke hub');
+      require(tokenizationSpoke.assetId() == assetId, 'tokenization spoke asset id');
+      require(tokenizationSpoke.asset() == expected.underlying, 'tokenization spoke asset');
+      require(
+        keccak256(bytes(tokenizationSpoke.name())) == keccak256(bytes(expected.name)),
+        'tokenization spoke name'
+      );
+      require(
+        keccak256(bytes(tokenizationSpoke.symbol())) == keccak256(bytes(expected.symbol)),
+        'tokenization spoke symbol'
+      );
+      require(!hub.isSpokeListed(assetId, proxy), 'tokenization spoke connected');
+    }
+  }
+
   function _verifyReserve(
     AaveV4BabylonConfig.Deployment memory deployment,
     AaveV4BabylonConfig.ReserveListing memory listing,
@@ -320,17 +363,26 @@ library AaveV4BabylonVerification {
       'asset ir data'
     );
 
-    // the BabylonSpoke, the fee receiver added by `addAsset` and the external spokes
+    // the fee receiver added by `addAsset`, the BabylonSpoke when connected and the external spokes
     require(
       hub.getSpokeCount(reserve.assetId) ==
-        2 + _externalSpokeCount(externalSpokes, listing.hub, listing.underlying),
+        1 +
+          (listing.connected ? 1 : 0) +
+          _externalSpokeCount(externalSpokes, listing.hub, listing.underlying),
       'asset spoke count'
     );
-    require(
-      keccak256(abi.encode(hub.getSpokeConfig(reserve.assetId, deployment.babylonSpoke))) ==
-        keccak256(abi.encode(listing.spokeConfig)),
-      'babylon spoke config'
-    );
+    if (listing.connected) {
+      require(
+        keccak256(abi.encode(hub.getSpokeConfig(reserve.assetId, deployment.babylonSpoke))) ==
+          keccak256(abi.encode(listing.spokeConfig)),
+        'babylon spoke config'
+      );
+    } else {
+      require(
+        !hub.isSpokeListed(reserve.assetId, deployment.babylonSpoke),
+        'babylon spoke connected'
+      );
+    }
     require(
       keccak256(abi.encode(hub.getSpokeConfig(reserve.assetId, feeReceiver))) ==
         keccak256(
@@ -380,6 +432,21 @@ library AaveV4BabylonVerification {
         keccak256(abi.encode(externalReserve.dynamicConfig)),
       'external dynamic reserve config'
     );
+  }
+
+  function _isListedReserve(
+    AaveV4BabylonConfig.MarketConfig memory marketConfig,
+    AaveV4BabylonConfig.TokenizationSpoke memory tokenizationSpoke
+  ) private pure returns (bool) {
+    for (uint256 i; i < marketConfig.reserves.length; ++i) {
+      if (
+        marketConfig.reserves[i].hub == tokenizationSpoke.hub &&
+        marketConfig.reserves[i].underlying == tokenizationSpoke.underlying
+      ) {
+        return true;
+      }
+    }
+    return false;
   }
 
   function _externalSpokeCount(

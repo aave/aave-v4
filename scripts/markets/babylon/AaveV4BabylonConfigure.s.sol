@@ -18,7 +18,8 @@ import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 
 /// @title AaveV4BabylonConfigure
 /// @author Aave Labs
-/// @notice Lists the configured assets on the Babylon Hubs and adds them as BabylonSpoke reserves.
+/// @notice Lists the configured assets on the Babylon Hubs and adds them as BabylonSpoke reserves,
+/// connecting the BabylonSpoke on the assets whose config sets `spokeConfig`.
 /// @dev Run by the deployer before `AaveV4BabylonHandover`. Grants the deployer the configurator
 /// domain admin roles and the configurators their Hub and Spoke roles. The handover revokes the
 /// deployer roles. Every asset's fee receiver is the config's fee receiver. External reserves are
@@ -119,12 +120,14 @@ contract AaveV4BabylonConfigure is Script {
         irStrategy: listing.irStrategy,
         irData: abi.encode(listing.irData)
       });
-      hubConfigurator.addSpoke({
-        hub: listing.hub,
-        spoke: deployment.babylonSpoke,
-        assetId: assetId,
-        config: listing.spokeConfig
-      });
+      if (listing.connected) {
+        hubConfigurator.addSpoke({
+          hub: listing.hub,
+          spoke: deployment.babylonSpoke,
+          assetId: assetId,
+          config: listing.spokeConfig
+        });
+      }
       uint256 reserveId = spokeConfigurator.addReserve({
         spoke: deployment.babylonSpoke,
         hub: listing.hub,

@@ -5,6 +5,7 @@ import {Test} from 'forge-std/Test.sol';
 import {
   AaveV4DeployBabylonHubHarness,
   AaveV4DeployBabylonSpokeHarness,
+  AaveV4DeployBabylonTokenizationHarness,
   AaveV4BabylonConfigureHarness,
   AaveV4BabylonHandoverHarness,
   AaveV4BabylonVerifyHarness
@@ -28,6 +29,7 @@ import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {IBabylonSpoke} from 'src/spoke/interfaces/IBabylonSpoke.sol';
+import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 import {IPriceFeed} from 'src/spoke/interfaces/IPriceFeed.sol';
@@ -126,6 +128,7 @@ contract AaveV4BabylonMainnetForkTest is Test {
 
     _deployAndWriteReport();
     new AaveV4BabylonConfigureHarness(_config, _marketJson).run();
+    new AaveV4DeployBabylonTokenizationHarness(_config, _marketJson).run();
     AaveV4BabylonHandoverHarness handover = new AaveV4BabylonHandoverHarness(_config);
     handover.setMarketJson(_marketJson);
     handover.run();
@@ -177,21 +180,25 @@ contract AaveV4BabylonMainnetForkTest is Test {
     assertEq(_proxyAdminOwner(_hub()), V4_SECURITY_COUNCIL, 'hub proxy admin owner');
     assertEq(_proxyAdminOwner(_spoke()), V4_SECURITY_COUNCIL, 'spoke proxy admin owner');
 
-    IHub.SpokeConfig memory spokeConfig = IHub(_hub()).getSpokeConfig(0, _spoke());
+    IHub.SpokeConfig memory spokeConfig = _spokeConfig({addCap: 1, drawCap: 1, active: true});
     ISpoke.ReserveConfig memory reserveConfig = ISpoke(_spoke()).getReserveConfig(1);
+    bytes memory unauthorized = abi.encodeWithSelector(
+      IAccessManaged.AccessManagedUnauthorized.selector,
+      _deployer
+    );
     vm.startPrank(_deployer);
-    vm.expectRevert();
-    IHub(_hub()).updateSpokeConfig(0, _spoke(), spokeConfig);
-    vm.expectRevert();
+    vm.expectRevert(unauthorized);
+    IHub(_hub()).addSpoke(0, _spoke(), spokeConfig);
+    vm.expectRevert(unauthorized);
     ISpoke(_spoke()).updateReserveConfig(1, reserveConfig);
-    vm.expectRevert();
-    IHubConfigurator(_deployment.hubConfigurator).updateSpokeActive({
+    vm.expectRevert(unauthorized);
+    IHubConfigurator(_deployment.hubConfigurator).addSpoke({
       hub: _hub(),
-      assetId: 0,
       spoke: _spoke(),
-      active: true
+      assetId: 0,
+      config: spokeConfig
     });
-    vm.expectRevert();
+    vm.expectRevert(unauthorized);
     ISpokeConfigurator(_deployment.spokeConfigurator).updateFrozen(_spoke(), 1, true);
     vm.stopPrank();
   }
@@ -241,6 +248,7 @@ contract AaveV4BabylonMainnetForkTest is Test {
     }
   }
 
+  /// @dev The launch AIP connects the BabylonSpoke on the Babylon Hub, the deployer only lists the assets.
   function test_babylonHubAssets() public view {
     IHub hub = IHub(_hub());
     assertEq(hub.getAssetCount(), 5, 'asset count');
@@ -248,42 +256,69 @@ contract AaveV4BabylonMainnetForkTest is Test {
       assetId: 0,
       underlying: _vaultBtc,
       liquidityFee: 0,
-      irData: _irData(99_00, 0, 0, 0),
-      addCap: 300,
-      drawCap: 0
+      irData: _irData(99_00, 0, 0, 0)
     });
     _assertBabylonHubAsset({
       assetId: 1,
       underlying: USDT,
       liquidityFee: 10_00,
-      irData: _irData(92_00, 0, 4_50, 20_00),
-      addCap: 5_000_000,
-      drawCap: 5_000_000
+      irData: _irData(92_00, 0, 4_50, 20_00)
     });
     _assertBabylonHubAsset({
       assetId: 2,
       underlying: USDC,
       liquidityFee: 10_00,
-      irData: _irData(92_00, 0, 4_50, 20_00),
-      addCap: 5_000_000,
-      drawCap: 5_000_000
+      irData: _irData(92_00, 0, 4_50, 20_00)
     });
     _assertBabylonHubAsset({
       assetId: 3,
       underlying: GHO,
       liquidityFee: 10_00,
-      irData: _irData(92_00, 0, 4_50, 20_00),
-      addCap: 1_000_000,
-      drawCap: 1_000_000
+      irData: _irData(92_00, 0, 4_50, 20_00)
     });
     _assertBabylonHubAsset({
       assetId: 4,
       underlying: WBTC,
       liquidityFee: 20_00,
-      irData: _irData(80_00, 25, 4_00, 60_00),
-      addCap: 100,
-      drawCap: 100
+      irData: _irData(80_00, 25, 4_00, 60_00)
     });
+  }
+
+  /// @dev LlamaRisk tokenized spokes, named as every Ethereum V4 TokenizationSpoke and owned by the
+  /// V4 Security Council, left unconnected until the launch AIP.
+  function test_tokenizationSpokes() public view {
+    address[4] memory underlyings = [USDT, USDC, GHO, WBTC];
+    string[4] memory symbols = ['USDT', 'USDC', 'GHO', 'WBTC'];
+    for (uint256 i; i < 4; ++i) {
+      ITokenizationSpoke tokenizationSpoke = _tokenizationSpoke(symbols[i]);
+      uint256 assetId = i + 1;
+      assertEq(tokenizationSpoke.hub(), _hub(), 'hub');
+      assertEq(tokenizationSpoke.assetId(), assetId, 'asset id');
+      assertEq(tokenizationSpoke.asset(), underlyings[i], 'asset');
+      assertEq(
+        tokenizationSpoke.name(),
+        string.concat('Wrapped Aave Babylon ', symbols[i]),
+        'name'
+      );
+      assertEq(tokenizationSpoke.symbol(), string.concat('waBabylon', symbols[i]), 'symbol');
+      assertEq(tokenizationSpoke.decimals(), IERC20Metadata(underlyings[i]).decimals(), 'decimals');
+      assertEq(
+        _proxyAdminOwner(address(tokenizationSpoke)),
+        V4_SECURITY_COUNCIL,
+        'proxy admin owner'
+      );
+      assertFalse(IHub(_hub()).isSpokeListed(assetId, address(tokenizationSpoke)), 'listed');
+    }
+  }
+
+  function test_revert_tokenizationSpokeDeposit_beforeAip() public {
+    ITokenizationSpoke tokenizationSpoke = _tokenizationSpoke('USDC');
+    deal(USDC, _supplier, 1_000e6);
+    vm.startPrank(_supplier);
+    IERC20(USDC).approve(address(tokenizationSpoke), 1_000e6);
+    vm.expectRevert(IHub.SpokeNotActive.selector);
+    tokenizationSpoke.deposit(1_000e6, _supplier);
+    vm.stopPrank();
   }
 
   function test_coreHubUntouchedBeforeAip() public view {
@@ -389,10 +424,10 @@ contract AaveV4BabylonMainnetForkTest is Test {
     ];
     uint40[5] memory drawCaps = [
       uint40(0),
-      uint40(5_000_000),
-      uint40(5_000_000),
-      uint40(1_000_000),
-      uint40(100)
+      uint40(4_600_000),
+      uint40(4_600_000),
+      uint40(920_000),
+      uint40(80)
     ];
     _executeLaunchAip();
     for (uint256 assetId; assetId < 5; ++assetId) {
@@ -404,6 +439,36 @@ contract AaveV4BabylonMainnetForkTest is Test {
         'babylon hub spoke config'
       );
     }
+  }
+
+  function test_aip_tokenizationSpokes() public {
+    uint40[4] memory addCaps = [
+      uint40(1_000_000),
+      uint40(1_000_000),
+      uint40(1_000_000),
+      uint40(10)
+    ];
+    string[4] memory symbols = ['USDT', 'USDC', 'GHO', 'WBTC'];
+    _executeLaunchAip();
+    for (uint256 i; i < 4; ++i) {
+      assertEq(
+        abi.encode(IHub(_hub()).getSpokeConfig(i + 1, address(_tokenizationSpoke(symbols[i])))),
+        abi.encode(_spokeConfig({addCap: addCaps[i], drawCap: 0, active: true})),
+        'tokenization spoke config'
+      );
+    }
+  }
+
+  function test_aip_tokenizationSpokeDeposit() public {
+    _executeLaunchAip();
+    ITokenizationSpoke tokenizationSpoke = _tokenizationSpoke('USDC');
+    deal(USDC, _supplier, 1_000e6);
+    vm.startPrank(_supplier);
+    IERC20(USDC).approve(address(tokenizationSpoke), 1_000e6);
+    uint256 shares = tokenizationSpoke.deposit(1_000e6, _supplier);
+    vm.stopPrank();
+    assertEq(tokenizationSpoke.balanceOf(_supplier), shares, 'shares');
+    assertEq(tokenizationSpoke.totalAssets(), 1_000e6, 'total assets');
   }
 
   function test_aip_borrowFromCoreHubCreditLine() public {
@@ -518,8 +583,9 @@ contract AaveV4BabylonMainnetForkTest is Test {
     vm.stopPrank();
   }
 
-  /// @dev Launch AIP actions on the Hub, BabylonSpoke and Core Hub. BTCVaultSwap, which Babylon
-  /// deploys, is not covered.
+  /// @dev Launch AIP actions in proposal order: the Hub and BabylonSpoke role mappings, the BabylonSpoke
+  /// and TokenizationSpoke connections on the Babylon Hub, then the Core Hub credit lines. Caps follow
+  /// the LlamaRisk parameters of 10 Nov 2026. BTCVaultSwap, which Babylon deploys, is not covered.
   function _executeLaunchAip() internal {
     vm.deal(EXECUTOR_LVL_1, 1 ether);
     vm.startPrank(EXECUTOR_LVL_1);
@@ -550,6 +616,47 @@ contract AaveV4BabylonMainnetForkTest is Test {
       Roles.SPOKE_USER_POSITION_UPDATER_ROLE
     );
 
+    uint40[5] memory babylonAddCaps = [
+      uint40(300),
+      uint40(5_000_000),
+      uint40(5_000_000),
+      uint40(1_000_000),
+      uint40(100)
+    ];
+    uint40[5] memory babylonDrawCaps = [
+      uint40(0),
+      uint40(4_600_000),
+      uint40(4_600_000),
+      uint40(920_000),
+      uint40(80)
+    ];
+    for (uint256 assetId; assetId < 5; ++assetId) {
+      IHubConfigurator(HUB_CONFIGURATOR).addSpoke({
+        hub: _hub(),
+        spoke: _spoke(),
+        assetId: assetId,
+        config: _spokeConfig({
+          addCap: babylonAddCaps[assetId],
+          drawCap: babylonDrawCaps[assetId],
+          active: true
+        })
+      });
+    }
+    uint40[4] memory tokenizedAddCaps = [
+      uint40(1_000_000),
+      uint40(1_000_000),
+      uint40(1_000_000),
+      uint40(10)
+    ];
+    string[4] memory tokenizedSymbols = ['USDT', 'USDC', 'GHO', 'WBTC'];
+    for (uint256 i; i < 4; ++i) {
+      IHubConfigurator(HUB_CONFIGURATOR).addSpoke({
+        hub: _hub(),
+        spoke: address(_tokenizationSpoke(tokenizedSymbols[i])),
+        assetId: i + 1,
+        config: _spokeConfig({addCap: tokenizedAddCaps[i], drawCap: 0, active: true})
+      });
+    }
     uint256[5] memory assetIds = _coreHubAssetIds();
     uint40[5] memory drawCaps = [
       uint40(8_000_000),
@@ -564,14 +671,6 @@ contract AaveV4BabylonMainnetForkTest is Test {
         spoke: _spoke(),
         assetId: assetIds[i],
         config: _spokeConfig({addCap: 0, drawCap: drawCaps[i], active: true})
-      });
-    }
-    for (uint256 assetId; assetId < 5; ++assetId) {
-      IHubConfigurator(HUB_CONFIGURATOR).updateSpokeActive({
-        hub: _hub(),
-        assetId: assetId,
-        spoke: _spoke(),
-        active: true
       });
     }
     vm.stopPrank();
@@ -601,9 +700,7 @@ contract AaveV4BabylonMainnetForkTest is Test {
     uint256 assetId,
     address underlying,
     uint16 liquidityFee,
-    IAssetInterestRateStrategy.InterestRateData memory irData,
-    uint40 addCap,
-    uint40 drawCap
+    IAssetInterestRateStrategy.InterestRateData memory irData
   ) internal view {
     IHub.Asset memory asset = IHub(_hub()).getAsset(assetId);
     assertEq(asset.underlying, underlying, 'asset underlying');
@@ -614,11 +711,8 @@ contract AaveV4BabylonMainnetForkTest is Test {
       abi.encode(irData),
       'asset ir data'
     );
-    assertEq(
-      abi.encode(IHub(_hub()).getSpokeConfig(assetId, _spoke())),
-      abi.encode(_spokeConfig({addCap: addCap, drawCap: drawCap, active: false})),
-      'babylon spoke config'
-    );
+    assertFalse(IHub(_hub()).isSpokeListed(assetId, _spoke()), 'babylon spoke listed');
+    assertEq(IHub(_hub()).getSpokeCount(assetId), 1, 'only the fee receiver');
   }
 
   function _assertUnmapped(address target, bytes4[] memory selectors) internal view {
@@ -808,6 +902,14 @@ contract AaveV4BabylonMainnetForkTest is Test {
         rateGrowthBeforeOptimal: rateGrowthBeforeOptimal,
         rateGrowthAfterOptimal: rateGrowthAfterOptimal
       });
+  }
+
+  function _tokenizationSpoke(string memory symbol) internal view returns (ITokenizationSpoke) {
+    (address proxy, ) = AaveV4BabylonConfig.readTokenizationSpoke(
+      _config,
+      string.concat('waBabylon', symbol)
+    );
+    return ITokenizationSpoke(proxy);
   }
 
   function _hub() internal view returns (address) {

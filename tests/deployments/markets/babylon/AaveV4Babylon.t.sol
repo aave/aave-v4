@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import {Create2TestHelper} from 'tests/utils/Create2TestHelper.sol';
 import {AaveV4DeployBabylonHub} from 'scripts/markets/babylon/AaveV4DeployBabylonHub.s.sol';
+import {AaveV4DeployBabylonTokenization} from 'scripts/markets/babylon/AaveV4DeployBabylonTokenization.s.sol';
 import {
   AaveV4DeployBabylonSpoke,
   AaveV4BabylonSpokeDeployment,
@@ -26,6 +27,7 @@ import {IAccessManagerEnumerable} from 'src/access/interfaces/IAccessManagerEnum
 import {ProxyAdmin} from 'src/dependencies/openzeppelin/ProxyAdmin.sol';
 import {Ownable2StepUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/Ownable2StepUpgradeable.sol';
 import {IBabylonSpoke} from 'src/spoke/interfaces/IBabylonSpoke.sol';
+import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
@@ -151,6 +153,39 @@ contract AaveV4BabylonConfigureHarness is AaveV4BabylonConfigure {
   }
 }
 
+contract AaveV4DeployBabylonTokenizationHarness is AaveV4DeployBabylonTokenization {
+  AaveV4BabylonConfig.Config internal _harnessConfig;
+  string internal _marketJson;
+
+  constructor(AaveV4BabylonConfig.Config memory config, string memory marketJson) {
+    _harnessConfig = config;
+    _marketJson = marketJson;
+  }
+
+  function _config() internal view override returns (AaveV4BabylonConfig.Config memory) {
+    return _harnessConfig;
+  }
+
+  function _marketConfig(
+    AaveV4BabylonConfig.Config memory config,
+    AaveV4BabylonConfig.Deployment memory deployment
+  ) internal view override returns (AaveV4BabylonConfig.MarketConfig memory) {
+    return
+      AaveV4BabylonConfig.parseMarketConfig({
+        json: _marketJson,
+        config: config,
+        deployment: deployment
+      });
+  }
+
+  /// @dev Updates the config report in place, so the next steps read the TokenizationSpokes.
+  function _outputReport(
+    AaveV4BabylonConfig.Config memory config
+  ) internal pure override returns (string memory) {
+    return config.report;
+  }
+}
+
 contract AaveV4BabylonVerifyHarness is AaveV4BabylonVerify {
   AaveV4BabylonConfig.Config internal _harnessConfig;
   string internal _marketJson;
@@ -180,6 +215,9 @@ contract AaveV4BabylonVerifyHarness is AaveV4BabylonVerify {
 contract AaveV4BabylonTest is Create2TestHelper {
   bytes32 internal constant ADMIN_SLOT =
     0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103;
+  /// @dev ERC-1967 implementation slot, `bytes32(uint256(keccak256('eip1967.proxy.implementation')) - 1)`.
+  bytes32 internal constant IMPLEMENTATION_SLOT =
+    0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
   string internal constant OUTPUT_DIR = 'output/reports/deployments/';
   string internal constant REPORT_NAME = 'babylon-handover-test';
   address internal constant SEPOLIA_AAVE_ADAPTER = 0x6A785E8fdF251E2aA758a6E1841e1470074f46BF;
@@ -204,6 +242,7 @@ contract AaveV4BabylonTest is Create2TestHelper {
     0x4caf100053574dceefa50d90c3de863dc3d04a7c728813d8ad2daae76037bdd8;
 
   address internal _deployer = DEFAULT_SENDER;
+  string internal _reportName = REPORT_NAME;
   address internal _admin = makeAddr('admin');
   address internal _liquidationManager = makeAddr('liquidationManager');
   AaveV4BabylonConfig.Config internal _config;
@@ -1101,6 +1140,139 @@ contract AaveV4BabylonTest is Create2TestHelper {
   }
 
   /// @dev The handover grants the configurator roles again and revokes the roles granted to the deployer.
+  function test_configure_unconnectedReserve() public {
+    _deployAndWriteReport();
+    _deploySepoliaTokensAndFeeds();
+    new AaveV4BabylonConfigureHarness(_config, _sepoliaJsonWithTokenization()).run();
+
+    AaveV4BabylonConfig.Deployment memory deployment = AaveV4BabylonConfig.readDeployment(_config);
+    IHub hub = IHub(deployment.hubs[0]);
+    uint256 assetId = hub.getAssetId(SEPOLIA_USDC);
+    assertFalse(hub.isSpokeListed(assetId, deployment.babylonSpoke), 'babylon spoke not connected');
+    assertEq(hub.getSpokeCount(assetId), 1, 'only the fee receiver');
+    ISpoke.Reserve memory reserve = ISpoke(deployment.babylonSpoke).getReserve(1);
+    assertEq(address(reserve.hub), address(hub), 'reserve hub');
+    assertEq(reserve.assetId, assetId, 'reserve asset id');
+    assertTrue(
+      hub.isSpokeListed(hub.getAssetId(SEPOLIA_BTC), deployment.babylonSpoke),
+      'connected reserve'
+    );
+  }
+
+  function test_verifyMarketConfig_revertsWith_unconnectedReserveConnected() public {
+    _deployAndWriteReport();
+    _deploySepoliaTokensAndFeeds();
+    string memory json = _sepoliaJsonWithTokenization();
+    new AaveV4BabylonConfigureHarness(_config, json).run();
+    AaveV4BabylonConfig.Deployment memory deployment = AaveV4BabylonConfig.readDeployment(_config);
+    uint256 assetId = IHub(deployment.hubs[0]).getAssetId(SEPOLIA_USDC);
+    IHub.SpokeConfig memory spokeConfig = _externalSpokeConfig();
+    vm.prank(_deployer);
+    IHubConfigurator(deployment.hubConfigurator).addSpoke({
+      hub: deployment.hubs[0],
+      spoke: deployment.babylonSpoke,
+      assetId: assetId,
+      config: spokeConfig
+    });
+    vm.expectRevert('asset spoke count');
+    this.verifyMarketConfigJson(deployment, json);
+  }
+
+  function test_deployTokenization() public {
+    _useOwnReport('babylon-tokenization-test');
+    AaveV4BabylonConfig.Deployment memory deployment = _configureForTokenization();
+    new AaveV4DeployBabylonTokenizationHarness(_config, _sepoliaJsonWithTokenization()).run();
+
+    _assertTokenizationSpoke({
+      hub: deployment.hubs[0],
+      underlying: SEPOLIA_USDC,
+      name: 'Wrapped Aave Babylon BTC USDC',
+      symbol: 'waBabylonBtcUSDC'
+    });
+    _assertTokenizationSpoke({
+      hub: deployment.hubs[1],
+      underlying: SEPOLIA_USDT,
+      name: 'Wrapped Aave Babylon Stables USDT',
+      symbol: 'waBabylonStablesUSDT'
+    });
+  }
+
+  function test_deployTokenization_thenHandoverVerify() public {
+    _useOwnReport('babylon-tokenization-verify-test');
+    _configureForTokenization();
+    string memory json = _sepoliaJsonWithTokenization();
+    new AaveV4DeployBabylonTokenizationHarness(_config, json).run();
+    new AaveV4BabylonHandoverHarness(_config).run();
+    AaveV4BabylonConfig.Deployment memory deployment = AaveV4BabylonConfig.readDeployment(_config);
+    vm.prank(_admin);
+    Ownable2StepUpgradeable(deployment.treasurySpoke).acceptOwnership();
+
+    new AaveV4BabylonVerifyHarness(_config, json).run();
+  }
+
+  function test_deployTokenization_revertsWith_alreadyInReport() public {
+    _useOwnReport('babylon-tokenization-twice-test');
+    _configureForTokenization();
+    AaveV4DeployBabylonTokenizationHarness harness = new AaveV4DeployBabylonTokenizationHarness(
+      _config,
+      _sepoliaJsonWithTokenization()
+    );
+    harness.run();
+    vm.expectRevert('tokenization spoke already in report');
+    harness.run();
+  }
+
+  function test_deployTokenization_revertsWith_assetNotListed() public {
+    _useOwnReport('babylon-tokenization-unlisted-test');
+    _deployAndWriteReport();
+    AaveV4DeployBabylonTokenizationHarness harness = new AaveV4DeployBabylonTokenizationHarness(
+      _config,
+      _sepoliaJsonWithTokenization()
+    );
+    vm.expectRevert(IHub.AssetNotListed.selector);
+    harness.run();
+  }
+
+  function test_deployTokenization_revertsWith_broadcasterNotDeployer() public {
+    _useOwnReport('babylon-tokenization-broadcaster-test');
+    _configureForTokenization();
+    AaveV4BabylonConfig.Config memory config = _config;
+    config.deployer = makeAddr('other deployer');
+    AaveV4DeployBabylonTokenizationHarness harness = new AaveV4DeployBabylonTokenizationHarness(
+      config,
+      _sepoliaJsonWithTokenization()
+    );
+    vm.expectRevert('broadcaster is not the config deployer');
+    harness.run();
+  }
+
+  function test_deployTokenization_revertsWith_noTokenizationSpokes() public {
+    _useOwnReport('babylon-tokenization-none-test');
+    _configureForTokenization();
+    AaveV4DeployBabylonTokenizationHarness harness = new AaveV4DeployBabylonTokenizationHarness(
+      _config,
+      vm.readFile(SEPOLIA_CONFIG)
+    );
+    vm.expectRevert('no tokenization spokes');
+    harness.run();
+  }
+
+  function test_verify_revertsWith_tokenizationSpokeNotDeployed() public {
+    _useOwnReport('babylon-tokenization-missing-test');
+    _configureForTokenization();
+    new AaveV4BabylonHandoverHarness(_config).run();
+    AaveV4BabylonConfig.Deployment memory deployment = AaveV4BabylonConfig.readDeployment(_config);
+    vm.prank(_admin);
+    Ownable2StepUpgradeable(deployment.treasurySpoke).acceptOwnership();
+
+    AaveV4BabylonVerifyHarness verifier = new AaveV4BabylonVerifyHarness(
+      _config,
+      _sepoliaJsonWithTokenization()
+    );
+    vm.expectRevert('tokenization spoke not deployed');
+    verifier.run();
+  }
+
   function test_configure_thenHandover_leavesDeployerWithNothing() public {
     OrchestrationReports.FullDeploymentReport memory report = _deployAndWriteReport();
     _deploySepoliaTokensAndFeeds();
@@ -1162,7 +1334,7 @@ contract AaveV4BabylonTest is Create2TestHelper {
     returns (OrchestrationReports.FullDeploymentReport memory report)
   {
     report = this.deploy(_config);
-    _writeReport(report, REPORT_NAME);
+    _writeReport(report, _reportName);
   }
 
   /// @dev Writes to its own report, since tests run in parallel and the others read the full one.
@@ -1360,6 +1532,7 @@ contract AaveV4BabylonTest is Create2TestHelper {
         priceSource: priceSource,
         liquidityFee: liquidityFee,
         irData: irData,
+        connected: true,
         spokeConfig: IHub.SpokeConfig({
           addCap: addCap,
           drawCap: drawCap,
@@ -1556,8 +1729,6 @@ contract AaveV4BabylonTest is Create2TestHelper {
         rateGrowthBeforeOptimal: 0,
         rateGrowthAfterOptimal: 0
       }),
-      addCap: 300,
-      drawCap: 0,
       borrowable: false,
       collateralFactor: 78_00,
       maxLiquidationBonus: 105_55
@@ -1568,8 +1739,6 @@ contract AaveV4BabylonTest is Create2TestHelper {
       priceSource: ETHEREUM_USDT_FEED,
       liquidityFee: 10_00,
       irData: stables,
-      addCap: 5_000_000,
-      drawCap: 5_000_000,
       borrowable: true,
       collateralFactor: 0,
       maxLiquidationBonus: 100_00
@@ -1580,8 +1749,6 @@ contract AaveV4BabylonTest is Create2TestHelper {
       priceSource: ETHEREUM_USDC_FEED,
       liquidityFee: 10_00,
       irData: stables,
-      addCap: 5_000_000,
-      drawCap: 5_000_000,
       borrowable: true,
       collateralFactor: 0,
       maxLiquidationBonus: 100_00
@@ -1592,8 +1759,6 @@ contract AaveV4BabylonTest is Create2TestHelper {
       priceSource: ETHEREUM_GHO_FEED,
       liquidityFee: 10_00,
       irData: stables,
-      addCap: 1_000_000,
-      drawCap: 1_000_000,
       borrowable: true,
       collateralFactor: 0,
       maxLiquidationBonus: 100_00
@@ -1609,8 +1774,6 @@ contract AaveV4BabylonTest is Create2TestHelper {
         rateGrowthBeforeOptimal: 4_00,
         rateGrowthAfterOptimal: 60_00
       }),
-      addCap: 100,
-      drawCap: 100,
       borrowable: true,
       collateralFactor: 0,
       maxLiquidationBonus: 100_00
@@ -1659,6 +1822,31 @@ contract AaveV4BabylonTest is Create2TestHelper {
     }
 
     assertEq(marketConfig.externalSpokes.length, 0);
+
+    // LlamaRisk tokenized spokes on the Babylon Hub borrowable assets, named as every Ethereum V4
+    // TokenizationSpoke
+    address[4] memory tokenizedUnderlyings = [
+      ETHEREUM_USDT,
+      ETHEREUM_USDC,
+      ETHEREUM_GHO,
+      ETHEREUM_WBTC
+    ];
+    string[4] memory tokenizedSymbols = ['USDT', 'USDC', 'GHO', 'WBTC'];
+    assertEq(marketConfig.tokenizationSpokes.length, 4);
+    for (uint256 i; i < 4; ++i) {
+      assertEq(
+        abi.encode(marketConfig.tokenizationSpokes[i]),
+        abi.encode(
+          AaveV4BabylonConfig.TokenizationSpoke({
+            hub: deployment.hubs[0],
+            underlying: tokenizedUnderlyings[i],
+            name: string.concat('Wrapped Aave Babylon ', tokenizedSymbols[i]),
+            symbol: string.concat('waBabylon', tokenizedSymbols[i])
+          })
+        )
+      );
+    }
+
     assertEq(marketConfig.liquidationConfig.targetHealthFactor, 1e18);
     assertEq(marketConfig.liquidationConfig.healthFactorForMaxBonus, 0.9e18);
     assertEq(marketConfig.liquidationConfig.liquidationBonusFactor, 90_00);
@@ -1846,14 +2034,13 @@ contract AaveV4BabylonTest is Create2TestHelper {
     _config.hubLabels = hubLabels;
   }
 
+  /// @dev The BabylonSpoke is not connected on the Babylon Hub before the launch AIP.
   function _mainnetListing(
     AaveV4BabylonConfig.Deployment memory deployment,
     address underlying,
     address priceSource,
     uint16 liquidityFee,
     IAssetInterestRateStrategy.InterestRateData memory irData,
-    uint40 addCap,
-    uint40 drawCap,
     bool borrowable,
     uint16 collateralFactor,
     uint32 maxLiquidationBonus
@@ -1865,14 +2052,93 @@ contract AaveV4BabylonTest is Create2TestHelper {
       priceSource: priceSource,
       liquidityFee: liquidityFee,
       irData: irData,
-      addCap: addCap,
-      drawCap: drawCap,
+      addCap: 0,
+      drawCap: 0,
       borrowable: borrowable,
       collateralFactor: collateralFactor,
       maxLiquidationBonus: maxLiquidationBonus
     });
-    listing.spokeConfig.riskPremiumThreshold = 0;
-    listing.spokeConfig.active = false;
+    listing.connected = false;
+    listing.spokeConfig = IHub.SpokeConfig({
+      addCap: 0,
+      drawCap: 0,
+      riskPremiumThreshold: 0,
+      active: false,
+      halted: false
+    });
+  }
+
+  /// @dev The Sepolia config with reserve 1 left unconnected on its Hub and two TokenizationSpokes.
+  function _sepoliaJsonWithTokenization() internal view returns (string memory json) {
+    string memory reserve1SpokeConfig = string.concat(
+      '"spokeConfig": {\n        "addCap": 50000,\n        "drawCap": 50000,\n',
+      '        "riskPremiumThreshold": 16777215,\n        "active": true,\n',
+      '        "halted": false\n      },\n      "reserveConfig"'
+    );
+    json = vm.readFile(SEPOLIA_CONFIG);
+    assertEq(vm.split(json, reserve1SpokeConfig).length, 2, 'one reserve 1 spoke config');
+    json = vm.replace(json, reserve1SpokeConfig, '"reserveConfig"');
+    json = vm.replace(
+      json,
+      '"liquidationConfig"',
+      string.concat(
+        '"tokenizationSpokes": [{"hub": "babylon-btc", "underlying": "',
+        vm.toString(SEPOLIA_USDC),
+        '", "name": "Wrapped Aave Babylon BTC USDC", "symbol": "waBabylonBtcUSDC"}, ',
+        '{"hub": "babylon-stables", "underlying": "',
+        vm.toString(SEPOLIA_USDT),
+        '", "name": "Wrapped Aave Babylon Stables USDT", "symbol": "waBabylonStablesUSDT"}],\n',
+        '  "liquidationConfig"'
+      )
+    );
+  }
+
+  /// @dev Tests that add TokenizationSpokes to the report write their own, since tests run in parallel.
+  function _useOwnReport(string memory reportName) internal {
+    _reportName = reportName;
+    _config.report = string.concat(
+      OUTPUT_DIR,
+      vm.toString(block.chainid),
+      '-',
+      reportName,
+      '.json'
+    );
+  }
+
+  function _configureForTokenization()
+    internal
+    returns (AaveV4BabylonConfig.Deployment memory deployment)
+  {
+    _deployAndWriteReport();
+    _deploySepoliaTokensAndFeeds();
+    new AaveV4BabylonConfigureHarness(_config, _sepoliaJsonWithTokenization()).run();
+    deployment = AaveV4BabylonConfig.readDeployment(_config);
+  }
+
+  function _assertTokenizationSpoke(
+    address hub,
+    address underlying,
+    string memory name,
+    string memory symbol
+  ) internal view {
+    (address proxy, address implementation) = AaveV4BabylonConfig.readTokenizationSpoke(
+      _config,
+      symbol
+    );
+    ITokenizationSpoke tokenizationSpoke = ITokenizationSpoke(proxy);
+    uint256 assetId = IHub(hub).getAssetId(underlying);
+    assertEq(tokenizationSpoke.hub(), hub, 'tokenization spoke hub');
+    assertEq(tokenizationSpoke.assetId(), assetId, 'tokenization spoke asset id');
+    assertEq(tokenizationSpoke.asset(), underlying, 'tokenization spoke asset');
+    assertEq(tokenizationSpoke.name(), name, 'tokenization spoke name');
+    assertEq(tokenizationSpoke.symbol(), symbol, 'tokenization spoke symbol');
+    assertEq(_proxyAdmin(proxy).owner(), _admin, 'tokenization spoke proxy admin owner');
+    assertEq(
+      address(uint160(uint256(vm.load(proxy, IMPLEMENTATION_SLOT)))),
+      implementation,
+      'tokenization spoke implementation'
+    );
+    assertFalse(IHub(hub).isSpokeListed(assetId, proxy), 'tokenization spoke not connected');
   }
 
   function _mainnetJsonWithVaultBtc(address vaultBtc) internal view returns (string memory) {
