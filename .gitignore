@@ -24,5 +24,6 @@ report/
 
 .DS_Store
 .venv/
+.certora_internal/
 
 output/
