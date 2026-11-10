@@ -17,7 +17,7 @@ contract AaveV4ConfigEngine is IAaveV4ConfigEngine {
 
   /// @notice Modifier that reverts unless the engine is reached via delegatecall.
   modifier onlyDelegateCall() {
-    require(address(this) != SELF, OnlyDelegateCall());
+    _checkDelegateCall();
     _;
   }
 
@@ -159,5 +159,9 @@ contract AaveV4ConfigEngine is IAaveV4ConfigEngine {
     TargetAdminDelayUpdate[] calldata updates
   ) external onlyDelegateCall {
     AccessManagerEngine.executeTargetAdminDelayUpdates(updates);
+  }
+
+  function _checkDelegateCall() internal view {
+    require(address(this) != SELF, OnlyDelegateCall());
   }
 }

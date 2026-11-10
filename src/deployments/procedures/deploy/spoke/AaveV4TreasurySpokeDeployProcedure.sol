@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: LicenseRef-BUSL
 pragma solidity ^0.8.0;
 
-import {AaveV4DeployProcedureBase} from 'src/deployments/procedures/AaveV4DeployProcedureBase.sol';
 import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 import {TreasurySpokeInstance} from 'src/spoke/instances/TreasurySpokeInstance.sol';
 
 /// @title AaveV4TreasurySpokeDeployProcedure
 /// @author Aave Labs
 /// @notice Deploys the TreasurySpoke contract behind a transparent proxy.
-contract AaveV4TreasurySpokeDeployProcedure is AaveV4DeployProcedureBase {
+contract AaveV4TreasurySpokeDeployProcedure {
   /// @notice Deploys a Treasury Spoke instance via CREATE2 and sets up a transparent proxy.
   /// @param owner The owner of the proxy admin and the TreasurySpoke initializer.
   /// @param salt The CREATE2 salt for deterministic deployment.
