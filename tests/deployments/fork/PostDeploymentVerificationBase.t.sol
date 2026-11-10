@@ -48,13 +48,13 @@ abstract contract PostDeploymentVerificationBase is BatchTestProcedures {
       report.gatewaysBatchReport.signatureGateway = vm.parseJsonAddress(json, '$.signatureGateway');
     }
     if (vm.keyExistsJson(json, '$.giverPositionManager')) {
-      report.giverPositionManagerBatchReport.giverPositionManager = vm.parseJsonAddress(
+      report.giverTakerPositionManagerBatchReport.giverPositionManager = vm.parseJsonAddress(
         json,
         '$.giverPositionManager'
       );
     }
     if (vm.keyExistsJson(json, '$.takerPositionManager')) {
-      report.takerPositionManagerBatchReport.takerPositionManager = vm.parseJsonAddress(
+      report.giverTakerPositionManagerBatchReport.takerPositionManager = vm.parseJsonAddress(
         json,
         '$.takerPositionManager'
       );

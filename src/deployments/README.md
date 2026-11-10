@@ -76,8 +76,7 @@ src/deployments/
     AaveV4HubInstanceBatch              HubInstance proxy (impl deployed beforehand), InterestRateStrategy
     AaveV4SpokeInstanceBatch            SpokeInstance (proxy + impl), AaveOracle
     AaveV4GatewayBatch                  NativeTokenGateway, SignatureGateway
-    AaveV4GiverPositionManagerBatch     GiverPositionManager
-    AaveV4TakerPositionManagerBatch     TakerPositionManager
+    AaveV4GiverTakerPositionManagerBatch GiverPositionManager, TakerPositionManager
     AaveV4ConfigPositionManagerBatch    ConfigPositionManager
 
   orchestration/              High-level orchestrators
@@ -248,14 +247,10 @@ AaveV4DeployBatchBase.s.sol                         (Foundry script entry point)
     |     |       new AaveV4GatewayBatch(owner, nativeWrapper, deployNativeTokenGateway, deploySignatureGateway, salt)
     |     |         Create2Utils.create2Deploy() --> NativeTokenGateway, SignatureGateway
     |     |
-    |     +-- _deployGiverPositionManagerBatch()    (if deployPositionManagers)
-    |     |     AaveV4DeployBase.deployGiverPositionManagerBatch()
-    |     |       new AaveV4GiverPositionManagerBatch(owner, salt)
-    |     |         Create2Utils.create2Deploy() --> GiverPositionManager
-    |     +-- _deployTakerPositionManagerBatch()    (if deployPositionManagers)
-    |     |     AaveV4DeployBase.deployTakerPositionManagerBatch()
-    |     |       new AaveV4TakerPositionManagerBatch(owner, salt)
-    |     |         Create2Utils.create2Deploy() --> TakerPositionManager
+    |     +-- _deployGiverTakerPositionManagerBatch() (if deployPositionManagers)
+    |     |     AaveV4DeployBase.deployGiverTakerPositionManagerBatch()
+    |     |       new AaveV4GiverTakerPositionManagerBatch(owner, salt)
+    |     |         Create2Utils.create2Deploy() --> GiverPositionManager, TakerPositionManager
     |     +-- _deployConfigPositionManagerBatch()   (if deployPositionManagers)
     |     |     AaveV4DeployBase.deployConfigPositionManagerBatch()
     |     |       new AaveV4ConfigPositionManagerBatch(owner, salt)

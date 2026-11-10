@@ -51,12 +51,9 @@ library BatchReports {
   }
 
   /// @dev giverPositionManager The deployed GiverPositionManager contract address.
-  struct GiverPositionManagerBatchReport {
-    address giverPositionManager;
-  }
-
   /// @dev takerPositionManager The deployed TakerPositionManager contract address.
-  struct TakerPositionManagerBatchReport {
+  struct GiverTakerPositionManagerBatchReport {
+    address giverPositionManager;
     address takerPositionManager;
   }
 

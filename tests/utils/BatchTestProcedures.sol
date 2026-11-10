@@ -199,12 +199,12 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     }
     if (inputs.deployPositionManagers) {
       assertNotEq(
-        report.giverPositionManagerBatchReport.giverPositionManager,
+        report.giverTakerPositionManagerBatchReport.giverPositionManager,
         address(0),
         'GiverPositionManager'
       );
       assertNotEq(
-        report.takerPositionManagerBatchReport.takerPositionManager,
+        report.giverTakerPositionManagerBatchReport.takerPositionManager,
         address(0),
         'TakerPositionManager'
       );
@@ -215,12 +215,12 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
       );
     } else {
       assertEq(
-        report.giverPositionManagerBatchReport.giverPositionManager,
+        report.giverTakerPositionManagerBatchReport.giverPositionManager,
         address(0),
         'Zero GiverPositionManager'
       );
       assertEq(
-        report.takerPositionManagerBatchReport.takerPositionManager,
+        report.giverTakerPositionManagerBatchReport.takerPositionManager,
         address(0),
         'Zero TakerPositionManager'
       );
@@ -845,12 +845,12 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     }
     if (inputs.deployPositionManagers) {
       assertEq(
-        Ownable(report.giverPositionManagerBatchReport.giverPositionManager).owner(),
+        Ownable(report.giverTakerPositionManagerBatchReport.giverPositionManager).owner(),
         inputs.positionManagerOwner,
         'GiverPositionManager owner'
       );
       assertEq(
-        Ownable(report.takerPositionManagerBatchReport.takerPositionManager).owner(),
+        Ownable(report.giverTakerPositionManagerBatchReport.takerPositionManager).owner(),
         inputs.positionManagerOwner,
         'TakerPositionManager owner'
       );
@@ -912,15 +912,15 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     if (report.gatewaysBatchReport.signatureGateway != address(0)) {
       _assertHasCode(report.gatewaysBatchReport.signatureGateway, 'signatureGateway');
     }
-    if (report.giverPositionManagerBatchReport.giverPositionManager != address(0)) {
+    if (report.giverTakerPositionManagerBatchReport.giverPositionManager != address(0)) {
       _assertHasCode(
-        report.giverPositionManagerBatchReport.giverPositionManager,
+        report.giverTakerPositionManagerBatchReport.giverPositionManager,
         'giverPositionManager'
       );
     }
-    if (report.takerPositionManagerBatchReport.takerPositionManager != address(0)) {
+    if (report.giverTakerPositionManagerBatchReport.takerPositionManager != address(0)) {
       _assertHasCode(
-        report.takerPositionManagerBatchReport.takerPositionManager,
+        report.giverTakerPositionManagerBatchReport.takerPositionManager,
         'takerPositionManager'
       );
     }
