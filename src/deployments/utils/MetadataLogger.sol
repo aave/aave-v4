@@ -73,11 +73,17 @@ contract MetadataLogger is Logger {
     if (report.gatewaysBatchReport.nativeGateway != address(0)) {
       _write('nativeTokenGateway', report.gatewaysBatchReport.nativeGateway);
     }
-    if (report.giverPositionManagerBatchReport.giverPositionManager != address(0)) {
-      _write('giverPositionManager', report.giverPositionManagerBatchReport.giverPositionManager);
+    if (report.giverTakerPositionManagerBatchReport.giverPositionManager != address(0)) {
+      _write(
+        'giverPositionManager',
+        report.giverTakerPositionManagerBatchReport.giverPositionManager
+      );
     }
-    if (report.takerPositionManagerBatchReport.takerPositionManager != address(0)) {
-      _write('takerPositionManager', report.takerPositionManagerBatchReport.takerPositionManager);
+    if (report.giverTakerPositionManagerBatchReport.takerPositionManager != address(0)) {
+      _write(
+        'takerPositionManager',
+        report.giverTakerPositionManagerBatchReport.takerPositionManager
+      );
     }
     if (report.configPositionManagerBatchReport.configPositionManager != address(0)) {
       _write(

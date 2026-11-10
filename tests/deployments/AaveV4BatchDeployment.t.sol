@@ -489,7 +489,7 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
 
   /// @dev Predicts the first revert error based on execution order in deployAaveV4:
   ///      1. AuthorityBatch (deployer as initial admin)
-  ///      2. ConfiguratorBatch
+  ///      2. HubConfiguratorBatch, SpokeConfiguratorBatch
   ///      3. TreasurySpokeBatch (treasurySpokeOwner)
   ///      4. Hubs (proxyAdminOwner)
   ///      5. Spokes (proxyAdminOwner)

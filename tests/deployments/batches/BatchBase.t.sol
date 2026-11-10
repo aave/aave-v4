@@ -19,8 +19,7 @@ import {AaveV4HubConfiguratorBatch} from 'src/deployments/batches/AaveV4HubConfi
 import {AaveV4SpokeConfiguratorBatch} from 'src/deployments/batches/AaveV4SpokeConfiguratorBatch.sol';
 import {AaveV4TokenizationSpokeBatch} from 'src/deployments/batches/AaveV4TokenizationSpokeBatch.sol';
 import {AaveV4GatewayBatch} from 'src/deployments/batches/AaveV4GatewayBatch.sol';
-import {AaveV4GiverPositionManagerBatch} from 'src/deployments/batches/AaveV4GiverPositionManagerBatch.sol';
-import {AaveV4TakerPositionManagerBatch} from 'src/deployments/batches/AaveV4TakerPositionManagerBatch.sol';
+import {AaveV4GiverTakerPositionManagerBatch} from 'src/deployments/batches/AaveV4GiverTakerPositionManagerBatch.sol';
 import {AaveV4ConfigPositionManagerBatch} from 'src/deployments/batches/AaveV4ConfigPositionManagerBatch.sol';
 import {AaveV4HubImplementationDeployProcedure} from 'src/deployments/procedures/deploy/hub/AaveV4HubImplementationDeployProcedure.sol';
 import {AaveV4SpokeImplementationDeployProcedure} from 'src/deployments/procedures/deploy/spoke/AaveV4SpokeImplementationDeployProcedure.sol';

@@ -28,8 +28,7 @@ library OrchestrationReports {
   /// @dev spokeInstanceBatchReports Per-spoke deployment reports.
   /// @dev hubInstanceBatchReports Per-hub deployment reports.
   /// @dev gatewaysBatchReport Gateway deployment report.
-  /// @dev giverPositionManagerBatchReport GiverPositionManager deployment report.
-  /// @dev takerPositionManagerBatchReport TakerPositionManager deployment report.
+  /// @dev giverTakerPositionManagerBatchReport GiverPositionManager and TakerPositionManager deployment report.
   /// @dev configPositionManagerBatchReport ConfigPositionManager deployment report.
   /// @dev salt The salt used to derive deterministic contract addresses.
   struct FullDeploymentReport {
@@ -40,8 +39,7 @@ library OrchestrationReports {
     SpokeDeploymentReport[] spokeInstanceBatchReports;
     HubDeploymentReport[] hubInstanceBatchReports;
     BatchReports.GatewaysBatchReport gatewaysBatchReport;
-    BatchReports.GiverPositionManagerBatchReport giverPositionManagerBatchReport;
-    BatchReports.TakerPositionManagerBatchReport takerPositionManagerBatchReport;
+    BatchReports.GiverTakerPositionManagerBatchReport giverTakerPositionManagerBatchReport;
     BatchReports.ConfigPositionManagerBatchReport configPositionManagerBatchReport;
     bytes32 salt;
   }

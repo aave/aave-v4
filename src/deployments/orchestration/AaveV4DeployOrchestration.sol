@@ -114,12 +114,7 @@ library AaveV4DeployOrchestration {
 
     // Deploy Position Manager Batches if flag is enabled
     if (deployInputs.deployPositionManagers) {
-      report.giverPositionManagerBatchReport = _deployGiverPositionManagerBatch({
-        logger: logger,
-        owner: deployInputs.positionManagerOwner,
-        salt: salt
-      });
-      report.takerPositionManagerBatchReport = _deployTakerPositionManagerBatch({
+      report.giverTakerPositionManagerBatchReport = _deployGiverTakerPositionManagerBatch({
         logger: logger,
         owner: deployInputs.positionManagerOwner,
         salt: salt
@@ -468,24 +463,14 @@ library AaveV4DeployOrchestration {
     return report;
   }
 
-  function _deployGiverPositionManagerBatch(
+  function _deployGiverTakerPositionManagerBatch(
     Logger logger,
     address owner,
     bytes32 salt
-  ) internal returns (BatchReports.GiverPositionManagerBatchReport memory report) {
-    logger.logHeader1('deploying GiverPositionManagerBatch');
-    report = AaveV4DeployBase.deployGiverPositionManagerBatch({owner: owner, salt: salt});
+  ) internal returns (BatchReports.GiverTakerPositionManagerBatchReport memory report) {
+    logger.logHeader1('deploying GiverTakerPositionManagerBatch');
+    report = AaveV4DeployBase.deployGiverTakerPositionManagerBatch({owner: owner, salt: salt});
     logger.logDetail('GiverPositionManager', report.giverPositionManager);
-    return report;
-  }
-
-  function _deployTakerPositionManagerBatch(
-    Logger logger,
-    address owner,
-    bytes32 salt
-  ) internal returns (BatchReports.TakerPositionManagerBatchReport memory report) {
-    logger.logHeader1('deploying TakerPositionManagerBatch');
-    report = AaveV4DeployBase.deployTakerPositionManagerBatch({owner: owner, salt: salt});
     logger.logDetail('TakerPositionManager', report.takerPositionManager);
     return report;
   }

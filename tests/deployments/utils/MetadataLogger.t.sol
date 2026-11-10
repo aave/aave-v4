@@ -42,8 +42,8 @@ contract MetadataLoggerTest is Test {
     report.gatewaysBatchReport.nativeGateway = makeAddr('nativeGateway');
     report.gatewaysBatchReport.signatureGateway = makeAddr('signatureGateway');
 
-    report.giverPositionManagerBatchReport.giverPositionManager = makeAddr('giverPM');
-    report.takerPositionManagerBatchReport.takerPositionManager = makeAddr('takerPM');
+    report.giverTakerPositionManagerBatchReport.giverPositionManager = makeAddr('giverPM');
+    report.giverTakerPositionManagerBatchReport.takerPositionManager = makeAddr('takerPM');
     report.configPositionManagerBatchReport.configPositionManager = makeAddr('configPM');
   }
 
@@ -122,11 +122,11 @@ contract MetadataLoggerTest is Test {
     // Position Managers
     assertEq(
       vm.parseJsonAddress(json, '$.giverPositionManager'),
-      report.giverPositionManagerBatchReport.giverPositionManager
+      report.giverTakerPositionManagerBatchReport.giverPositionManager
     );
     assertEq(
       vm.parseJsonAddress(json, '$.takerPositionManager'),
-      report.takerPositionManagerBatchReport.takerPositionManager
+      report.giverTakerPositionManagerBatchReport.takerPositionManager
     );
     assertEq(
       vm.parseJsonAddress(json, '$.configPositionManager'),
@@ -155,8 +155,8 @@ contract MetadataLoggerTest is Test {
   function test_writeJsonReportMarket_noPositionManagers() public {
     MetadataLogger logger = new MetadataLogger(OUTPUT_DIR);
     OrchestrationReports.FullDeploymentReport memory report = _fullReport();
-    report.giverPositionManagerBatchReport.giverPositionManager = address(0);
-    report.takerPositionManagerBatchReport.takerPositionManager = address(0);
+    report.giverTakerPositionManagerBatchReport.giverPositionManager = address(0);
+    report.giverTakerPositionManagerBatchReport.takerPositionManager = address(0);
     report.configPositionManagerBatchReport.configPositionManager = address(0);
 
     logger.writeJsonReportMarket(report);
@@ -172,8 +172,8 @@ contract MetadataLoggerTest is Test {
     OrchestrationReports.FullDeploymentReport memory report = _fullReport();
     report.gatewaysBatchReport.nativeGateway = address(0);
     report.gatewaysBatchReport.signatureGateway = address(0);
-    report.giverPositionManagerBatchReport.giverPositionManager = address(0);
-    report.takerPositionManagerBatchReport.takerPositionManager = address(0);
+    report.giverTakerPositionManagerBatchReport.giverPositionManager = address(0);
+    report.giverTakerPositionManagerBatchReport.takerPositionManager = address(0);
     report.configPositionManagerBatchReport.configPositionManager = address(0);
 
     logger.writeJsonReportMarket(report);

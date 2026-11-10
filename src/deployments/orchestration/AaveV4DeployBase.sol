@@ -9,8 +9,7 @@ import {AaveV4HubConfiguratorBatch} from 'src/deployments/batches/AaveV4HubConfi
 import {AaveV4SpokeConfiguratorBatch} from 'src/deployments/batches/AaveV4SpokeConfiguratorBatch.sol';
 import {AaveV4GatewayBatch} from 'src/deployments/batches/AaveV4GatewayBatch.sol';
 import {AaveV4HubInstanceBatch} from 'src/deployments/batches/AaveV4HubInstanceBatch.sol';
-import {AaveV4GiverPositionManagerBatch} from 'src/deployments/batches/AaveV4GiverPositionManagerBatch.sol';
-import {AaveV4TakerPositionManagerBatch} from 'src/deployments/batches/AaveV4TakerPositionManagerBatch.sol';
+import {AaveV4GiverTakerPositionManagerBatch} from 'src/deployments/batches/AaveV4GiverTakerPositionManagerBatch.sol';
 import {AaveV4ConfigPositionManagerBatch} from 'src/deployments/batches/AaveV4ConfigPositionManagerBatch.sol';
 import {AaveV4SpokeInstanceBatch} from 'src/deployments/batches/AaveV4SpokeInstanceBatch.sol';
 import {AaveV4TokenizationSpokeBatch} from 'src/deployments/batches/AaveV4TokenizationSpokeBatch.sol';
@@ -160,34 +159,19 @@ library AaveV4DeployBase {
     return spokeInstanceBatch.getReport();
   }
 
-  /// @notice Deploys the GiverPositionManager batch.
-  /// @param owner The owner of the GiverPositionManager.
+  /// @notice Deploys the batch containing GiverPositionManager and TakerPositionManager.
+  /// @param owner The owner of the GiverPositionManager and TakerPositionManager.
   /// @param salt The CREATE2 salt for deterministic deployment.
-  /// @return The GiverPositionManager batch report.
-  function deployGiverPositionManagerBatch(
+  /// @return The GiverPositionManager and TakerPositionManager batch report.
+  function deployGiverTakerPositionManagerBatch(
     address owner,
     bytes32 salt
-  ) internal returns (BatchReports.GiverPositionManagerBatchReport memory) {
-    AaveV4GiverPositionManagerBatch giverPositionManagerBatch = new AaveV4GiverPositionManagerBatch({
+  ) internal returns (BatchReports.GiverTakerPositionManagerBatchReport memory) {
+    AaveV4GiverTakerPositionManagerBatch giverTakerPositionManagerBatch = new AaveV4GiverTakerPositionManagerBatch({
         owner_: owner,
         salt_: salt
       });
-    return giverPositionManagerBatch.getReport();
-  }
-
-  /// @notice Deploys the TakerPositionManager batch.
-  /// @param owner The owner of the TakerPositionManager.
-  /// @param salt The CREATE2 salt for deterministic deployment.
-  /// @return The TakerPositionManager batch report.
-  function deployTakerPositionManagerBatch(
-    address owner,
-    bytes32 salt
-  ) internal returns (BatchReports.TakerPositionManagerBatchReport memory) {
-    AaveV4TakerPositionManagerBatch takerPositionManagerBatch = new AaveV4TakerPositionManagerBatch({
-        owner_: owner,
-        salt_: salt
-      });
-    return takerPositionManagerBatch.getReport();
+    return giverTakerPositionManagerBatch.getReport();
   }
 
   /// @notice Deploys the ConfigPositionManager batch.

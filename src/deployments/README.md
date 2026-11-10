@@ -34,11 +34,20 @@ make deploy-contracts
 
 This runs `AaveV4DeployOrchestration.deployAaveV4()`, which deploys batches in order: AccessManager → role labeling → Configurators → Configurator role setup → TreasurySpoke → Hubs → Spokes → Gateways → PositionManagers → role grants → DEFAULT_ADMIN transfer.
 
-### Per-transaction gas cap
+### Transaction gas limits (Tempo, Glamsterdam)
 
-Each transaction deploys at most one large contract, so the deployment fits on chains that cap the gas of a single transaction (e.g. 30M on Tempo, where code deposit costs 1,000 gas per byte). Hub and Spoke implementations are deployed directly by the deployer through library procedures, each in its own transaction; configurators, position managers and each Spoke's AaveOracle get their own batch. On a Tempo fork, the largest transaction is the Spoke implementation at about 27.3M gas.
+Large contracts are spread over several transactions, so that each transaction fits on the two networks that limit them:
 
-Foundry's default gas limit is 130% of the estimate, which exceeds a 30M cap for the implementations. On such chains, pass a lower multiplier, e.g. `--gas-estimate-multiplier 105`.
+- **Tempo** caps a transaction at 30M gas and charges 1,000 gas per byte of deployed code.
+- **Ethereum after Glamsterdam** ([EIP-8037](https://eips.ethereum.org/EIPS/eip-8037)) charges 1,530 gas per byte of deployed code as state gas. The 16,777,216 per-transaction cap applies only to execution gas; the gas limit above it becomes a state gas reservoir. A transaction's whole gas limit must still fit in the block's remaining state gas budget, which is the block gas limit (60M on mainnet when this was written) minus the state gas of earlier transactions in the block.
+
+On Glamsterdam about 97% of each deployment transaction's gas is state gas, and none uses more than 1.4M execution gas, so the 16,777,216 cap does not bind. The block gas limit does.
+
+A 24 KB implementation alone takes about 26M gas on Tempo and 38M on Glamsterdam, so each one gets its own transaction: Hub and Spoke implementations are deployed directly by the deployer through library procedures. The configurators take two batches: `AaveV4HubConfiguratorBatch` and `AaveV4SpokeConfiguratorBatch`. The position managers also take two: `AaveV4GiverTakerPositionManagerBatch` deploys GiverPositionManager and TakerPositionManager together, and `AaveV4ConfigPositionManagerBatch` deploys ConfigPositionManager. Each Spoke takes four transactions. `AaveV4AaveOracleBatch` deploys its AaveOracle first, because the Spoke implementation reads the oracle in its constructor. The Spoke implementation follows, then `AaveV4SpokeInstanceBatch` deploys the Spoke proxy, and `AaveV4AaveOracleBatch.setSpoke` binds the oracle to it. The largest transactions are the implementations: the Spoke implementation takes about 27.3M gas on Tempo, and the Hub and Spoke implementations take 38.0M and 37.9M on Glamsterdam.
+
+Foundry's default gas limit is 130% of the estimate. That exceeds Tempo's 30M cap for the implementations, so on Tempo pass a lower multiplier, e.g. `--gas-estimate-multiplier 105`. On Glamsterdam the default fits a 60M block: the largest gas limit is about 49.4M.
+
+Glamsterdam needs Foundry 1.9.0 or later. Earlier versions plan gas limits with the pre-Glamsterdam prices, and the transactions revert.
 
 ### TokenizationSpoke
 
@@ -77,8 +86,7 @@ src/deployments/
     AaveV4AaveOracleBatch               AaveOracle; binds it to the SpokeInstance proxy once, owner-only
     AaveV4SpokeInstanceBatch            SpokeInstance proxy (impl and AaveOracle deployed beforehand)
     AaveV4GatewayBatch                  NativeTokenGateway, SignatureGateway
-    AaveV4GiverPositionManagerBatch     GiverPositionManager
-    AaveV4TakerPositionManagerBatch     TakerPositionManager
+    AaveV4GiverTakerPositionManagerBatch GiverPositionManager, TakerPositionManager
     AaveV4ConfigPositionManagerBatch    ConfigPositionManager
 
   orchestration/              High-level orchestrators
@@ -189,9 +197,8 @@ AaveV4DeployBatchBase.s.sol                         (Foundry script entry point)
     |     |         AaveV4AccessManagerEnumerableDeployProcedure._deployAccessManagerEnumerable()
     |     |           Create2Utils.create2Deploy() --> AccessManagerEnumerable
     |     |
-    |     +-- _labelRoles()
-    |     |     AaveV4AccessManagerRolesProcedure.labelAllRoles()
-    |     |       AccessManager.labelRole()  (labels all roles with the associated Roles.sol constant names)
+    |     +-- AaveV4AccessManagerRolesProcedure.labelAllRoles()
+    |     |     AccessManager.labelRole()  (labels all roles with the associated Roles.sol constant names)
     |     |
     |     +-- _deployHubConfiguratorBatch()
     |     |     AaveV4DeployBase.deployHubConfiguratorBatch()
@@ -260,14 +267,10 @@ AaveV4DeployBatchBase.s.sol                         (Foundry script entry point)
     |     |       new AaveV4GatewayBatch(owner, nativeWrapper, deployNativeTokenGateway, deploySignatureGateway, salt)
     |     |         Create2Utils.create2Deploy() --> NativeTokenGateway, SignatureGateway
     |     |
-    |     +-- _deployGiverPositionManagerBatch()    (if deployPositionManagers)
-    |     |     AaveV4DeployBase.deployGiverPositionManagerBatch()
-    |     |       new AaveV4GiverPositionManagerBatch(owner, salt)
-    |     |         Create2Utils.create2Deploy() --> GiverPositionManager
-    |     +-- _deployTakerPositionManagerBatch()    (if deployPositionManagers)
-    |     |     AaveV4DeployBase.deployTakerPositionManagerBatch()
-    |     |       new AaveV4TakerPositionManagerBatch(owner, salt)
-    |     |         Create2Utils.create2Deploy() --> TakerPositionManager
+    |     +-- _deployGiverTakerPositionManagerBatch() (if deployPositionManagers)
+    |     |     AaveV4DeployBase.deployGiverTakerPositionManagerBatch()
+    |     |       new AaveV4GiverTakerPositionManagerBatch(owner, salt)
+    |     |         Create2Utils.create2Deploy() --> GiverPositionManager, TakerPositionManager
     |     +-- _deployConfigPositionManagerBatch()   (if deployPositionManagers)
     |     |     AaveV4DeployBase.deployConfigPositionManagerBatch()
     |     |       new AaveV4ConfigPositionManagerBatch(owner, salt)
@@ -296,3 +299,5 @@ AaveV4DeployBatchBase.s.sol                         (Foundry script entry point)
     _logDeploySummary(logger)                       write deployment summary to logger
     logger.save()                                   save logs to output/reports/deployments/
 ```
+
+// weave: run 'weave explain src/deployments/README.md' for per-hunk detail, 'weave check' to verify your resolution
