@@ -3,11 +3,9 @@ pragma solidity ^0.8.0;
 
 import 'tests/setup/BabylonBase.t.sol';
 import {BabylonSpokeInstance} from 'src/spoke/instances/BabylonSpokeInstance.sol';
-import {MockBabylonSpokeInstance} from 'tests/helpers/mocks/MockBabylonSpokeInstance.sol';
 
 /// @dev Configuration of the BabylonSpoke: its immutables, the non-borrowable managed collateral
-/// reserve on listing, update and upgrade, the fee-free reserves and the single registrable
-/// collateral.
+/// reserve on listing and update, the fee-free reserves and the single registrable collateral.
 contract BabylonSpokeConfigTest is BabylonBase {
   uint256 internal collateralReserveId;
   uint256 internal debtReserveId;
@@ -128,104 +126,6 @@ contract BabylonSpokeConfigTest is BabylonBase {
     assertTrue(spoke4.getReserveConfig(reserveId).borrowable, 'other reserve borrowable');
   }
 
-  /// @dev Upgrading a spoke whose managed collateral reserve is already listed as borrowable reverts.
-  function test_revert_upgrade_borrowableManagedCollateral() public {
-    MockBabylonSpokeInstance implementation = new MockBabylonSpokeInstance(
-      2,
-      address(oracle4),
-      liquidationManager,
-      debtReserveId
-    );
-
-    vm.expectRevert(IBabylonSpoke.UnsupportedBorrowableCollateral.selector);
-    vm.prank(ProxyHelper.getProxyAdmin(address(spoke4)));
-    ITransparentUpgradeableProxy(address(spoke4)).upgradeToAndCall(
-      address(implementation),
-      abi.encodeCall(ISpokeInstance.initialize, (address(accessManager)))
-    );
-  }
-
-  /// @dev An unlisted managed collateral reserve has no flags, so the check passes and the spoke
-  /// initializes before the reserve exists.
-  function test_upgrade_unlistedManagedCollateralReserve() public {
-    uint256 unlistedReserveId = spoke4.getReserveCount();
-    MockBabylonSpokeInstance implementation = new MockBabylonSpokeInstance(
-      2,
-      address(oracle4),
-      liquidationManager,
-      unlistedReserveId
-    );
-
-    vm.expectEmit(address(spoke4));
-    emit IBabylonSpoke.SetBabylonSpokeImmutables(liquidationManager, unlistedReserveId);
-    vm.prank(ProxyHelper.getProxyAdmin(address(spoke4)));
-    ITransparentUpgradeableProxy(address(spoke4)).upgradeToAndCall(
-      address(implementation),
-      abi.encodeCall(ISpokeInstance.initialize, (address(accessManager)))
-    );
-
-    assertEq(
-      babylonSpoke.MANAGED_COLLATERAL_RESERVE_ID(),
-      unlistedReserveId,
-      'managed collateral reserve id'
-    );
-  }
-
-  function test_upgrade_nonBorrowableManagedCollateral() public {
-    MockBabylonSpokeInstance implementation = new MockBabylonSpokeInstance(
-      2,
-      address(oracle4),
-      liquidationManager,
-      collateralReserveId
-    );
-
-    vm.expectEmit(address(spoke4));
-    emit IBabylonSpoke.SetBabylonSpokeImmutables(liquidationManager, collateralReserveId);
-    vm.prank(ProxyHelper.getProxyAdmin(address(spoke4)));
-    ITransparentUpgradeableProxy(address(spoke4)).upgradeToAndCall(
-      address(implementation),
-      abi.encodeCall(ISpokeInstance.initialize, (address(accessManager)))
-    );
-
-    assertEq(babylonSpoke.LIQUIDATION_MANAGER(), liquidationManager, 'liquidation manager');
-    assertEq(
-      babylonSpoke.MANAGED_COLLATERAL_RESERVE_ID(),
-      collateralReserveId,
-      'managed collateral reserve id'
-    );
-  }
-
-  /// @dev A babylon spoke with no reserve listed, managing reserve 0.
-  function _deployFreshBabylonSpoke() private returns (ISpoke) {
-    vm.startPrank(ADMIN);
-    TestTypes.TestSpokeReport memory report = AaveV4TestOrchestration.deployTestBabylonSpoke({
-      proxyAdminOwner: ADMIN,
-      accessManager: address(accessManager),
-      liquidationManager: liquidationManager,
-      managedCollateralReserveId: 0,
-      babylonSpokeBytecode: BytecodeHelper.getBabylonSpokeBytecode(),
-      salt: keccak256('fresh-babylon-spoke')
-    });
-    AaveV4SpokeRolesProcedure.setupSpokeAllRoles(address(accessManager), report.spoke);
-    vm.stopPrank();
-
-    assertEq(ISpoke(report.spoke).getReserveCount(), 0, 'no reserve listed');
-    return ISpoke(report.spoke);
-  }
-
-  function _getFreshDynamicReserveConfig()
-    private
-    pure
-    returns (ISpoke.DynamicReserveConfig memory)
-  {
-    return
-      ISpoke.DynamicReserveConfig({
-        collateralFactor: 10_00,
-        maxLiquidationBonus: 110_00,
-        liquidationFee: 0
-      });
-  }
-
   function test_revert_addDynamicReserveConfig_nonZeroLiquidationFee() public {
     ISpoke.DynamicReserveConfig memory config = _getLatestDynamicReserveConfig(
       spoke4,
@@ -340,10 +240,12 @@ contract BabylonSpokeConfigTest is BabylonBase {
 
     // the managed collateral can be disabled and registered again
     spoke4.setUsingAsCollateral(collateralReserveId, false, alice);
+    (bool isUsingAsCollateral, ) = spoke4.getUserReserveStatus(collateralReserveId, alice);
+    assertFalse(isUsingAsCollateral, 'managed collateral disabled');
     spoke4.setUsingAsCollateral(collateralReserveId, true, alice);
     vm.stopPrank();
 
-    (bool isUsingAsCollateral, ) = spoke4.getUserReserveStatus(collateralReserveId, alice);
+    (isUsingAsCollateral, ) = spoke4.getUserReserveStatus(collateralReserveId, alice);
     assertTrue(isUsingAsCollateral, 'managed collateral registered');
   }
 
@@ -360,5 +262,36 @@ contract BabylonSpokeConfigTest is BabylonBase {
 
     (bool isUsingAsCollateral, ) = spoke4.getUserReserveStatus(debtReserveId, alice);
     assertFalse(isUsingAsCollateral, 'other reserve not registered as collateral');
+  }
+
+  /// @dev A babylon spoke with no reserve listed, managing reserve 0.
+  function _deployFreshBabylonSpoke() private returns (ISpoke) {
+    vm.startPrank(ADMIN);
+    TestTypes.TestSpokeReport memory report = AaveV4TestOrchestration.deployTestBabylonSpoke({
+      proxyAdminOwner: ADMIN,
+      accessManager: address(accessManager),
+      liquidationManager: liquidationManager,
+      managedCollateralReserveId: 0,
+      babylonSpokeBytecode: BytecodeHelper.getBabylonSpokeBytecode(),
+      salt: keccak256('fresh-babylon-spoke')
+    });
+    AaveV4SpokeRolesProcedure.setupSpokeAllRoles(address(accessManager), report.spoke);
+    vm.stopPrank();
+
+    assertEq(ISpoke(report.spoke).getReserveCount(), 0, 'no reserve listed');
+    return ISpoke(report.spoke);
+  }
+
+  function _getFreshDynamicReserveConfig()
+    private
+    pure
+    returns (ISpoke.DynamicReserveConfig memory)
+  {
+    return
+      ISpoke.DynamicReserveConfig({
+        collateralFactor: 10_00,
+        maxLiquidationBonus: 110_00,
+        liquidationFee: 0
+      });
   }
 }

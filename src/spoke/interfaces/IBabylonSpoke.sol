@@ -67,12 +67,12 @@ interface IBabylonSpoke is ISpoke {
     uint256 maxCollateralToRemove
   ) external returns (uint256 liquidationBonus, uint256 collateralAmountRemoved);
 
+  /// @notice Returns the address of the external `BabylonLiquidationLogic` library.
+  function getBabylonLiquidationLogic() external pure returns (address);
+
   /// @notice Returns the only address allowed to perform liquidations on this Spoke.
   function LIQUIDATION_MANAGER() external view returns (address);
 
   /// @notice Returns the identifier of the only reserve usable as collateral.
   function MANAGED_COLLATERAL_RESERVE_ID() external view returns (uint256);
-
-  /// @notice Returns the address of the external `BabylonLiquidationLogic` library.
-  function getBabylonLiquidationLogic() external pure returns (address);
 }

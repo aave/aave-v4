@@ -25,6 +25,75 @@ abstract contract BabylonSpokeLiquidationCallHelperTest is BabylonSpokeLiquidati
     spoke = spoke4;
   }
 
+  function test_liquidationCall_fuzz_OneCollateral_OneDebt_UserSolvent(
+    uint256 debtReserveId,
+    uint256 debtToCover,
+    uint256 maxCollateralToRemove
+  ) public virtual {
+    debtReserveId = _boundDebtReserve(debtReserveId);
+    _processAdditionalSetup(debtReserveId);
+
+    _increaseCollateralSupply(
+      spoke,
+      collateralReserveId,
+      _convertValueToAmount(spoke, collateralReserveId, baseAmountValue),
+      user
+    );
+
+    _testLiquidationCall({
+      debtReserveId: debtReserveId,
+      debtToCover: debtToCover,
+      maxCollateralToRemove: maxCollateralToRemove,
+      isSolvent: true
+    });
+  }
+
+  function test_liquidationCall_fuzz_OneCollateral_OneDebt_UserInsolvent(
+    uint256 debtReserveId,
+    uint256 debtToCover,
+    uint256 maxCollateralToRemove
+  ) public virtual {
+    debtReserveId = _boundDebtReserve(debtReserveId);
+    _processAdditionalSetup(debtReserveId);
+
+    _increaseCollateralSupply(
+      spoke,
+      collateralReserveId,
+      _convertValueToAmount(spoke, collateralReserveId, baseAmountValue),
+      user
+    );
+
+    _testLiquidationCall({
+      debtReserveId: debtReserveId,
+      debtToCover: debtToCover,
+      maxCollateralToRemove: maxCollateralToRemove,
+      isSolvent: false
+    });
+  }
+
+  // calculates the max borrow amount that ensures user will be healthy after skipping time as well
+  function _calculateMaxHealthyBorrowValue(address addr) internal returns (uint256) {
+    uint256 maxBorrowValue = _getRequiredDebtValueForHf(
+      spoke,
+      addr,
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD
+    );
+
+    // buffer
+    maxBorrowValue /= 2;
+    // account for drawn rate and time
+    maxBorrowValue = maxBorrowValue.percentDivDown(
+      PercentageMath.PERCENTAGE_FACTOR + (_spokeMaxDrawnRate(spoke) * skipTime) / 365 days
+    );
+    // account for premium debt
+    maxBorrowValue = maxBorrowValue.percentDivDown(
+      PercentageMath.PERCENTAGE_FACTOR +
+        (_spokeMaxCollateralRisk(spoke) + PercentageMath.PERCENTAGE_FACTOR)
+    );
+
+    return maxBorrowValue;
+  }
+
   /// @dev Bounds the debt reserve over the borrowable reserves, excluding the managed collateral
   /// so its supply share price stays at one.
   function _boundDebtReserve(uint256 debtReserveId) internal view returns (uint256) {
@@ -124,75 +193,6 @@ abstract contract BabylonSpokeLiquidationCallHelperTest is BabylonSpokeLiquidati
         maxCollateralToRemove: maxCollateralToRemove
       })
     );
-  }
-
-  function test_liquidationCall_fuzz_OneCollateral_OneDebt_UserSolvent(
-    uint256 debtReserveId,
-    uint256 debtToCover,
-    uint256 maxCollateralToRemove
-  ) public virtual {
-    debtReserveId = _boundDebtReserve(debtReserveId);
-    _processAdditionalSetup(debtReserveId);
-
-    _increaseCollateralSupply(
-      spoke,
-      collateralReserveId,
-      _convertValueToAmount(spoke, collateralReserveId, baseAmountValue),
-      user
-    );
-
-    _testLiquidationCall({
-      debtReserveId: debtReserveId,
-      debtToCover: debtToCover,
-      maxCollateralToRemove: maxCollateralToRemove,
-      isSolvent: true
-    });
-  }
-
-  function test_liquidationCall_fuzz_OneCollateral_OneDebt_UserInsolvent(
-    uint256 debtReserveId,
-    uint256 debtToCover,
-    uint256 maxCollateralToRemove
-  ) public virtual {
-    debtReserveId = _boundDebtReserve(debtReserveId);
-    _processAdditionalSetup(debtReserveId);
-
-    _increaseCollateralSupply(
-      spoke,
-      collateralReserveId,
-      _convertValueToAmount(spoke, collateralReserveId, baseAmountValue),
-      user
-    );
-
-    _testLiquidationCall({
-      debtReserveId: debtReserveId,
-      debtToCover: debtToCover,
-      maxCollateralToRemove: maxCollateralToRemove,
-      isSolvent: false
-    });
-  }
-
-  // calculates the max borrow amount that ensures user will be healthy after skipping time as well
-  function _calculateMaxHealthyBorrowValue(address addr) internal returns (uint256) {
-    uint256 maxBorrowValue = _getRequiredDebtValueForHf(
-      spoke,
-      addr,
-      HEALTH_FACTOR_LIQUIDATION_THRESHOLD
-    );
-
-    // buffer
-    maxBorrowValue /= 2;
-    // account for drawn rate and time
-    maxBorrowValue = maxBorrowValue.percentDivDown(
-      PercentageMath.PERCENTAGE_FACTOR + (_spokeMaxDrawnRate(spoke) * skipTime) / 365 days
-    );
-    // account for premium debt
-    maxBorrowValue = maxBorrowValue.percentDivDown(
-      PercentageMath.PERCENTAGE_FACTOR +
-        (_spokeMaxCollateralRisk(spoke) + PercentageMath.PERCENTAGE_FACTOR)
-    );
-
-    return maxBorrowValue;
   }
 }
 
