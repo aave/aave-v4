@@ -10,7 +10,7 @@ import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 /// @notice Deploys the AaveOracle of a Spoke and later binds it to the Spoke, producing a batch report.
 /// @dev The Spoke implementation reads the oracle in its constructor, so the oracle comes first and the Spoke
 ///      implementation and proxy follow in their own transactions. Only the oracle's deployer can call
-///      `AaveOracle.setSpoke`, so this batch stays the deployer and exposes `setSpoke` to `owner`.
+///      `AaveOracle.setSpoke`, so this batch stays the deployer and exposes `setSpoke` to `OWNER`.
 ///      `AaveOracle.setSpoke` is one-shot, so `setSpoke` here can succeed only once.
 contract AaveV4AaveOracleBatch is AaveV4AaveOracleDeployProcedure {
   /// @notice The only account allowed to call `setSpoke`.
