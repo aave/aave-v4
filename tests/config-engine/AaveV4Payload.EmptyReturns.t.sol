@@ -26,7 +26,7 @@ contract AaveV4PayloadEmptyReturnsTest is BaseConfigEngineTest {
 
   function setUp() public override {
     super.setUp();
-    minimal = new MinimalAaveV4Payload(IAaveV4ConfigEngine(address(engine)));
+    minimal = new MinimalAaveV4Payload(IAaveV4ConfigEngine(address(engineImplementation)));
   }
 
   /// @dev Calling execute() on the minimal payload exercises _preExecute, _postExecute,

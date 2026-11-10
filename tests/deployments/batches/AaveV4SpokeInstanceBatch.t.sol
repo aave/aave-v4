@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import 'tests/deployments/batches/BatchBase.t.sol';
+import {AaveV4DeployBaseWrapper} from 'tests/helpers/mocks/deployments/AaveV4DeployBaseWrapper.sol';
 
 contract AaveV4SpokeInstanceBatchTest is BatchBaseTest {
   AaveV4SpokeInstanceBatch public spokeBatch;
@@ -88,6 +89,60 @@ contract AaveV4SpokeInstanceBatchTest is BatchBaseTest {
       oracleDecimals_: 8,
       maxUserReservesLimit_: 0,
       salt_: keccak256('zeroMaxReservesSalt')
+    });
+  }
+
+  /// @dev AaveV4DeployBase repeats the batch's input checks because the CREATE2 factory drops revert
+  ///      reasons; these mirror the test_revert_* cases above so the two copies cannot drift apart.
+  function test_deploySpokeInstanceBatch_revert_zeroAuthority() public {
+    AaveV4DeployBaseWrapper deployBase = new AaveV4DeployBaseWrapper();
+    vm.expectRevert('invalid authority');
+    deployBase.deploySpokeInstanceBatch({
+      proxyAdminOwner: admin,
+      authority: address(0),
+      spokeBytecode: spokeBytecode,
+      oracleDecimals: 8,
+      maxUserReservesLimit: 128,
+      salt: salt
+    });
+  }
+
+  function test_deploySpokeInstanceBatch_revert_zeroProxyAdminOwner() public {
+    AaveV4DeployBaseWrapper deployBase = new AaveV4DeployBaseWrapper();
+    vm.expectRevert('invalid proxy admin owner');
+    deployBase.deploySpokeInstanceBatch({
+      proxyAdminOwner: address(0),
+      authority: accessManager,
+      spokeBytecode: spokeBytecode,
+      oracleDecimals: 8,
+      maxUserReservesLimit: 128,
+      salt: salt
+    });
+  }
+
+  function test_deploySpokeInstanceBatch_revert_zeroOracleDecimals() public {
+    AaveV4DeployBaseWrapper deployBase = new AaveV4DeployBaseWrapper();
+    vm.expectRevert('invalid oracle decimals');
+    deployBase.deploySpokeInstanceBatch({
+      proxyAdminOwner: admin,
+      authority: accessManager,
+      spokeBytecode: spokeBytecode,
+      oracleDecimals: 0,
+      maxUserReservesLimit: 128,
+      salt: salt
+    });
+  }
+
+  function test_deploySpokeInstanceBatch_revert_zeroMaxUserReservesLimit() public {
+    AaveV4DeployBaseWrapper deployBase = new AaveV4DeployBaseWrapper();
+    vm.expectRevert('invalid max user reserves limit');
+    deployBase.deploySpokeInstanceBatch({
+      proxyAdminOwner: admin,
+      authority: accessManager,
+      spokeBytecode: spokeBytecode,
+      oracleDecimals: 8,
+      maxUserReservesLimit: 0,
+      salt: salt
     });
   }
 
