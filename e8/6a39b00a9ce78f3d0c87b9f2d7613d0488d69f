@@ -1,0 +1,19 @@
+src/deployments/libraries/BatchReports.sol
+  s_6045398d7d3d38::t_26c61b20ca5e52 32
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e86a39b00a9ce78f3d0c87b9f2d7613d0488d69f",
+  "prompts": {},
+  "sessions": {
+    "s_6045398d7d3d38": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "574bcd02-99a9-41af-a6fe-9d7565835090",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}
