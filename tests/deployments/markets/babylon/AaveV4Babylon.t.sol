@@ -391,6 +391,31 @@ contract AaveV4BabylonTest is Create2TestHelper {
     assertTrue(deployerIsAdmin);
   }
 
+  function test_deployHub_run() public {
+    uint256 snapshot = vm.snapshotState();
+    OrchestrationReports.FullDeploymentReport memory expected = this.deployHubsAs(
+      _config,
+      _deployer
+    );
+    vm.revertToState(snapshot);
+    address hub = expected.hubInstanceBatchReports[0].report.hubProxy;
+    assertEq(hub.code.length, 0);
+
+    new AaveV4DeployBabylonHubHarness(_config).run();
+
+    assertEq(
+      IAccessManaged(hub).authority(),
+      expected.authorityBatchReport.accessManager,
+      'hub authority'
+    );
+    assertEq(_proxyAdmin(hub).owner(), _deployer, 'hub proxy admin owner');
+    assertGt(
+      expected.hubInstanceBatchReports[1].report.hubProxy.code.length,
+      0,
+      'second hub deployed'
+    );
+  }
+
   /// @dev The split deployment puts the BabylonSpoke where the single-step deployment did.
   function test_deploySpoke_matchesSingleStepDeployment() public {
     uint256 snapshot = vm.snapshotState();
