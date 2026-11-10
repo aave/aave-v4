@@ -39,7 +39,9 @@ This runs `AaveV4DeployOrchestration.deployAaveV4()`, which deploys batches in o
 Large contracts are spread over several transactions, so that each transaction fits on the two networks that limit them:
 
 - **Tempo** caps a transaction at 30M gas and charges 1,000 gas per byte of deployed code.
-- **Ethereum after Glamsterdam** ([EIP-8037](https://eips.ethereum.org/EIPS/eip-8037)) charges 1,530 gas per byte of deployed code, and a transaction's gas limit must fit in the block gas limit (60M on mainnet when this was written).
+- **Ethereum after Glamsterdam** ([EIP-8037](https://eips.ethereum.org/EIPS/eip-8037)) charges 1,530 gas per byte of deployed code as state gas. The 16,777,216 per-transaction cap applies only to execution gas; the gas limit above it becomes a state gas reservoir. A transaction's whole gas limit must still fit in the block's remaining state gas budget, which is the block gas limit (60M on mainnet when this was written) minus the state gas of earlier transactions in the block.
+
+On Glamsterdam about 97% of each deployment transaction's gas is state gas, and none uses more than 1.4M execution gas, so the 16,777,216 cap does not bind. The block gas limit does.
 
 A 24 KB implementation alone takes about 26M gas on Tempo and 38M on Glamsterdam. Hub implementations are deployed directly by the deployer through a library procedure, in their own transaction. The configurators take two batches: `AaveV4HubConfiguratorBatch` and `AaveV4SpokeConfiguratorBatch`. The position managers also take two: `AaveV4GiverTakerPositionManagerBatch` deploys GiverPositionManager and TakerPositionManager together, and `AaveV4ConfigPositionManagerBatch` deploys ConfigPositionManager. `AaveV4SpokeInstanceBatch` still deploys the Spoke implementation, its proxy and its AaveOracle together, because the AaveOracle and the Spoke reference each other. That batch takes 35.9M gas on Tempo, which is over the cap, and 48.2M on Glamsterdam.
 
