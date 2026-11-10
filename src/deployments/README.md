@@ -196,9 +196,8 @@ AaveV4DeployBatchBase.s.sol                         (Foundry script entry point)
     |     |         AaveV4AccessManagerEnumerableDeployProcedure._deployAccessManagerEnumerable()
     |     |           Create2Utils.create2Deploy() --> AccessManagerEnumerable
     |     |
-    |     +-- _labelRoles()
-    |     |     AaveV4AccessManagerRolesProcedure.labelAllRoles()
-    |     |       AccessManager.labelRole()  (labels all roles with the associated Roles.sol constant names)
+    |     +-- AaveV4AccessManagerRolesProcedure.labelAllRoles()
+    |     |     AccessManager.labelRole()  (labels all roles with the associated Roles.sol constant names)
     |     |
     |     +-- _deployHubConfiguratorBatch()
     |     |     AaveV4DeployBase.deployHubConfiguratorBatch()
