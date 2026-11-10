@@ -2,7 +2,7 @@
   "chainId": 1,
   "salt": "0x33a846d4b87a3624efb401b95093037d9e2200be5c427a6dbda2aabdfdc13afb",
   "librarySalt": "0x0000000000000000000000000000000000000000000000000000000000002bdf",
-  "deployer": "0x2045C7414b28A37EDe726498920E06Ad07894Ac1",
+  "deployer": "0x4df5D09841A716391E00fB9B118f3FaBCFD4c8D1",
   "hubLabels": ["babylon"],
   "babylonSpokeLabel": "babylon",
   "liquidationManager": "0xadca531564f3B26d0aAF48a044d741fD6cD571Ea",

@@ -47,7 +47,7 @@ deploy-contracts :;
 	$(if ${dry},, --broadcast --verify) \
 
 # Babylon market. Run in order; see scripts/markets/babylon/README.md for what goes between the steps.
-# `make babylon-deploy chain=sepolia config=sepolia account=<keystore-name>`, `config` names `scripts/markets/babylon/config/<config>.json`.
+# `make babylon-deploy-hub chain=sepolia config=sepolia account=<keystore-name>`, `config` names `scripts/markets/babylon/config/<config>.json`.
 # Add `dry=true` to simulate and `gas_multiplier=<percent>` to scale gas estimates
 babylon-precompile :;
 	FOUNDRY_PROFILE=${chain} forge clean && BABYLON_CONFIG=${config} forge script scripts/markets/babylon/AaveV4BabylonLibraries.s.sol:AaveV4BabylonLibraries \
@@ -55,8 +55,8 @@ babylon-precompile :;
 	$(if ${dry},, --broadcast --verify) \
 	$(if ${gas_multiplier},--gas-estimate-multiplier ${gas_multiplier}) \
 
-babylon-deploy :;
-	forge clean && BABYLON_CONFIG=${config} forge script scripts/markets/babylon/AaveV4DeployBabylon.s.sol:AaveV4DeployBabylon \
+babylon-deploy-hub :;
+	forge clean && BABYLON_CONFIG=${config} forge script scripts/markets/babylon/AaveV4DeployBabylonHub.s.sol:AaveV4DeployBabylonHub \
 	--rpc-url ${chain} --account ${account} --slow \
 	$(if ${dry},, --broadcast --verify) \
 	$(if ${gas_multiplier},--gas-estimate-multiplier ${gas_multiplier}) \

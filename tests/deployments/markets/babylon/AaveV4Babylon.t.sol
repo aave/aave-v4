@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {Create2TestHelper} from 'tests/utils/Create2TestHelper.sol';
-import {AaveV4DeployBabylon} from 'scripts/markets/babylon/AaveV4DeployBabylon.s.sol';
+import {AaveV4DeployBabylonHub} from 'scripts/markets/babylon/AaveV4DeployBabylonHub.s.sol';
 import {
   AaveV4DeployBabylonSpoke,
   AaveV4BabylonSpokeDeployment,
@@ -33,7 +33,7 @@ import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateS
 import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
 import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 
-contract AaveV4DeployBabylonHarness is AaveV4DeployBabylon {
+contract AaveV4DeployBabylonHubHarness is AaveV4DeployBabylonHub {
   AaveV4BabylonConfig.Config internal _harnessConfig;
 
   constructor(AaveV4BabylonConfig.Config memory config) {
@@ -195,6 +195,7 @@ contract AaveV4BabylonTest is Create2TestHelper {
   address internal constant SEPOLIA_BTC_FEED = 0xF9C48C4C694cb1101081c4402F95Cf5Dd33fb316;
   string internal constant SEPOLIA_CONFIG = 'scripts/markets/babylon/config/sepolia.json';
   address internal constant BABYLON_TEST_DEPLOYER = 0x2045C7414b28A37EDe726498920E06Ad07894Ac1;
+  address internal constant BABYLON_MAINNET_DEPLOYER = 0x4df5D09841A716391E00fB9B118f3FaBCFD4c8D1;
   address internal constant SEPOLIA_BABYLON_DEPLOYER = 0x445Dfdc71003f000455BF3f7f1EcBA5D46CBBB91;
   address internal constant CREATEX = 0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed;
   /// @dev CreateX's guarded salt of the Sepolia AaveAdapter proxy, which CreateX on Sepolia maps to
@@ -315,7 +316,7 @@ contract AaveV4BabylonTest is Create2TestHelper {
   }
 
   function test_deployInputs() public {
-    InputUtils.FullDeployInputs memory inputs = new AaveV4DeployBabylonHarness(_config)
+    InputUtils.FullDeployInputs memory inputs = new AaveV4DeployBabylonHubHarness(_config)
       .sanitizedDeployInputs(_deployer);
 
     assertFalse(inputs.grantRoles);
@@ -393,7 +394,7 @@ contract AaveV4BabylonTest is Create2TestHelper {
   /// @dev The split deployment puts the BabylonSpoke where the single-step deployment did.
   function test_deploySpoke_matchesSingleStepDeployment() public {
     uint256 snapshot = vm.snapshotState();
-    InputUtils.FullDeployInputs memory inputs = new AaveV4DeployBabylonHarness(_config)
+    InputUtils.FullDeployInputs memory inputs = new AaveV4DeployBabylonHubHarness(_config)
       .sanitizedDeployInputs(_deployer);
     inputs.babylonSpokeLabels = new string[](1);
     inputs.babylonSpokeLabels[0] = _config.babylonSpokeLabel;
@@ -1483,7 +1484,7 @@ contract AaveV4BabylonTest is Create2TestHelper {
     assertEq(config.salt, keccak256('aave-v4-babylon-mainnet-v1'));
     // the canonical salt, so LiquidationLogic is the live AaveV4EthereumExternalLibraries.LIQUIDATION_LOGIC
     assertEq(config.librarySalt, CANONICAL_LIBRARY_SALT);
-    assertEq(config.deployer, BABYLON_TEST_DEPLOYER);
+    assertEq(config.deployer, BABYLON_MAINNET_DEPLOYER);
     assertEq(config.hubLabels.length, 1);
     assertEq(config.hubLabels[0], 'babylon');
     assertEq(config.babylonSpokeLabel, 'babylon');
@@ -1674,7 +1675,7 @@ contract AaveV4BabylonTest is Create2TestHelper {
   }
 
   function test_deploy_revertsWith_broadcasterNotDeployer() public {
-    AaveV4DeployBabylonHarness harness = new AaveV4DeployBabylonHarness(_config);
+    AaveV4DeployBabylonHubHarness harness = new AaveV4DeployBabylonHubHarness(_config);
     vm.expectRevert('broadcaster is not the config deployer');
     harness.sanitizedDeployInputs(makeAddr('other deployer'));
   }
@@ -1959,7 +1960,7 @@ contract AaveV4BabylonTest is Create2TestHelper {
     AaveV4BabylonConfig.Config memory config,
     address deployer
   ) external returns (OrchestrationReports.FullDeploymentReport memory report) {
-    InputUtils.FullDeployInputs memory inputs = new AaveV4DeployBabylonHarness(config)
+    InputUtils.FullDeployInputs memory inputs = new AaveV4DeployBabylonHubHarness(config)
       .sanitizedDeployInputs(deployer);
     MetadataLogger logger = new MetadataLogger(OUTPUT_DIR);
     bytes memory hubBytecode = BytecodeHelper.getHubBytecode();

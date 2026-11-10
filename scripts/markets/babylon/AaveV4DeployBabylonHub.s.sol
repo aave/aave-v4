@@ -5,13 +5,13 @@ import {AaveV4DeployBatchBaseScript} from 'scripts/deploy/AaveV4DeployBatchBase.
 import {AaveV4BabylonConfig} from 'scripts/markets/babylon/AaveV4BabylonConfig.sol';
 import {InputUtils} from 'src/deployments/utils/libraries/InputUtils.sol';
 
-/// @title AaveV4DeployBabylon
+/// @title AaveV4DeployBabylonHub
 /// @author Aave Labs
 /// @notice Deploys the Babylon market without its BabylonSpoke: the AccessManager, the
 /// configurators, the TreasurySpoke and the Hubs, with roles and ownership kept by the deployer
 /// until `AaveV4BabylonHandover`. `AaveV4DeployBabylonSpoke` deploys the BabylonSpoke.
-contract AaveV4DeployBabylon is AaveV4DeployBatchBaseScript {
-  constructor() AaveV4DeployBatchBaseScript('babylon') {}
+contract AaveV4DeployBabylonHub is AaveV4DeployBatchBaseScript {
+  constructor() AaveV4DeployBatchBaseScript('babylon-hub') {}
 
   function _getDeployInputs() internal view override returns (InputUtils.FullDeployInputs memory) {
     return AaveV4BabylonConfig.deployInputs(_config());

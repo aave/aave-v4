@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {Test} from 'forge-std/Test.sol';
 import {
-  AaveV4DeployBabylonHarness,
+  AaveV4DeployBabylonHubHarness,
   AaveV4DeployBabylonSpokeHarness,
   AaveV4BabylonConfigureHarness,
   AaveV4BabylonHandoverHarness,
@@ -500,7 +500,7 @@ contract AaveV4BabylonMainnetForkTest is Test {
   }
 
   function deployHubs() external returns (OrchestrationReports.FullDeploymentReport memory report) {
-    InputUtils.FullDeployInputs memory inputs = new AaveV4DeployBabylonHarness(_config)
+    InputUtils.FullDeployInputs memory inputs = new AaveV4DeployBabylonHubHarness(_config)
       .sanitizedDeployInputs(_deployer);
     MetadataLogger logger = new MetadataLogger(OUTPUT_DIR);
     bytes memory hubBytecode = BytecodeHelper.getHubBytecode();

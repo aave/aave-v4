@@ -56,7 +56,7 @@ library AaveV4BabylonSpokeDeployment {
 
 /// @title AaveV4DeployBabylonSpoke
 /// @author Aave Labs
-/// @notice Deploys the BabylonSpoke of the market `AaveV4DeployBabylon` deployed, under its
+/// @notice Deploys the BabylonSpoke of the market `AaveV4DeployBabylonHub` deployed, under its
 /// AccessManager, and writes the deployment report with the BabylonSpoke added.
 contract AaveV4DeployBabylonSpoke is Script {
   /// @dev CreateX factory, https://github.com/pcaversaccio/createx.
