@@ -1,4 +1,4 @@
-import {User, Spoke, Hub, System} from './core.ts';
+import {User, Spoke, Hub} from './core.ts';
 
 export const DEBUG = true;
 const SEED = 4333;
@@ -15,6 +15,9 @@ export const WAD = 10n ** 18n;
 export const PERCENTAGE_FACTOR = 100_00n;
 export const MAX_UINT = 2n ** 256n - 1n;
 
+export const VIRTUAL_ASSETS = 10n ** 6n;
+export const VIRTUAL_SHARES = 10n ** 6n;
+
 export const MIN_RP = 0n;
 export const MAX_RP = 1000_00n;
 export const MIN_INDEX = parseRay(1.01); // 1% interest
@@ -22,18 +25,116 @@ export const MAX_INDEX = parseRay(1.99); // 99% interest
 
 export const PRECISION = 3000n; // max abs delta allowed
 
+
+export interface PremiumDelta {
+  sharesDelta: bigint; // signed
+  offsetRayDelta: bigint; // signed
+  restoredPremiumRay: bigint; // unsigned
+}
+
+
+export function rayMulDown(a: bigint, b: bigint): bigint {
+  return (a * b) / RAY;
+}
+
+export function rayMulUp(a: bigint, b: bigint): bigint {
+  const product = a * b;
+  return product / RAY + (product % RAY > 0n ? 1n : 0n);
+}
+
+export function rayDivDown(a: bigint, b: bigint): bigint {
+  return (a * RAY) / b;
+}
+
+export function rayDivUp(a: bigint, b: bigint): bigint {
+  const product = a * RAY;
+  return product / b + (product % b > 0n ? 1n : 0n);
+}
+
+export function fromRayUp(a: bigint): bigint {
+  if (a === 0n) return 0n;
+  return a / RAY + (a % RAY > 0n ? 1n : 0n);
+}
+
+export function toRay(a: bigint): bigint {
+  return a * RAY;
+}
+
+export function percentMulDown(a: bigint, b: bigint): bigint {
+  return (a * b) / PERCENTAGE_FACTOR;
+}
+
+export function percentMulUp(a: bigint, b: bigint): bigint {
+  const product = a * b;
+  return product / PERCENTAGE_FACTOR + (product % PERCENTAGE_FACTOR > 0n ? 1n : 0n);
+}
+
+export function signedSub(a: bigint, b: bigint): bigint {
+  return a - b; // JS bigint handles sign naturally
+}
+
+export function addSigned(a: bigint, b: bigint): bigint {
+  const result = a + b;
+  if (result < 0n) throw new Error('addSigned: underflow');
+  return result;
+}
+
+
+export function toSharesDown(assets: bigint, totalAssets: bigint, totalShares: bigint): bigint {
+  return mulDiv(assets, totalShares + VIRTUAL_SHARES, totalAssets + VIRTUAL_ASSETS, Rounding.FLOOR);
+}
+
+export function toSharesUp(assets: bigint, totalAssets: bigint, totalShares: bigint): bigint {
+  return mulDiv(assets, totalShares + VIRTUAL_SHARES, totalAssets + VIRTUAL_ASSETS, Rounding.CEIL);
+}
+
+export function toAssetsDown(shares: bigint, totalAssets: bigint, totalShares: bigint): bigint {
+  return mulDiv(shares, totalAssets + VIRTUAL_ASSETS, totalShares + VIRTUAL_SHARES, Rounding.FLOOR);
+}
+
+export function toAssetsUp(shares: bigint, totalAssets: bigint, totalShares: bigint): bigint {
+  return mulDiv(shares, totalAssets + VIRTUAL_ASSETS, totalShares + VIRTUAL_SHARES, Rounding.CEIL);
+}
+
+
+export function calculatePremiumRay(
+  premiumShares: bigint,
+  premiumOffsetRay: bigint, // signed
+  drawnIndex: bigint
+): bigint {
+  const result = premiumShares * drawnIndex - premiumOffsetRay;
+  if (result < 0n) throw new Error(`calculatePremiumRay: negative premium (${result})`);
+  return result;
+}
+
+
+export function rayMul(a: bigint, b: bigint, rounding = Rounding.FLOOR) {
+  return mulDiv(a, b, RAY, rounding);
+}
+export function rayDiv(a: bigint, b: bigint, rounding = Rounding.FLOOR) {
+  return mulDiv(a, RAY, b, rounding);
+}
+
+export function percentMul(a: bigint, b: bigint, rounding = Rounding.FLOOR) {
+  return mulDiv(a, b, PERCENTAGE_FACTOR, rounding);
+}
+
+
 export function logDebt(who: User | Spoke | Hub) {
   const hub = who instanceof Hub ? who : who.hub;
+  const drawnIndex = hub.drawnIndex;
+  const premiumRay = calculatePremiumRay(who.premiumShares, who.premiumOffsetRay, drawnIndex);
   console.log(
-    'debt: base %d + premium %d (ghost %d, offset %d, unrealised %d) = %d',
+    'debt: base %d + premium %d (premiumShares %d, premiumOffsetRay %d, premiumRay %d) = %d',
     f(who.getDebt().drawnDebt),
     f(who.getDebt().premiumDebt),
-    f(hub.toDrawnAssets(who.ghostDrawnShares)),
-    f(who.offset),
-    f(who.realisedPremium),
+    f(who.premiumShares),
+    who.premiumOffsetRay,
+    premiumRay,
     f(who.getTotalDebt())
   );
 }
+
 
 export function assertNonZero(a: bigint) {
   if (a === 0n) throw new Error('got zero');
@@ -41,6 +142,7 @@ export function assertNonZero(a: bigint) {
 export function assertGeZero(a: bigint) {
   if (a < 0n) throw new Error('got negative');
 }
+
 
 export function random(min: bigint, max: bigint) {
   return BigInt(Math.floor(Math.random() * Number(max - min))) + min;
@@ -91,6 +193,7 @@ export function inverse(rounding: Rounding) {
   throw new Error('cannot inverse rounding');
 }
 
+
 export function parseEther(ether: string | bigint | number) {
   return parseUnits(ether, 18);
 }
@@ -119,17 +222,6 @@ export function p(ether: string | bigint | number) {
   return parseEther(ether);
 }
 
-export function percentMul(a: bigint, b: bigint, rounding = Rounding.FLOOR) {
-  return mulDiv(a, b, PERCENTAGE_FACTOR, rounding);
-}
-
-export function rayMul(a: bigint, b: bigint, rounding = Rounding.FLOOR) {
-  return mulDiv(a, b, RAY, rounding);
-}
-export function rayDiv(a: bigint, b: bigint, rounding = Rounding.FLOOR) {
-  return mulDiv(a, RAY, b, rounding);
-}
-
 export function formatUnits(wei: bigint, index = 18): string {
   const abs = wei < 0n ? -wei : wei;
   const UNITS = 10n ** BigInt(index);
@@ -145,7 +237,6 @@ export function parseUnits(units: string | bigint | number, index = 18): bigint 
   return BigInt(whole) * 10n ** BigInt(index) + BigInt(paddedFractional.slice(0, index));
 }
 
-// @dev Calculates (a * b) / c, with specified rounding direction
 export function mulDiv(a: bigint, b: bigint, c: bigint, rounding: Rounding) {
   const prod = a * b;
   const quotient = prod / c;
@@ -170,69 +261,6 @@ export function mulDiv(a: bigint, b: bigint, c: bigint, rounding: Rounding) {
     default:
       return quotient;
   }
-}
-
-// scenario engine
-let scenarioId = 1;
-let skipped = 0;
-type Runner = (ctx: System) => void;
-interface Scenario {
-  name: string;
-  ctx: System;
-  runInvariants: boolean;
-  fn: Runner;
-}
-
-export const scenarios: Array<Scenario> = [];
-export function it(
-  name = `Scenario ${scenarioId}`,
-  runInvariants = true,
-  numSpokes = 1,
-  numUsers = 3
-) {
-  const ctx = new System(numSpokes, numUsers);
-  const runner = (fn: Runner) => {
-    scenarios.push({name, fn, ctx, runInvariants});
-    scenarioId++;
-  };
-  runner.skip = (_: Runner) => {
-    skipped++;
-  };
-  return runner;
-}
-export function runScenarios() {
-  const filter = parseFilter();
-  let passed = 0,
-    failed = 0;
-  scenarios
-    .filter((s) => filter.test(s.name))
-    .forEach(({name, fn, ctx, runInvariants}) => {
-      console.log(`\t\t running scenario ${name} \t\t\n`);
-      try {
-        fn(ctx);
-        if (runInvariants) ctx.runInvariants();
-        passed++;
-      } catch (e) {
-        failed++;
-        console.error(`\t\t scenario ${name} failed \t\t`);
-        console.error(e);
-      }
-      console.log();
-    });
-  console.log(`scenario run finished: ${passed} passed, ${failed} failed, ${skipped} skipped`);
-}
-
-function parseFilter() {
-  let filter = '';
-  // @ts-ignore
-  const args = process.argv.slice(2);
-  for (let i = 0; i < args.length; ++i) {
-    switch (args[i]) {
-      case '--mt':
-        filter = args[i + 1] || '';
-    }
-  }
-  return new RegExp(filter, 'gi');
 }
 
 export function info(...args: any[]) {
