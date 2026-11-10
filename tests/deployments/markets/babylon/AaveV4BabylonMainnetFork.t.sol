@@ -33,24 +33,50 @@ import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 import {IPriceFeed} from 'src/spoke/interfaces/IPriceFeed.sol';
+import {SpokeDeployUtils} from 'scripts/utils/SpokeDeployUtils.sol';
+import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 import {TestnetERC20} from 'tests/helpers/mocks/TestnetERC20.sol';
+import {ProxyHelper} from 'tests/utils/ProxyHelper.sol';
+
+interface IVaultBTC {
+  function HUB() external view returns (address);
+
+  function adapter() external view returns (address);
+}
+
+interface IAaveAdapter {
+  function BTC_VAULT_CORE_SPOKE() external view returns (address);
+
+  function BTC_VAULT_HUB() external view returns (address);
+
+  function EXIT_BTC_RESERVE_ID() external view returns (uint256);
+
+  function VAULT_BTC_ASSET_ID() external view returns (uint256);
+
+  function VAULT_BTC_RESERVE_ID() external view returns (uint256);
+}
+
+interface IBTCVaultSwap {
+  function ADAPTER() external view returns (address);
+
+  function HUB() external view returns (address);
+
+  function EXIT_BTC_ASSET_ID() external view returns (uint256);
+}
 
 /// @dev Runs the production Babylon market scripts on an Ethereum fork and asserts the state after
 /// the handover (step 5b of the launch plan), then the state after the launch AIP actions on the
 /// shared V4 contracts. Expected values come from the LlamaRisk parameters and aave-address-book,
 /// not from `config/mainnet.json`. A mock vaultBTC stands in until Babylon deploys it.
 contract AaveV4BabylonMainnetForkTest is Test {
-  uint256 internal constant FORK_BLOCK = 26_376_995;
+  uint256 internal constant FORK_BLOCK = 26_387_600;
   string internal constant OUTPUT_DIR = 'output/reports/deployments/';
   string internal constant REPORT_NAME = 'babylon-mainnet-fork-test';
   string internal constant MAINNET_CONFIG = 'scripts/markets/babylon/config/mainnet.json';
-  /// @dev ERC-1967 admin slot, `bytes32(uint256(keccak256('eip1967.proxy.admin')) - 1)`.
-  bytes32 internal constant ADMIN_SLOT =
-    0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103;
   string internal constant VAULT_BTC_PLACEHOLDER =
     '"underlying": "0x0000000000000000000000000000000000000000"';
 
-  // aave-address-book AaveV4Ethereum, GovernanceV3Ethereum
+  // aave-address-book AaveV4Ethereum, GovernanceV3Ethereum, MiscEthereum
   address internal constant ACCESS_MANAGER = 0x08aE3BE30958cDd1847ec58fFfd4C451a87fDF01;
   address internal constant HUB_CONFIGURATOR = 0x1F0753480bB03EaA00863224602267B7E0525C3d;
   address internal constant SPOKE_CONFIGURATOR = 0x9BFFf48BFb5A7AE70c348d4d4cb97E8DEFa5389a;
@@ -957,6 +983,6 @@ contract AaveV4BabylonMainnetForkTest is Test {
   }
 
   function _proxyAdminOwner(address proxy) internal view returns (address) {
-    return ProxyAdmin(address(uint160(uint256(vm.load(proxy, ADMIN_SLOT))))).owner();
+    return ProxyAdmin(ProxyHelper.getProxyAdmin(proxy)).owner();
   }
 }
