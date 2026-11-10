@@ -36,7 +36,7 @@ This runs `AaveV4DeployOrchestration.deployAaveV4()`, which deploys batches in o
 
 ### Per-transaction gas cap
 
-Large contracts get their own transaction, so the deployment can fit on chains that cap the gas of a single transaction (e.g. 30M on Tempo, where code deposit costs 1,000 gas per byte). Hub implementations are deployed directly by the deployer through a library procedure, in their own transaction, and configurators and position managers get one batch each. `AaveV4SpokeInstanceBatch` still deploys the Spoke implementation, its proxy and its AaveOracle together, because the AaveOracle and the Spoke reference each other.
+Large contracts are spread over several transactions, so the deployment can fit on chains that cap the gas of a single transaction (e.g. 30M on Tempo, where code deposit costs 1,000 gas per byte). Hub implementations are deployed directly by the deployer through a library procedure, in their own transaction. The configurators take two batches: `AaveV4HubConfiguratorBatch` and `AaveV4SpokeConfiguratorBatch`. The position managers also take two: `AaveV4GiverTakerPositionManagerBatch` deploys GiverPositionManager and TakerPositionManager together, and `AaveV4ConfigPositionManagerBatch` deploys ConfigPositionManager. `AaveV4SpokeInstanceBatch` still deploys the Spoke implementation, its proxy and its AaveOracle together, because the AaveOracle and the Spoke reference each other.
 
 Foundry's default gas limit is 130% of the estimate, which exceeds a 30M cap for the implementations. On such chains, pass a lower multiplier, e.g. `--gas-estimate-multiplier 105`.
 
