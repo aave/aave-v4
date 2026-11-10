@@ -161,10 +161,17 @@ Snapshot files generated:
 
 You can find all audit reports under [audits](./audits/):
 
-- [2026-02-05 - Aave V4 - Blackthorn](./audits/2026-02-05_Aave-V4_Blackthorn.pdf)
-- [2026-02-10 - Aave V4 - TrailOfBits](./audits/2026-02-10_Aave-V4_TrailOfBits.pdf)
+- [2025-10-20 - Aave V4 - Blackthorn](./audits/2025-10-20_Aave-V4_Blackthorn.pdf)
+- [2025-11-06 - Aave V4 - TrailOfBits](./audits/2025-11-06_Aave-V4_TrailOfBits.pdf)
 - [2026-01-28 - Aave V4 - ChainSecurity](./audits/2026-01-28_Aave-V4_ChainSecurity.pdf)
+- [2026-02-10 - TokenizationSpoke - ChainSecurity](./audits/2026-02-10_TokenizationSpoke_ChainSecurity.pdf)
+- [2026-02-24 - Aave V4 - Blackthorn](./audits/2026-02-24_Aave-V4_Blackthorn.pdf)
+- [2026-03-09 - Hub Formal Verification - Certora](./audits/2026-03-09_Hub-Fomal-Verification_Certora.pdf)
+- [2026-03-09 - Libraries Formal Verification - Certora](./audits/2026-03-09_Libraries-Fomal-Verification_Certora.pdf)
+- [2026-03-09 - Spoke Formal Verification - Certora](./audits/2026-03-09_Spoke-Fomal-Verification_Certora.pdf)
 - [2026-03-23 - Aave V4 - ChainSecurity](./audits/2026-03-23_Aave-V4_ChainSecurity.pdf)
+- [2026-04-13 - TokenizationSpoke Formal Verification - Certora](./audits/2026-04-13_TokenizationSpoke-Fomal-Verification_Certora.pdf)
+- [2026-11-02 - Config Engine - Certora](./audits/2026-11-02_Config-Engine_Certora.pdf)
 
 ### Bug Bounty
 
