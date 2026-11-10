@@ -1,0 +1,19 @@
+src/deployments/README.md
+  s_a7c93df1b6897d::t_11013e677d5fda 42-44
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "43e6ac963a0ca83b1499370c82c89f0d2b7fc55f",
+  "prompts": {},
+  "sessions": {
+    "s_a7c93df1b6897d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6b3b0537-862f-4af3-bbaf-239e58b03252",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}
