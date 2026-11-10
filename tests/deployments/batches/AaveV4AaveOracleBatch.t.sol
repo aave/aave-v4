@@ -49,6 +49,13 @@ contract AaveV4AaveOracleBatchTest is BatchBaseTest {
     oracleBatch.setSpoke(spokeProxy);
   }
 
+  function test_setSpoke_revert_ownerCallsOracleDirectly() public {
+    address spokeProxy = _deploySpoke(report.aaveOracle);
+    vm.expectRevert(IAaveOracle.OnlyDeployer.selector);
+    vm.prank(admin);
+    IAaveOracle(report.aaveOracle).setSpoke(spokeProxy);
+  }
+
   function test_setSpoke_revert_alreadySet() public {
     address spokeProxy = _deploySpoke(report.aaveOracle);
     vm.startPrank(admin);
