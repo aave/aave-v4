@@ -1,0 +1,19 @@
+src/deployments/procedures/deploy/hub/AaveV4HubDeployProcedure.sol
+  s_a7c93df1b6897d::t_414bf669268650 10
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "bf506ac2dd76f8cdb18df5d9be67f8ebab2e14a6",
+  "prompts": {},
+  "sessions": {
+    "s_a7c93df1b6897d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6b3b0537-862f-4af3-bbaf-239e58b03252",
+        "model": "claude-fable-5-2"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}
