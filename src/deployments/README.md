@@ -34,11 +34,18 @@ make deploy-contracts
 
 This runs `AaveV4DeployOrchestration.deployAaveV4()`, which deploys batches in order: AccessManager → role labeling → Configurators → Configurator role setup → TreasurySpoke → Hubs → Spokes → Gateways → PositionManagers → role grants → DEFAULT_ADMIN transfer.
 
-### Per-transaction gas cap
+### Transaction gas limits (Tempo, Glamsterdam)
 
-Large contracts are spread over several transactions, so the deployment can fit on chains that cap the gas of a single transaction (e.g. 30M on Tempo, where code deposit costs 1,000 gas per byte). Hub implementations are deployed directly by the deployer through a library procedure, in their own transaction. The configurators take two batches: `AaveV4HubConfiguratorBatch` and `AaveV4SpokeConfiguratorBatch`. The position managers also take two: `AaveV4GiverTakerPositionManagerBatch` deploys GiverPositionManager and TakerPositionManager together, and `AaveV4ConfigPositionManagerBatch` deploys ConfigPositionManager. `AaveV4SpokeInstanceBatch` still deploys the Spoke implementation, its proxy and its AaveOracle together, because the AaveOracle and the Spoke reference each other.
+Large contracts are spread over several transactions, so that each transaction fits on the two networks that limit them:
 
-Foundry's default gas limit is 130% of the estimate, which exceeds a 30M cap for the implementations. On such chains, pass a lower multiplier, e.g. `--gas-estimate-multiplier 105`.
+- **Tempo** caps a transaction at 30M gas and charges 1,000 gas per byte of deployed code.
+- **Ethereum after Glamsterdam** ([EIP-8037](https://eips.ethereum.org/EIPS/eip-8037)) charges 1,530 gas per byte of deployed code, and a transaction's gas limit must fit in the block gas limit (60M on mainnet when this was written).
+
+A 24 KB implementation alone takes about 26M gas on Tempo and 38M on Glamsterdam. Hub implementations are deployed directly by the deployer through a library procedure, in their own transaction. The configurators take two batches: `AaveV4HubConfiguratorBatch` and `AaveV4SpokeConfiguratorBatch`. The position managers also take two: `AaveV4GiverTakerPositionManagerBatch` deploys GiverPositionManager and TakerPositionManager together, and `AaveV4ConfigPositionManagerBatch` deploys ConfigPositionManager. `AaveV4SpokeInstanceBatch` still deploys the Spoke implementation, its proxy and its AaveOracle together, because the AaveOracle and the Spoke reference each other. That batch takes 35.9M gas on Tempo, which is over the cap, and 48.2M on Glamsterdam.
+
+Foundry's default gas limit is 130% of the estimate. That exceeds Tempo's 30M cap for the implementations, and a 60M block for the Spoke batch on Glamsterdam. On these networks, pass a lower multiplier, e.g. `--gas-estimate-multiplier 105`.
+
+Glamsterdam needs Foundry 1.9.0 or later. Earlier versions plan gas limits with the pre-Glamsterdam prices, and the transactions revert.
 
 ### TokenizationSpoke
 
