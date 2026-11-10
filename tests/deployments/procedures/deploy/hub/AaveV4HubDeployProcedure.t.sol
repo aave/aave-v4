@@ -10,7 +10,10 @@ contract AaveV4HubDeployProcedureTest is ProceduresBase {
   function setUp() public override {
     super.setUp();
     aaveV4HubDeployProcedureWrapper = new AaveV4HubDeployProcedureWrapper();
-    hubImplementation = Create2Utils.create2Deploy(salt, hubBytecode);
+    hubImplementation = AaveV4HubImplementationDeployProcedure.deployHubImplementation({
+      hubBytecode: hubBytecode,
+      salt: salt
+    });
   }
 
   function test_deployHubProxy() public {
