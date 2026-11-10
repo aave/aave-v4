@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Test} from 'forge-std/Test.sol';
+import {Test, Vm} from 'forge-std/Test.sol';
 import {
   AaveV4DeployBabylonHubHarness,
   AaveV4DeployBabylonSpokeHarness,
@@ -59,6 +59,12 @@ contract AaveV4BabylonMainnetForkTest is Test {
   address internal constant MAIN_SPOKE = 0x94e7A5dCbE816e498b89aB752661904E2F56c485;
   address internal constant EXECUTOR_LVL_1 = 0x5300A1a15135EA4dc7aD5a167152C01EFc9b192A;
   address internal constant V4_SECURITY_COUNCIL = 0x187AAE17d4931310B3fc75743e7F16Bdc9eD77e9;
+  // aave-address-book AaveV4Ethereum.POSITION_MANAGERS
+  address internal constant CONFIG_POSITION_MANAGER = 0x51305839CE822a7b4b12AA7D86eA7005052d575c;
+  address internal constant GIVER_POSITION_MANAGER = 0x17A54b8d6D9C68e7fa1C7112AC998EA1BA51d11e;
+  address internal constant NATIVE_TOKEN_GATEWAY = 0xe68ab4F90Fe026B9873F5F276eD2d7efBbbE42Be;
+  address internal constant SIGNATURE_GATEWAY = 0xfbC184337Dc6595D8bf62968Bda46e7De7AF9c3d;
+  address internal constant TAKER_POSITION_MANAGER = 0x6c044c0D3801499bCAbfAd458B70880bc518e9F7;
 
   address internal constant AAVE_ADAPTER = 0xadca531564f3B26d0aAF48a044d741fD6cD571Ea;
   address internal constant USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
@@ -107,11 +113,14 @@ contract AaveV4BabylonMainnetForkTest is Test {
   string internal _marketJson;
   AaveV4BabylonConfig.Config internal _config;
   AaveV4BabylonConfig.Deployment internal _deployment;
+  uint256 internal _positionManagerUpdates;
+  uint256 internal _reserveAdditions;
 
   function setUp() public {
     vm.createSelectFork(vm.rpcUrl('mainnet'), FORK_BLOCK);
     // deploying the market and the script harnesses exceeds the fork block gas limit
     vm.pauseGasMetering();
+    vm.recordLogs();
 
     _config = AaveV4BabylonConfig.read('mainnet');
     _config.deployer = _deployer;
@@ -134,6 +143,17 @@ contract AaveV4BabylonMainnetForkTest is Test {
     handover.run();
 
     _deployment = AaveV4BabylonConfig.readDeployment(_config);
+    Vm.Log[] memory logs = vm.getRecordedLogs();
+    for (uint256 i; i < logs.length; ++i) {
+      if (logs[i].topics[0] == ISpoke.UpdatePositionManager.selector) {
+        ++_positionManagerUpdates;
+      } else if (
+        logs[i].topics[0] == ISpoke.AddReserve.selector &&
+        logs[i].emitter == _deployment.babylonSpoke
+      ) {
+        ++_reserveAdditions;
+      }
+    }
     vm.resumeGasMetering();
   }
 
@@ -319,6 +339,22 @@ contract AaveV4BabylonMainnetForkTest is Test {
     vm.expectRevert(IHub.SpokeNotActive.selector);
     tokenizationSpoke.deposit(1_000e6, _supplier);
     vm.stopPrank();
+  }
+
+  /// @dev No step activates a position manager, so only the AIP or later governance can.
+  function test_noPositionManagers() public view {
+    assertEq(_reserveAdditions, RESERVE_COUNT, 'deployment logs recorded');
+    assertEq(_positionManagerUpdates, 0, 'position manager updates');
+    address[5] memory positionManagers = [
+      CONFIG_POSITION_MANAGER,
+      GIVER_POSITION_MANAGER,
+      NATIVE_TOKEN_GATEWAY,
+      SIGNATURE_GATEWAY,
+      TAKER_POSITION_MANAGER
+    ];
+    for (uint256 i; i < positionManagers.length; ++i) {
+      assertFalse(ISpoke(_spoke()).isPositionManagerActive(positionManagers[i]), 'active');
+    }
   }
 
   function test_coreHubUntouchedBeforeAip() public view {
