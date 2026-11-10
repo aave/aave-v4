@@ -1,0 +1,21 @@
+{
+  "accessManager": "0x39abDA92f1C220aA5f57F8971Ac8711E91496aeA",
+  "babylonSpoke": "",
+  "babylonSpokeImplementation": "",
+  "hub": {
+    "babylon": "0xAd0fd800cbaF41a4Ced1BEa3a4f90aA18CfBC49d"
+  },
+  "hubConfigurator": "0x2207F01E4eAe1AdE3339B96B11F01aa3C196d3A2",
+  "hubImplementation": {
+    "babylon": "0x294871258134336FB340761F86c9970474A6A4d7"
+  },
+  "irStrategy": {
+    "babylon": "0xe94Fb20280100aff45E49C7242c91e91E6652676"
+  },
+  "oracle": "",
+  "salt": "0x33a846d4b87a3624efb401b95093037d9e2200be5c427a6dbda2aabdfdc13afb",
+  "spoke": "",
+  "spokeConfigurator": "0x18cBeC03D6cB32cfbC3F1e7791b4fDE3fD205000",
+  "spokeImplementation": "",
+  "treasurySpoke": "0xB30CAC4D98A3691b7cf8B3fDBc61E416bA412Eb9"
+}
