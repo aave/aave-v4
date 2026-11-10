@@ -1,0 +1,88 @@
+scripts/markets/babylon/config/sepolia.json
+  s_477c0d90c4846f::t_a471e89470b419 9-10,13-14
+  s_477c0d90c4846f::t_86ca82dfd15d86 5
+scripts/markets/babylon/AaveV4BabylonHandover.s.sol
+  s_477c0d90c4846f::t_93107fe703e2e0 16,23,26-27,39-43,48,51-64,94,96,98,101-111,116,118-133,135-139
+  s_477c0d90c4846f::t_cab58b31c334db 47
+  s_477c0d90c4846f::t_ccd6295aae48b5 24-25,28-29,69-70,74-75,77-79,112-115
+  s_477c0d90c4846f::t_6f75e93569ce72 68
+scripts/markets/babylon/AaveV4BabylonConfigure.s.sol
+  s_477c0d90c4846f::t_92e6ca046ed1ee 31-36,43,46-50
+  s_477c0d90c4846f::t_cab58b31c334db 41
+  s_477c0d90c4846f::t_27538c6374e5b5 117
+  s_477c0d90c4846f::t_a50e5ee19df6ed 139-152
+  s_477c0d90c4846f::t_78b375c1b22443 24-25
+  s_477c0d90c4846f::t_4b81e946dbd34f 105-106
+scripts/markets/babylon/AaveV4BabylonVerification.sol
+  s_477c0d90c4846f::t_5ef9eb078db577 47,50-51,67,80,137-141,143-150,153-161,165,224,227-228,231-235,248-257,284-285,310,323,335,347-381,433-441,443-444
+  s_477c0d90c4846f::t_0db8ddd35c8bf6 31-33
+  s_477c0d90c4846f::t_cab58b31c334db 142,151-152
+  s_477c0d90c4846f::t_6f75e93569ce72 172,177
+  s_477c0d90c4846f::t_b7ab4dfbbf5c76 191,195
+  s_477c0d90c4846f::t_ccd6295aae48b5 173,178-179,182,192-194
+  s_477c0d90c4846f::t_342a802f4b9098 162-164,166,442,445
+scripts/markets/babylon/AaveV4BabylonVerify.s.sol
+  s_477c0d90c4846f::t_cab58b31c334db 31
+  s_477c0d90c4846f::t_ad1798eca66952 20-30,32-33,46-50
+  s_477c0d90c4846f::t_4f9d449b222a4e 12,43
+  s_477c0d90c4846f::t_6f75e93569ce72 37
+  s_477c0d90c4846f::t_ccd6295aae48b5 38-39
+scripts/markets/babylon/config/mainnet-test.json
+  s_477c0d90c4846f::t_a471e89470b419 9-10,13-14
+  s_477c0d90c4846f::t_86ca82dfd15d86 5
+tests/deployments/markets/babylon/AaveV4Babylon.t.sol
+  s_477c0d90c4846f::t_1f12f7d76fabeb 18,1290-1291,1539-1543,1567,1570,1630-1634,1690-1691,1694-1698
+  s_477c0d90c4846f::t_27a775046643d5 5,1288-1289,1292-1317,1320-1334,1336-1427,1430-1433,1435,1437-1440,1442,1445-1455,1457-1475,1477-1538,1544-1566,1568-1569,1571,1576-1628,1635-1645,1647,1649-1650,1657-1689,1692-1693,1699-1744,1746-1787
+  s_477c0d90c4846f::t_655fe305320bae 47-50,62-63,167-172,188,192-193,196-197,212,214-215,218-219,232,234-235,238-239,273,275,953-961,965-967,971-973
+  s_477c0d90c4846f::t_86ca82dfd15d86 166
+  s_477c0d90c4846f::t_c698a5b79d94bd 1428-1429,1434,1436,1441,1443-1444,1456,1629,1646,1648
+  s_477c0d90c4846f::t_b6880c83e695fc 1572-1575
+  s_477c0d90c4846f::t_755406f18f81ae 1318-1319
+  s_477c0d90c4846f::t_b87ce105e103da 1788-1808
+  s_477c0d90c4846f::t_7ec6d60cde8996 1335,1476,1651-1656,1745
+  s_477c0d90c4846f::t_02285e178e1b0a 64
+scripts/markets/babylon/config/mainnet.json
+  s_477c0d90c4846f::t_581b4b33c59ef0 4
+  s_477c0d90c4846f::t_cb7eb7fbd9b20a 1-3,6-265
+  s_477c0d90c4846f::t_86ca82dfd15d86 5
+scripts/markets/babylon/README.md
+  s_477c0d90c4846f::t_308ea49b6c1963 9,16,20-21,23-25,28,40,48
+  s_477c0d90c4846f::t_3c4a952171e1cc 44-45
+  s_477c0d90c4846f::t_42a084d73bc6a9 36
+  s_477c0d90c4846f::t_cd4be1a900d0c5 37
+scripts/markets/babylon/AaveV4BabylonConfig.sol
+  s_477c0d90c4846f::t_d491c1673a0179 200,384-438
+  s_477c0d90c4846f::t_84f4c79dd44c3a 158-159,162-163,173-199
+  s_477c0d90c4846f::t_8157afc6474e89 372
+  s_477c0d90c4846f::t_1d65eb8891e81a 28-30,32-35,45-46,49-50
+  s_477c0d90c4846f::t_cab58b31c334db 24,41,154,168-172
+  s_477c0d90c4846f::t_5a25bf870f460d 98-113,118
+  s_477c0d90c4846f::t_1cfe7baac7d617 361-362
+  s_477c0d90c4846f::t_72d7c776371698 201
+scripts/markets/babylon/AaveV4DeployBabylon.s.sol
+  s_477c0d90c4846f::t_6177c208dd4246 11-14,20-22,28,32-42,46-50,57-64
+  s_477c0d90c4846f::t_1f12f7d76fabeb 51-56
+  s_477c0d90c4846f::t_4aacad46303641 43-45
+  s_477c0d90c4846f::t_6f7fb3ab9e451b 65
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "cd5d0fdc59608526337d1a634a635739e84e4aad",
+  "prompts": {},
+  "humans": {
+    "h_0f977de3f043fc": {
+      "author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  },
+  "sessions": {
+    "s_477c0d90c4846f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9de15bb6-ef2d-4870-b4ab-7a2a27701508",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}
