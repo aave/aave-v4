@@ -175,7 +175,7 @@ You can find all audit reports under [audits](./audits/):
 
 ### Bug Bounty
 
-Further details will be made available soon.
+Aave V4 has an active bug bounty program on [Sherlock](https://audits.sherlock.xyz/bug-bounties/300).
 
 # License
 
