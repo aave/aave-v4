@@ -2,7 +2,12 @@
 pragma solidity ^0.8.0;
 
 import {Create2TestHelper} from 'tests/utils/Create2TestHelper.sol';
-import {AaveV4DeployBabylon, ICreateX} from 'scripts/markets/babylon/AaveV4DeployBabylon.s.sol';
+import {AaveV4DeployBabylon} from 'scripts/markets/babylon/AaveV4DeployBabylon.s.sol';
+import {
+  AaveV4DeployBabylonSpoke,
+  AaveV4BabylonSpokeDeployment,
+  ICreateX
+} from 'scripts/markets/babylon/AaveV4DeployBabylonSpoke.s.sol';
 import {AaveV4BabylonHandover} from 'scripts/markets/babylon/AaveV4BabylonHandover.s.sol';
 import {AaveV4BabylonConfigure} from 'scripts/markets/babylon/AaveV4BabylonConfigure.s.sol';
 import {AaveV4BabylonConfig} from 'scripts/markets/babylon/AaveV4BabylonConfig.sol';
@@ -10,6 +15,7 @@ import {AaveV4BabylonVerify} from 'scripts/markets/babylon/AaveV4BabylonVerify.s
 import {AaveV4BabylonVerification} from 'scripts/markets/babylon/AaveV4BabylonVerification.sol';
 import {AaveV4DeployOrchestration} from 'src/deployments/orchestration/AaveV4DeployOrchestration.sol';
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
+import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 import {InputUtils} from 'src/deployments/utils/libraries/InputUtils.sol';
 import {MetadataLogger} from 'src/deployments/utils/MetadataLogger.sol';
 import {BytecodeHelper} from 'src/deployments/utils/libraries/BytecodeHelper.sol';
@@ -40,6 +46,22 @@ contract AaveV4DeployBabylonHarness is AaveV4DeployBabylon {
     return _loadWarningsAndSanitizeInputs(_getDeployInputs(), deployer);
   }
 
+  function _config() internal view override returns (AaveV4BabylonConfig.Config memory) {
+    return _harnessConfig;
+  }
+
+  function _executeUserPrompt() internal override {}
+}
+
+contract AaveV4DeployBabylonSpokeHarness is AaveV4DeployBabylonSpoke {
+  AaveV4BabylonConfig.Config internal _harnessConfig;
+  bool internal _skipLiquidationManagerCheck;
+
+  constructor(AaveV4BabylonConfig.Config memory config, bool skipLiquidationManagerCheck) {
+    _harnessConfig = config;
+    _skipLiquidationManagerCheck = skipLiquidationManagerCheck;
+  }
+
   function requireConfigLibraries(bytes32 librarySalt) external view {
     super._requireConfigLibraries(librarySalt);
   }
@@ -56,13 +78,22 @@ contract AaveV4DeployBabylonHarness is AaveV4DeployBabylon {
     return _harnessConfig;
   }
 
+  /// @dev Updates the config report in place, so the next steps read the BabylonSpoke.
+  function _outputReport() internal view override returns (string memory) {
+    return _harnessConfig.report;
+  }
+
   /// @dev Tests link the libraries foundry deploys, not the ones at the config salt.
   function _requireConfigLibraries(bytes32) internal view override {}
 
-  /// @dev CreateX is not deployed in tests, `requireLiquidationManager` covers the check.
-  function _requireLiquidationManager(AaveV4BabylonConfig.Config memory) internal view override {}
-
-  function _executeUserPrompt() internal override {}
+  /// @dev CreateX is not deployed in unit tests, `requireLiquidationManager` covers the check.
+  function _requireLiquidationManager(
+    AaveV4BabylonConfig.Config memory config
+  ) internal view override {
+    if (!_skipLiquidationManagerCheck) {
+      super._requireLiquidationManager(config);
+    }
+  }
 }
 
 contract AaveV4BabylonHandoverHarness is AaveV4BabylonHandover {
@@ -251,13 +282,13 @@ contract AaveV4BabylonTest is Create2TestHelper {
   }
 
   function test_requireConfigLibraries_revertsWith_librariesNotDeployed() public {
-    AaveV4DeployBabylonHarness harness = new AaveV4DeployBabylonHarness(_config);
+    AaveV4DeployBabylonSpokeHarness harness = new AaveV4DeployBabylonSpokeHarness(_config, true);
     vm.expectRevert('config libraries not deployed');
     harness.requireConfigLibraries(keccak256('aave-v4-babylon-mainnet-test-libraries-v1'));
   }
 
   function test_containsAddress() public {
-    AaveV4DeployBabylonHarness harness = new AaveV4DeployBabylonHarness(_config);
+    AaveV4DeployBabylonSpokeHarness harness = new AaveV4DeployBabylonSpokeHarness(_config, true);
     address target = makeAddr('library');
     bytes memory code = abi.encodePacked(hex'6080', target, hex'5b');
     assertTrue(harness.containsAddress(code, target));
@@ -271,8 +302,9 @@ contract AaveV4BabylonTest is Create2TestHelper {
   function test_sepoliaConfig_deploy() public {
     vm.chainId(SEPOLIA_CHAIN_ID);
     AaveV4BabylonConfig.Config memory config = AaveV4BabylonConfig.read('sepolia');
-    OrchestrationReports.FullDeploymentReport memory report = this.deploy(
-      new AaveV4DeployBabylonHarness(config).sanitizedDeployInputs(config.deployer)
+    OrchestrationReports.FullDeploymentReport memory report = this.deployAs(
+      config,
+      config.deployer
     );
 
     IBabylonSpoke babylonSpoke = IBabylonSpoke(
@@ -293,10 +325,9 @@ contract AaveV4BabylonTest is Create2TestHelper {
     assertEq(inputs.hubLabels[0], 'babylon-btc');
     assertEq(inputs.hubLabels[1], 'babylon-stables');
     assertEq(inputs.spokeLabels.length, 0);
-    assertEq(inputs.babylonSpokeLabels.length, 1);
-    assertEq(inputs.babylonSpokeLabels[0], 'babylon');
-    assertEq(inputs.babylonLiquidationManagers[0], _liquidationManager);
-    assertEq(inputs.babylonManagedCollateralReserveIds[0], 0);
+    assertEq(inputs.babylonSpokeLabels.length, 0);
+    assertEq(inputs.babylonLiquidationManagers.length, 0);
+    assertEq(inputs.babylonManagedCollateralReserveIds.length, 0);
     assertFalse(inputs.deployNativeTokenGateway);
     assertFalse(inputs.deploySignatureGateway);
     assertFalse(inputs.deployPositionManagers);
@@ -304,9 +335,7 @@ contract AaveV4BabylonTest is Create2TestHelper {
   }
 
   function test_deploy() public {
-    OrchestrationReports.FullDeploymentReport memory report = this.deploy(
-      new AaveV4DeployBabylonHarness(_config).sanitizedDeployInputs(_deployer)
-    );
+    OrchestrationReports.FullDeploymentReport memory report = this.deploy(_config);
 
     assertEq(report.hubInstanceBatchReports.length, 2);
     assertEq(report.hubInstanceBatchReports[0].label, 'babylon-btc');
@@ -340,6 +369,123 @@ contract AaveV4BabylonTest is Create2TestHelper {
     (bool deployerIsAdmin, ) = IAccessManagerEnumerable(report.authorityBatchReport.accessManager)
       .hasRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, _deployer);
     assertTrue(deployerIsAdmin);
+  }
+
+  function test_deployHubs_withoutBabylonSpoke() public {
+    OrchestrationReports.FullDeploymentReport memory report = this.deployHubsAs(_config, _deployer);
+
+    assertEq(report.hubInstanceBatchReports.length, 2);
+    assertEq(report.spokeInstanceBatchReports.length, 0);
+    assertEq(report.babylonSpokeInstanceBatchReports.length, 0);
+    address accessManager = report.authorityBatchReport.accessManager;
+    for (uint256 i; i < 2; ++i) {
+      address hub = report.hubInstanceBatchReports[i].report.hubProxy;
+      assertEq(IAccessManaged(hub).authority(), accessManager);
+      assertEq(_proxyAdmin(hub).owner(), _deployer);
+    }
+    (bool deployerIsAdmin, ) = IAccessManagerEnumerable(accessManager).hasRole(
+      Roles.ACCESS_MANAGER_ADMIN_ROLE,
+      _deployer
+    );
+    assertTrue(deployerIsAdmin);
+  }
+
+  /// @dev The split deployment puts the BabylonSpoke where the single-step deployment did.
+  function test_deploySpoke_matchesSingleStepDeployment() public {
+    uint256 snapshot = vm.snapshotState();
+    InputUtils.FullDeployInputs memory inputs = new AaveV4DeployBabylonHarness(_config)
+      .sanitizedDeployInputs(_deployer);
+    inputs.babylonSpokeLabels = new string[](1);
+    inputs.babylonSpokeLabels[0] = _config.babylonSpokeLabel;
+    inputs.babylonLiquidationManagers = new address[](1);
+    inputs.babylonLiquidationManagers[0] = _liquidationManager;
+    inputs.babylonManagedCollateralReserveIds = new uint256[](1);
+    BatchReports.SpokeInstanceBatchReport memory singleStep = this
+      .deployInputs(inputs)
+      .babylonSpokeInstanceBatchReports[0]
+      .report;
+    vm.revertToState(snapshot);
+
+    OrchestrationReports.FullDeploymentReport memory report = this.deploy(_config);
+
+    BatchReports.SpokeInstanceBatchReport memory split = report
+      .babylonSpokeInstanceBatchReports[0]
+      .report;
+    assertEq(split.spokeProxy, singleStep.spokeProxy);
+    assertEq(split.spokeImplementation, singleStep.spokeImplementation);
+    assertEq(split.aaveOracle, singleStep.aaveOracle);
+  }
+
+  function test_deploySpoke_run() public {
+    OrchestrationReports.FullDeploymentReport memory hubs = _deployHubsAndWriteReport(
+      'babylon-split-run-test'
+    );
+    address accessManager = hubs.authorityBatchReport.accessManager;
+
+    new AaveV4DeployBabylonSpokeHarness(_config, true).run();
+
+    AaveV4BabylonConfig.Deployment memory deployment = AaveV4BabylonConfig.readDeployment(_config);
+    assertEq(deployment.accessManager, accessManager);
+    assertEq(deployment.hubs[0], hubs.hubInstanceBatchReports[0].report.hubProxy);
+    assertEq(deployment.hubs[1], hubs.hubInstanceBatchReports[1].report.hubProxy);
+    assertEq(deployment.treasurySpoke, hubs.treasurySpokeBatchReport.treasurySpoke);
+    address babylonSpoke = deployment.babylonSpoke;
+    assertEq(IBabylonSpoke(babylonSpoke).LIQUIDATION_MANAGER(), _liquidationManager);
+    assertEq(IBabylonSpoke(babylonSpoke).MANAGED_COLLATERAL_RESERVE_ID(), 0);
+    assertEq(IAccessManaged(babylonSpoke).authority(), accessManager);
+    assertEq(_proxyAdmin(babylonSpoke).owner(), _deployer);
+    assertEq(ISpoke(babylonSpoke).ORACLE(), deployment.oracle);
+    _assertTargetRole(
+      accessManager,
+      babylonSpoke,
+      Roles.getSpokeConfiguratorRoleSelectors(),
+      Roles.SPOKE_CONFIGURATOR_ROLE
+    );
+    _assertTargetRole(
+      accessManager,
+      babylonSpoke,
+      Roles.getSpokePositionUpdaterRoleSelectors(),
+      Roles.SPOKE_USER_POSITION_UPDATER_ROLE
+    );
+  }
+
+  function test_deploySpoke_run_revertsWith_babylonSpokeAlreadyInReport() public {
+    _deployHubsAndWriteReport('babylon-split-twice-test');
+    AaveV4DeployBabylonSpokeHarness harness = new AaveV4DeployBabylonSpokeHarness(_config, true);
+    harness.run();
+    vm.expectRevert('babylon spoke already in report');
+    harness.run();
+  }
+
+  function test_deploySpoke_run_revertsWith_hubAuthority() public {
+    OrchestrationReports.FullDeploymentReport memory hubs = _deployHubsAndWriteReport(
+      'babylon-split-authority-test'
+    );
+    vm.writeJson(
+      string.concat('"', vm.toString(hubs.configuratorBatchReport.hubConfigurator), '"'),
+      _config.report,
+      '.accessManager'
+    );
+    AaveV4DeployBabylonSpokeHarness harness = new AaveV4DeployBabylonSpokeHarness(_config, true);
+    vm.expectRevert('hub authority');
+    harness.run();
+  }
+
+  function test_deploySpoke_run_revertsWith_broadcasterNotDeployer() public {
+    _deployHubsAndWriteReport('babylon-split-broadcaster-test');
+    AaveV4BabylonConfig.Config memory config = _config;
+    config.deployer = makeAddr('other deployer');
+    AaveV4DeployBabylonSpokeHarness harness = new AaveV4DeployBabylonSpokeHarness(config, true);
+    vm.expectRevert('broadcaster is not the config deployer');
+    harness.run();
+  }
+
+  function test_deploySpoke_run_revertsWith_liquidationManagerDeployerUnsetOnEthereum() public {
+    _deployHubsAndWriteReport('babylon-split-createx-test');
+    vm.chainId(1);
+    AaveV4DeployBabylonSpokeHarness harness = new AaveV4DeployBabylonSpokeHarness(_config, false);
+    vm.expectRevert('liquidation manager deployer unset');
+    harness.run();
   }
 
   function test_handover_leavesDeployerWithNothing() public {
@@ -980,33 +1126,53 @@ contract AaveV4BabylonTest is Create2TestHelper {
   }
 
   function deploy(
-    InputUtils.FullDeployInputs memory inputs
-  ) external returns (OrchestrationReports.FullDeploymentReport memory report) {
-    MetadataLogger logger = new MetadataLogger(OUTPUT_DIR);
-    bytes memory hubBytecode = BytecodeHelper.getHubBytecode();
-    bytes memory spokeBytecode = BytecodeHelper.getSpokeBytecode();
-    bytes memory babylonSpokeBytecode = BytecodeHelper.getBabylonSpokeBytecode();
-    vm.startPrank(_deployer);
-    report = AaveV4DeployOrchestration.deployAaveV4({
-      logger: logger,
-      deployer: _deployer,
-      deployInputs: inputs,
-      hubBytecode: hubBytecode,
-      spokeBytecode: spokeBytecode,
-      babylonSpokeBytecode: babylonSpokeBytecode
-    });
-    vm.stopPrank();
+    AaveV4BabylonConfig.Config memory config
+  ) external returns (OrchestrationReports.FullDeploymentReport memory) {
+    return this.deployAs(config, _deployer);
   }
 
   function _deployAndWriteReport()
     internal
     returns (OrchestrationReports.FullDeploymentReport memory report)
   {
-    report = this.deploy(new AaveV4DeployBabylonHarness(_config).sanitizedDeployInputs(_deployer));
+    report = this.deploy(_config);
+    _writeReport(report, REPORT_NAME);
+  }
+
+  /// @dev Writes to its own report, since tests run in parallel and the others read the full one.
+  function _deployHubsAndWriteReport(
+    string memory reportName
+  ) internal returns (OrchestrationReports.FullDeploymentReport memory report) {
+    _config.report = string.concat(
+      OUTPUT_DIR,
+      vm.toString(block.chainid),
+      '-',
+      reportName,
+      '.json'
+    );
+    report = this.deployHubsAs(_config, _deployer);
+    _writeReport(report, reportName);
+  }
+
+  function _writeReport(
+    OrchestrationReports.FullDeploymentReport memory report,
+    string memory reportName
+  ) internal {
     vm.createDir(OUTPUT_DIR, true);
     MetadataLogger logger = new MetadataLogger(OUTPUT_DIR);
     logger.writeJsonReportMarket(report);
-    logger.save({fileName: REPORT_NAME, withTimestamp: false});
+    logger.save({fileName: reportName, withTimestamp: false});
+  }
+
+  function _assertTargetRole(
+    address accessManager,
+    address target,
+    bytes4[] memory selectors,
+    uint64 roleId
+  ) internal view {
+    for (uint256 i; i < selectors.length; ++i) {
+      assertEq(IAccessManager(accessManager).getTargetFunctionRole(target, selectors[i]), roleId);
+    }
   }
 
   function _proxyAdmin(address proxy) internal view returns (ProxyAdmin) {
@@ -1484,27 +1650,27 @@ contract AaveV4BabylonTest is Create2TestHelper {
   function test_requireLiquidationManager() public {
     AaveV4BabylonConfig.Config memory config = _sepoliaAdapterConfig();
     _mockCreateX(SEPOLIA_ADAPTER_GUARDED_SALT, SEPOLIA_AAVE_ADAPTER);
-    new AaveV4DeployBabylonHarness(config).requireLiquidationManager(config);
+    new AaveV4DeployBabylonSpokeHarness(config, true).requireLiquidationManager(config);
   }
 
   function test_requireLiquidationManager_revertsWith_notCreateXAddress() public {
     AaveV4BabylonConfig.Config memory config = _sepoliaAdapterConfig();
     config.liquidationManager = makeAddr('other adapter');
     _mockCreateX(SEPOLIA_ADAPTER_GUARDED_SALT, SEPOLIA_AAVE_ADAPTER);
-    AaveV4DeployBabylonHarness harness = new AaveV4DeployBabylonHarness(config);
+    AaveV4DeployBabylonSpokeHarness harness = new AaveV4DeployBabylonSpokeHarness(config, true);
     vm.expectRevert('liquidation manager is not the createx address');
     harness.requireLiquidationManager(config);
   }
 
   function test_requireLiquidationManager_revertsWith_deployerUnsetOnEthereum() public {
-    AaveV4DeployBabylonHarness harness = new AaveV4DeployBabylonHarness(_config);
+    AaveV4DeployBabylonSpokeHarness harness = new AaveV4DeployBabylonSpokeHarness(_config, true);
     vm.chainId(1);
     vm.expectRevert('liquidation manager deployer unset');
     harness.requireLiquidationManager(_config);
   }
 
   function test_requireLiquidationManager_skipsUnsetDeployerOffEthereum() public {
-    new AaveV4DeployBabylonHarness(_config).requireLiquidationManager(_config);
+    new AaveV4DeployBabylonSpokeHarness(_config, true).requireLiquidationManager(_config);
   }
 
   function test_deploy_revertsWith_broadcasterNotDeployer() public {
@@ -1726,7 +1892,7 @@ contract AaveV4BabylonTest is Create2TestHelper {
     externalConfig.hubLabels = hubLabels;
     externalConfig.babylonSpokeLabel = 'external';
     OrchestrationReports.FullDeploymentReport memory report = this.deployAs(
-      new AaveV4DeployBabylonHarness(externalConfig).sanitizedDeployInputs(_governance),
+      externalConfig,
       _governance
     );
     hub = report.hubInstanceBatchReports[0].report.hubProxy;
@@ -1749,10 +1915,52 @@ contract AaveV4BabylonTest is Create2TestHelper {
     vm.stopPrank();
   }
 
+  /// @dev Runs the orchestration on `inputs` as is, so it can deploy a BabylonSpoke in one step.
+  function deployInputs(
+    InputUtils.FullDeployInputs memory inputs
+  ) external returns (OrchestrationReports.FullDeploymentReport memory report) {
+    MetadataLogger logger = new MetadataLogger(OUTPUT_DIR);
+    bytes memory hubBytecode = BytecodeHelper.getHubBytecode();
+    bytes memory spokeBytecode = BytecodeHelper.getSpokeBytecode();
+    bytes memory babylonSpokeBytecode = BytecodeHelper.getBabylonSpokeBytecode();
+    vm.startPrank(_deployer);
+    report = AaveV4DeployOrchestration.deployAaveV4({
+      logger: logger,
+      deployer: _deployer,
+      deployInputs: inputs,
+      hubBytecode: hubBytecode,
+      spokeBytecode: spokeBytecode,
+      babylonSpokeBytecode: babylonSpokeBytecode
+    });
+    vm.stopPrank();
+  }
+
+  /// @dev Runs both deploy steps: the Hubs, then the BabylonSpoke under their AccessManager.
   function deployAs(
-    InputUtils.FullDeployInputs memory inputs,
+    AaveV4BabylonConfig.Config memory config,
     address deployer
   ) external returns (OrchestrationReports.FullDeploymentReport memory report) {
+    report = this.deployHubsAs(config, deployer);
+    vm.startPrank(deployer);
+    BatchReports.SpokeInstanceBatchReport memory spokeReport = AaveV4BabylonSpokeDeployment.deploy({
+      config: config,
+      deployer: deployer,
+      accessManager: report.authorityBatchReport.accessManager
+    });
+    vm.stopPrank();
+    report.babylonSpokeInstanceBatchReports = new OrchestrationReports.SpokeDeploymentReport[](1);
+    report.babylonSpokeInstanceBatchReports[0] = OrchestrationReports.SpokeDeploymentReport({
+      label: config.babylonSpokeLabel,
+      report: spokeReport
+    });
+  }
+
+  function deployHubsAs(
+    AaveV4BabylonConfig.Config memory config,
+    address deployer
+  ) external returns (OrchestrationReports.FullDeploymentReport memory report) {
+    InputUtils.FullDeployInputs memory inputs = new AaveV4DeployBabylonHarness(config)
+      .sanitizedDeployInputs(deployer);
     MetadataLogger logger = new MetadataLogger(OUTPUT_DIR);
     bytes memory hubBytecode = BytecodeHelper.getHubBytecode();
     bytes memory spokeBytecode = BytecodeHelper.getSpokeBytecode();

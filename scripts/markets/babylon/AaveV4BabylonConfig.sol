@@ -199,18 +199,12 @@ library AaveV4BabylonConfig {
     return config.authority == address(0) ? deployment.accessManager : config.authority;
   }
 
-  /// @notice Builds the deploy inputs: the Hubs and one BabylonSpoke, roles deferred to the handover.
+  /// @notice Builds the deploy inputs: the Hubs without the BabylonSpoke, roles deferred to the
+  /// handover.
   /// @param config The Babylon market config.
   function deployInputs(
     Config memory config
   ) internal pure returns (InputUtils.FullDeployInputs memory) {
-    string[] memory babylonSpokeLabels = new string[](1);
-    babylonSpokeLabels[0] = config.babylonSpokeLabel;
-    address[] memory babylonLiquidationManagers = new address[](1);
-    babylonLiquidationManagers[0] = config.liquidationManager;
-    uint256[] memory babylonManagedCollateralReserveIds = new uint256[](1);
-    babylonManagedCollateralReserveIds[0] = config.managedCollateralReserveId;
-
     return
       InputUtils.FullDeployInputs({
         accessManagerAdmin: address(0),
@@ -230,9 +224,9 @@ library AaveV4BabylonConfig {
         hubLabels: config.hubLabels,
         spokeLabels: new string[](0),
         spokeMaxReservesLimits: new uint16[](0),
-        babylonSpokeLabels: babylonSpokeLabels,
-        babylonLiquidationManagers: babylonLiquidationManagers,
-        babylonManagedCollateralReserveIds: babylonManagedCollateralReserveIds,
+        babylonSpokeLabels: new string[](0),
+        babylonLiquidationManagers: new address[](0),
+        babylonManagedCollateralReserveIds: new uint256[](0),
         salt: config.salt
       });
   }

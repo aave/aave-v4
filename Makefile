@@ -61,6 +61,12 @@ babylon-deploy :;
 	$(if ${dry},, --broadcast --verify) \
 	$(if ${gas_multiplier},--gas-estimate-multiplier ${gas_multiplier}) \
 
+babylon-deploy-spoke :;
+	forge clean && BABYLON_CONFIG=${config} forge script scripts/markets/babylon/AaveV4DeployBabylonSpoke.s.sol:AaveV4DeployBabylonSpoke \
+	--rpc-url ${chain} --account ${account} --slow \
+	$(if ${dry},, --broadcast --verify) \
+	$(if ${gas_multiplier},--gas-estimate-multiplier ${gas_multiplier}) \
+
 babylon-configure :;
 	BABYLON_CONFIG=${config} forge script scripts/markets/babylon/AaveV4BabylonConfigure.s.sol:AaveV4BabylonConfigure \
 	--rpc-url ${chain} --account ${account} --slow \
