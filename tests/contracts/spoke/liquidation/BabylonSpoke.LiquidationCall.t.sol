@@ -16,20 +16,6 @@ contract BabylonSpokeLiquidationCallTest is BabylonSpokeLiquidationCallBaseTest 
     debtReserveId = _daiReserveId(spoke4);
   }
 
-  /// @dev Supplies `collateralValue` (in units of Value) of collateral for `user` and borrows the
-  /// debt reserve so the user health factor lands at `healthFactor`.
-  function _setUpLiquidatableUser(uint256 collateralValue, uint256 healthFactor) internal {
-    _setUpLiquidatableUser(user, debtReserveId, collateralValue, healthFactor);
-  }
-
-  function _expectedRemovedValue(uint256 debtValueCovered) internal view returns (uint256) {
-    return _expectedRemovedValue(user, debtValueCovered);
-  }
-
-  function _expectedRepaidValue(uint256 removedValue) internal view returns (uint256) {
-    return _expectedRepaidValue(user, removedValue);
-  }
-
   /// @dev The managed collateral reserve never carries debt, so it is never a valid debt reserve.
   function test_revert_liquidationCall_managedCollateralReserveAsDebt() public {
     _setUpLiquidatableUser(100_000e26, 0.95e18);
@@ -196,18 +182,7 @@ contract BabylonSpokeLiquidationCallTest is BabylonSpokeLiquidationCallBaseTest 
     uint256 maxCollateralToRemove = userSuppliedBefore * 2; // above the priced removal
 
     // Act
-    vm.expectEmit(true, true, true, false, address(babylonSpoke));
-    emit IBabylonSpoke.BabylonLiquidationCall({
-      collateralReserveId: collateralReserveId,
-      debtReserveId: debtReserveId,
-      user: user,
-      liquidator: liquidationManager,
-      debtAmountRestored: 0,
-      drawnSharesLiquidated: 0,
-      premiumDelta: ZERO_PREMIUM_DELTA,
-      collateralAmountRemoved: 0,
-      collateralSharesLiquidated: 0
-    });
+    _expectBabylonLiquidationEvents(debtToCover, maxCollateralToRemove);
     vm.prank(liquidationManager);
     babylonSpoke.liquidationCall(debtReserveId, debtToCover, user, maxCollateralToRemove);
 
@@ -427,13 +402,7 @@ contract BabylonSpokeLiquidationCallTest is BabylonSpokeLiquidationCallBaseTest 
     uint256 maxCollateralToRemove = spoke4.getUserSuppliedAssets(collateralReserveId, user) * 2;
 
     // Act
-    vm.expectEmit(true, true, false, false, address(babylonSpoke));
-    emit ISpoke.ReportDeficit({
-      reserveId: debtReserveId,
-      user: user,
-      drawnShares: 0,
-      premiumDelta: ZERO_PREMIUM_DELTA
-    });
+    _expectBabylonLiquidationEvents(debtToCover, maxCollateralToRemove);
     vm.prank(liquidationManager);
     babylonSpoke.liquidationCall(debtReserveId, debtToCover, user, maxCollateralToRemove);
 
@@ -443,5 +412,42 @@ contract BabylonSpokeLiquidationCallTest is BabylonSpokeLiquidationCallBaseTest 
     (, bool isBorrowing) = spoke4.getUserReserveStatus(debtReserveId, user);
     assertFalse(isBorrowing, 'user borrowing status');
     assertEq(spoke4.getUserLastRiskPremium(user), 0, 'user risk premium');
+  }
+
+  /// @dev Supplies `collateralValue` (in units of Value) of collateral for `user` and borrows the
+  /// debt reserve so the user health factor lands at `healthFactor`.
+  function _setUpLiquidatableUser(uint256 collateralValue, uint256 healthFactor) internal {
+    _setUpLiquidatableUser(user, debtReserveId, collateralValue, healthFactor);
+  }
+
+  function _expectedRemovedValue(uint256 debtValueCovered) internal view returns (uint256) {
+    return _expectedRemovedValue(user, debtValueCovered);
+  }
+
+  function _expectedRepaidValue(uint256 removedValue) internal view returns (uint256) {
+    return _expectedRepaidValue(user, removedValue);
+  }
+
+  function _expectBabylonLiquidationEvents(
+    uint256 debtToCover,
+    uint256 maxCollateralToRemove
+  ) internal {
+    CheckedBabylonLiquidationCallParams memory params = CheckedBabylonLiquidationCallParams({
+      debtReserveId: debtReserveId,
+      debtToCover: debtToCover,
+      user: user,
+      maxCollateralToRemove: maxCollateralToRemove
+    });
+    BabylonAccountsSnapshot memory accountsInfoBefore = _getBabylonAccountsInfo(params);
+    BabylonLiquidationMetadata memory liquidationMetadata = _getBabylonLiquidationMetadata(
+      params,
+      accountsInfoBefore.userAccountData
+    );
+    _expectBabylonEventsAndCalls({
+      params: params,
+      accountsInfoBefore: accountsInfoBefore,
+      liquidationMetadata: liquidationMetadata,
+      expectedUserAccountData: _calculateExpectedBabylonUserAccountData(params, liquidationMetadata)
+    });
   }
 }

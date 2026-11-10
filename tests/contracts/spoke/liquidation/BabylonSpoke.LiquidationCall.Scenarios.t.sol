@@ -18,10 +18,6 @@ contract BabylonSpokeLiquidationCallScenariosTest is BabylonSpokeLiquidationCall
 
   address public user = makeAddr('user');
 
-  function _babylonManagedCollateralReserveId() internal pure override returns (uint256) {
-    return BABYLON_WETH_RESERVE_INDEX;
-  }
-
   function setUp() public virtual override {
     super.setUp();
 
@@ -370,5 +366,9 @@ contract BabylonSpokeLiquidationCallScenariosTest is BabylonSpokeLiquidationCall
       0,
       'User should have 0 premium offset after liquidation'
     );
+  }
+
+  function _babylonManagedCollateralReserveId() internal pure override returns (uint256) {
+    return BABYLON_WETH_RESERVE_INDEX;
   }
 }

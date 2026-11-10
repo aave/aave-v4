@@ -15,22 +15,6 @@ contract BabylonSpokeOperations_Gas_Tests is BabylonBase, SpokeOperations_Gas_Te
     reserveId = _getReserveIds(spoke);
   }
 
-  /// @dev bob acts as the liquidation manager, matching the canonical liquidator.
-  function _babylonLiquidationManager() internal view override returns (address) {
-    return bob;
-  }
-
-  /// @dev usdx is the managed collateral, matching the canonical liquidation reserves so the
-  /// snapshots stay comparable.
-  function _babylonManagedCollateralReserveId() internal pure override returns (uint256) {
-    return BABYLON_USDX_RESERVE_INDEX;
-  }
-
-  /// @dev Babylon liquidations never charge the fee, and the managed collateral reserve rejects one.
-  function _collateralLiquidationFee() internal pure override returns (uint16) {
-    return 0;
-  }
-
   function test_liquidation_partial() public override {
     _liquidationSetup(85_00);
 
@@ -238,4 +222,20 @@ contract BabylonSpokeOperations_Gas_Tests is BabylonBase, SpokeOperations_Gas_Te
 
   /// @dev The liquidator always receives underlying assets on the BabylonSpoke.
   function test_liquidation_receiveShares_full() public override {}
+
+  /// @dev bob acts as the liquidation manager, matching the canonical liquidator.
+  function _babylonLiquidationManager() internal view override returns (address) {
+    return bob;
+  }
+
+  /// @dev usdx is the managed collateral, matching the canonical liquidation reserves so the
+  /// snapshots stay comparable.
+  function _babylonManagedCollateralReserveId() internal pure override returns (uint256) {
+    return BABYLON_USDX_RESERVE_INDEX;
+  }
+
+  /// @dev Babylon liquidations never charge the fee, and the managed collateral reserve rejects one.
+  function _collateralLiquidationFee() internal pure override returns (uint16) {
+    return 0;
+  }
 }
