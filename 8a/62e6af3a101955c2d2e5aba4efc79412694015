@@ -1,0 +1,42 @@
+src/deployments/batches/AaveV4GiverTakerPositionManagerBatch.sol
+  s_a7c93df1b6897d::t_043b20a2a87902 1-35
+src/deployments/libraries/BatchReports.sol
+  s_a7c93df1b6897d::t_043b20a2a87902 55-56
+src/deployments/libraries/OrchestrationReports.sol
+  s_a7c93df1b6897d::t_043b20a2a87902 31,42
+src/deployments/orchestration/AaveV4DeployOrchestration.sol
+  s_a7c93df1b6897d::t_043b20a2a87902 115,403,407-409
+src/deployments/utils/MetadataLogger.sol
+  s_a7c93df1b6897d::t_afcba7b1c9fdc0 77-80,83-86
+  s_a7c93df1b6897d::t_043b20a2a87902 76,82
+tests/deployments/batches/BatchBase.t.sol
+  s_a7c93df1b6897d::t_043b20a2a87902 21
+tests/deployments/fork/PostDeploymentVerificationBase.t.sol
+  s_a7c93df1b6897d::t_043b20a2a87902 51,57
+tests/deployments/utils/MetadataLogger.t.sol
+  s_a7c93df1b6897d::t_043b20a2a87902 45-46,125,129,158-159,175-176
+tests/utils/BatchTestProcedures.sol
+  s_a7c93df1b6897d::t_043b20a2a87902 202,207,218,223,848,853,915,917,921,923
+src/deployments/orchestration/AaveV4DeployBase.sol
+  s_a7c93df1b6897d::t_043b20a2a87902 11,144-145,147-148,151-152,156
+tests/deployments/batches/AaveV4GiverTakerPositionManagerBatch.t.sol
+  s_a7c93df1b6897d::t_043b20a2a87902 1-43
+src/deployments/README.md
+  s_a7c93df1b6897d::t_043b20a2a87902 79,250-253
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "8a62e6af3a101955c2d2e5aba4efc79412694015",
+  "prompts": {},
+  "sessions": {
+    "s_a7c93df1b6897d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6b3b0537-862f-4af3-bbaf-239e58b03252",
+        "model": "claude-fable-5-2"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}
