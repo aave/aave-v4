@@ -1,0 +1,19 @@
+README.md
+  s_4dcb37728f852a::t_9ffe4a807ac704 178
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7f141df65fa89d5752881a40df4bcb2607fa0e5e",
+  "prompts": {},
+  "sessions": {
+    "s_4dcb37728f852a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ea6fad41-f330-4de7-9b82-53cb6ef88f49",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "DhairyaSethi <55102840+DhairyaSethi@users.noreply.github.com>"
+    }
+  }
+}
