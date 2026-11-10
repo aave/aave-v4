@@ -83,7 +83,11 @@ contract AaveV4BabylonMainnetForkTest is Test {
   address internal constant TREASURY_SPOKE = 0xB9B0b8616f6Bf6841972a52058132BE08d723155;
   address internal constant CORE_HUB = 0xCca852Bc40e560adC3b1Cc58CA5b55638ce826c9;
   address internal constant MAIN_SPOKE = 0x94e7A5dCbE816e498b89aB752661904E2F56c485;
+  // aave-address-book AaveV4EthereumExternalLibraries
+  address internal constant LIQUIDATION_LOGIC = 0x88dF535473C5adf1f57789734A05E555F7Deb8DB;
+  // aave-address-book GovernanceV3Ethereum
   address internal constant EXECUTOR_LVL_1 = 0x5300A1a15135EA4dc7aD5a167152C01EFc9b192A;
+  // aave-address-book MiscEthereum
   address internal constant V4_SECURITY_COUNCIL = 0x187AAE17d4931310B3fc75743e7F16Bdc9eD77e9;
   // aave-address-book AaveV4Ethereum.POSITION_MANAGERS
   address internal constant CONFIG_POSITION_MANAGER = 0x51305839CE822a7b4b12AA7D86eA7005052d575c;
@@ -190,6 +194,8 @@ contract AaveV4BabylonMainnetForkTest is Test {
   function test_hubAndSpokeOnSharedAccessManager() public view {
     assertEq(IAccessManaged(_hub()).authority(), ACCESS_MANAGER, 'hub authority');
     assertEq(IAccessManaged(_spoke()).authority(), ACCESS_MANAGER, 'spoke authority');
+    assertEq(IAccessManaged(CORE_HUB).authority(), ACCESS_MANAGER, 'core hub authority');
+    assertEq(IAccessManaged(MAIN_SPOKE).authority(), ACCESS_MANAGER, 'main spoke authority');
     assertNotEq(_deployment.accessManager, ACCESS_MANAGER, 'temporary access manager');
     assertEq(
       IAccessManaged(_deployment.hubConfigurator).authority(),
@@ -257,6 +263,14 @@ contract AaveV4BabylonMainnetForkTest is Test {
     for (uint256 assetId; assetId < IHub(_hub()).getAssetCount(); ++assetId) {
       assertEq(IHub(_hub()).getAsset(assetId).feeReceiver, TREASURY_SPOKE, 'fee receiver');
       assertFalse(IHub(_hub()).isSpokeListed(assetId, treasurySpoke), 'unused treasury listed');
+      assertEq(IHub(_hub()).getSpokeAddedShares(assetId, treasurySpoke), 0, 'added shares');
+      assertEq(IHub(_hub()).getSpokeDrawnShares(assetId, treasurySpoke), 0, 'drawn shares');
+      (uint256 premiumShares, int256 premiumOffsetRay) = IHub(_hub()).getSpokePremiumData(
+        assetId,
+        treasurySpoke
+      );
+      assertEq(premiumShares, 0, 'premium shares');
+      assertEq(premiumOffsetRay, 0, 'premium offset');
     }
   }
 
@@ -264,6 +278,7 @@ contract AaveV4BabylonMainnetForkTest is Test {
     ExpectedReserve[] memory expected = _expectedReserves();
     ISpoke spoke = ISpoke(_spoke());
     IAaveOracle oracle = IAaveOracle(spoke.ORACLE());
+    assertEq(oracle.spoke(), _spoke(), 'oracle spoke');
     assertEq(spoke.getReserveCount(), RESERVE_COUNT, 'reserve count');
 
     for (uint256 reserveId; reserveId < RESERVE_COUNT; ++reserveId) {
@@ -330,7 +345,7 @@ contract AaveV4BabylonMainnetForkTest is Test {
     });
   }
 
-  /// @dev LlamaRisk tokenized spokes, named as every Ethereum V4 TokenizationSpoke and owned by the
+  /// @dev Tokenized spokes, named as every Ethereum V4 TokenizationSpoke and owned by the
   /// V4 Security Council, left unconnected until the launch AIP.
   function test_tokenizationSpokes() public view {
     address[4] memory underlyings = [USDT, USDC, GHO, WBTC];
