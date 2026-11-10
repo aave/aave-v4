@@ -32,7 +32,7 @@ contract TokenizationSpokeUpgradeableTest is TokenizationSpokeBaseTest {
     vm.expectEmit(vaultProxyAddress);
     emit IERC1967.Upgraded(address(vaultImpl));
     vm.expectEmit(vaultProxyAddress);
-    emit ITokenizationSpoke.SetTokenizationSpokeHubAsset(address(hub1), daiAssetId);
+    emit ITokenizationSpoke.SetTokenizationSpokeInitParams(address(hub1), daiAssetId);
     vm.expectEmit(vaultProxyAddress);
     emit Initializable.Initialized(revision);
     vm.expectEmit(proxyAdminAddress);

@@ -67,7 +67,7 @@ interface ITokenizationSpoke is IERC4626, IERC2612, IIntentConsumer {
   /// @notice Emitted when the TokenizationSpoke is bound to its Hub asset at initialization.
   /// @param hub The address of the Hub.
   /// @param assetId The identifier of the asset.
-  event SetTokenizationSpokeHubAsset(address indexed hub, uint256 indexed assetId);
+  event SetTokenizationSpokeInitParams(address indexed hub, uint256 indexed assetId);
 
   /// @notice Thrown when the given address is invalid.
   error InvalidAddress();

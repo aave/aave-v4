@@ -65,7 +65,7 @@ abstract contract TokenizationSpoke is
     (_asset, _decimals) = IHub(hub).getAssetUnderlyingAndDecimals(_assetId);
     _maxAllowedSpokeCap = IHub(hub).MAX_ALLOWED_SPOKE_CAP();
 
-    emit SetTokenizationSpokeHubAsset(hub, _assetId);
+    emit SetTokenizationSpokeInitParams(hub, _assetId);
 
     __ERC20_init(shareName, shareSymbol);
   }
