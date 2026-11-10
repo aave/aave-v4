@@ -20,6 +20,9 @@ abstract contract LegacyTokenizationSpoke is ITokenizationSpoke, ERC20Upgradeabl
   using EIP712Hash for *;
   using MathUtils for uint256;
 
+  /// @notice Emitted when the immutable variables of the TokenizationSpoke are set.
+  event SetTokenizationSpokeImmutables(address indexed hub, uint256 indexed assetId);
+
   /// @inheritdoc ITokenizationSpoke
   uint192 public constant PERMIT_NONCE_NAMESPACE = 0;
   /// @inheritdoc ITokenizationSpoke

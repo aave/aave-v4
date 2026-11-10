@@ -50,20 +50,22 @@ abstract contract TokenizationSpoke is
   ) external virtual;
 
   /// @dev Binds the vault to the Hub asset of `underlying` and sets the share token's ERC20 name and symbol.
-  /// @dev Must be called at every initialization, including upgrades: revision 1 held the Hub binding in immutables.
+  /// @dev Callable once per proxy: at deployment, or when upgrading from revision 1 which held the Hub binding in
+  /// immutables. Later revisions must not call it again.
   function __TokenizationSpoke_init(
     address hub,
     address underlying,
     string memory shareName,
     string memory shareSymbol
   ) internal onlyInitializing {
+    require(_hub == address(0), HubAlreadySet());
     require(hub != address(0), InvalidAddress());
     _hub = hub;
     _assetId = IHub(hub).getAssetId(underlying).toUint96(); // reverts if invalid
     (_asset, _decimals) = IHub(hub).getAssetUnderlyingAndDecimals(_assetId);
     _maxAllowedSpokeCap = IHub(hub).MAX_ALLOWED_SPOKE_CAP();
 
-    emit SetTokenizationSpokeImmutables(hub, _assetId);
+    emit SetTokenizationSpokeHubAsset(hub, _assetId);
 
     __ERC20_init(shareName, shareSymbol);
   }
@@ -184,7 +186,7 @@ abstract contract TokenizationSpoke is
     bytes32 s
   ) external returns (uint256) {
     try
-      IERC20Permit(asset()).permit({
+      IERC20Permit(_asset).permit({
         owner: msg.sender,
         spender: address(this),
         value: assets,

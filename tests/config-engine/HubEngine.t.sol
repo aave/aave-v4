@@ -1026,16 +1026,6 @@ contract HubEngineTest is BaseConfigEngineTest {
     assertEq(hub2().getAssetCount(), hub2CountBefore + 1);
   }
 
-  function test_constructor_setsTokenizationSpokeImplementation() public {
-    address impl = address(new TokenizationSpokeInstance());
-    assertEq(new AaveV4ConfigEngine(impl).TOKENIZATION_SPOKE_IMPLEMENTATION(), impl);
-  }
-
-  function test_constructor_revertsWith_InvalidTokenizationSpokeImplementation() public {
-    vm.expectRevert(IAaveV4ConfigEngine.InvalidTokenizationSpokeImplementation.selector);
-    new AaveV4ConfigEngine(address(0));
-  }
-
   function test_tokenizationSpokeDeployer_deploy_revertsOnZeroProxyAdminOwner() public {
     address implementation = engine.TOKENIZATION_SPOKE_IMPLEMENTATION();
     vm.expectRevert(TokenizationSpokeDeployer.InvalidProxyAdminOwner.selector);

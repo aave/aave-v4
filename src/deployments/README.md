@@ -68,6 +68,8 @@ src/deployments/
     AaveV4AuthorityBatch        AccessManagerEnumerable
     AaveV4ConfiguratorBatch     HubConfigurator, SpokeConfigurator
     AaveV4TreasurySpokeBatch    TreasurySpoke (single instance, proxy + impl)
+    AaveV4TokenizationSpokeImplementationBatch
+                                Canonical TokenizationSpokeInstance implementation (shared by all proxies)
     AaveV4HubInstanceBatch      HubInstance (proxy + impl), InterestRateStrategy
     AaveV4SpokeInstanceBatch    SpokeInstance (proxy + impl), AaveOracle
     AaveV4GatewayBatch          NativeTokenGateway, SignatureGateway
@@ -202,6 +204,11 @@ AaveV4DeployBatchBase.s.sol                         (Foundry script entry point)
     |     |     AaveV4DeployBase.deployTreasurySpokeBatch()
     |     |       new AaveV4TreasurySpokeBatch(owner, salt)
     |     |         Create2Utils.create2Deploy() --> TreasurySpoke
+    |     |
+    |     +-- _deployTokenizationSpokeImplementationBatch()
+    |     |     AaveV4DeployBase.deployTokenizationSpokeImplementationBatch()
+    |     |       new AaveV4TokenizationSpokeImplementationBatch(salt)
+    |     |         Create2Utils.create2Deploy() --> TokenizationSpokeInstance (canonical implementation)
     |     |
     |     +-- InputUtils.validateUniqueLabels()      revert on duplicate hub or spoke labels
     |     |
