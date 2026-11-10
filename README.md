@@ -171,7 +171,7 @@ You can find all audit reports under [audits](./audits/):
 - [2026-03-09 - Spoke Formal Verification - Certora](./audits/2026-03-09_Spoke-Fomal-Verification_Certora.pdf)
 - [2026-03-23 - Aave V4 - ChainSecurity](./audits/2026-03-23_Aave-V4_ChainSecurity.pdf)
 - [2026-04-13 - TokenizationSpoke Formal Verification - Certora](./audits/2026-04-13_TokenizationSpoke-Fomal-Verification_Certora.pdf)
-- [2026-11-02 - Config Engine - Certora](./audits/2026-11-02_Config-Engine_Certora.pdf)
+- [2026-11-02 - Config and Deploy Engine - Certora](./audits/2026-11-02_Config-and-Deploy-Engine_Certora.pdf)
 
 ### Bug Bounty
 
