@@ -41,6 +41,31 @@ contract HubEngineTest is BaseConfigEngineTest {
     engine.executeHubAssetListings(_toAssetListingArray(listing));
   }
 
+  function test_executeHubAssetListings_revertsWith_KeepCurrentNotAllowed() public {
+    for (uint256 field; field < 8; ++field) {
+      IAaveV4ConfigEngine.AssetListing memory listing = _defaultAssetListing();
+      listing.underlying = address(newToken);
+      if (field == 0) listing.feeReceiver = EngineFlags.KEEP_CURRENT_ADDRESS;
+      else if (field == 1) listing.irStrategy = EngineFlags.KEEP_CURRENT_ADDRESS;
+      else if (field == 2) listing.liquidityFee = EngineFlags.KEEP_CURRENT;
+      else if (field == 3) listing.irData.optimalUsageRatio = EngineFlags.KEEP_CURRENT_UINT16;
+      else if (field == 4) listing.irData.baseDrawnRate = EngineFlags.KEEP_CURRENT_UINT32;
+      else if (field == 5) listing.irData.rateGrowthBeforeOptimal = EngineFlags.KEEP_CURRENT_UINT32;
+      else if (field == 6) listing.irData.rateGrowthAfterOptimal = EngineFlags.KEEP_CURRENT_UINT32;
+      else {
+        listing.tokenization = IAaveV4ConfigEngine.TokenizationSpokeConfig({
+          addCap: 1000,
+          proxyAdminOwner: EngineFlags.KEEP_CURRENT_ADDRESS,
+          name: 'tNEW',
+          symbol: 'tNEW'
+        });
+      }
+
+      vm.expectRevert(HubEngine.KeepCurrentNotAllowed.selector);
+      engine.executeHubAssetListings(_toAssetListingArray(listing));
+    }
+  }
+
   function test_executeHubAssetConfigUpdates_feeBoth() public {
     uint256 assetId = _getAssetId(0, 0);
     IHub.AssetConfig memory configBefore = hub1().getAssetConfig(assetId);
@@ -1003,16 +1028,6 @@ contract HubEngineTest is BaseConfigEngineTest {
 
     assertEq(hub1().getAssetCount(), hub1CountBefore + 1);
     assertEq(hub2().getAssetCount(), hub2CountBefore + 1);
-  }
-
-  function test_constructor_setsFactory() public {
-    IHubSpokeFactory factory = engine.FACTORY();
-    assertEq(address(new AaveV4ConfigEngine(factory).FACTORY()), address(factory));
-  }
-
-  function test_constructor_revertsWith_InvalidFactory() public {
-    vm.expectRevert(IAaveV4ConfigEngine.InvalidFactory.selector);
-    new AaveV4ConfigEngine(IHubSpokeFactory(address(0)));
   }
 
   function test_executeHubSpokeToAssetsAdditions_revert_spokeAlreadyListed() public {

@@ -44,6 +44,7 @@ import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 import {TestnetERC20} from 'tests/helpers/mocks/TestnetERC20.sol';
 import {AaveV4PayloadWrapper} from 'tests/helpers/mocks/config-engine/AaveV4PayloadWrapper.sol';
 import {MockGovernanceExecutor} from 'tests/helpers/mocks/config-engine/MockGovernanceExecutor.sol';
+import {ConfigEngineDelegateCaller} from 'tests/helpers/mocks/config-engine/ConfigEngineDelegateCaller.sol';
 import {MockPriceFeed} from 'tests/helpers/mocks/MockPriceFeed.sol';
 import {PositionManagerBaseWrapper} from 'tests/helpers/mocks/PositionManagerBaseWrapper.sol';
 
@@ -86,6 +87,8 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
 
   MockGovernanceExecutor internal executor;
   IHubSpokeFactory internal factory;
+  AaveV4ConfigEngine internal engineImplementation;
+  /// @dev Delegatecalls into `engineImplementation`; holds the roles an Executor would hold.
   AaveV4ConfigEngine internal engine;
   IAccessManager internal accessManager;
   IHubConfigurator internal hubConfigurator;
@@ -165,7 +168,10 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
 
     executor = new MockGovernanceExecutor(PAYLOADS_CONTROLLER);
     factory = AaveV4TestOrchestration.deployHubSpokeFactory(address(accessManager), ADMIN);
-    engine = new AaveV4ConfigEngine(factory);
+    engineImplementation = new AaveV4ConfigEngine(factory);
+    engine = AaveV4ConfigEngine(
+      address(new ConfigEngineDelegateCaller(address(engineImplementation)))
+    );
     positionManager = new PositionManagerBaseWrapper(address(engine));
 
     _setupRoles(report);

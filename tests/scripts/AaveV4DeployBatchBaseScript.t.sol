@@ -93,7 +93,7 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     bool grantRoles
   ) public {
     _inputs.accessManagerAdmin = address(0);
-    _inputs.grantRoles = grantRoles;
+    _setGrantRoles(grantRoles);
     InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
       _inputs,
       _deployer
@@ -110,7 +110,7 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
 
   function test_loadWarningsAndSanitizeInputs_withZeroHubAdmin_fuzz(bool grantRoles) public {
     _inputs.hubAdmin = address(0);
-    _inputs.grantRoles = grantRoles;
+    _setGrantRoles(grantRoles);
     InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
       _inputs,
       _deployer
@@ -119,7 +119,7 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     if (grantRoles) {
       expected.hubAdmin = _deployer;
     } else {
-      // when grantRoles=false, treasurySpokeOwner and proxyAdminOwner always default to deployer
+      // when grantRoles=false, zero treasurySpokeOwner and proxyAdminOwner default to deployer
       expected.treasurySpokeOwner = _deployer;
       expected.proxyAdminOwner = _deployer;
     }
@@ -128,7 +128,7 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
 
   function test_loadWarningsAndSanitizeInputs_withZeroSpokeAdmin_fuzz(bool grantRoles) public {
     _inputs.spokeAdmin = address(0);
-    _inputs.grantRoles = grantRoles;
+    _setGrantRoles(grantRoles);
     InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
       _inputs,
       _deployer
@@ -147,7 +147,7 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     bool grantRoles
   ) public {
     _inputs.hubConfiguratorAdmin = address(0);
-    _inputs.grantRoles = grantRoles;
+    _setGrantRoles(grantRoles);
     InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
       _inputs,
       _deployer
@@ -166,7 +166,7 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     bool grantRoles
   ) public {
     _inputs.spokeConfiguratorAdmin = address(0);
-    _inputs.grantRoles = grantRoles;
+    _setGrantRoles(grantRoles);
     InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
       _inputs,
       _deployer
@@ -183,7 +183,7 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
 
   function test_loadWarningsAndSanitizeInputs_withZeroProxyAdminOwner_fuzz(bool grantRoles) public {
     _inputs.proxyAdminOwner = address(0);
-    _inputs.grantRoles = grantRoles;
+    _setGrantRoles(grantRoles);
     InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
       _inputs,
       _deployer
@@ -202,7 +202,7 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     bool grantRoles
   ) public {
     _inputs.treasurySpokeOwner = address(0);
-    _inputs.grantRoles = grantRoles;
+    _setGrantRoles(grantRoles);
     InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
       _inputs,
       _deployer
@@ -218,7 +218,7 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
 
   function test_loadWarningsAndSanitizeInputs_withZeroGatewayOwner_fuzz(bool grantRoles) public {
     _inputs.gatewayOwner = address(0);
-    _inputs.grantRoles = grantRoles;
+    _setGrantRoles(grantRoles);
     InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
       _inputs,
       _deployer
@@ -236,7 +236,7 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     bool grantRoles
   ) public {
     _inputs.positionManagerOwner = address(0);
-    _inputs.grantRoles = grantRoles;
+    _setGrantRoles(grantRoles);
     InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
       _inputs,
       _deployer
@@ -248,6 +248,39 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
       expected.proxyAdminOwner = _deployer;
     }
     assertEq(sanitized, expected);
+  }
+
+  function test_loadWarningsAndSanitizeInputs_withoutRoles_ownersEqualDeployer() public {
+    _inputs.grantRoles = false;
+    _inputs.proxyAdminOwner = _deployer;
+    _inputs.treasurySpokeOwner = _deployer;
+    InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
+      _inputs,
+      _deployer
+    );
+    assertEq(sanitized, _inputs);
+  }
+
+  function test_loadWarningsAndSanitizeInputs_withoutRoles_revertsWith_ProxyAdminOwnerMustBeDeployer_fuzz(
+    address proxyAdminOwner
+  ) public {
+    vm.assume(proxyAdminOwner != address(0) && proxyAdminOwner != _deployer);
+    _inputs.grantRoles = false;
+    _inputs.proxyAdminOwner = proxyAdminOwner;
+    _inputs.treasurySpokeOwner = _deployer;
+    vm.expectRevert(AaveV4DeployBatchBaseScript.ProxyAdminOwnerMustBeDeployer.selector);
+    _harness.loadWarningsAndSanitizeInputs(_inputs, _deployer);
+  }
+
+  function test_loadWarningsAndSanitizeInputs_withoutRoles_revertsWith_TreasurySpokeOwnerMustBeDeployer_fuzz(
+    address treasurySpokeOwner
+  ) public {
+    vm.assume(treasurySpokeOwner != address(0) && treasurySpokeOwner != _deployer);
+    _inputs.grantRoles = false;
+    _inputs.proxyAdminOwner = _deployer;
+    _inputs.treasurySpokeOwner = treasurySpokeOwner;
+    vm.expectRevert(AaveV4DeployBatchBaseScript.TreasurySpokeOwnerMustBeDeployer.selector);
+    _harness.loadWarningsAndSanitizeInputs(_inputs, _deployer);
   }
 
   /// @dev These tests verify that the deployer reverts when trying to deploy a native token gateway
@@ -269,7 +302,7 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     _inputs.nativeWrapper = address(0);
     // set deployNativeTokenGateway to false, so nativeWrapper input can be 0 address
     _inputs.deployNativeTokenGateway = false;
-    _inputs.grantRoles = grantRoles;
+    _setGrantRoles(grantRoles);
     InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
       _inputs,
       _deployer
@@ -328,6 +361,15 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     assertEq(a.spokeLabels, b.spokeLabels, 'spoke labels');
     assertEq(a.salt, b.salt, 'salt');
     assertEq(abi.encode(a), abi.encode(b));
+  }
+
+  /// @dev Deferred roles only accept zero or deployer-owned ProxyAdmins, so zero the owners to exercise the default.
+  function _setGrantRoles(bool grantRoles) internal {
+    _inputs.grantRoles = grantRoles;
+    if (!grantRoles) {
+      _inputs.proxyAdminOwner = address(0);
+      _inputs.treasurySpokeOwner = address(0);
+    }
   }
 
   function _toArray(

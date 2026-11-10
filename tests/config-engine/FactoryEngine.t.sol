@@ -52,6 +52,23 @@ contract FactoryEngineTest is BaseConfigEngineTest {
     }
   }
 
+  function test_executeHubDeployments_revertsWith_KeepCurrentNotAllowed() public {
+    IAaveV4ConfigEngine.HubDeployment[]
+      memory deployments = new IAaveV4ConfigEngine.HubDeployment[](1);
+    for (uint256 field; field < 2; ++field) {
+      deployments[0] = IAaveV4ConfigEngine.HubDeployment({
+        salt: 'hub',
+        authority: address(accessManager),
+        proxyAdminOwner: PROXY_ADMIN_OWNER
+      });
+      if (field == 0) deployments[0].authority = EngineFlags.KEEP_CURRENT_ADDRESS;
+      else deployments[0].proxyAdminOwner = EngineFlags.KEEP_CURRENT_ADDRESS;
+
+      vm.expectRevert(FactoryEngine.KeepCurrentNotAllowed.selector);
+      engine.executeHubDeployments(deployments);
+    }
+  }
+
   function test_executeSpokeDeployments() public {
     IAaveV4ConfigEngine.SpokeDeployment[]
       memory deployments = new IAaveV4ConfigEngine.SpokeDeployment[](2);
@@ -99,6 +116,25 @@ contract FactoryEngineTest is BaseConfigEngineTest {
     }
   }
 
+  function test_executeSpokeDeployments_revertsWith_KeepCurrentNotAllowed() public {
+    IAaveV4ConfigEngine.SpokeDeployment[]
+      memory deployments = new IAaveV4ConfigEngine.SpokeDeployment[](1);
+    for (uint256 field; field < 3; ++field) {
+      deployments[0] = IAaveV4ConfigEngine.SpokeDeployment({
+        salt: 'spoke',
+        authority: address(accessManager),
+        maxUserReservesLimit: MAX_USER_RESERVES_LIMIT,
+        proxyAdminOwner: PROXY_ADMIN_OWNER
+      });
+      if (field == 0) deployments[0].authority = EngineFlags.KEEP_CURRENT_ADDRESS;
+      else if (field == 1) deployments[0].maxUserReservesLimit = EngineFlags.KEEP_CURRENT_UINT16;
+      else deployments[0].proxyAdminOwner = EngineFlags.KEEP_CURRENT_ADDRESS;
+
+      vm.expectRevert(FactoryEngine.KeepCurrentNotAllowed.selector);
+      engine.executeSpokeDeployments(deployments);
+    }
+  }
+
   function test_executeTreasurySpokeDeployments() public {
     IAaveV4ConfigEngine.TreasurySpokeDeployment[]
       memory deployments = new IAaveV4ConfigEngine.TreasurySpokeDeployment[](1);
@@ -128,6 +164,23 @@ contract FactoryEngineTest is BaseConfigEngineTest {
       factory.getImplementation(IHubSpokeFactory.InstanceType.TreasurySpoke)
     );
     assertEq(Ownable(predicted).owner(), ADMIN);
+  }
+
+  function test_executeTreasurySpokeDeployments_revertsWith_KeepCurrentNotAllowed() public {
+    IAaveV4ConfigEngine.TreasurySpokeDeployment[]
+      memory deployments = new IAaveV4ConfigEngine.TreasurySpokeDeployment[](1);
+    for (uint256 field; field < 2; ++field) {
+      deployments[0] = IAaveV4ConfigEngine.TreasurySpokeDeployment({
+        salt: 'treasury-spoke',
+        owner: ADMIN,
+        proxyAdminOwner: PROXY_ADMIN_OWNER
+      });
+      if (field == 0) deployments[0].owner = EngineFlags.KEEP_CURRENT_ADDRESS;
+      else deployments[0].proxyAdminOwner = EngineFlags.KEEP_CURRENT_ADDRESS;
+
+      vm.expectRevert(FactoryEngine.KeepCurrentNotAllowed.selector);
+      engine.executeTreasurySpokeDeployments(deployments);
+    }
   }
 
   function test_payload_deploysAndWiresInstances() public {
@@ -195,7 +248,7 @@ contract FactoryEngineTest is BaseConfigEngineTest {
 
     return
       new MockFactoryDeploymentPayload({
-        configEngine: IAaveV4ConfigEngine(address(engine)),
+        configEngine: IAaveV4ConfigEngine(address(engineImplementation)),
         hubConfigurator: hubConfigurator,
         spokeConfigurator: spokeConfigurator,
         authority: address(accessManager),

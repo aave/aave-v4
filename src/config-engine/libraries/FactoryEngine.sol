@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: LicenseRef-BUSL
 pragma solidity ^0.8.0;
 
+import {EngineFlags} from 'src/config-engine/libraries/EngineFlags.sol';
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
 import {IHubSpokeFactory} from 'src/factory/interfaces/IHubSpokeFactory.sol';
 
@@ -11,6 +12,10 @@ import {IHubSpokeFactory} from 'src/factory/interfaces/IHubSpokeFactory.sol';
 /// executor. Payloads predict the deployed addresses with the factory `predict*` functions, using the executor as
 /// deployer.
 library FactoryEngine {
+  /// @dev Thrown when a deployment field carries a KEEP_CURRENT sentinel. A deployment has no
+  /// current value to keep, so a sentinel there is always a drafting mistake.
+  error KeepCurrentNotAllowed();
+
   /// @notice Deploys Hubs and their interest rate strategies.
   /// @param factory The HubSpokeFactory.
   /// @param deployments The Hub deployments to execute.
@@ -20,6 +25,7 @@ library FactoryEngine {
   ) external {
     uint256 length = deployments.length;
     for (uint256 i; i < length; ++i) {
+      require(!_hasKeepCurrent(deployments[i]), KeepCurrentNotAllowed());
       factory.deployHub({
         salt: deployments[i].salt,
         authority: deployments[i].authority,
@@ -37,6 +43,7 @@ library FactoryEngine {
   ) external {
     uint256 length = deployments.length;
     for (uint256 i; i < length; ++i) {
+      require(!_hasKeepCurrent(deployments[i]), KeepCurrentNotAllowed());
       factory.deploySpoke({
         salt: deployments[i].salt,
         authority: deployments[i].authority,
@@ -55,6 +62,7 @@ library FactoryEngine {
   ) external {
     uint256 length = deployments.length;
     for (uint256 i; i < length; ++i) {
+      require(!_hasKeepCurrent(deployments[i]), KeepCurrentNotAllowed());
       factory.deployTreasurySpoke({
         salt: deployments[i].salt,
         owner: deployments[i].owner,
@@ -118,6 +126,34 @@ library FactoryEngine {
         symbol: symbol,
         proxyAdminOwner: proxyAdminOwner
       });
+  }
+
+  /// @dev Returns true if any Hub deployment field carries the KEEP_CURRENT sentinel of its width.
+  function _hasKeepCurrent(
+    IAaveV4ConfigEngine.HubDeployment calldata deployment
+  ) private pure returns (bool) {
+    return
+      deployment.authority == EngineFlags.KEEP_CURRENT_ADDRESS ||
+      deployment.proxyAdminOwner == EngineFlags.KEEP_CURRENT_ADDRESS;
+  }
+
+  /// @dev Returns true if any Spoke deployment field carries the KEEP_CURRENT sentinel of its width.
+  function _hasKeepCurrent(
+    IAaveV4ConfigEngine.SpokeDeployment calldata deployment
+  ) private pure returns (bool) {
+    return
+      deployment.authority == EngineFlags.KEEP_CURRENT_ADDRESS ||
+      deployment.maxUserReservesLimit == EngineFlags.KEEP_CURRENT_UINT16 ||
+      deployment.proxyAdminOwner == EngineFlags.KEEP_CURRENT_ADDRESS;
+  }
+
+  /// @dev Returns true if any TreasurySpoke deployment field carries the KEEP_CURRENT sentinel of its width.
+  function _hasKeepCurrent(
+    IAaveV4ConfigEngine.TreasurySpokeDeployment calldata deployment
+  ) private pure returns (bool) {
+    return
+      deployment.owner == EngineFlags.KEEP_CURRENT_ADDRESS ||
+      deployment.proxyAdminOwner == EngineFlags.KEEP_CURRENT_ADDRESS;
   }
 
   function _tokenizationSpokeSalt(

@@ -63,7 +63,7 @@ contract TokenizationSpokeLegacyUpgradeTest is TokenizationSpokeBaseTest {
     address newImpl = address(new TokenizationSpokeInstance());
 
     vm.expectEmit(address(legacyVault));
-    emit ITokenizationSpoke.SetTokenizationSpokeImmutables(address(hub1), daiAssetId);
+    emit ITokenizationSpoke.SetTokenizationSpokeInitParams(address(hub1), daiAssetId);
     vm.expectEmit(address(legacyVault));
     emit Initializable.Initialized(2);
     _upgrade(newImpl);

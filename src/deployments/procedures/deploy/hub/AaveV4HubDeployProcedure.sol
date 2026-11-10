@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: LicenseRef-BUSL
 pragma solidity ^0.8.0;
 
-import {AaveV4DeployProcedureBase} from 'src/deployments/procedures/AaveV4DeployProcedureBase.sol';
 import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 
 /// @title AaveV4HubDeployProcedure
 /// @author Aave Labs
 /// @notice Deploys the canonical Hub implementation.
-contract AaveV4HubDeployProcedure is AaveV4DeployProcedureBase {
+contract AaveV4HubDeployProcedure {
   /// @notice Deploys the canonical Hub implementation via CREATE2.
   /// @param hubBytecode The creation bytecode of the Hub implementation.
   /// @param salt The CREATE2 salt for deterministic deployment.
