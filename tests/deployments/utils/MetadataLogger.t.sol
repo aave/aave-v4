@@ -24,6 +24,9 @@ contract MetadataLoggerTest is Test {
     report.hubImplementationBatchReport.hubImplementation = makeAddr('hubImplementation');
     report.spokeImplementationBatchReport.spokeImplementation = makeAddr('spokeImplementation');
     report.hubSpokeFactoryBatchReport.hubSpokeFactory = makeAddr('hubSpokeFactory');
+    report.hubSpokeFactoryBatchReport.hubSpokeFactoryImplementation = makeAddr(
+      'hubSpokeFactoryImplementation'
+    );
     report.hubSpokeFactoryBatchReport.treasurySpokeImplementation = makeAddr(
       'treasurySpokeImplementation'
     );
@@ -104,6 +107,10 @@ contract MetadataLoggerTest is Test {
     assertEq(
       vm.parseJsonAddress(json, '$.hubSpokeFactory'),
       report.hubSpokeFactoryBatchReport.hubSpokeFactory
+    );
+    assertEq(
+      vm.parseJsonAddress(json, '$.hubSpokeFactoryImplementation'),
+      report.hubSpokeFactoryBatchReport.hubSpokeFactoryImplementation
     );
 
     // Hubs

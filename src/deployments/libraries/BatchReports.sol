@@ -50,10 +50,12 @@ library BatchReports {
     address spokeImplementation;
   }
 
-  /// @dev hubSpokeFactory The deployed HubSpokeFactory contract address.
+  /// @dev hubSpokeFactory The deployed HubSpokeFactory proxy contract address.
+  /// @dev hubSpokeFactoryImplementation The deployed HubSpokeFactory implementation contract address.
   /// @dev treasurySpokeImplementation The deployed canonical TreasurySpoke implementation contract address.
   struct HubSpokeFactoryBatchReport {
     address hubSpokeFactory;
+    address hubSpokeFactoryImplementation;
     address treasurySpokeImplementation;
   }
 

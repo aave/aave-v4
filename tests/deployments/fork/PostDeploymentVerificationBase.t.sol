@@ -52,6 +52,10 @@ abstract contract PostDeploymentVerificationBase is BatchTestProcedures {
         json,
         '$.hubSpokeFactory'
       );
+      report.hubSpokeFactoryBatchReport.hubSpokeFactoryImplementation = vm.parseJsonAddress(
+        json,
+        '$.hubSpokeFactoryImplementation'
+      );
       report.hubSpokeFactoryBatchReport.treasurySpokeImplementation = vm.parseJsonAddress(
         json,
         '$.treasurySpokeImplementation'

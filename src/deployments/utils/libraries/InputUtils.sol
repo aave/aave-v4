@@ -6,7 +6,7 @@ pragma solidity ^0.8.0;
 /// @notice Deployment input struct and validation helpers.
 library InputUtils {
   /// @dev accessManagerAdmin The default admin of the access manager. Only used when grantRoles is true.
-  /// @dev proxyAdminOwner The owner of the Hub and Spoke ProxyAdmin contracts. Required at deploy time (constructor arg).
+  /// @dev proxyAdminOwner The owner of the HubSpokeFactory, Hub and Spoke ProxyAdmin contracts. Required at deploy time (constructor arg).
   ///      When grantRoles is `false`, defaults to the deployer; ownership can be transferred post-deployment.
   /// @dev hubAdmin The admin of the hub. Only used when grantRoles is true.
   /// @dev hubConfiguratorAdmin The admin granted all hub configurator roles. Only used when grantRoles is true.

@@ -78,18 +78,24 @@ library AaveV4DeployBase {
 
   /// @notice Deploys the HubSpokeFactory batch containing the canonical TreasurySpoke implementation and the
   /// HubSpokeFactory.
+  /// @param proxyAdminOwner The owner of the HubSpokeFactory ProxyAdmin.
+  /// @param authority The access control authority of the HubSpokeFactory.
   /// @param hubImplementation The canonical HubInstance implementation.
   /// @param spokeImplementation The canonical SpokeInstance implementation.
   /// @param tokenizationSpokeImplementation The canonical TokenizationSpokeInstance implementation.
   /// @param salt The CREATE2 salt for deterministic deployment.
   /// @return The HubSpokeFactory batch report.
   function deployHubSpokeFactoryBatch(
+    address proxyAdminOwner,
+    address authority,
     address hubImplementation,
     address spokeImplementation,
     address tokenizationSpokeImplementation,
     bytes32 salt
   ) internal returns (BatchReports.HubSpokeFactoryBatchReport memory) {
     AaveV4HubSpokeFactoryBatch hubSpokeFactoryBatch = new AaveV4HubSpokeFactoryBatch({
+      proxyAdminOwner_: proxyAdminOwner,
+      authority_: authority,
       hubImplementation_: hubImplementation,
       spokeImplementation_: spokeImplementation,
       tokenizationSpokeImplementation_: tokenizationSpokeImplementation,

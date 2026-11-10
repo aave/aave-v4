@@ -201,6 +201,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     spokeDeploys[0] = IAaveV4ConfigEngine.SpokeDeployment({
       salt: 'spoke',
       authority: address(accessManager),
+      maxUserReservesLimit: MAX_USER_RESERVES_LIMIT,
       proxyAdminOwner: PROXY_ADMIN_OWNER
     });
     IAaveV4ConfigEngine.TreasurySpokeDeployment[]
@@ -224,6 +225,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
       address(payload),
       'spoke',
       address(accessManager),
+      MAX_USER_RESERVES_LIMIT,
       PROXY_ADMIN_OWNER
     );
     address treasurySpoke = factory.predictTreasurySpoke(

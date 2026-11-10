@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {AaveV4Payload} from 'src/config-engine/AaveV4Payload.sol';
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
-import {IHubSpokeFactory} from 'src/deployments/factory/interfaces/IHubSpokeFactory.sol';
+import {IHubSpokeFactory} from 'src/factory/interfaces/IHubSpokeFactory.sol';
 import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
@@ -27,6 +27,7 @@ contract MockFactoryDeploymentPayload is AaveV4Payload {
 
   bytes32 internal constant HUB_SALT = 'hub';
   bytes32 internal constant TREASURY_SPOKE_SALT = 'treasury-spoke';
+  uint16 internal constant MAX_USER_RESERVES_LIMIT = type(uint16).max;
 
   constructor(
     IAaveV4ConfigEngine configEngine,
@@ -55,7 +56,10 @@ contract MockFactoryDeploymentPayload is AaveV4Payload {
   }
 
   function predictedSpoke(address deployer, uint256 i) public view returns (address) {
-    return FACTORY.predictSpoke(deployer, bytes32(i), AUTHORITY, PROXY_ADMIN_OWNER).proxy;
+    return
+      FACTORY
+        .predictSpoke(deployer, bytes32(i), AUTHORITY, MAX_USER_RESERVES_LIMIT, PROXY_ADMIN_OWNER)
+        .proxy;
   }
 
   function predictedTreasurySpoke(address deployer) public view returns (address) {
@@ -93,6 +97,7 @@ contract MockFactoryDeploymentPayload is AaveV4Payload {
       deployments[i] = IAaveV4ConfigEngine.SpokeDeployment({
         salt: bytes32(i),
         authority: AUTHORITY,
+        maxUserReservesLimit: MAX_USER_RESERVES_LIMIT,
         proxyAdminOwner: PROXY_ADMIN_OWNER
       });
     }

@@ -15,8 +15,8 @@ import {AaveV4SpokeRolesProcedure} from 'src/deployments/procedures/roles/AaveV4
 import {AaveV4HubConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubConfiguratorRolesProcedure.sol';
 import {AaveV4SpokeConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeConfiguratorRolesProcedure.sol';
 import {AaveV4AuthorityBatch} from 'src/deployments/batches/AaveV4AuthorityBatch.sol';
-import {HubSpokeFactory} from 'src/deployments/factory/HubSpokeFactory.sol';
-import {IHubSpokeFactory} from 'src/deployments/factory/interfaces/IHubSpokeFactory.sol';
+import {HubSpokeFactory} from 'src/factory/HubSpokeFactory.sol';
+import {IHubSpokeFactory} from 'src/factory/interfaces/IHubSpokeFactory.sol';
 import {TreasurySpokeInstance} from 'src/spoke/instances/TreasurySpokeInstance.sol';
 import {TokenizationSpokeInstance} from 'src/spoke/instances/TokenizationSpokeInstance.sol';
 import {TestTokensBatch} from 'tests/deployments/batches/TestTokensBatch.sol';
@@ -28,12 +28,15 @@ import {IHubInstance} from 'src/deployments/utils/interfaces/IHubInstance.sol';
 import {ISpokeInstance} from 'src/deployments/utils/interfaces/ISpokeInstance.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
+import {DeployConstants} from 'src/deployments/utils/libraries/DeployConstants.sol';
 import {TransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
 
 library AaveV4TestOrchestration {
   bool public constant IS_TEST = true;
   bytes internal constant CREATE2_FACTORY_BYTECODE =
     hex'7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe03601600081602082378035828234f58015156039578182fd5b8082525050506014600cf3';
+  address internal constant TEST_FACTORY_ADMIN =
+    address(uint160(uint256(keccak256('test-factory-admin'))));
   Vm private constant vm = Vm(address(bytes20(uint160(uint256(keccak256('hevm cheat code'))))));
 
   error Create2DeploymentFailed();
@@ -71,7 +74,13 @@ library AaveV4TestOrchestration {
       .accessManager;
 
     // Deploy canonical implementations and the HubSpokeFactory bound to them
-    IHubSpokeFactory factory = _deployTestEnvFactory(hubBytecode, spokeBytecode, salt);
+    IHubSpokeFactory factory = _deployTestEnvFactory(
+      admin,
+      report.accessManager,
+      hubBytecode,
+      spokeBytecode,
+      salt
+    );
 
     // Deploy TreasurySpoke (single instance for all hubs)
     report.treasurySpoke = factory.deployTreasurySpoke({
@@ -115,6 +124,8 @@ library AaveV4TestOrchestration {
   }
 
   function _deployTestEnvFactory(
+    address proxyAdminOwner,
+    address authority,
     bytes memory hubBytecode,
     bytes memory spokeBytecode,
     bytes32 salt
@@ -123,6 +134,8 @@ library AaveV4TestOrchestration {
       IHubSpokeFactory(
         AaveV4DeployBase
           .deployHubSpokeFactoryBatch({
+            proxyAdminOwner: proxyAdminOwner,
+            authority: authority,
             hubImplementation: AaveV4DeployBase
               .deployHubImplementationBatch({hubBytecode: hubBytecode, salt: salt})
               .hubImplementation,
@@ -169,6 +182,7 @@ library AaveV4TestOrchestration {
       IHubSpokeFactory.SpokeDeployment memory spokeDeployment = factory.deploySpoke({
         salt: keccak256(abi.encodePacked(salt, 'spoke-', string(abi.encode(i)))),
         authority: accessManager,
+        maxUserReservesLimit: DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT,
         proxyAdminOwner: admin
       });
       spokeReports[i].spoke = spokeDeployment.proxy;
@@ -199,6 +213,7 @@ library AaveV4TestOrchestration {
     IHubSpokeFactory.SpokeDeployment memory spokeDeployment = deployTestFactory().deploySpoke({
       salt: salt,
       authority: accessManager,
+      maxUserReservesLimit: DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT,
       proxyAdminOwner: proxyAdminOwner
     });
     report.spoke = spokeDeployment.proxy;
@@ -213,19 +228,51 @@ library AaveV4TestOrchestration {
       deployTestFactory().deployTreasurySpoke({salt: salt, owner: owner, proxyAdminOwner: owner});
   }
 
-  /// @dev Deploys, or returns when already deployed, a HubSpokeFactory bound to the canonical implementations.
+  /// @dev Deploys a new HubSpokeFactory proxy bound to the canonical implementations.
+  function deployHubSpokeFactory(
+    address authority,
+    address proxyAdminOwner
+  ) internal returns (IHubSpokeFactory) {
+    bytes memory initData = abi.encodeCall(
+      HubSpokeFactory.initialize,
+      (
+        authority,
+        address(deployHubImplementation()),
+        address(deploySpokeImplementation()),
+        _create2Deploy('', type(TreasurySpokeInstance).creationCode),
+        _create2Deploy('', type(TokenizationSpokeInstance).creationCode)
+      )
+    );
+    return
+      IHubSpokeFactory(
+        address(
+          new TransparentUpgradeableProxy(address(new HubSpokeFactory()), proxyAdminOwner, initData)
+        )
+      );
+  }
+
+  /// @dev Deploys, or returns when already deployed, a HubSpokeFactory proxy bound to the canonical implementations.
   function deployTestFactory() internal returns (IHubSpokeFactory) {
+    bytes memory initData = abi.encodeCall(
+      HubSpokeFactory.initialize,
+      (
+        TEST_FACTORY_ADMIN,
+        address(deployHubImplementation()),
+        address(deploySpokeImplementation()),
+        _create2Deploy('', type(TreasurySpokeInstance).creationCode),
+        _create2Deploy('', type(TokenizationSpokeInstance).creationCode)
+      )
+    );
     return
       IHubSpokeFactory(
         _create2Deploy(
           '',
           abi.encodePacked(
-            type(HubSpokeFactory).creationCode,
+            type(TransparentUpgradeableProxy).creationCode,
             abi.encode(
-              deployHubImplementation(),
-              deploySpokeImplementation(),
-              _create2Deploy('', type(TreasurySpokeInstance).creationCode),
-              _create2Deploy('', type(TokenizationSpokeInstance).creationCode)
+              _create2Deploy('', type(HubSpokeFactory).creationCode),
+              TEST_FACTORY_ADMIN,
+              initData
             )
           )
         )

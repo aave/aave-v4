@@ -42,13 +42,17 @@ The orchestration deploys one canonical `TokenizationSpokeInstance` implementati
 
 ### HubSpokeFactory
 
-`HubSpokeFactory` is the single deployment path for Hub, Spoke, TreasurySpoke and TokenizationSpoke instances, both in the initial deployment and afterwards. It takes the four canonical implementations as constructor immutables and deploys every instance as a `TransparentUpgradeableProxy` pointing to one of them, so every instance runs exactly the canonical code. A Hub comes with its `AssetInterestRateStrategy`, and a Spoke with its `AaveOracle`, bound atomically and initialized with `MAX_USER_RESERVES_LIMIT`. The implementations can't be changed: a new implementation version means new implementations and a new factory.
+`HubSpokeFactory` (`src/factory/`) is the single deployment path for Hub, Spoke, TreasurySpoke and TokenizationSpoke instances, both in the initial deployment and afterwards. It deploys every instance as a `TransparentUpgradeableProxy` pointing to the canonical implementation of its type, so every instance runs exactly the canonical code. A Hub comes with its `AssetInterestRateStrategy`, and a Spoke with its `AaveOracle`, bound atomically.
 
-The orchestration deploys the factory with the canonical implementations (`hubSpokeFactory`, `hubImplementation`, `spokeImplementation`, `treasurySpokeImplementation` and `tokenizationSpokeImplementation` in the report), then deploys the TreasurySpoke, Hubs and Spokes through it. The deployer calls the factory directly, so the factory binds the deployer into every salt on top of the orchestration's own salt derivation.
+The factory is itself upgradeable, behind a `TransparentUpgradeableProxy`, and access-managed. The canonical implementations live in storage and are updated with the restricted `setImplementation`, which checks each implementation's revision and type. Instances already deployed are not affected.
 
-After the initial deployment, governance deploys new instances through the config engine deployment actions (`hubDeployments()`, `spokeDeployments()`, `treasurySpokeDeployments()`, see `src/config-engine/README.md`), with the factory binding the governance Executor into every salt. Deployments are permissionless, and `predict*` returns the addresses for a given caller. Deployment events record provenance only, since a ProxyAdmin can upgrade an instance afterwards.
+The factory records every deployment, keyed by deployer: `getInstances(deployer, instanceType)` lists them in deployment order, `getInstanceInfo(instance)` returns the deployer and type of an instance, and `getTokenizationSpoke(deployer, hub, underlying)` returns the TokenizationSpoke of an asset, of which there is at most one per deployer.
 
-Every Spoke is initialized with the same `MAX_USER_RESERVES_LIMIT` (`DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT`), so the deploy inputs no longer take a per-Spoke limit.
+The orchestration deploys the factory with the canonical implementations (`hubSpokeFactory`, `hubSpokeFactoryImplementation`, `hubImplementation`, `spokeImplementation`, `treasurySpokeImplementation` and `tokenizationSpokeImplementation` in the report), with the AccessManager as authority and `proxyAdminOwner` as ProxyAdmin owner, then deploys the TreasurySpoke, Hubs and Spokes through it. The deployer calls the factory directly, so the factory binds the deployer into every salt on top of the orchestration's own salt derivation, and records these instances under the deployer.
+
+After the initial deployment, governance deploys new instances through the config engine deployment actions (`hubDeployments()`, `spokeDeployments()`, `treasurySpokeDeployments()`, see `src/config-engine/README.md`), with the factory binding the governance Executor into every salt and recording the instances under it. Deployments are permissionless, and `predict*` returns the addresses for a given caller. Records track provenance only, since a ProxyAdmin can upgrade an instance afterwards.
+
+The orchestration initializes every Spoke with `DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT`. Through the factory or the config engine, the limit is set per Spoke.
 
 ### LiquidationLogic Pre-deployment
 
@@ -80,12 +84,9 @@ src/deployments/
     AaveV4HubImplementationBatch     Canonical HubInstance implementation
     AaveV4SpokeImplementationBatch   Canonical SpokeInstance implementation
     AaveV4TokenizationSpokeImplementationBatch  Canonical TokenizationSpokeInstance implementation
-    AaveV4HubSpokeFactoryBatch       Canonical TreasurySpokeInstance implementation, HubSpokeFactory
+    AaveV4HubSpokeFactoryBatch       Canonical TreasurySpokeInstance implementation, HubSpokeFactory (proxy + implementation)
     AaveV4GatewayBatch          NativeTokenGateway, SignatureGateway
     AaveV4PositionManagerBatch  GiverPositionManager, TakerPositionManager, ConfigPositionManager
-
-  factory/
-    HubSpokeFactory           Deploys Hub, Spoke, TreasurySpoke, TokenizationSpoke proxies to canonical implementations
 
   orchestration/              High-level orchestrators
     AaveV4DeployOrchestration   Main entry: deployAaveV4() -- calls batches in order

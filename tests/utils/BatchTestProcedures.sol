@@ -33,7 +33,7 @@ import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ITreasurySpoke} from 'src/spoke/interfaces/ITreasurySpoke.sol';
 import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
-import {IHubSpokeFactory} from 'src/deployments/factory/interfaces/IHubSpokeFactory.sol';
+import {IHubSpokeFactory} from 'src/factory/interfaces/IHubSpokeFactory.sol';
 import {INativeTokenGateway} from 'src/position-manager/interfaces/INativeTokenGateway.sol';
 
 contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
@@ -277,44 +277,98 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
   ) internal view {
     IHubSpokeFactory factory = IHubSpokeFactory(report.hubSpokeFactoryBatchReport.hubSpokeFactory);
     assertEq(
-      factory.HUB_IMPLEMENTATION(),
+      ProxyHelper.getImplementation(address(factory)),
+      report.hubSpokeFactoryBatchReport.hubSpokeFactoryImplementation,
+      'factory implementation'
+    );
+    assertEq(
+      IAccessManaged(address(factory)).authority(),
+      report.authorityBatchReport.accessManager,
+      'factory authority'
+    );
+    // the orchestration deploys every instance from the same caller
+    address deployer = factory
+      .getInstanceInfo(report.treasurySpokeBatchReport.treasurySpoke)
+      .deployer;
+    assertNotEq(deployer, address(0), 'factory deployer');
+    _checkFactoryRecord(
+      factory,
+      deployer,
+      report.treasurySpokeBatchReport.treasurySpoke,
+      IHubSpokeFactory.InstanceType.TreasurySpoke
+    );
+    for (uint256 i; i < report.hubInstanceBatchReports.length; ++i) {
+      _checkFactoryRecord(
+        factory,
+        deployer,
+        report.hubInstanceBatchReports[i].report.hubProxy,
+        IHubSpokeFactory.InstanceType.Hub
+      );
+    }
+    for (uint256 i; i < report.spokeInstanceBatchReports.length; ++i) {
+      _checkFactoryRecord(
+        factory,
+        deployer,
+        report.spokeInstanceBatchReports[i].report.spokeProxy,
+        IHubSpokeFactory.InstanceType.Spoke
+      );
+    }
+    assertEq(
+      factory.getImplementation(IHubSpokeFactory.InstanceType.Hub),
       report.hubImplementationBatchReport.hubImplementation,
       'factory hub implementation'
     );
     assertEq(
-      factory.SPOKE_IMPLEMENTATION(),
+      factory.getImplementation(IHubSpokeFactory.InstanceType.Spoke),
       report.spokeImplementationBatchReport.spokeImplementation,
       'factory spoke implementation'
     );
     assertEq(
-      factory.TREASURY_SPOKE_IMPLEMENTATION(),
+      factory.getImplementation(IHubSpokeFactory.InstanceType.TreasurySpoke),
       report.hubSpokeFactoryBatchReport.treasurySpokeImplementation,
       'factory treasury spoke implementation'
     );
     assertEq(
-      factory.TOKENIZATION_SPOKE_IMPLEMENTATION(),
+      factory.getImplementation(IHubSpokeFactory.InstanceType.TokenizationSpoke),
       report.tokenizationSpokeImplementationBatchReport.tokenizationSpokeImplementation,
       'factory tokenization spoke implementation'
     );
     assertEq(
       ProxyHelper.getImplementation(report.treasurySpokeBatchReport.treasurySpoke),
-      factory.TREASURY_SPOKE_IMPLEMENTATION(),
+      factory.getImplementation(IHubSpokeFactory.InstanceType.TreasurySpoke),
       'treasury spoke implementation'
     );
     for (uint256 i; i < report.hubInstanceBatchReports.length; ++i) {
       assertEq(
         report.hubInstanceBatchReports[i].report.hubImplementation,
-        factory.HUB_IMPLEMENTATION(),
+        factory.getImplementation(IHubSpokeFactory.InstanceType.Hub),
         'hub canonical implementation'
       );
     }
     for (uint256 i; i < report.spokeInstanceBatchReports.length; ++i) {
       assertEq(
         report.spokeInstanceBatchReports[i].report.spokeImplementation,
-        factory.SPOKE_IMPLEMENTATION(),
+        factory.getImplementation(IHubSpokeFactory.InstanceType.Spoke),
         'spoke canonical implementation'
       );
     }
+  }
+
+  function _checkFactoryRecord(
+    IHubSpokeFactory factory,
+    address deployer,
+    address instance,
+    IHubSpokeFactory.InstanceType instanceType
+  ) internal view {
+    IHubSpokeFactory.InstanceInfo memory info = factory.getInstanceInfo(instance);
+    assertEq(info.deployer, deployer, 'factory record deployer');
+    assertEq(uint8(info.instanceType), uint8(instanceType), 'factory record type');
+    address[] memory instances = factory.getInstances(deployer, instanceType);
+    bool found;
+    for (uint256 i; i < instances.length; ++i) {
+      if (instances[i] == instance) found = true;
+    }
+    assertTrue(found, 'factory record listed');
   }
 
   function _checkSpokeBatchDeployments(

@@ -11,8 +11,9 @@ import {AaveV4SpokeRolesProcedure} from 'src/deployments/procedures/roles/AaveV4
 import {AaveV4HubConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubConfiguratorRolesProcedure.sol';
 import {AaveV4SpokeConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeConfiguratorRolesProcedure.sol';
 import {InputUtils} from 'src/deployments/utils/libraries/InputUtils.sol';
+import {DeployConstants} from 'src/deployments/utils/libraries/DeployConstants.sol';
 import {Logger} from 'src/deployments/utils/Logger.sol';
-import {IHubSpokeFactory} from 'src/deployments/factory/interfaces/IHubSpokeFactory.sol';
+import {IHubSpokeFactory} from 'src/factory/interfaces/IHubSpokeFactory.sol';
 
 /// @title AaveV4DeployOrchestration Library
 /// @author Aave Labs
@@ -67,6 +68,8 @@ library AaveV4DeployOrchestration {
     _deployHubSpokeFactory({
       logger: logger,
       report: report,
+      proxyAdminOwner: deployInputs.proxyAdminOwner,
+      authority: accessManager,
       hubBytecode: hubBytecode,
       spokeBytecode: spokeBytecode,
       salt: salt
@@ -164,6 +167,8 @@ library AaveV4DeployOrchestration {
   function _deployHubSpokeFactory(
     Logger logger,
     OrchestrationReports.FullDeploymentReport memory report,
+    address proxyAdminOwner,
+    address authority,
     bytes memory hubBytecode,
     bytes memory spokeBytecode,
     bytes32 salt
@@ -192,6 +197,8 @@ library AaveV4DeployOrchestration {
 
     logger.logHeader1('deploying HubSpokeFactoryBatch');
     report.hubSpokeFactoryBatchReport = AaveV4DeployBase.deployHubSpokeFactoryBatch({
+      proxyAdminOwner: proxyAdminOwner,
+      authority: authority,
       hubImplementation: report.hubImplementationBatchReport.hubImplementation,
       spokeImplementation: report.spokeImplementationBatchReport.spokeImplementation,
       tokenizationSpokeImplementation: report
@@ -204,6 +211,10 @@ library AaveV4DeployOrchestration {
       report.hubSpokeFactoryBatchReport.treasurySpokeImplementation
     );
     logger.log('HubSpokeFactory', report.hubSpokeFactoryBatchReport.hubSpokeFactory);
+    logger.log(
+      'HubSpokeFactoryImplementation',
+      report.hubSpokeFactoryBatchReport.hubSpokeFactoryImplementation
+    );
     logger.logNewLine();
   }
 
@@ -245,7 +256,7 @@ library AaveV4DeployOrchestration {
       hubReports[i].label = hubLabels[i];
       hubReports[i].report = BatchReports.HubInstanceBatchReport({
         hubProxy: deployment.proxy,
-        hubImplementation: factory.HUB_IMPLEMENTATION(),
+        hubImplementation: factory.getImplementation(IHubSpokeFactory.InstanceType.Hub),
         irStrategy: deployment.irStrategy
       });
 
@@ -271,12 +282,13 @@ library AaveV4DeployOrchestration {
       IHubSpokeFactory.SpokeDeployment memory deployment = factory.deploySpoke({
         salt: _deriveChildSalt(salt, 'spoke', spokeLabels[i]),
         authority: authority,
+        maxUserReservesLimit: DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT,
         proxyAdminOwner: proxyAdminOwner
       });
       spokeReports[i].label = spokeLabels[i];
       spokeReports[i].report = BatchReports.SpokeInstanceBatchReport({
         spokeProxy: deployment.proxy,
-        spokeImplementation: factory.SPOKE_IMPLEMENTATION(),
+        spokeImplementation: factory.getImplementation(IHubSpokeFactory.InstanceType.Spoke),
         aaveOracle: deployment.oracle
       });
 

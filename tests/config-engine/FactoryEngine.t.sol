@@ -44,7 +44,10 @@ contract FactoryEngineTest is BaseConfigEngineTest {
     engine.executeHubDeployments(deployments);
 
     for (uint256 i; i < 2; ++i) {
-      assertEq(ProxyHelper.getImplementation(predicted[i].proxy), factory.HUB_IMPLEMENTATION());
+      assertEq(
+        ProxyHelper.getImplementation(predicted[i].proxy),
+        factory.getImplementation(IHubSpokeFactory.InstanceType.Hub)
+      );
       assertEq(AssetInterestRateStrategy(predicted[i].irStrategy).HUB(), predicted[i].proxy);
     }
   }
@@ -55,11 +58,13 @@ contract FactoryEngineTest is BaseConfigEngineTest {
     deployments[0] = IAaveV4ConfigEngine.SpokeDeployment({
       salt: 'spoke-1',
       authority: address(accessManager),
+      maxUserReservesLimit: MAX_USER_RESERVES_LIMIT,
       proxyAdminOwner: PROXY_ADMIN_OWNER
     });
     deployments[1] = IAaveV4ConfigEngine.SpokeDeployment({
       salt: 'spoke-2',
       authority: address(accessManager),
+      maxUserReservesLimit: MAX_USER_RESERVES_LIMIT,
       proxyAdminOwner: PROXY_ADMIN_OWNER
     });
 
@@ -69,6 +74,7 @@ contract FactoryEngineTest is BaseConfigEngineTest {
         address(engine),
         deployments[i].salt,
         address(accessManager),
+        MAX_USER_RESERVES_LIMIT,
         PROXY_ADMIN_OWNER
       );
       vm.expectEmit(address(factory));
@@ -83,8 +89,12 @@ contract FactoryEngineTest is BaseConfigEngineTest {
     engine.executeSpokeDeployments(deployments);
 
     for (uint256 i; i < 2; ++i) {
-      assertEq(ProxyHelper.getImplementation(predicted[i].proxy), factory.SPOKE_IMPLEMENTATION());
+      assertEq(
+        ProxyHelper.getImplementation(predicted[i].proxy),
+        factory.getImplementation(IHubSpokeFactory.InstanceType.Spoke)
+      );
       assertEq(ISpoke(predicted[i].proxy).ORACLE(), predicted[i].oracle);
+      assertEq(ISpoke(predicted[i].proxy).MAX_USER_RESERVES_LIMIT(), MAX_USER_RESERVES_LIMIT);
       assertEq(IAaveOracle(predicted[i].oracle).spoke(), predicted[i].proxy);
     }
   }
@@ -113,7 +123,10 @@ contract FactoryEngineTest is BaseConfigEngineTest {
     );
     engine.executeTreasurySpokeDeployments(deployments);
 
-    assertEq(ProxyHelper.getImplementation(predicted), factory.TREASURY_SPOKE_IMPLEMENTATION());
+    assertEq(
+      ProxyHelper.getImplementation(predicted),
+      factory.getImplementation(IHubSpokeFactory.InstanceType.TreasurySpoke)
+    );
     assertEq(Ownable(predicted).owner(), ADMIN);
   }
 

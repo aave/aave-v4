@@ -34,8 +34,8 @@ import {HubEngine} from 'src/config-engine/libraries/HubEngine.sol';
 import {SpokeEngine} from 'src/config-engine/libraries/SpokeEngine.sol';
 import {PositionManagerEngine} from 'src/config-engine/libraries/PositionManagerEngine.sol';
 import {FactoryEngine} from 'src/config-engine/libraries/FactoryEngine.sol';
-import {HubSpokeFactory} from 'src/deployments/factory/HubSpokeFactory.sol';
-import {IHubSpokeFactory} from 'src/deployments/factory/interfaces/IHubSpokeFactory.sol';
+import {HubSpokeFactory} from 'src/factory/HubSpokeFactory.sol';
+import {IHubSpokeFactory} from 'src/factory/interfaces/IHubSpokeFactory.sol';
 import {TokenizationSpokeInstance} from 'src/spoke/instances/TokenizationSpokeInstance.sol';
 import {TreasurySpokeInstance} from 'src/spoke/instances/TreasurySpokeInstance.sol';
 import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
@@ -65,6 +65,7 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
 
   uint256 internal constant LIQUIDITY_FEE = 5_00;
   uint256 internal constant DYNAMIC_CONFIG_KEY = 0;
+  uint16 internal constant MAX_USER_RESERVES_LIMIT = 16;
 
   IAssetInterestRateStrategy.InterestRateData internal IR_DATA =
     IAssetInterestRateStrategy.InterestRateData({
@@ -163,12 +164,7 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
     }
 
     executor = new MockGovernanceExecutor(PAYLOADS_CONTROLLER);
-    factory = new HubSpokeFactory({
-      hubImplementation_: address(AaveV4TestOrchestration.deployHubImplementation()),
-      spokeImplementation_: address(AaveV4TestOrchestration.deploySpokeImplementation()),
-      treasurySpokeImplementation_: address(new TreasurySpokeInstance()),
-      tokenizationSpokeImplementation_: address(new TokenizationSpokeInstance())
-    });
+    factory = AaveV4TestOrchestration.deployHubSpokeFactory(address(accessManager), ADMIN);
     engine = new AaveV4ConfigEngine(factory);
     positionManager = new PositionManagerBaseWrapper(address(engine));
 

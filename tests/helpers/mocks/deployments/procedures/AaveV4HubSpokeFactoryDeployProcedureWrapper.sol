@@ -6,15 +6,19 @@ import {AaveV4HubSpokeFactoryDeployProcedure} from 'src/deployments/procedures/d
 contract AaveV4HubSpokeFactoryDeployProcedureWrapper is AaveV4HubSpokeFactoryDeployProcedure {
   bool public IS_TEST = true;
 
-  function deployHubSpokeFactory(
+  function deployUpgradeableHubSpokeFactory(
+    address proxyAdminOwner,
+    address authority,
     address hubImplementation,
     address spokeImplementation,
     address treasurySpokeImplementation,
     address tokenizationSpokeImplementation,
     bytes32 salt
-  ) external returns (address) {
+  ) external returns (address, address) {
     return
-      _deployHubSpokeFactory(
+      _deployUpgradeableHubSpokeFactory(
+        proxyAdminOwner,
+        authority,
         hubImplementation,
         spokeImplementation,
         treasurySpokeImplementation,

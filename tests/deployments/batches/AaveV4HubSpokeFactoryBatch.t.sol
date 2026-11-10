@@ -3,7 +3,8 @@ pragma solidity ^0.8.0;
 
 import 'tests/deployments/batches/BatchBase.t.sol';
 import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
-import {IHubSpokeFactory} from 'src/deployments/factory/interfaces/IHubSpokeFactory.sol';
+import {HubSpokeFactory} from 'src/factory/HubSpokeFactory.sol';
+import {IHubSpokeFactory} from 'src/factory/interfaces/IHubSpokeFactory.sol';
 import {TreasurySpokeInstance} from 'src/spoke/instances/TreasurySpokeInstance.sol';
 
 contract AaveV4HubSpokeFactoryBatchTest is BatchBaseTest {
@@ -24,6 +25,8 @@ contract AaveV4HubSpokeFactoryBatchTest is BatchBaseTest {
       .getReport()
       .tokenizationSpokeImplementation;
     report = new AaveV4HubSpokeFactoryBatch(
+      admin,
+      accessManager,
       hubImplementation,
       spokeImplementation,
       tokenizationSpokeImplementation,
@@ -36,15 +39,30 @@ contract AaveV4HubSpokeFactoryBatchTest is BatchBaseTest {
       report.treasurySpokeImplementation,
       Create2Utils.computeCreate2Address(salt, type(TreasurySpokeInstance).creationCode)
     );
-    assertNotEq(report.hubSpokeFactory.code.length, 0);
+    assertEq(
+      report.hubSpokeFactoryImplementation,
+      Create2Utils.computeCreate2Address(salt, type(HubSpokeFactory).creationCode)
+    );
+    assertEq(
+      ProxyHelper.getImplementation(report.hubSpokeFactory),
+      report.hubSpokeFactoryImplementation
+    );
   }
 
   function test_factory() public view {
     IHubSpokeFactory factory = IHubSpokeFactory(report.hubSpokeFactory);
-    assertEq(factory.HUB_IMPLEMENTATION(), hubImplementation);
-    assertEq(factory.SPOKE_IMPLEMENTATION(), spokeImplementation);
-    assertEq(factory.TREASURY_SPOKE_IMPLEMENTATION(), report.treasurySpokeImplementation);
-    assertEq(factory.TOKENIZATION_SPOKE_IMPLEMENTATION(), tokenizationSpokeImplementation);
+    assertEq(factory.getImplementation(IHubSpokeFactory.InstanceType.Hub), hubImplementation);
+    assertEq(factory.getImplementation(IHubSpokeFactory.InstanceType.Spoke), spokeImplementation);
+    assertEq(
+      factory.getImplementation(IHubSpokeFactory.InstanceType.TreasurySpoke),
+      report.treasurySpokeImplementation
+    );
+    assertEq(
+      factory.getImplementation(IHubSpokeFactory.InstanceType.TokenizationSpoke),
+      tokenizationSpokeImplementation
+    );
+    assertEq(IAccessManaged(address(factory)).authority(), accessManager);
+    assertEq(Ownable(ProxyHelper.getProxyAdmin(address(factory))).owner(), admin);
   }
 
   function test_treasurySpokeImplementation() public view {
@@ -58,6 +76,8 @@ contract AaveV4HubSpokeFactoryBatchTest is BatchBaseTest {
   function test_revert_sameSalt() public {
     vm.expectRevert(Create2Utils.ContractAlreadyDeployed.selector);
     new AaveV4HubSpokeFactoryBatch(
+      admin,
+      accessManager,
       hubImplementation,
       spokeImplementation,
       tokenizationSpokeImplementation,

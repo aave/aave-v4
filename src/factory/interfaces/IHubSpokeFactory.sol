@@ -5,6 +5,23 @@ pragma solidity ^0.8.0;
 /// @author Aave Labs
 /// @notice Interface for the Hub & Spoke factory.
 interface IHubSpokeFactory {
+  /// @notice Types of instances deployed by the factory.
+  enum InstanceType {
+    None,
+    Hub,
+    Spoke,
+    TreasurySpoke,
+    TokenizationSpoke
+  }
+
+  /// @notice Deployment information of an instance.
+  /// @param deployer The caller of the deployment.
+  /// @param instanceType The type of the instance.
+  struct InstanceInfo {
+    address deployer;
+    InstanceType instanceType;
+  }
+
   /// @notice Addresses produced by a Hub deployment.
   /// @param proxy The Hub proxy.
   /// @param irStrategy The interest rate strategy bound to the Hub proxy.
@@ -75,13 +92,28 @@ interface IHubSpokeFactory {
     address proxyAdminOwner
   );
 
+  /// @notice Emitted when the canonical implementation of an instance type is updated.
+  /// @param instanceType The instance type.
+  /// @param implementation The new canonical implementation.
+  event ImplementationUpdated(InstanceType indexed instanceType, address indexed implementation);
+
   /// @notice Thrown when a canonical implementation is invalid.
   error InvalidImplementation();
 
   /// @notice Thrown when the caller and salt map to an address already in use.
   error SaltAlreadyUsed();
 
-  /// @notice Deploys a Hub proxy pointing to `HUB_IMPLEMENTATION`, and its interest rate strategy.
+  /// @notice Thrown when the caller already deployed a TokenizationSpoke for the Hub and underlying.
+  error TokenizationSpokeAlreadyDeployed();
+
+  /// @notice Updates the canonical implementation of an instance type.
+  /// @dev The implementation must match the revision and type expected for `instanceType`. Instances already deployed
+  /// are not affected, but the addresses returned by `predict*` change.
+  /// @param instanceType The instance type.
+  /// @param implementation The new canonical implementation.
+  function setImplementation(InstanceType instanceType, address implementation) external;
+
+  /// @notice Deploys a Hub proxy pointing to the canonical Hub implementation, and its interest rate strategy.
   /// @dev The CREATE2 salt is bound to the caller. Reverts with `SaltAlreadyUsed` if a resulting address is already in use.
   /// @param salt The caller-provided salt.
   /// @param authority The access-control authority of the Hub.
@@ -93,20 +125,21 @@ interface IHubSpokeFactory {
     address proxyAdminOwner
   ) external returns (HubDeployment memory);
 
-  /// @notice Deploys an AaveOracle and a Spoke proxy pointing to `SPOKE_IMPLEMENTATION`, and binds them.
+  /// @notice Deploys an AaveOracle and a Spoke proxy pointing to the canonical Spoke implementation, and binds them.
   /// @dev The CREATE2 salt is bound to the caller. Reverts with `SaltAlreadyUsed` if a resulting address is already in use.
-  /// The Spoke is initialized with `MAX_USER_RESERVES_LIMIT`.
   /// @param salt The caller-provided salt.
   /// @param authority The access-control authority of the Spoke.
+  /// @param maxUserReservesLimit The maximum number of collateral and borrow reserves a user can have.
   /// @param proxyAdminOwner The owner of the Spoke ProxyAdmin.
   /// @return The deployed Spoke addresses.
   function deploySpoke(
     bytes32 salt,
     address authority,
+    uint16 maxUserReservesLimit,
     address proxyAdminOwner
   ) external returns (SpokeDeployment memory);
 
-  /// @notice Deploys a TreasurySpoke proxy pointing to `TREASURY_SPOKE_IMPLEMENTATION`.
+  /// @notice Deploys a TreasurySpoke proxy pointing to the canonical TreasurySpoke implementation.
   /// @dev The CREATE2 salt is bound to the caller. Reverts with `SaltAlreadyUsed` if a resulting address is already in use.
   /// @param salt The caller-provided salt.
   /// @param owner The owner of the TreasurySpoke.
@@ -118,8 +151,9 @@ interface IHubSpokeFactory {
     address proxyAdminOwner
   ) external returns (address);
 
-  /// @notice Deploys a TokenizationSpoke proxy pointing to `TOKENIZATION_SPOKE_IMPLEMENTATION`.
+  /// @notice Deploys a TokenizationSpoke proxy pointing to the canonical TokenizationSpoke implementation.
   /// @dev The CREATE2 salt is bound to the caller. Reverts with `SaltAlreadyUsed` if a resulting address is already in use.
+  /// Reverts with `TokenizationSpokeAlreadyDeployed` if the caller already deployed one for `hub` and `underlying`.
   /// Registering the TokenizationSpoke on its Hub is left to the caller.
   /// @param salt The caller-provided salt.
   /// @param hub The Hub of the tokenized asset.
@@ -154,12 +188,14 @@ interface IHubSpokeFactory {
   /// @param deployer The caller of the deployment.
   /// @param salt The caller-provided salt.
   /// @param authority The access-control authority of the Spoke.
+  /// @param maxUserReservesLimit The maximum number of collateral and borrow reserves a user can have.
   /// @param proxyAdminOwner The owner of the Spoke ProxyAdmin.
   /// @return The predicted Spoke addresses.
   function predictSpoke(
     address deployer,
     bytes32 salt,
     address authority,
+    uint16 maxUserReservesLimit,
     address proxyAdminOwner
   ) external view returns (SpokeDeployment memory);
 
@@ -195,21 +231,37 @@ interface IHubSpokeFactory {
     address proxyAdminOwner
   ) external view returns (address);
 
-  /// @notice Returns the canonical Hub implementation.
-  function HUB_IMPLEMENTATION() external view returns (address);
+  /// @notice Returns the canonical implementation of an instance type.
+  /// @param instanceType The instance type.
+  /// @return The canonical implementation, or zero address if unset.
+  function getImplementation(InstanceType instanceType) external view returns (address);
 
-  /// @notice Returns the canonical Spoke implementation.
-  function SPOKE_IMPLEMENTATION() external view returns (address);
+  /// @notice Returns the instances of a type deployed by a deployer, in deployment order.
+  /// @param deployer The caller of the deployments.
+  /// @param instanceType The instance type.
+  /// @return The deployed instances.
+  function getInstances(
+    address deployer,
+    InstanceType instanceType
+  ) external view returns (address[] memory);
 
-  /// @notice Returns the canonical TreasurySpoke implementation.
-  function TREASURY_SPOKE_IMPLEMENTATION() external view returns (address);
+  /// @notice Returns the deployment information of an instance.
+  /// @dev Records provenance only: a ProxyAdmin can upgrade an instance afterwards.
+  /// @param instance The instance address.
+  /// @return The deployment information, empty if the instance was not deployed by the factory.
+  function getInstanceInfo(address instance) external view returns (InstanceInfo memory);
 
-  /// @notice Returns the canonical TokenizationSpoke implementation.
-  function TOKENIZATION_SPOKE_IMPLEMENTATION() external view returns (address);
+  /// @notice Returns the TokenizationSpoke deployed by a deployer for a Hub and underlying.
+  /// @param deployer The caller of the deployment.
+  /// @param hub The Hub of the tokenized asset.
+  /// @param underlying The underlying of the tokenized asset.
+  /// @return The TokenizationSpoke proxy, or zero address if none.
+  function getTokenizationSpoke(
+    address deployer,
+    address hub,
+    address underlying
+  ) external view returns (address);
 
   /// @notice Returns the decimals of the AaveOracle deployed with each Spoke.
   function ORACLE_DECIMALS() external view returns (uint8);
-
-  /// @notice Returns the maximum user reserves limit each Spoke is initialized with.
-  function MAX_USER_RESERVES_LIMIT() external view returns (uint16);
 }

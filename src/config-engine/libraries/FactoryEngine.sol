@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
-import {IHubSpokeFactory} from 'src/deployments/factory/interfaces/IHubSpokeFactory.sol';
+import {IHubSpokeFactory} from 'src/factory/interfaces/IHubSpokeFactory.sol';
 
 /// @title FactoryEngine
 /// @author Aave Labs
@@ -40,6 +40,7 @@ library FactoryEngine {
       factory.deploySpoke({
         salt: deployments[i].salt,
         authority: deployments[i].authority,
+        maxUserReservesLimit: deployments[i].maxUserReservesLimit,
         proxyAdminOwner: deployments[i].proxyAdminOwner
       });
     }

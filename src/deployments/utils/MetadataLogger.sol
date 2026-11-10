@@ -31,6 +31,10 @@ contract MetadataLogger is Logger {
       report.hubSpokeFactoryBatchReport.treasurySpokeImplementation
     );
     _write('hubSpokeFactory', report.hubSpokeFactoryBatchReport.hubSpokeFactory);
+    _write(
+      'hubSpokeFactoryImplementation',
+      report.hubSpokeFactoryBatchReport.hubSpokeFactoryImplementation
+    );
 
     // Group hubs by property type
     uint256 hubLen = report.hubInstanceBatchReports.length;

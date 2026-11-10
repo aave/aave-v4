@@ -792,7 +792,7 @@ contract HubEngineTest is BaseConfigEngineTest {
 
     assertEq(
       ProxyHelper.getImplementation(predictedProxy),
-      engine.FACTORY().TOKENIZATION_SPOKE_IMPLEMENTATION(),
+      engine.FACTORY().getImplementation(IHubSpokeFactory.InstanceType.TokenizationSpoke),
       'TokenizationSpoke proxy should point to the factory implementation'
     );
     ITokenizationSpoke tokenizationSpoke = ITokenizationSpoke(predictedProxy);

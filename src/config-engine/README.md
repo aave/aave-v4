@@ -166,7 +166,7 @@ When a payload calls `execute()`, `AaveV4Payload` delegate-calls into `AaveV4Con
 
 ### HubSpokeFactory deployments
 
-`AaveV4ConfigEngine` takes the `HubSpokeFactory` in its constructor and exposes it as `FACTORY`. `FactoryEngine` forwards the deployment actions to it, and `HubEngine` deploys TokenizationSpokes through it on listings with tokenization set. Every instance is a `TransparentUpgradeableProxy` pointing to one of the factory's canonical implementations. A new factory means a new engine deployment.
+`AaveV4ConfigEngine` takes the `HubSpokeFactory` in its constructor and exposes it as `FACTORY`. `FactoryEngine` forwards the deployment actions to it, and `HubEngine` deploys TokenizationSpokes through it on listings with tokenization set. Every instance is a `TransparentUpgradeableProxy` pointing to one of the factory's canonical implementations. The factory is upgradeable and holds its implementations in storage, so a new implementation version doesn't need a new factory or engine.
 
 The factory binds its caller, the governance Executor, into every CREATE2 salt. Later actions of the same payload reference the new instances by their predicted addresses: `FACTORY.predict*` with the Executor as deployer, and `FactoryEngine.predictTokenizationSpoke` for TokenizationSpokes, salted with `(hub, underlying, name, symbol)`.
 
@@ -183,6 +183,7 @@ function spokeDeployments()
   d[0] = IAaveV4ConfigEngine.SpokeDeployment({
     salt: SALT,
     authority: ACCESS_MANAGER,
+    maxUserReservesLimit: MAX_USER_RESERVES_LIMIT,
     proxyAdminOwner: PROXY_ADMIN_OWNER
   });
 }
@@ -196,7 +197,13 @@ function accessManagerTargetFunctionRoleUpdates()
   // address(this) is the Executor at execution time, i.e. the factory caller
   address spoke = CONFIG_ENGINE
     .FACTORY()
-    .predictSpoke(address(this), SALT, ACCESS_MANAGER, PROXY_ADMIN_OWNER)
+    .predictSpoke(
+      address(this),
+      SALT,
+      ACCESS_MANAGER,
+      MAX_USER_RESERVES_LIMIT,
+      PROXY_ADMIN_OWNER
+    )
     .proxy;
   u = new IAaveV4ConfigEngine.TargetFunctionRoleUpdate[](1);
   u[0] = IAaveV4ConfigEngine.TargetFunctionRoleUpdate({

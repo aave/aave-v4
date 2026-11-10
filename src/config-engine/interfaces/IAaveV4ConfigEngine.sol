@@ -6,7 +6,7 @@ import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
-import {IHubSpokeFactory} from 'src/deployments/factory/interfaces/IHubSpokeFactory.sol';
+import {IHubSpokeFactory} from 'src/factory/interfaces/IHubSpokeFactory.sol';
 
 /// @title IAaveV4ConfigEngine
 /// @author Aave Labs
@@ -356,10 +356,12 @@ interface IAaveV4ConfigEngine {
   /// @notice Parameters for deploying a Spoke and its AaveOracle through the HubSpokeFactory.
   /// @dev salt The salt passed to the factory, bound to the governance executor by the factory.
   /// @dev authority The access-control authority of the Spoke.
+  /// @dev maxUserReservesLimit The maximum number of collateral and borrow reserves a user can have.
   /// @dev proxyAdminOwner The owner of the Spoke ProxyAdmin.
   struct SpokeDeployment {
     bytes32 salt;
     address authority;
+    uint16 maxUserReservesLimit;
     address proxyAdminOwner;
   }
 

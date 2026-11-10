@@ -2,22 +2,17 @@
 pragma solidity ^0.8.0;
 
 import 'tests/setup/Base.t.sol';
-import {HubSpokeFactory} from 'src/deployments/factory/HubSpokeFactory.sol';
+import {IHubSpokeFactory} from 'src/factory/interfaces/IHubSpokeFactory.sol';
 
 /// forge-config: default.isolate = true
 contract HubSpokeFactoryOperations_Gas_Tests is Base {
   string internal constant NAMESPACE = 'HubSpokeFactory.Operations';
 
-  HubSpokeFactory internal factory;
+  IHubSpokeFactory internal factory;
 
   function setUp() public virtual override {
     super.setUp();
-    factory = new HubSpokeFactory({
-      hubImplementation_: address(AaveV4TestOrchestration.deployHubImplementation()),
-      spokeImplementation_: address(AaveV4TestOrchestration.deploySpokeImplementation()),
-      treasurySpokeImplementation_: address(new TreasurySpokeInstance()),
-      tokenizationSpokeImplementation_: address(new TokenizationSpokeInstance())
-    });
+    factory = AaveV4TestOrchestration.deployHubSpokeFactory(address(accessManager), ADMIN);
   }
 
   function test_deployHub() public {
@@ -26,7 +21,7 @@ contract HubSpokeFactoryOperations_Gas_Tests is Base {
   }
 
   function test_deploySpoke() public {
-    factory.deploySpoke('salt', address(accessManager), ADMIN);
+    factory.deploySpoke('salt', address(accessManager), MAX_ALLOWED_USER_RESERVES_LIMIT, ADMIN);
     vm.snapshotGasLastCall(NAMESPACE, 'deploySpoke');
   }
 
