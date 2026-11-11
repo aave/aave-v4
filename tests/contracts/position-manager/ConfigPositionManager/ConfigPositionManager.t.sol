@@ -489,6 +489,87 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
     assertEq(isCollateral, useAsCollateral);
   }
 
+  function test_setUsingAsCollateralOnBehalfOf_noop_whenStatusUnchanged(
+    uint256 reserveId,
+    bool useAsCollateral
+  ) public {
+    reserveId = bound(reserveId, 1, spoke1.getReserveCount() - 1);
+
+    vm.prank(alice);
+    positionManager.setCanSetUsingAsCollateralPermission(address(spoke1), bob, true);
+
+    vm.prank(alice);
+    spoke1.setUsingAsCollateral(reserveId, useAsCollateral, alice);
+
+    (bool isCollateral, ) = spoke1.getUserReserveStatus(reserveId, alice);
+    assertEq(isCollateral, useAsCollateral);
+
+    vm.expectCall(address(spoke1), abi.encodeWithSelector(ISpoke.setUsingAsCollateral.selector), 0);
+    vm.recordLogs();
+    vm.prank(bob);
+    positionManager.setUsingAsCollateralOnBehalfOf(
+      address(spoke1),
+      reserveId,
+      useAsCollateral,
+      alice
+    );
+
+    _assertEventsNotEmitted(
+      IConfigPositionManager.SetUsingAsCollateralOnBehalfOf.selector,
+      ISpoke.SetUsingAsCollateral.selector
+    );
+
+    (isCollateral, ) = spoke1.getUserReserveStatus(reserveId, alice);
+    assertEq(isCollateral, useAsCollateral);
+  }
+
+  function test_setUsingAsCollateralOnBehalfOf_noop_whenStatusUnchanged_positionManagerRevoked(
+    bool useAsCollateral
+  ) public {
+    uint256 reserveId = _daiReserveId(spoke1);
+
+    vm.prank(alice);
+    positionManager.setCanSetUsingAsCollateralPermission(address(spoke1), bob, true);
+
+    vm.startPrank(alice);
+    spoke1.setUsingAsCollateral(reserveId, useAsCollateral, alice);
+    spoke1.setUserPositionManager(address(positionManager), false);
+    vm.stopPrank();
+
+    vm.expectCall(address(spoke1), abi.encodeWithSelector(ISpoke.setUsingAsCollateral.selector), 0);
+    vm.prank(bob);
+    positionManager.setUsingAsCollateralOnBehalfOf(
+      address(spoke1),
+      reserveId,
+      useAsCollateral,
+      alice
+    );
+  }
+
+  function test_setUsingAsCollateralOnBehalfOf_noop_whenStatusUnchanged_positionManagerDeactivated(
+    bool useAsCollateral
+  ) public {
+    uint256 reserveId = _daiReserveId(spoke1);
+
+    vm.prank(alice);
+    positionManager.setCanSetUsingAsCollateralPermission(address(spoke1), bob, true);
+
+    vm.prank(alice);
+    spoke1.setUsingAsCollateral(reserveId, useAsCollateral, alice);
+
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updatePositionManager(address(positionManager), false);
+
+    vm.expectCall(address(spoke1), abi.encodeWithSelector(ISpoke.setUsingAsCollateral.selector), 0);
+    vm.prank(bob);
+    positionManager.setUsingAsCollateralOnBehalfOf(
+      address(spoke1),
+      reserveId,
+      useAsCollateral,
+      alice
+    );
+  }
+
   function test_setUsingAsCollateralOnBehalfOf_revertsWith_CallerNotAllowed() public {
     vm.expectRevert(IConfigPositionManager.DelegateeNotAllowed.selector);
     vm.prank(bob);
