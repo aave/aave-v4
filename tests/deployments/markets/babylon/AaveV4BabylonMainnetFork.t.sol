@@ -11,6 +11,7 @@ import {
   AaveV4BabylonVerifyHarness
 } from 'tests/deployments/markets/babylon/AaveV4Babylon.t.sol';
 import {AaveV4BabylonConfig} from 'scripts/markets/babylon/AaveV4BabylonConfig.sol';
+import {AaveV4BabylonVerification} from 'scripts/markets/babylon/AaveV4BabylonVerification.sol';
 import {AaveV4DeployOrchestration} from 'src/deployments/orchestration/AaveV4DeployOrchestration.sol';
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
 import {InputUtils} from 'src/deployments/utils/libraries/InputUtils.sol';
@@ -37,6 +38,10 @@ import {SpokeDeployUtils} from 'scripts/utils/SpokeDeployUtils.sol';
 import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 import {TestnetERC20} from 'tests/helpers/mocks/TestnetERC20.sol';
 import {ProxyHelper} from 'tests/utils/ProxyHelper.sol';
+
+interface IBabylonLiquidationLogic {
+  function getLiquidationLogic() external pure returns (address);
+}
 
 interface IVaultBTC {
   function HUB() external view returns (address);
@@ -76,7 +81,7 @@ contract AaveV4BabylonMainnetForkTest is Test {
   string internal constant VAULT_BTC_PLACEHOLDER =
     '"underlying": "0x0000000000000000000000000000000000000000"';
 
-  // aave-address-book AaveV4Ethereum, GovernanceV3Ethereum, MiscEthereum
+  // aave-address-book AaveV4Ethereum
   address internal constant ACCESS_MANAGER = 0x08aE3BE30958cDd1847ec58fFfd4C451a87fDF01;
   address internal constant HUB_CONFIGURATOR = 0x1F0753480bB03EaA00863224602267B7E0525C3d;
   address internal constant SPOKE_CONFIGURATOR = 0x9BFFf48BFb5A7AE70c348d4d4cb97E8DEFa5389a;
@@ -97,6 +102,10 @@ contract AaveV4BabylonMainnetForkTest is Test {
   address internal constant TAKER_POSITION_MANAGER = 0x6c044c0D3801499bCAbfAd458B70880bc518e9F7;
 
   address internal constant AAVE_ADAPTER = 0xadca531564f3B26d0aAF48a044d741fD6cD571Ea;
+  // set once deployd
+  address internal constant VAULT_BTC = address(0);
+  // set once deployed
+  address internal constant BTC_VAULT_SWAP = address(0);
   address internal constant USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
   address internal constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
   address internal constant GHO = 0x40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f;
@@ -116,7 +125,9 @@ contract AaveV4BabylonMainnetForkTest is Test {
   uint256 internal constant CORE_GHO_ASSET_ID = 6;
   uint256 internal constant CORE_RLUSD_ASSET_ID = 7;
   uint256 internal constant CORE_USDG_ASSET_ID = 8;
+  uint256 internal constant CORE_WBTC_ASSET_ID = 11;
 
+  uint256 internal constant BABYLON_VAULT_BTC_ASSET_ID = 0;
   uint256 internal constant BABYLON_USDC_ASSET_ID = 2;
 
   uint256 internal constant VAULT_BTC_RESERVE_ID = 0;
@@ -427,13 +438,33 @@ contract AaveV4BabylonMainnetForkTest is Test {
     assertEq(config.liquidationBonusFactor, 90_00, 'liquidation bonus factor');
   }
 
+  // the fork links the libraries foundry deploys, so only the links between them are checked
   function test_libraries() public view {
-    assertGt(ISpoke(_spoke()).getLiquidationLogic().code.length, 0, 'liquidation logic');
-    assertGt(
-      IBabylonSpoke(_spoke()).getBabylonLiquidationLogic().code.length,
-      0,
-      'babylon liquidation logic'
+    address liquidationLogic = ISpoke(_spoke()).getLiquidationLogic();
+    address babylonLiquidationLogic = IBabylonSpoke(_spoke()).getBabylonLiquidationLogic();
+    assertGt(liquidationLogic.code.length, 0, 'liquidation logic');
+    assertGt(babylonLiquidationLogic.code.length, 0, 'babylon liquidation logic');
+    assertEq(
+      IBabylonLiquidationLogic(babylonLiquidationLogic).getLiquidationLogic(),
+      liquidationLogic,
+      'babylon liquidation logic link'
     );
+  }
+
+  // verify rejects a BabylonSpoke that does not link the live LiquidationLogic
+  function test_verifyLibraries_revertsWith_babylonSpokeLiquidationLogic() public {
+    vm.expectRevert(bytes('babylon spoke liquidation logic'));
+    this.verifyLibraries(_deployment, _config.librarySalt);
+  }
+
+  // the config's library salt resolves to the same LiquidationLogic
+  function test_libraries_librarySaltResolvesToSharedLiquidationLogic() public view {
+    address liquidationLogic = Create2Utils.computeCreate2Address(
+      _config.librarySalt,
+      vm.getCode(SpokeDeployUtils.LIQUIDATION_LOGIC_ARTIFACT)
+    );
+    assertEq(liquidationLogic, LIQUIDATION_LOGIC, 'liquidation logic address');
+    assertGt(LIQUIDATION_LOGIC.code.length, 0, 'liquidation logic code');
   }
 
   /// @dev The mainnet config cannot deploy the BabylonSpoke until it has Babylon's CreateX fields.
@@ -639,6 +670,49 @@ contract AaveV4BabylonMainnetForkTest is Test {
     IBabylonSpoke(_spoke()).liquidationCall(CORE_USDC_RESERVE_ID, 1, _user, 1);
     vm.expectRevert(IBabylonSpoke.UnsupportedLiquidationCall.selector);
     ISpoke(_spoke()).liquidationCall(VAULT_BTC_RESERVE_ID, CORE_USDC_RESERVE_ID, _user, 1, false);
+  }
+
+  // will fail until Babylon deploys vaultBTC
+  function test_babylon_vaultBtc() public view {
+    vm.skip(true, 'post-babylon deployment, step 3');
+    assertEq(IVaultBTC(VAULT_BTC).HUB(), _hub(), 'hub');
+    assertEq(IVaultBTC(VAULT_BTC).adapter(), AAVE_ADAPTER, 'adapter');
+  }
+
+  // will fail until Babylon deploys the AaveAdapter
+  function test_babylon_aaveAdapter() public view {
+    vm.skip(true, 'post-babylon deployment, step 5');
+    assertEq(IAaveAdapter(AAVE_ADAPTER).BTC_VAULT_CORE_SPOKE(), _spoke(), 'babylon spoke');
+    assertEq(IAaveAdapter(AAVE_ADAPTER).EXIT_BTC_RESERVE_ID(), EXIT_BTC_RESERVE_ID, 'exitBTC');
+    assertEq(
+      IAaveAdapter(AAVE_ADAPTER).VAULT_BTC_RESERVE_ID(),
+      VAULT_BTC_RESERVE_ID,
+      'vaultBTC reserve id'
+    );
+    assertEq(IAaveAdapter(AAVE_ADAPTER).BTC_VAULT_HUB(), _hub(), 'babylon hub');
+    assertEq(
+      IAaveAdapter(AAVE_ADAPTER).VAULT_BTC_ASSET_ID(),
+      BABYLON_VAULT_BTC_ASSET_ID,
+      'vaultBTC asset id'
+    );
+  }
+
+  // will fail until Babylon deploys BTCVaultSwap
+  function test_babylon_btcVaultSwap() public view {
+    vm.skip(true, 'post-babylon deployment, step 5');
+    IBTCVaultSwap btcVaultSwap = IBTCVaultSwap(BTC_VAULT_SWAP);
+    assertEq(btcVaultSwap.ADAPTER(), AAVE_ADAPTER, 'adapter');
+    assertEq(btcVaultSwap.HUB(), CORE_HUB, 'hub');
+    assertEq(btcVaultSwap.EXIT_BTC_ASSET_ID(), CORE_WBTC_ASSET_ID, 'exitBTC asset id');
+    assertEq(IAccessManaged(BTC_VAULT_SWAP).authority(), ACCESS_MANAGER, 'authority');
+    assertEq(_proxyAdminOwner(BTC_VAULT_SWAP), V4_SECURITY_COUNCIL, 'proxy admin owner');
+  }
+
+  function verifyLibraries(
+    AaveV4BabylonConfig.Deployment memory deployment,
+    bytes32 librarySalt
+  ) external view {
+    AaveV4BabylonVerification.verifyLibraries(deployment, librarySalt);
   }
 
   function deployHubs() external returns (OrchestrationReports.FullDeploymentReport memory report) {
