@@ -416,11 +416,19 @@ contract AaveV4BabylonMainnetForkTest is Test {
     );
   }
 
-  /// @dev The mainnet config cannot deploy the BabylonSpoke until it has Babylon's CreateX fields.
-  function test_deploySpoke_revertsWith_liquidationManagerDeployerUnset() public {
-    AaveV4DeployBabylonSpokeHarness harness = new AaveV4DeployBabylonSpokeHarness(_config, false);
-    vm.expectRevert('liquidation manager deployer unset');
-    harness.run();
+  /// @dev Babylon's CreateX deployer and salt map to the configured liquidation manager on CreateX.
+  function test_requireLiquidationManager() public {
+    AaveV4BabylonConfig.Config memory config = AaveV4BabylonConfig.read('mainnet');
+    assertEq(config.liquidationManager, AAVE_ADAPTER, 'liquidation manager');
+    new AaveV4DeployBabylonSpokeHarness(config, false).requireLiquidationManager(config);
+  }
+
+  function test_requireLiquidationManager_revertsWith_notCreateXAddress() public {
+    AaveV4BabylonConfig.Config memory config = AaveV4BabylonConfig.read('mainnet');
+    config.liquidationManagerDeployer = makeAddr('other deployer');
+    AaveV4DeployBabylonSpokeHarness harness = new AaveV4DeployBabylonSpokeHarness(config, false);
+    vm.expectRevert('liquidation manager is not the createx address');
+    harness.requireLiquidationManager(config);
   }
 
   function test_revert_supply_marketInactive() public {
@@ -860,14 +868,13 @@ contract AaveV4BabylonMainnetForkTest is Test {
   }
 
   /// @dev Step 2 deploys the Hub and writes the report, step 3 runs the BabylonSpoke script on it.
-  /// The CreateX check is skipped until Babylon shares its deployer and salt.
   function _deployAndWriteReport() internal {
     OrchestrationReports.FullDeploymentReport memory report = this.deployHubs();
     vm.createDir(OUTPUT_DIR, true);
     MetadataLogger logger = new MetadataLogger(OUTPUT_DIR);
     logger.writeJsonReportMarket(report);
     logger.save({fileName: REPORT_NAME, withTimestamp: false});
-    new AaveV4DeployBabylonSpokeHarness(_config, true).run();
+    new AaveV4DeployBabylonSpokeHarness(_config, false).run();
   }
 
   function _assertBabylonHubAsset(

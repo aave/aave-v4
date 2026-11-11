@@ -1979,6 +1979,7 @@ contract AaveV4BabylonTest is Create2TestHelper {
   address internal constant ETHEREUM_USDG = 0xe343167631d89B6Ffc58B88d6b7fB0228795491D;
   address internal constant ETHEREUM_RLUSD = 0x8292Bb45bf1Ee4d140127049757C2E0fF06317eD;
   address internal constant ETHEREUM_VAULT_BTC = 0x69712D713FD30aBEF48b5D14eC2a9FB834D2c341;
+  address internal constant ETHEREUM_BABYLON_DEPLOYER = 0x29D6008BFB46007a554Fcf47Ac05d5F4F4BE7313;
   address internal constant ETHEREUM_BTC_USD_SVR_FEED = 0xb41E773f507F7a7EA890b1afB7d2b660c30C8B0A;
   address internal constant ETHEREUM_USDT_FEED = 0x260326c220E469358846b187eE53328303Efe19C;
   address internal constant ETHEREUM_USDC_FEED = 0x3f73F03aa83B2A48ed27E964eD0fDb590332095B;
@@ -2003,6 +2004,8 @@ contract AaveV4BabylonTest is Create2TestHelper {
     assertEq(config.hubLabels[0], 'babylon');
     assertEq(config.babylonSpokeLabel, 'babylon');
     assertEq(config.liquidationManager, ETHEREUM_AAVE_ADAPTER);
+    assertEq(config.liquidationManagerDeployer, ETHEREUM_BABYLON_DEPLOYER);
+    assertEq(config.liquidationManagerSalt, keccak256('mainnet.mainnet'));
     assertEq(config.managedCollateralReserveId, 0);
     assertEq(config.admin, ETHEREUM_V4_SECURITY_COUNCIL);
     assertEq(config.authority, ETHEREUM_ACCESS_MANAGER);
