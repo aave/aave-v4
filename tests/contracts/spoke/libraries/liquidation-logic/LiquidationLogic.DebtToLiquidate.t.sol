@@ -79,6 +79,12 @@ contract LiquidationLogicDebtToLiquidateTest is LiquidationLogicBaseTest {
       LiquidationLogic.DUST_LIQUIDATION_THRESHOLD.fromWadDown() * params.debtAssetUnit,
       MAX_ASSET_PRICE
     );
+    // re-bound to the new debt asset unit, as `drawnShares` below
+    params.premiumDebtRay = bound(
+      params.premiumDebtRay,
+      0,
+      MAX_SUPPLY_ASSET_UNITS * params.debtAssetUnit * WadRayMath.RAY
+    );
     uint256 debtRayToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
       _getDebtToTargetHealthFactorParams(params)
     );

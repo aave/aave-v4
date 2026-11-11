@@ -36,6 +36,9 @@ contract AaveV4BabylonConfigure is Script {
       authority: deployment.accessManager
     });
     _requireNoDelays(deployment.accessManager);
+    if (config.production) {
+      _requireNoConnections(marketConfig);
+    }
 
     vm.startBroadcast();
     (, address deployer, ) = vm.readCallers();
@@ -60,6 +63,16 @@ contract AaveV4BabylonConfigure is Script {
     AaveV4BabylonConfig.Deployment memory deployment
   ) internal view virtual returns (AaveV4BabylonConfig.MarketConfig memory) {
     return AaveV4BabylonConfig.readMarketConfig(config, deployment);
+  }
+
+  /// @dev On the production market governance connects every spoke, so the deployer connects none.
+  function _requireNoConnections(
+    AaveV4BabylonConfig.MarketConfig memory marketConfig
+  ) internal pure {
+    require(marketConfig.externalSpokes.length == 0, 'production connects spokes');
+    for (uint256 i; i < marketConfig.reserves.length; ++i) {
+      require(!marketConfig.reserves[i].connected, 'production connects spokes');
+    }
   }
 
   /// @dev A role grant delay or AccessManager admin delay would defer the role grants below, so every

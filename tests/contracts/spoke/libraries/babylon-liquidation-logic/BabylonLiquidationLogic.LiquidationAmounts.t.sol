@@ -83,6 +83,7 @@ contract BabylonLiquidationLogicLiquidationAmountsTest is BabylonLiquidationLogi
       );
 
     assertEq(liquidationAmounts, expectedLiquidationAmounts);
+    _assertSizingInvariants(params, liquidationAmounts);
   }
 
   function test_calculateLiquidationAmounts_PremiumOnly() public {
@@ -160,6 +161,51 @@ contract BabylonLiquidationLogicLiquidationAmountsTest is BabylonLiquidationLogi
         premiumDebtRayToLiquidate: 0.5e18 * 1e27
       })
     );
+  }
+
+  /// @dev The resized repayment rounds up: a capped collateral worth a fraction of a ray above one
+  /// drawn share repays two.
+  function test_calculateLiquidationAmounts_CapEnforced_RoundsRepaymentUp() public {
+    _mockSupplySharePrice({
+      hub: collateralReserveHub,
+      assetId: collateralAssetId,
+      totalAddedAssets: 1_000e6,
+      addedShares: 1_000e6,
+      spoke: address(spoke1)
+    });
+    // share price is 1, so the cap of 10001e24 + 1 shares is as many assets
+    // repayment in ray = (10001e24 + 1) * 1e37 / 1.0001e38 = 1e27 + 1000 / 10001
+    uint256 maxRemovableShares = 10001e24 + 1;
+    BabylonLiquidationLogic.CalculateLiquidationAmountsParams
+      memory params = BabylonLiquidationLogic.CalculateLiquidationAmountsParams({
+        collateralReserveHub: collateralReserveHub,
+        collateralReserveAssetId: collateralAssetId,
+        collateralAssetUnit: 1e18,
+        collateralAssetPrice: 1,
+        drawnShares: 3,
+        premiumDebtRay: 0,
+        drawnIndex: 1e27,
+        debtAssetUnit: 1e6,
+        debtAssetPrice: MAX_ASSET_PRICE,
+        liquidationBonus: 100_01,
+        debtToCover: 3,
+        maxRemovableShares: maxRemovableShares
+      });
+
+    BabylonLiquidationLogic.LiquidationAmounts
+      memory liquidationAmounts = babylonLiquidationLogicWrapper.calculateLiquidationAmounts(
+        params
+      );
+
+    assertEq(
+      liquidationAmounts,
+      BabylonLiquidationLogic.LiquidationAmounts({
+        collateralSharesToLiquidate: maxRemovableShares,
+        drawnSharesToLiquidate: 2,
+        premiumDebtRayToLiquidate: 0
+      })
+    );
+    _assertSizingInvariants(params, liquidationAmounts);
   }
 
   /// @dev A cap equal to the priced removal is not enforced: the unbounded sizing stands.
@@ -241,11 +287,12 @@ contract BabylonLiquidationLogicLiquidationAmountsTest is BabylonLiquidationLogi
   }
 
   /// @dev Rules that hold for every sizing: the cap is never exceeded, premium debt goes first,
-  /// and the repayment stays within the user's debt.
+  /// the repayment stays within the user's debt and `debtToCover`, and the removed collateral is
+  /// worth at most the repaid debt plus the liquidation bonus.
   function _assertSizingInvariants(
     BabylonLiquidationLogic.CalculateLiquidationAmountsParams memory params,
     BabylonLiquidationLogic.LiquidationAmounts memory liquidationAmounts
-  ) internal pure {
+  ) internal view {
     assertLe(
       liquidationAmounts.collateralSharesToLiquidate,
       params.maxRemovableShares,
@@ -268,6 +315,30 @@ contract BabylonLiquidationLogicLiquidationAmountsTest is BabylonLiquidationLogi
         'invariant: drawn debt repaid before the premium is cleared'
       );
     }
+    assertLe(
+      liquidationAmounts.drawnSharesToLiquidate.rayMulUp(params.drawnIndex) +
+        liquidationAmounts.premiumDebtRayToLiquidate.fromRayUp(),
+      params.debtToCover,
+      'invariant: repayment exceeds debtToCover'
+    );
+    // collateral value <= repaid value * bonus, with the division moved to the collateral side
+    assertGe(
+      liquidationAmounts.drawnSharesToLiquidate * params.drawnIndex +
+        liquidationAmounts.premiumDebtRayToLiquidate,
+      Math.mulDiv(
+        params.collateralReserveHub.previewRemoveByShares(
+          params.collateralReserveAssetId,
+          liquidationAmounts.collateralSharesToLiquidate
+        ),
+        params.collateralAssetPrice *
+          params.debtAssetUnit *
+          PercentageMath.PERCENTAGE_FACTOR *
+          WadRayMath.RAY,
+        params.debtAssetPrice * params.collateralAssetUnit * params.liquidationBonus,
+        Math.Rounding.Ceil
+      ),
+      'invariant: collateral removed above the bonus price of the repayment'
+    );
   }
 
   function _getParams(

@@ -103,12 +103,7 @@ contract BabylonSpokeLiquidationCallTest is BabylonSpokeLiquidationCallBaseTest 
     );
 
     // Assert: the debt is repaid while no collateral is removed
-    assertApproxEqAbs(
-      debtBefore - spoke4.getUserTotalDebt(debtReserveId, user),
-      debtToCover,
-      2,
-      'debt repaid'
-    );
+    assertEq(debtBefore - spoke4.getUserTotalDebt(debtReserveId, user), debtToCover, 'debt repaid');
     assertEq(
       spoke4.getUserSuppliedAssets(collateralReserveId, user),
       suppliedBefore,
@@ -187,31 +182,21 @@ contract BabylonSpokeLiquidationCallTest is BabylonSpokeLiquidationCallBaseTest 
     babylonSpoke.liquidationCall(debtReserveId, debtToCover, user, maxCollateralToRemove);
 
     // Assert: the requested debt is repaid and the removed collateral is priced by the canonical bonus formula
-    assertApproxEqAbs(
-      debtBefore - spoke4.getUserTotalDebt(debtReserveId, user),
-      debtToCover,
-      2,
-      'repaid debt'
+    assertEq(debtBefore - spoke4.getUserTotalDebt(debtReserveId, user), debtToCover, 'repaid debt');
+    uint256 expectedRemoved = _convertValueToAmount(
+      spoke4,
+      collateralReserveId,
+      expectedRemovedValue
     );
-    assertApproxEqRel(
-      _convertAmountToValue(
-        spoke4,
-        collateralReserveId,
-        userSuppliedBefore - spoke4.getUserSuppliedAssets(collateralReserveId, user)
-      ),
-      expectedRemovedValue,
-      0.0001e18,
-      'removed collateral value'
+    assertEq(
+      userSuppliedBefore - spoke4.getUserSuppliedAssets(collateralReserveId, user),
+      expectedRemoved,
+      'removed collateral'
     );
-    assertApproxEqRel(
-      _convertAmountToValue(
-        spoke4,
-        collateralReserveId,
-        collateralUnderlying.balanceOf(liquidationManager) - liquidatorCollateralBefore
-      ),
-      expectedRemovedValue,
-      0.0001e18,
-      'liquidator collateral value'
+    assertEq(
+      collateralUnderlying.balanceOf(liquidationManager) - liquidatorCollateralBefore,
+      expectedRemoved,
+      'liquidator collateral received'
     );
   }
 
@@ -231,11 +216,12 @@ contract BabylonSpokeLiquidationCallTest is BabylonSpokeLiquidationCallBaseTest 
     );
     uint256 capValue = _convertAmountToValue(spoke4, collateralReserveId, maxCollateralToRemove);
     uint256 expectedRemovedShares = _expectedRemovedShares(maxCollateralToRemove);
-    uint256 expectedRepaid = _convertValueToAmount(
-      spoke4,
-      debtReserveId,
-      _expectedRepaidValue(capValue)
-    );
+    uint256 expectedRepaidValue = _expectedRepaidValue(capValue);
+    uint256 expectedRepaid = _convertValueToAmount(spoke4, debtReserveId, expectedRepaidValue);
+    // the resized repayment rounds up to a whole debt unit
+    if (_convertAmountToValue(spoke4, debtReserveId, expectedRepaid) < expectedRepaidValue) {
+      ++expectedRepaid;
+    }
     uint256 debtBalanceBefore = _getAssetUnderlyingByReserveId(spoke4, debtReserveId).balanceOf(
       liquidationManager
     );
@@ -260,22 +246,16 @@ contract BabylonSpokeLiquidationCallTest is BabylonSpokeLiquidationCallBaseTest 
     );
     uint256 repaid = debtBefore - spoke4.getUserTotalDebt(debtReserveId, user);
     assertLt(repaid, debtToCover, 'repaid below requested');
-    assertApproxEqRel(repaid, expectedRepaid, 0.0001e18, 'repaid debt');
-    assertApproxEqAbs(
+    assertEq(repaid, expectedRepaid, 'repaid debt');
+    assertEq(
       debtBalanceBefore -
         _getAssetUnderlyingByReserveId(spoke4, debtReserveId).balanceOf(liquidationManager),
       repaid,
-      2,
       'liquidator debt spent'
     );
     uint256 liquidatorCollateralReceived = collateralUnderlying.balanceOf(liquidationManager) -
       liquidatorCollateralBefore;
-    assertApproxEqRel(
-      _convertAmountToValue(spoke4, collateralReserveId, liquidatorCollateralReceived),
-      capValue,
-      0.0001e18,
-      'liquidator collateral value'
-    );
+    assertEq(liquidatorCollateralReceived, maxCollateralToRemove, 'liquidator collateral received');
     assertEq(
       collateralAmountRemoved,
       liquidatorCollateralReceived,
@@ -386,12 +366,7 @@ contract BabylonSpokeLiquidationCallTest is BabylonSpokeLiquidationCallBaseTest 
     babylonSpoke.liquidationCall(debtReserveId, debtToCover, user, maxCollateralToRemove);
 
     // Assert
-    assertApproxEqAbs(
-      debtBefore - spoke4.getUserTotalDebt(debtReserveId, user),
-      debtToCover,
-      2,
-      'repaid debt'
-    );
+    assertEq(debtBefore - spoke4.getUserTotalDebt(debtReserveId, user), debtToCover, 'repaid debt');
   }
 
   function test_liquidationCall_deficit() public {

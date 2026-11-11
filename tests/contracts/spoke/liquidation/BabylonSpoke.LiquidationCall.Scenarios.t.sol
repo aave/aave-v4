@@ -144,7 +144,7 @@ contract BabylonSpokeLiquidationCallScenariosTest is BabylonSpokeLiquidationCall
     //   - DAI: 3%
     vm.prank(address(hub1));
     irStrategy.setInterestRateData(
-      _daiReserveId(spoke4),
+      daiAssetId,
       abi.encode(
         IAssetInterestRateStrategy.InterestRateData({
           optimalUsageRatio: 90_00,

@@ -11,6 +11,10 @@ import {
   AaveV4BabylonVerifyHarness
 } from 'tests/deployments/markets/babylon/AaveV4Babylon.t.sol';
 import {AaveV4BabylonConfig} from 'scripts/markets/babylon/AaveV4BabylonConfig.sol';
+import {
+  IBabylonAaveAdapter,
+  IBabylonBTCVaultSwap
+} from 'scripts/markets/babylon/interfaces/IBabylonIntegration.sol';
 import {AaveV4DeployOrchestration} from 'src/deployments/orchestration/AaveV4DeployOrchestration.sol';
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
 import {InputUtils} from 'src/deployments/utils/libraries/InputUtils.sol';
@@ -36,7 +40,10 @@ import {IPriceFeed} from 'src/spoke/interfaces/IPriceFeed.sol';
 import {SpokeDeployUtils} from 'scripts/utils/SpokeDeployUtils.sol';
 import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 import {TestnetERC20} from 'tests/helpers/mocks/TestnetERC20.sol';
+import {ERC1967Utils} from 'src/dependencies/openzeppelin/ERC1967Utils.sol';
 import {ProxyHelper} from 'tests/utils/ProxyHelper.sol';
+import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
+import {EngineFlags} from 'src/config-engine/libraries/EngineFlags.sol';
 
 interface IVaultBTC {
   function HUB() external view returns (address);
@@ -64,17 +71,26 @@ interface IBTCVaultSwap {
   function EXIT_BTC_ASSET_ID() external view returns (uint256);
 }
 
+/// @dev The Ethereum V4 RiskSteward entry points the tests call.
+interface IV4RiskSteward {
+  function updateHubSpokeCaps(IAaveV4ConfigEngine.SpokeConfigUpdate[] calldata updates) external;
+
+  function updateDynamicReserveConfigs(
+    IAaveV4ConfigEngine.DynamicReserveConfigUpdate[] calldata updates
+  ) external;
+}
+
 /// @dev Runs the production Babylon market scripts on an Ethereum fork and asserts the state after
 /// the handover (step 5b of the launch plan), then the state after the launch AIP actions on the
 /// shared V4 contracts. Expected values come from the LlamaRisk parameters and aave-address-book,
-/// not from `config/mainnet.json`. A mock vaultBTC stands in until Babylon deploys it.
+/// not from `config/mainnet.json`. A mock vaultBTC stands in for Babylon's, deployed after `FORK_BLOCK`.
 contract AaveV4BabylonMainnetForkTest is Test {
   uint256 internal constant FORK_BLOCK = 26_387_600;
   string internal constant OUTPUT_DIR = 'output/reports/deployments/';
   string internal constant REPORT_NAME = 'babylon-mainnet-fork-test';
   string internal constant MAINNET_CONFIG = 'scripts/markets/babylon/config/mainnet.json';
-  string internal constant VAULT_BTC_PLACEHOLDER =
-    '"underlying": "0x0000000000000000000000000000000000000000"';
+  string internal constant VAULT_BTC_CONFIG =
+    '"underlying": "0x69712D713FD30aBEF48b5D14eC2a9FB834D2c341"';
 
   // aave-address-book AaveV4Ethereum
   address internal constant ACCESS_MANAGER = 0x08aE3BE30958cDd1847ec58fFfd4C451a87fDF01;
@@ -89,6 +105,9 @@ contract AaveV4BabylonMainnetForkTest is Test {
   address internal constant EXECUTOR_LVL_1 = 0x5300A1a15135EA4dc7aD5a167152C01EFc9b192A;
   // aave-address-book MiscEthereum
   address internal constant V4_SECURITY_COUNCIL = 0x187AAE17d4931310B3fc75743e7F16Bdc9eD77e9;
+  // aave-address-book AaveV4Ethereum
+  address internal constant RISK_STEWARD = 0x6f48d9Cdb8EE6E17c96B2d8Aec128af426A295c1;
+  address internal constant RISK_COUNCIL = 0x47c71dFEB55Ebaa431Ae3fbF99Ea50e0D3d30fA8;
   // aave-address-book AaveV4Ethereum.POSITION_MANAGERS
   address internal constant CONFIG_POSITION_MANAGER = 0x51305839CE822a7b4b12AA7D86eA7005052d575c;
   address internal constant GIVER_POSITION_MANAGER = 0x17A54b8d6D9C68e7fa1C7112AC998EA1BA51d11e;
@@ -146,6 +165,7 @@ contract AaveV4BabylonMainnetForkTest is Test {
   address internal _user = makeAddr('user');
   address internal _supplier = makeAddr('supplier');
   address internal _vaultBtc;
+  address internal _btcVaultSwap = makeAddr('btcVaultSwap');
   string internal _marketJson;
   AaveV4BabylonConfig.Config internal _config;
   AaveV4BabylonConfig.Deployment internal _deployment;
@@ -164,16 +184,17 @@ contract AaveV4BabylonMainnetForkTest is Test {
 
     _vaultBtc = address(new TestnetERC20('vaultBTC', 'vaultBTC', 8));
     string memory json = vm.readFile(MAINNET_CONFIG);
-    assertEq(vm.split(json, VAULT_BTC_PLACEHOLDER).length, 2, 'one vaultBTC placeholder');
+    assertEq(vm.split(json, VAULT_BTC_CONFIG).length, 2, 'one vaultBTC reserve');
     _marketJson = vm.replace(
       json,
-      VAULT_BTC_PLACEHOLDER,
+      VAULT_BTC_CONFIG,
       string.concat('"underlying": "', vm.toString(_vaultBtc), '"')
     );
 
     _deployAndWriteReport();
     new AaveV4BabylonConfigureHarness(_config, _marketJson).run();
     new AaveV4DeployBabylonTokenizationHarness(_config, _marketJson).run();
+    _mockBabylonContracts();
     AaveV4BabylonHandoverHarness handover = new AaveV4BabylonHandoverHarness(_config);
     handover.setMarketJson(_marketJson);
     handover.run();
@@ -452,11 +473,19 @@ contract AaveV4BabylonMainnetForkTest is Test {
     assertGt(LIQUIDATION_LOGIC.code.length, 0, 'liquidation logic code');
   }
 
-  /// @dev The mainnet config cannot deploy the BabylonSpoke until it has Babylon's CreateX fields.
-  function test_deploySpoke_revertsWith_liquidationManagerDeployerUnset() public {
-    AaveV4DeployBabylonSpokeHarness harness = new AaveV4DeployBabylonSpokeHarness(_config, false);
-    vm.expectRevert('liquidation manager deployer unset');
-    harness.run();
+  /// @dev Babylon's CreateX deployer and salt map to the configured liquidation manager on CreateX.
+  function test_requireLiquidationManager() public {
+    AaveV4BabylonConfig.Config memory config = AaveV4BabylonConfig.read('mainnet');
+    assertEq(config.liquidationManager, AAVE_ADAPTER, 'liquidation manager');
+    new AaveV4DeployBabylonSpokeHarness(config, false).requireLiquidationManager(config);
+  }
+
+  function test_requireLiquidationManager_revertsWith_notCreateXAddress() public {
+    AaveV4BabylonConfig.Config memory config = AaveV4BabylonConfig.read('mainnet');
+    config.liquidationManagerDeployer = makeAddr('other deployer');
+    AaveV4DeployBabylonSpokeHarness harness = new AaveV4DeployBabylonSpokeHarness(config, false);
+    vm.expectRevert('liquidation manager is not the createx address');
+    harness.requireLiquidationManager(config);
   }
 
   function test_revert_supply_marketInactive() public {
@@ -649,6 +678,61 @@ contract AaveV4BabylonMainnetForkTest is Test {
     assertEq(IHub(_hub()).getSpokeConfig(BABYLON_USDC_ASSET_ID, _spoke()).drawCap, 1, 'draw cap');
   }
 
+  /// @dev The RiskSteward governs the Babylon Hub through the shared HubConfigurator once the AIP maps
+  /// its selectors.
+  function test_aip_riskStewardUpdatesBabylonHubCaps() public {
+    _executeLaunchAip();
+    IAaveV4ConfigEngine.SpokeConfigUpdate[]
+      memory updates = new IAaveV4ConfigEngine.SpokeConfigUpdate[](1);
+    updates[0] = IAaveV4ConfigEngine.SpokeConfigUpdate({
+      hubConfigurator: IHubConfigurator(HUB_CONFIGURATOR),
+      hub: _hub(),
+      underlying: USDC,
+      spoke: _spoke(),
+      addCap: EngineFlags.KEEP_CURRENT,
+      drawCap: 4_500_000,
+      riskPremiumThreshold: EngineFlags.KEEP_CURRENT,
+      active: EngineFlags.KEEP_CURRENT,
+      halted: EngineFlags.KEEP_CURRENT
+    });
+    vm.prank(RISK_COUNCIL);
+    IV4RiskSteward(RISK_STEWARD).updateHubSpokeCaps(updates);
+    assertEq(
+      IHub(_hub()).getSpokeConfig(BABYLON_USDC_ASSET_ID, _spoke()).drawCap,
+      4_500_000,
+      'draw cap'
+    );
+  }
+
+  /// @dev The RiskSteward governs the BabylonSpoke through the shared SpokeConfigurator once the AIP
+  /// maps its selectors.
+  function test_aip_riskStewardUpdatesBabylonSpokeCollateralFactor() public {
+    _executeLaunchAip();
+    uint32 dynamicConfigKey = ISpoke(_spoke()).getReserve(VAULT_BTC_RESERVE_ID).dynamicConfigKey;
+    IAaveV4ConfigEngine.DynamicReserveConfigUpdate[]
+      memory updates = new IAaveV4ConfigEngine.DynamicReserveConfigUpdate[](1);
+    updates[0] = IAaveV4ConfigEngine.DynamicReserveConfigUpdate({
+      spokeConfigurator: ISpokeConfigurator(SPOKE_CONFIGURATOR),
+      spoke: _spoke(),
+      hub: _hub(),
+      underlying: _vaultBtc,
+      dynamicConfigKey: dynamicConfigKey,
+      // the RiskSteward allows at most 50 BPS per collateral factor update
+      collateralFactor: 77_50,
+      maxLiquidationBonus: EngineFlags.KEEP_CURRENT,
+      liquidationFee: EngineFlags.KEEP_CURRENT
+    });
+    vm.prank(RISK_COUNCIL);
+    IV4RiskSteward(RISK_STEWARD).updateDynamicReserveConfigs(updates);
+    assertEq(
+      ISpoke(_spoke())
+        .getDynamicReserveConfig(VAULT_BTC_RESERVE_ID, dynamicConfigKey)
+        .collateralFactor,
+      77_50,
+      'collateral factor'
+    );
+  }
+
   function test_aip_revertsWith_liquidationNotFromAdapter() public {
     _executeLaunchAip();
     vm.expectRevert(ISpoke.Unauthorized.selector);
@@ -805,6 +889,68 @@ contract AaveV4BabylonMainnetForkTest is Test {
     vm.stopPrank();
   }
 
+  /// @dev Stands in for Babylon's step 5: the AaveAdapter at its predicted address and a BTCVaultSwap
+  /// wired as LlamaRisk and the launch plan expect, so the production handover checks pass.
+  function _mockBabylonContracts() internal {
+    AaveV4BabylonConfig.Deployment memory deployment = AaveV4BabylonConfig.readDeployment(_config);
+    vm.etch(AAVE_ADAPTER, hex'00');
+    vm.mockCall(
+      AAVE_ADAPTER,
+      abi.encodeCall(IBabylonAaveAdapter.BTC_VAULT_CORE_SPOKE, ()),
+      abi.encode(deployment.babylonSpoke)
+    );
+    vm.mockCall(
+      AAVE_ADAPTER,
+      abi.encodeCall(IBabylonAaveAdapter.VAULT_BTC_RESERVE_ID, ()),
+      abi.encode(VAULT_BTC_RESERVE_ID)
+    );
+    vm.mockCall(
+      AAVE_ADAPTER,
+      abi.encodeCall(IBabylonAaveAdapter.BTC_VAULT_HUB, ()),
+      abi.encode(deployment.hubs[0])
+    );
+    vm.mockCall(
+      AAVE_ADAPTER,
+      abi.encodeCall(IBabylonAaveAdapter.EXIT_BTC_RESERVE_ID, ()),
+      abi.encode(EXIT_BTC_RESERVE_ID)
+    );
+
+    vm.etch(_btcVaultSwap, hex'00');
+    vm.store(
+      _btcVaultSwap,
+      ERC1967Utils.ADMIN_SLOT,
+      bytes32(uint256(uint160(address(new ProxyAdmin(V4_SECURITY_COUNCIL)))))
+    );
+    vm.mockCall(
+      _btcVaultSwap,
+      abi.encodeCall(IBabylonBTCVaultSwap.ADAPTER, ()),
+      abi.encode(AAVE_ADAPTER)
+    );
+    vm.mockCall(_btcVaultSwap, abi.encodeCall(IBabylonBTCVaultSwap.HUB, ()), abi.encode(CORE_HUB));
+    vm.mockCall(_btcVaultSwap, abi.encodeCall(IBabylonBTCVaultSwap.EXIT_BTC, ()), abi.encode(WBTC));
+    vm.mockCall(
+      _btcVaultSwap,
+      abi.encodeCall(IBabylonBTCVaultSwap.EXIT_BTC_ASSET_ID, ()),
+      abi.encode(CORE_WBTC_ASSET_ID)
+    );
+    vm.mockCall(
+      _btcVaultSwap,
+      abi.encodeCall(IBabylonBTCVaultSwap.sellDiscountBps, ()),
+      abi.encode(2_00)
+    );
+    vm.mockCall(
+      _btcVaultSwap,
+      abi.encodeCall(IBabylonBTCVaultSwap.minimumProfitThresholdBps, ()),
+      abi.encode(50)
+    );
+    vm.mockCall(
+      _btcVaultSwap,
+      abi.encodeCall(IAccessManaged.authority, ()),
+      abi.encode(ACCESS_MANAGER)
+    );
+    _config.btcVaultSwap.swap = _btcVaultSwap;
+  }
+
   function _supplyVaultBtcAsCollateral(uint256 amount) internal {
     TestnetERC20(_vaultBtc).mint(_user, amount);
     vm.startPrank(_user);
@@ -815,14 +961,13 @@ contract AaveV4BabylonMainnetForkTest is Test {
   }
 
   /// @dev Step 2 deploys the Hub and writes the report, step 3 runs the BabylonSpoke script on it.
-  /// The CreateX check is skipped until Babylon shares its deployer and salt.
   function _deployAndWriteReport() internal {
     OrchestrationReports.FullDeploymentReport memory report = this.deployHubs();
     vm.createDir(OUTPUT_DIR, true);
     MetadataLogger logger = new MetadataLogger(OUTPUT_DIR);
     logger.writeJsonReportMarket(report);
     logger.save({fileName: REPORT_NAME, withTimestamp: false});
-    new AaveV4DeployBabylonSpokeHarness(_config, true).run();
+    new AaveV4DeployBabylonSpokeHarness(_config, false).run();
   }
 
   function _assertBabylonHubAsset(

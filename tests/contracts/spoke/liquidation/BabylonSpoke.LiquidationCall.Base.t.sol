@@ -47,6 +47,7 @@ contract BabylonSpokeLiquidationCallBaseTest is BabylonBase, SpokeLiquidationCal
     LiquidationBalanceSnapshot debtHubBalanceInfo;
     LiquidationBalanceSnapshot spokeBalanceInfo;
     LiquidationBalanceSnapshot collateralHubBalanceInfo;
+    LiquidationBalanceSnapshot collateralFeeReceiverBalanceInfo;
   }
 
   BabylonLiquidationLogicWrapper internal babylonLiquidationLogicWrapper;
@@ -187,6 +188,12 @@ contract BabylonSpokeLiquidationCallBaseTest is BabylonBase, SpokeLiquidationCal
       address(_hub(spoke4, collateralReserveId)),
       collateralReserveId,
       collateralReserveId
+    );
+    snapshot.collateralFeeReceiverBalanceInfo = _getBalanceInfo(
+      spoke4,
+      _getFeeReceiver(spoke4, collateralReserveId),
+      collateralReserveId,
+      params.debtReserveId
     );
   }
 
@@ -604,11 +611,10 @@ contract BabylonSpokeLiquidationCallBaseTest is BabylonBase, SpokeLiquidationCal
       true,
       'user position status: using as collateral'
     );
-    bool isBorrowing = _isBorrowing(spoke4, params.debtReserveId, params.user);
-    assertTrue(
-      !liquidationMetadata.fullDebtReserveLiquidated
-        ? (isBorrowing || liquidationMetadata.hasDeficit)
-        : !isBorrowing,
+    // the single debt reserve is cleared by a full repayment or by the deficit report
+    assertEq(
+      _isBorrowing(spoke4, params.debtReserveId, params.user),
+      !(liquidationMetadata.fullDebtReserveLiquidated || liquidationMetadata.hasDeficit),
       'user position status: borrowing'
     );
   }
@@ -685,6 +691,103 @@ contract BabylonSpokeLiquidationCallBaseTest is BabylonBase, SpokeLiquidationCal
     );
   }
 
+  /// @dev Hub-side accounting, mirroring the canonical `_checkHubBalances`: only the spoke's
+  /// added and owed amounts move, and the collateral fee receiver earns nothing.
+  function _checkBabylonHubBalances(
+    BabylonAccountsSnapshot memory accountsInfoBefore,
+    BabylonAccountsSnapshot memory accountsInfoAfter,
+    BabylonLiquidationMetadata memory liquidationMetadata
+  ) internal virtual {
+    assertEq(
+      accountsInfoAfter.userBalanceInfo.addedInHub,
+      accountsInfoBefore.userBalanceInfo.addedInHub,
+      'user: added'
+    );
+    assertEq(
+      accountsInfoAfter.userBalanceInfo.drawnFromHub,
+      accountsInfoBefore.userBalanceInfo.drawnFromHub,
+      'user: drawn'
+    );
+    assertEq(
+      accountsInfoAfter.liquidatorBalanceInfo.addedInHub,
+      accountsInfoBefore.liquidatorBalanceInfo.addedInHub,
+      'liquidator: added'
+    );
+    assertEq(
+      accountsInfoAfter.liquidatorBalanceInfo.drawnFromHub,
+      accountsInfoBefore.liquidatorBalanceInfo.drawnFromHub,
+      'liquidator: drawn'
+    );
+    assertEq(
+      accountsInfoAfter.debtHubBalanceInfo.addedInHub,
+      accountsInfoBefore.debtHubBalanceInfo.addedInHub,
+      'debt hub: added'
+    );
+    assertEq(
+      accountsInfoAfter.debtHubBalanceInfo.drawnFromHub,
+      accountsInfoBefore.debtHubBalanceInfo.drawnFromHub,
+      'debt hub: drawn'
+    );
+
+    // the liquidation fee is never charged
+    assertEq(
+      accountsInfoAfter.collateralFeeReceiverBalanceInfo.addedInHub,
+      accountsInfoBefore.collateralFeeReceiverBalanceInfo.addedInHub,
+      'collateral fee receiver: added'
+    );
+    assertEq(
+      accountsInfoAfter.collateralFeeReceiverBalanceInfo.drawnFromHub,
+      accountsInfoBefore.collateralFeeReceiverBalanceInfo.drawnFromHub,
+      'collateral fee receiver: drawn'
+    );
+
+    // exact at a collateral share price of one
+    assertEq(
+      accountsInfoAfter.spokeBalanceInfo.addedInHub,
+      accountsInfoBefore.spokeBalanceInfo.addedInHub - liquidationMetadata.collateralAmountRemoved,
+      'spoke: added'
+    );
+    assertApproxEqAbs(
+      accountsInfoAfter.spokeBalanceInfo.drawnFromHub,
+      liquidationMetadata.hasDeficit
+        ? accountsInfoBefore.spokeBalanceInfo.drawnFromHub -
+          accountsInfoBefore.userBalanceInfo.borrowedFromSpoke
+        : accountsInfoBefore.spokeBalanceInfo.drawnFromHub -
+          liquidationMetadata.debtAssetsToRestore,
+      2,
+      'spoke: drawn'
+    );
+  }
+
+  /// @dev The user's premium follows its last risk premium, mirroring the canonical
+  /// `_checkUserAccountData`.
+  function _checkBabylonUserRiskPremium(
+    CheckedBabylonLiquidationCallParams memory params,
+    BabylonAccountsSnapshot memory accountsInfoAfter,
+    BabylonLiquidationMetadata memory liquidationMetadata
+  ) internal virtual {
+    if (_isBorrowing(spoke4, params.debtReserveId, params.user)) {
+      ISpoke.UserPosition memory userPosition = spoke4.getUserPosition(
+        params.debtReserveId,
+        params.user
+      );
+      assertNotEq(userPosition.drawnShares, 0, 'borrowed reserve should have non zero base debt');
+      assertEq(
+        userPosition.premiumShares,
+        uint256(userPosition.drawnShares).percentMulUp(accountsInfoAfter.userLastRiskPremium),
+        'last user risk premium in debt reserve'
+      );
+    }
+    assertEq(
+      accountsInfoAfter.userAccountData.riskPremium,
+      accountsInfoAfter.userLastRiskPremium,
+      'user risk premium: user account data'
+    );
+    if (liquidationMetadata.hasDeficit) {
+      assertEq(accountsInfoAfter.userLastRiskPremium, 0, 'user risk premium: 0 in deficit');
+    }
+  }
+
   /// @dev The returned data must match the sizing the call performed.
   function _checkBabylonReturnData(
     BabylonLiquidationMetadata memory liquidationMetadata,
@@ -696,6 +799,40 @@ contract BabylonSpokeLiquidationCallBaseTest is BabylonBase, SpokeLiquidationCal
       collateralAmountRemoved,
       liquidationMetadata.collateralAmountRemoved,
       'returned collateral amount removed'
+    );
+  }
+
+  /// @dev The call never spends more than `debtToCover` nor pays out more than
+  /// `maxCollateralToRemove`, and the liquidator receives exactly the returned collateral amount,
+  /// as no liquidation fee is charged.
+  function _checkBabylonCallBounds(
+    CheckedBabylonLiquidationCallParams memory params,
+    BabylonAccountsSnapshot memory accountsInfoBefore,
+    BabylonAccountsSnapshot memory accountsInfoAfter,
+    uint256 collateralAmountRemoved
+  ) internal virtual {
+    assertLe(
+      accountsInfoBefore.liquidatorBalanceInfo.debtErc20Balance -
+        accountsInfoAfter.liquidatorBalanceInfo.debtErc20Balance,
+      params.debtToCover,
+      'liquidator spent above debtToCover'
+    );
+    assertLe(
+      accountsInfoAfter.liquidatorBalanceInfo.collateralErc20Balance -
+        accountsInfoBefore.liquidatorBalanceInfo.collateralErc20Balance,
+      params.maxCollateralToRemove,
+      'liquidator received above maxCollateralToRemove'
+    );
+    assertLe(
+      collateralAmountRemoved,
+      params.maxCollateralToRemove,
+      'returned collateral above maxCollateralToRemove'
+    );
+    assertEq(
+      accountsInfoAfter.liquidatorBalanceInfo.collateralErc20Balance -
+        accountsInfoBefore.liquidatorBalanceInfo.collateralErc20Balance,
+      collateralAmountRemoved,
+      'liquidator received the returned collateral amount'
     );
   }
 
@@ -744,6 +881,7 @@ contract BabylonSpokeLiquidationCallBaseTest is BabylonBase, SpokeLiquidationCal
       'user account data'
     );
     _checkBabylonReturnData(liquidationMetadata, liquidationBonus, collateralAmountRemoved);
+    _checkBabylonCallBounds(params, accountsInfoBefore, accountsInfoAfter, collateralAmountRemoved);
     _checkBabylonHealthFactor(
       params,
       accountsInfoBefore,
@@ -752,6 +890,8 @@ contract BabylonSpokeLiquidationCallBaseTest is BabylonBase, SpokeLiquidationCal
     );
     _checkBabylonPositionStatus(params, liquidationMetadata);
     _checkBabylonBalances(accountsInfoBefore, accountsInfoAfter, liquidationMetadata);
+    _checkBabylonHubBalances(accountsInfoBefore, accountsInfoAfter, liquidationMetadata);
+    _checkBabylonUserRiskPremium(params, accountsInfoAfter, liquidationMetadata);
 
     _assertHubLiquidity(
       _hub(spoke4, collateralReserveId),

@@ -6,17 +6,25 @@
   "hubLabels": ["babylon"],
   "babylonSpokeLabel": "babylon",
   "liquidationManager": "0xadca531564f3B26d0aAF48a044d741fD6cD571Ea",
-  "liquidationManagerDeployer": "0x0000000000000000000000000000000000000000",
-  "liquidationManagerSalt": "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "liquidationManagerDeployer": "0x29D6008BFB46007a554Fcf47Ac05d5F4F4BE7313",
+  "liquidationManagerSalt": "0xd1e36ebbfa8f5209694e0d3f482200ae5717e177708951ffea2b32ad25c1706b",
   "managedCollateralReserveId": 0,
   "admin": "0x187AAE17d4931310B3fc75743e7F16Bdc9eD77e9",
   "authority": "0x08aE3BE30958cDd1847ec58fFfd4C451a87fDF01",
   "feeReceiver": "0xB9B0b8616f6Bf6841972a52058132BE08d723155",
   "report": "scripts/markets/babylon/reports/mainnet.json",
+  "production": true,
+  "exitReserveId": 4,
+  "btcVaultSwap": {
+    "address": "0x0000000000000000000000000000000000000000",
+    "hub": "0xCca852Bc40e560adC3b1Cc58CA5b55638ce826c9",
+    "sellDiscountBps": 200,
+    "minimumProfitThresholdBps": 50
+  },
   "reserves": [
     {
       "hub": "babylon",
-      "underlying": "0x0000000000000000000000000000000000000000",
+      "underlying": "0x69712D713FD30aBEF48b5D14eC2a9FB834D2c341",
       "priceSource": "0xb41E773f507F7a7EA890b1afB7d2b660c30C8B0A",
       "liquidityFee": 0,
       "irData": {
