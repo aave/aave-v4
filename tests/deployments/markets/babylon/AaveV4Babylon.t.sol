@@ -2,6 +2,8 @@
 pragma solidity ^0.8.0;
 
 import {Create2TestHelper} from 'tests/utils/Create2TestHelper.sol';
+import {ERC1967Utils} from 'src/dependencies/openzeppelin/ERC1967Utils.sol';
+import {ProxyHelper} from 'tests/utils/ProxyHelper.sol';
 import {AaveV4DeployBabylonHub} from 'scripts/markets/babylon/AaveV4DeployBabylonHub.s.sol';
 import {AaveV4DeployBabylonTokenization} from 'scripts/markets/babylon/AaveV4DeployBabylonTokenization.s.sol';
 import {
@@ -219,11 +221,6 @@ contract AaveV4BabylonVerifyHarness is AaveV4BabylonVerify {
 }
 
 contract AaveV4BabylonTest is Create2TestHelper {
-  bytes32 internal constant ADMIN_SLOT =
-    0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103;
-  /// @dev ERC-1967 implementation slot, `bytes32(uint256(keccak256('eip1967.proxy.implementation')) - 1)`.
-  bytes32 internal constant IMPLEMENTATION_SLOT =
-    0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
   string internal constant OUTPUT_DIR = 'output/reports/deployments/';
   string internal constant REPORT_NAME = 'babylon-handover-test';
   address internal constant SEPOLIA_AAVE_ADAPTER = 0x6A785E8fdF251E2aA758a6E1841e1470074f46BF;
@@ -1603,7 +1600,11 @@ contract AaveV4BabylonTest is Create2TestHelper {
   function _mockBtcVaultSwap(AaveV4BabylonConfig.Deployment memory deployment) internal {
     address hub = deployment.hubs[0];
     vm.etch(_btcVaultSwap, hex'00');
-    vm.store(_btcVaultSwap, ADMIN_SLOT, bytes32(uint256(uint160(address(new ProxyAdmin(_admin))))));
+    vm.store(
+      _btcVaultSwap,
+      ERC1967Utils.ADMIN_SLOT,
+      bytes32(uint256(uint160(address(new ProxyAdmin(_admin)))))
+    );
     vm.mockCall(
       _btcVaultSwap,
       abi.encodeCall(IBabylonBTCVaultSwap.ADAPTER, ()),
@@ -1689,7 +1690,7 @@ contract AaveV4BabylonTest is Create2TestHelper {
   }
 
   function _proxyAdmin(address proxy) internal view returns (ProxyAdmin) {
-    return ProxyAdmin(address(uint160(uint256(vm.load(proxy, ADMIN_SLOT)))));
+    return ProxyAdmin(ProxyHelper.getProxyAdmin(proxy));
   }
 
   function _deploySepoliaTokensAndFeeds() internal {
@@ -2297,8 +2298,10 @@ contract AaveV4BabylonTest is Create2TestHelper {
       deployment.babylonSpoke
     );
     spokeConfig.active = false;
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, _deployer)
+    );
     vm.prank(_deployer);
-    vm.expectRevert();
     IHub(deployment.hubs[0]).updateSpokeConfig(0, deployment.babylonSpoke, spokeConfig);
     vm.prank(_governance);
     IHub(deployment.hubs[0]).updateSpokeConfig(0, deployment.babylonSpoke, spokeConfig);
@@ -2464,7 +2467,7 @@ contract AaveV4BabylonTest is Create2TestHelper {
     assertEq(tokenizationSpoke.symbol(), symbol, 'tokenization spoke symbol');
     assertEq(_proxyAdmin(proxy).owner(), _admin, 'tokenization spoke proxy admin owner');
     assertEq(
-      address(uint160(uint256(vm.load(proxy, IMPLEMENTATION_SLOT)))),
+      ProxyHelper.getImplementation(proxy),
       implementation,
       'tokenization spoke implementation'
     );

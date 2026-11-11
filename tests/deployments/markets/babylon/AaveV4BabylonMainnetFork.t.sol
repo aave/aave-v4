@@ -37,9 +37,39 @@ import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 import {IPriceFeed} from 'src/spoke/interfaces/IPriceFeed.sol';
+import {SpokeDeployUtils} from 'scripts/utils/SpokeDeployUtils.sol';
+import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 import {TestnetERC20} from 'tests/helpers/mocks/TestnetERC20.sol';
+import {ERC1967Utils} from 'src/dependencies/openzeppelin/ERC1967Utils.sol';
+import {ProxyHelper} from 'tests/utils/ProxyHelper.sol';
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
 import {EngineFlags} from 'src/config-engine/libraries/EngineFlags.sol';
+
+interface IVaultBTC {
+  function HUB() external view returns (address);
+
+  function adapter() external view returns (address);
+}
+
+interface IAaveAdapter {
+  function BTC_VAULT_CORE_SPOKE() external view returns (address);
+
+  function BTC_VAULT_HUB() external view returns (address);
+
+  function EXIT_BTC_RESERVE_ID() external view returns (uint256);
+
+  function VAULT_BTC_ASSET_ID() external view returns (uint256);
+
+  function VAULT_BTC_RESERVE_ID() external view returns (uint256);
+}
+
+interface IBTCVaultSwap {
+  function ADAPTER() external view returns (address);
+
+  function HUB() external view returns (address);
+
+  function EXIT_BTC_ASSET_ID() external view returns (uint256);
+}
 
 /// @dev The Ethereum V4 RiskSteward entry points the tests call.
 interface IV4RiskSteward {
@@ -55,24 +85,25 @@ interface IV4RiskSteward {
 /// shared V4 contracts. Expected values come from the LlamaRisk parameters and aave-address-book,
 /// not from `config/mainnet.json`. A mock vaultBTC stands in for Babylon's, deployed after `FORK_BLOCK`.
 contract AaveV4BabylonMainnetForkTest is Test {
-  uint256 internal constant FORK_BLOCK = 26_376_995;
+  uint256 internal constant FORK_BLOCK = 26_387_600;
   string internal constant OUTPUT_DIR = 'output/reports/deployments/';
   string internal constant REPORT_NAME = 'babylon-mainnet-fork-test';
   string internal constant MAINNET_CONFIG = 'scripts/markets/babylon/config/mainnet.json';
-  /// @dev ERC-1967 admin slot, `bytes32(uint256(keccak256('eip1967.proxy.admin')) - 1)`.
-  bytes32 internal constant ADMIN_SLOT =
-    0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103;
   string internal constant VAULT_BTC_CONFIG =
     '"underlying": "0x69712D713FD30aBEF48b5D14eC2a9FB834D2c341"';
 
-  // aave-address-book AaveV4Ethereum, GovernanceV3Ethereum
+  // aave-address-book AaveV4Ethereum
   address internal constant ACCESS_MANAGER = 0x08aE3BE30958cDd1847ec58fFfd4C451a87fDF01;
   address internal constant HUB_CONFIGURATOR = 0x1F0753480bB03EaA00863224602267B7E0525C3d;
   address internal constant SPOKE_CONFIGURATOR = 0x9BFFf48BFb5A7AE70c348d4d4cb97E8DEFa5389a;
   address internal constant TREASURY_SPOKE = 0xB9B0b8616f6Bf6841972a52058132BE08d723155;
   address internal constant CORE_HUB = 0xCca852Bc40e560adC3b1Cc58CA5b55638ce826c9;
   address internal constant MAIN_SPOKE = 0x94e7A5dCbE816e498b89aB752661904E2F56c485;
+  // aave-address-book AaveV4EthereumExternalLibraries
+  address internal constant LIQUIDATION_LOGIC = 0x88dF535473C5adf1f57789734A05E555F7Deb8DB;
+  // aave-address-book GovernanceV3Ethereum
   address internal constant EXECUTOR_LVL_1 = 0x5300A1a15135EA4dc7aD5a167152C01EFc9b192A;
+  // aave-address-book MiscEthereum
   address internal constant V4_SECURITY_COUNCIL = 0x187AAE17d4931310B3fc75743e7F16Bdc9eD77e9;
   // aave-address-book AaveV4Ethereum
   address internal constant RISK_STEWARD = 0x6f48d9Cdb8EE6E17c96B2d8Aec128af426A295c1;
@@ -85,6 +116,10 @@ contract AaveV4BabylonMainnetForkTest is Test {
   address internal constant TAKER_POSITION_MANAGER = 0x6c044c0D3801499bCAbfAd458B70880bc518e9F7;
 
   address internal constant AAVE_ADAPTER = 0xadca531564f3B26d0aAF48a044d741fD6cD571Ea;
+  // set once deployd
+  address internal constant VAULT_BTC = address(0);
+  // set once deployed
+  address internal constant BTC_VAULT_SWAP = address(0);
   address internal constant USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
   address internal constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
   address internal constant GHO = 0x40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f;
@@ -106,6 +141,7 @@ contract AaveV4BabylonMainnetForkTest is Test {
   uint256 internal constant CORE_USDG_ASSET_ID = 8;
   uint256 internal constant CORE_WBTC_ASSET_ID = 11;
 
+  uint256 internal constant BABYLON_VAULT_BTC_ASSET_ID = 0;
   uint256 internal constant BABYLON_USDC_ASSET_ID = 2;
 
   uint256 internal constant VAULT_BTC_RESERVE_ID = 0;
@@ -185,6 +221,8 @@ contract AaveV4BabylonMainnetForkTest is Test {
   function test_hubAndSpokeOnSharedAccessManager() public view {
     assertEq(IAccessManaged(_hub()).authority(), ACCESS_MANAGER, 'hub authority');
     assertEq(IAccessManaged(_spoke()).authority(), ACCESS_MANAGER, 'spoke authority');
+    assertEq(IAccessManaged(CORE_HUB).authority(), ACCESS_MANAGER, 'core hub authority');
+    assertEq(IAccessManaged(MAIN_SPOKE).authority(), ACCESS_MANAGER, 'main spoke authority');
     assertNotEq(_deployment.accessManager, ACCESS_MANAGER, 'temporary access manager');
     assertEq(
       IAccessManaged(_deployment.hubConfigurator).authority(),
@@ -252,6 +290,14 @@ contract AaveV4BabylonMainnetForkTest is Test {
     for (uint256 assetId; assetId < IHub(_hub()).getAssetCount(); ++assetId) {
       assertEq(IHub(_hub()).getAsset(assetId).feeReceiver, TREASURY_SPOKE, 'fee receiver');
       assertFalse(IHub(_hub()).isSpokeListed(assetId, treasurySpoke), 'unused treasury listed');
+      assertEq(IHub(_hub()).getSpokeAddedShares(assetId, treasurySpoke), 0, 'added shares');
+      assertEq(IHub(_hub()).getSpokeDrawnShares(assetId, treasurySpoke), 0, 'drawn shares');
+      (uint256 premiumShares, int256 premiumOffsetRay) = IHub(_hub()).getSpokePremiumData(
+        assetId,
+        treasurySpoke
+      );
+      assertEq(premiumShares, 0, 'premium shares');
+      assertEq(premiumOffsetRay, 0, 'premium offset');
     }
   }
 
@@ -259,6 +305,7 @@ contract AaveV4BabylonMainnetForkTest is Test {
     ExpectedReserve[] memory expected = _expectedReserves();
     ISpoke spoke = ISpoke(_spoke());
     IAaveOracle oracle = IAaveOracle(spoke.ORACLE());
+    assertEq(oracle.spoke(), _spoke(), 'oracle spoke');
     assertEq(spoke.getReserveCount(), RESERVE_COUNT, 'reserve count');
 
     for (uint256 reserveId; reserveId < RESERVE_COUNT; ++reserveId) {
@@ -325,7 +372,7 @@ contract AaveV4BabylonMainnetForkTest is Test {
     });
   }
 
-  /// @dev LlamaRisk tokenized spokes, named as every Ethereum V4 TokenizationSpoke and owned by the
+  /// @dev Tokenized spokes, named as every Ethereum V4 TokenizationSpoke and owned by the
   /// V4 Security Council, left unconnected until the launch AIP.
   function test_tokenizationSpokes() public view {
     address[4] memory underlyings = [USDT, USDC, GHO, WBTC];
@@ -414,6 +461,16 @@ contract AaveV4BabylonMainnetForkTest is Test {
       0,
       'babylon liquidation logic'
     );
+  }
+
+  // the config's library salt resolves to the same LiquidationLogic
+  function test_libraries_librarySaltResolvesToSharedLiquidationLogic() public view {
+    address liquidationLogic = Create2Utils.computeCreate2Address(
+      _config.librarySalt,
+      vm.getCode(SpokeDeployUtils.LIQUIDATION_LOGIC_ARTIFACT)
+    );
+    assertEq(liquidationLogic, LIQUIDATION_LOGIC, 'liquidation logic address');
+    assertGt(LIQUIDATION_LOGIC.code.length, 0, 'liquidation logic code');
   }
 
   /// @dev Babylon's CreateX deployer and salt map to the configured liquidation manager on CreateX.
@@ -684,6 +741,42 @@ contract AaveV4BabylonMainnetForkTest is Test {
     ISpoke(_spoke()).liquidationCall(VAULT_BTC_RESERVE_ID, CORE_USDC_RESERVE_ID, _user, 1, false);
   }
 
+  // will fail until Babylon deploys vaultBTC
+  function test_babylon_vaultBtc() public {
+    vm.skip(true, 'post-babylon deployment, step 3');
+    assertEq(IVaultBTC(VAULT_BTC).HUB(), _hub(), 'hub');
+    assertEq(IVaultBTC(VAULT_BTC).adapter(), AAVE_ADAPTER, 'adapter');
+  }
+
+  // will fail until Babylon deploys the AaveAdapter
+  function test_babylon_aaveAdapter() public {
+    vm.skip(true, 'post-babylon deployment, step 5');
+    assertEq(IAaveAdapter(AAVE_ADAPTER).BTC_VAULT_CORE_SPOKE(), _spoke(), 'babylon spoke');
+    assertEq(IAaveAdapter(AAVE_ADAPTER).EXIT_BTC_RESERVE_ID(), EXIT_BTC_RESERVE_ID, 'exitBTC');
+    assertEq(
+      IAaveAdapter(AAVE_ADAPTER).VAULT_BTC_RESERVE_ID(),
+      VAULT_BTC_RESERVE_ID,
+      'vaultBTC reserve id'
+    );
+    assertEq(IAaveAdapter(AAVE_ADAPTER).BTC_VAULT_HUB(), _hub(), 'babylon hub');
+    assertEq(
+      IAaveAdapter(AAVE_ADAPTER).VAULT_BTC_ASSET_ID(),
+      BABYLON_VAULT_BTC_ASSET_ID,
+      'vaultBTC asset id'
+    );
+  }
+
+  // will fail until Babylon deploys BTCVaultSwap
+  function test_babylon_btcVaultSwap() public {
+    vm.skip(true, 'post-babylon deployment, step 5');
+    IBTCVaultSwap btcVaultSwap = IBTCVaultSwap(BTC_VAULT_SWAP);
+    assertEq(btcVaultSwap.ADAPTER(), AAVE_ADAPTER, 'adapter');
+    assertEq(btcVaultSwap.HUB(), CORE_HUB, 'hub');
+    assertEq(btcVaultSwap.EXIT_BTC_ASSET_ID(), CORE_WBTC_ASSET_ID, 'exitBTC asset id');
+    assertEq(IAccessManaged(BTC_VAULT_SWAP).authority(), ACCESS_MANAGER, 'authority');
+    assertEq(_proxyAdminOwner(BTC_VAULT_SWAP), V4_SECURITY_COUNCIL, 'proxy admin owner');
+  }
+
   function deployHubs() external returns (OrchestrationReports.FullDeploymentReport memory report) {
     InputUtils.FullDeployInputs memory inputs = new AaveV4DeployBabylonHubHarness(_config)
       .sanitizedDeployInputs(_deployer);
@@ -825,7 +918,7 @@ contract AaveV4BabylonMainnetForkTest is Test {
     vm.etch(_btcVaultSwap, hex'00');
     vm.store(
       _btcVaultSwap,
-      ADMIN_SLOT,
+      ERC1967Utils.ADMIN_SLOT,
       bytes32(uint256(uint160(address(new ProxyAdmin(V4_SECURITY_COUNCIL)))))
     );
     vm.mockCall(
@@ -1102,6 +1195,6 @@ contract AaveV4BabylonMainnetForkTest is Test {
   }
 
   function _proxyAdminOwner(address proxy) internal view returns (address) {
-    return ProxyAdmin(address(uint160(uint256(vm.load(proxy, ADMIN_SLOT))))).owner();
+    return ProxyAdmin(ProxyHelper.getProxyAdmin(proxy)).owner();
   }
 }
