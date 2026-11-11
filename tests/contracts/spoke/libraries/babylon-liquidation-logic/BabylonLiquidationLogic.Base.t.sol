@@ -45,11 +45,13 @@ contract BabylonLiquidationLogicBaseTest is Base {
     params.collateralAssetPrice = bound(params.collateralAssetPrice, 1, MAX_ASSET_PRICE);
     params.debtAssetPrice = bound(params.debtAssetPrice, 1, MAX_ASSET_PRICE);
     params.drawnIndex = bound(params.drawnIndex, MIN_DRAWN_INDEX, MAX_DRAWN_INDEX);
-    uint256 maxDebtAmount = _max(
-      1,
-      _convertValueToAmount(MAX_SUPPLY_AMOUNT, params.debtAssetPrice, params.debtAssetUnit)
+    // the debt, in asset units, is at most the max supply of the debt asset
+    uint256 maxDebtAmount = MAX_SUPPLY_ASSET_UNITS * params.debtAssetUnit;
+    params.drawnShares = bound(
+      params.drawnShares,
+      0,
+      maxDebtAmount.mulDivDown(WadRayMath.RAY, params.drawnIndex)
     );
-    params.drawnShares = bound(params.drawnShares, 0, maxDebtAmount);
     params.premiumDebtRay = bound(params.premiumDebtRay, 0, maxDebtAmount * WadRayMath.RAY);
     uint256 debtAmount = (params.drawnShares * params.drawnIndex + params.premiumDebtRay)
       .fromRayUp();

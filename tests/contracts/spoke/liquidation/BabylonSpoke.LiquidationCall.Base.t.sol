@@ -700,7 +700,8 @@ contract BabylonSpokeLiquidationCallBaseTest is BabylonBase, SpokeLiquidationCal
   }
 
   /// @dev The call never spends more than `debtToCover` nor pays out more than
-  /// `maxCollateralToRemove`, checked on the liquidator balances and the returned amount.
+  /// `maxCollateralToRemove`, and the liquidator receives exactly the returned collateral amount,
+  /// as no liquidation fee is charged.
   function _checkBabylonCallBounds(
     CheckedBabylonLiquidationCallParams memory params,
     BabylonAccountsSnapshot memory accountsInfoBefore,
@@ -723,6 +724,12 @@ contract BabylonSpokeLiquidationCallBaseTest is BabylonBase, SpokeLiquidationCal
       collateralAmountRemoved,
       params.maxCollateralToRemove,
       'returned collateral above maxCollateralToRemove'
+    );
+    assertEq(
+      accountsInfoAfter.liquidatorBalanceInfo.collateralErc20Balance -
+        accountsInfoBefore.liquidatorBalanceInfo.collateralErc20Balance,
+      collateralAmountRemoved,
+      'liquidator received the returned collateral amount'
     );
   }
 
