@@ -481,7 +481,7 @@ contract SpokeLiquidationCallTest_SmallLiquidationBonus is SpokeLiquidationCallH
   ) internal view virtual override {
     assertLe(
       liquidationMetadata.liquidationBonus,
-      MAX_LIQUIDATION_BONUS.percentMulUp(102_00),
+      MIN_LIQUIDATION_BONUS.percentMulUp(102_00),
       'Liquidation bonus'
     );
   }

@@ -31,7 +31,7 @@ coverage :
 	make coverage-badge
 
 # Deployment
-# Step 1:Pre-deploy LiquidationLogic library (required before deploying spokes)
+# Step 1: Pre-deploy the LiquidationLogic and BabylonLiquidationLogic libraries (required before deploying spokes)
 # `make deploy-precompile`
 deploy-precompile :;
 	FOUNDRY_PROFILE=${chain} forge clean && forge script scripts/LibraryPreCompile.s.sol \

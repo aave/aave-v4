@@ -56,7 +56,8 @@ abstract contract AaveV4DeployBatchBaseScript is Script {
         deployer,
         inputs,
         BytecodeHelper.getHubBytecode(),
-        BytecodeHelper.getSpokeBytecode()
+        BytecodeHelper.getSpokeBytecode(),
+        BytecodeHelper.getBabylonSpokeBytecode()
       );
     vm.stopBroadcast();
     logger.writeJsonReportMarket(report);
@@ -89,10 +90,23 @@ abstract contract AaveV4DeployBatchBaseScript is Script {
     // Validate label uniqueness (duplicate labels produce identical CREATE2 salts)
     InputUtils.validateUniqueLabels(inputs.hubLabels, 'hub');
     InputUtils.validateUniqueLabels(inputs.spokeLabels, 'spoke');
+    InputUtils.validateUniqueLabels(inputs.babylonSpokeLabels, 'babylonSpoke');
+    // Spokes and BabylonSpokes share the oracle report group
+    InputUtils.validateDisjointLabels({
+      labels: inputs.spokeLabels,
+      otherLabels: inputs.babylonSpokeLabels,
+      kind: 'spoke/babylonSpoke'
+    });
+    require(
+      inputs.babylonLiquidationManagers.length == inputs.babylonSpokeLabels.length &&
+        inputs.babylonManagedCollateralReserveIds.length == inputs.babylonSpokeLabels.length,
+      'babylon spoke labels/managers/reserve ids length mismatch'
+    );
 
     _appendSummary('========== DEPLOYMENT SUMMARY ==========');
     _logHubs(inputs);
     _logSpokes(inputs);
+    _logBabylonSpokes(inputs);
     _logNativeTokenGateway(inputs);
     _logSignatureGateway(inputs);
     _logPositionManagers(inputs);
@@ -188,6 +202,29 @@ abstract contract AaveV4DeployBatchBaseScript is Script {
       }
     } else {
       _logWarning('no spokes will be deployed');
+    }
+  }
+
+  function _logBabylonSpokes(InputUtils.FullDeployInputs memory inputs) internal {
+    if (inputs.babylonSpokeLabels.length > 0) {
+      _appendSummary(
+        string.concat('babylon spokes to deploy: ', vm.toString(inputs.babylonSpokeLabels.length))
+      );
+      for (uint256 i; i < inputs.babylonSpokeLabels.length; i++) {
+        _appendSummary(
+          string.concat(
+            '  - ',
+            inputs.babylonSpokeLabels[i],
+            ' (liquidation manager: ',
+            vm.toString(inputs.babylonLiquidationManagers[i]),
+            ', managed collateral reserve id: ',
+            vm.toString(inputs.babylonManagedCollateralReserveIds[i]),
+            ')'
+          )
+        );
+      }
+    } else {
+      _logWarning('no babylon spokes will be deployed');
     }
   }
 
