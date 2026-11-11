@@ -433,6 +433,15 @@ contract AaveV4BabylonMainnetForkTest is Test {
     assertEq(config.liquidationBonusFactor, 90_00, 'liquidation bonus factor');
   }
 
+  function test_libraries() public view {
+    assertGt(ISpoke(_spoke()).getLiquidationLogic().code.length, 0, 'liquidation logic');
+    assertGt(
+      IBabylonSpoke(_spoke()).getBabylonLiquidationLogic().code.length,
+      0,
+      'babylon liquidation logic'
+    );
+  }
+
   // the config's library salt resolves to the same LiquidationLogic
   function test_libraries_librarySaltResolvesToSharedLiquidationLogic() public view {
     address liquidationLogic = Create2Utils.computeCreate2Address(
