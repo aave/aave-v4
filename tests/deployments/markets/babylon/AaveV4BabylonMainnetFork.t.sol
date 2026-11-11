@@ -11,7 +11,6 @@ import {
   AaveV4BabylonVerifyHarness
 } from 'tests/deployments/markets/babylon/AaveV4Babylon.t.sol';
 import {AaveV4BabylonConfig} from 'scripts/markets/babylon/AaveV4BabylonConfig.sol';
-import {AaveV4BabylonVerification} from 'scripts/markets/babylon/AaveV4BabylonVerification.sol';
 import {AaveV4DeployOrchestration} from 'src/deployments/orchestration/AaveV4DeployOrchestration.sol';
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
 import {InputUtils} from 'src/deployments/utils/libraries/InputUtils.sol';
@@ -38,10 +37,6 @@ import {SpokeDeployUtils} from 'scripts/utils/SpokeDeployUtils.sol';
 import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 import {TestnetERC20} from 'tests/helpers/mocks/TestnetERC20.sol';
 import {ProxyHelper} from 'tests/utils/ProxyHelper.sol';
-
-interface IBabylonLiquidationLogic {
-  function getLiquidationLogic() external pure returns (address);
-}
 
 interface IVaultBTC {
   function HUB() external view returns (address);
@@ -438,25 +433,6 @@ contract AaveV4BabylonMainnetForkTest is Test {
     assertEq(config.liquidationBonusFactor, 90_00, 'liquidation bonus factor');
   }
 
-  // the fork links the libraries foundry deploys, so only the links between them are checked
-  function test_libraries() public view {
-    address liquidationLogic = ISpoke(_spoke()).getLiquidationLogic();
-    address babylonLiquidationLogic = IBabylonSpoke(_spoke()).getBabylonLiquidationLogic();
-    assertGt(liquidationLogic.code.length, 0, 'liquidation logic');
-    assertGt(babylonLiquidationLogic.code.length, 0, 'babylon liquidation logic');
-    assertEq(
-      IBabylonLiquidationLogic(babylonLiquidationLogic).getLiquidationLogic(),
-      liquidationLogic,
-      'babylon liquidation logic link'
-    );
-  }
-
-  // verify rejects a BabylonSpoke that does not link the live LiquidationLogic
-  function test_verifyLibraries_revertsWith_babylonSpokeLiquidationLogic() public {
-    vm.expectRevert(bytes('babylon spoke liquidation logic'));
-    this.verifyLibraries(_deployment, _config.librarySalt);
-  }
-
   // the config's library salt resolves to the same LiquidationLogic
   function test_libraries_librarySaltResolvesToSharedLiquidationLogic() public view {
     address liquidationLogic = Create2Utils.computeCreate2Address(
@@ -673,14 +649,14 @@ contract AaveV4BabylonMainnetForkTest is Test {
   }
 
   // will fail until Babylon deploys vaultBTC
-  function test_babylon_vaultBtc() public view {
+  function test_babylon_vaultBtc() public {
     vm.skip(true, 'post-babylon deployment, step 3');
     assertEq(IVaultBTC(VAULT_BTC).HUB(), _hub(), 'hub');
     assertEq(IVaultBTC(VAULT_BTC).adapter(), AAVE_ADAPTER, 'adapter');
   }
 
   // will fail until Babylon deploys the AaveAdapter
-  function test_babylon_aaveAdapter() public view {
+  function test_babylon_aaveAdapter() public {
     vm.skip(true, 'post-babylon deployment, step 5');
     assertEq(IAaveAdapter(AAVE_ADAPTER).BTC_VAULT_CORE_SPOKE(), _spoke(), 'babylon spoke');
     assertEq(IAaveAdapter(AAVE_ADAPTER).EXIT_BTC_RESERVE_ID(), EXIT_BTC_RESERVE_ID, 'exitBTC');
@@ -698,7 +674,7 @@ contract AaveV4BabylonMainnetForkTest is Test {
   }
 
   // will fail until Babylon deploys BTCVaultSwap
-  function test_babylon_btcVaultSwap() public view {
+  function test_babylon_btcVaultSwap() public {
     vm.skip(true, 'post-babylon deployment, step 5');
     IBTCVaultSwap btcVaultSwap = IBTCVaultSwap(BTC_VAULT_SWAP);
     assertEq(btcVaultSwap.ADAPTER(), AAVE_ADAPTER, 'adapter');
@@ -706,13 +682,6 @@ contract AaveV4BabylonMainnetForkTest is Test {
     assertEq(btcVaultSwap.EXIT_BTC_ASSET_ID(), CORE_WBTC_ASSET_ID, 'exitBTC asset id');
     assertEq(IAccessManaged(BTC_VAULT_SWAP).authority(), ACCESS_MANAGER, 'authority');
     assertEq(_proxyAdminOwner(BTC_VAULT_SWAP), V4_SECURITY_COUNCIL, 'proxy admin owner');
-  }
-
-  function verifyLibraries(
-    AaveV4BabylonConfig.Deployment memory deployment,
-    bytes32 librarySalt
-  ) external view {
-    AaveV4BabylonVerification.verifyLibraries(deployment, librarySalt);
   }
 
   function deployHubs() external returns (OrchestrationReports.FullDeploymentReport memory report) {

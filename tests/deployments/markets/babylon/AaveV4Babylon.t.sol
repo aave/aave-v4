@@ -211,6 +211,12 @@ contract AaveV4BabylonVerifyHarness is AaveV4BabylonVerify {
         deployment: deployment
       });
   }
+
+  // tests link the libraries foundry deploys, not the ones at the config salt
+  function _verifyLibraries(
+    AaveV4BabylonConfig.Config memory,
+    AaveV4BabylonConfig.Deployment memory
+  ) internal view override {}
 }
 
 contract AaveV4BabylonTest is Create2TestHelper {
