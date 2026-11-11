@@ -6,6 +6,7 @@ import {Vm} from 'forge-std/Vm.sol';
 import {AaveV4BabylonConfig} from 'scripts/markets/babylon/AaveV4BabylonConfig.sol';
 import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 import {IAccessManagerEnumerable} from 'src/access/interfaces/IAccessManagerEnumerable.sol';
+import {ERC1967Utils} from 'src/dependencies/openzeppelin/ERC1967Utils.sol';
 import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 import {ProxyAdmin} from 'src/dependencies/openzeppelin/ProxyAdmin.sol';
 import {Ownable2StepUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/Ownable2StepUpgradeable.sol';
@@ -35,13 +36,6 @@ import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
 library AaveV4BabylonVerification {
   Vm internal constant vm = Vm(address(uint160(uint256(keccak256('hevm cheat code')))));
 
-  /// @dev ERC-1967 admin slot, `bytes32(uint256(keccak256('eip1967.proxy.admin')) - 1)`.
-  bytes32 internal constant ADMIN_SLOT =
-    0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103;
-  /// @dev ERC-1967 implementation slot, `bytes32(uint256(keccak256('eip1967.proxy.implementation')) - 1)`.
-  bytes32 internal constant IMPLEMENTATION_SLOT =
-    0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
-
   /// @notice Reverts unless every deployed contract exists and is wired to the others as configured.
   /// @param config The Babylon market config.
   /// @param deployment The deployed Babylon market.
@@ -67,7 +61,7 @@ library AaveV4BabylonVerification {
     for (uint256 i; i < deployment.hubs.length; ++i) {
       require(IAccessManaged(deployment.hubs[i]).authority() == authority, 'hub authority');
       require(
-        _implementation(deployment.hubs[i]) == deployment.hubImplementations[i],
+        getImplementation(deployment.hubs[i]) == deployment.hubImplementations[i],
         'hub implementation'
       );
       require(
@@ -82,7 +76,7 @@ library AaveV4BabylonVerification {
       'babylon spoke authority'
     );
     require(
-      _implementation(deployment.babylonSpoke) == deployment.babylonSpokeImplementation,
+      getImplementation(deployment.babylonSpoke) == deployment.babylonSpokeImplementation,
       'babylon spoke implementation'
     );
     require(ISpoke(deployment.babylonSpoke).ORACLE() == deployment.oracle, 'babylon spoke oracle');
@@ -298,7 +292,7 @@ library AaveV4BabylonVerification {
       require(proxy != address(0), 'tokenization spoke not deployed');
       _requireCode(proxy, 'tokenization spoke');
       _requireCode(implementation, 'tokenization spoke implementation');
-      require(_implementation(proxy) == implementation, 'tokenization spoke implementation');
+      require(getImplementation(proxy) == implementation, 'tokenization spoke implementation');
       _requireProxyAdminOwner(proxy, owner);
       require(_isListedReserve(marketConfig, expected), 'tokenization spoke asset not a reserve');
 
@@ -318,6 +312,20 @@ library AaveV4BabylonVerification {
       );
       require(!hub.isSpokeListed(assetId, proxy), 'tokenization spoke connected');
     }
+  }
+
+  /// @notice Returns the ProxyAdmin of a transparent proxy, read from its ERC-1967 admin slot.
+  /// @param proxy The proxy.
+  function getProxyAdmin(address proxy) internal view returns (address) {
+    // the slot holds a left-padded address, truncating the high bits is intended
+    return address(uint160(uint256(vm.load(proxy, ERC1967Utils.ADMIN_SLOT))));
+  }
+
+  /// @notice Returns the implementation of a proxy, read from its ERC-1967 implementation slot.
+  /// @param proxy The proxy.
+  function getImplementation(address proxy) internal view returns (address) {
+    // the slot holds a left-padded address, truncating the high bits is intended
+    return address(uint160(uint256(vm.load(proxy, ERC1967Utils.IMPLEMENTATION_SLOT))));
   }
 
   function _verifyReserve(
@@ -518,16 +526,12 @@ library AaveV4BabylonVerification {
   }
 
   function _requireProxyAdminOwner(address proxy, address owner) private view {
-    address proxyAdmin = address(uint160(uint256(vm.load(proxy, ADMIN_SLOT))));
+    address proxyAdmin = getProxyAdmin(proxy);
     require(proxyAdmin != address(0), 'not a transparent proxy');
     require(ProxyAdmin(proxyAdmin).owner() == owner, 'proxy admin owner');
   }
 
   function _requireCode(address target, string memory what) private view {
     require(target.code.length > 0, what);
-  }
-
-  function _implementation(address proxy) private view returns (address) {
-    return address(uint160(uint256(vm.load(proxy, IMPLEMENTATION_SLOT))));
   }
 }

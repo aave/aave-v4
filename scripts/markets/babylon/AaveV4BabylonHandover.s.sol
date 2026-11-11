@@ -16,7 +16,6 @@ import {IAccessManagerEnumerable} from 'src/access/interfaces/IAccessManagerEnum
 import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 import {ProxyAdmin} from 'src/dependencies/openzeppelin/ProxyAdmin.sol';
 import {Ownable2StepUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/Ownable2StepUpgradeable.sol';
-import {ProxyHelper} from 'tests/utils/ProxyHelper.sol';
 
 /// @title AaveV4BabylonHandover
 /// @author Aave Labs
@@ -174,6 +173,6 @@ contract AaveV4BabylonHandover is Script {
   }
 
   function _proxyAdmin(address proxy) internal view returns (ProxyAdmin) {
-    return ProxyAdmin(ProxyHelper.getProxyAdmin(proxy));
+    return ProxyAdmin(AaveV4BabylonVerification.getProxyAdmin(proxy));
   }
 }
