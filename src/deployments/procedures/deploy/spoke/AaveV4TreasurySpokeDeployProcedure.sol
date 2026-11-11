@@ -6,24 +6,13 @@ import {TreasurySpokeInstance} from 'src/spoke/instances/TreasurySpokeInstance.s
 
 /// @title AaveV4TreasurySpokeDeployProcedure
 /// @author Aave Labs
-/// @notice Deploys the TreasurySpoke contract behind a transparent proxy.
+/// @notice Deploys the canonical TreasurySpoke implementation.
 contract AaveV4TreasurySpokeDeployProcedure {
-  /// @notice Deploys a Treasury Spoke instance via CREATE2 and sets up a transparent proxy.
-  /// @param owner The owner of the proxy admin and the TreasurySpoke initializer.
+  /// @notice Deploys the canonical TreasurySpoke implementation via CREATE2.
   /// @param salt The CREATE2 salt for deterministic deployment.
-  /// @return The address of the deployed transparent proxy contract.
-  function _deployTreasurySpoke(address owner, bytes32 salt) internal returns (address) {
-    require(owner != address(0), 'invalid owner');
-    address implementation = Create2Utils.create2Deploy(
-      salt,
-      type(TreasurySpokeInstance).creationCode
-    );
+  /// @return The address of the deployed TreasurySpoke implementation contract.
+  function _deployTreasurySpokeImplementation(bytes32 salt) internal returns (address) {
     return
-      Create2Utils.proxify(
-        salt,
-        implementation,
-        owner,
-        abi.encodeCall(TreasurySpokeInstance.initialize, (owner))
-      );
+      Create2Utils.create2Deploy({salt: salt, bytecode: type(TreasurySpokeInstance).creationCode});
   }
 }

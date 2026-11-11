@@ -32,13 +32,27 @@ This deploys `LiquidationLogic` via CREATE2 and writes `FOUNDRY_LIBRARIES` to `.
 make deploy-contracts
 ```
 
-This runs `AaveV4DeployOrchestration.deployAaveV4()`, which deploys batches in order: AccessManager → role labeling → Configurators → Configurator role setup → TreasurySpoke → TokenizationSpoke implementation → Hubs → Spokes → Gateways → PositionManagers → role grants → DEFAULT_ADMIN transfer.
+This runs `AaveV4DeployOrchestration.deployAaveV4()`, which deploys in order: AccessManager → role labeling → Configurators → Configurator role setup → canonical Hub, Spoke and TokenizationSpoke implementations → HubSpokeFactory (with the canonical TreasurySpoke implementation) → TreasurySpoke → Hubs → Spokes → Gateways → PositionManagers → role grants → DEFAULT_ADMIN transfer. The TreasurySpoke, Hubs and Spokes are deployed through the `HubSpokeFactory`, so they all point to the same canonical implementations as instances deployed later by governance.
 
 ### TokenizationSpoke
 
 The orchestration deploys one canonical `TokenizationSpokeInstance` implementation (`tokenizationSpokeImplementation` in the report). It holds no Hub or asset specific state and is shared by every `TokenizationSpoke` proxy.
 
-`TokenizationSpoke` proxies are **not** deployed by the orchestration, because each requires an asset to already be listed on a Hub. Deploy one proxy per asset after listing, either through the config engine (`AssetListing.tokenization`) or with `AaveV4TokenizationSpokeBatch`, passing the canonical implementation.
+`TokenizationSpoke` proxies are **not** deployed by the orchestration, because each requires an asset to already be listed on a Hub. Deploy one proxy per asset after listing, through the config engine (`AssetListing.tokenization`) or directly with `HubSpokeFactory.deployTokenizationSpoke`.
+
+### HubSpokeFactory
+
+`HubSpokeFactory` (`src/factory/`) is the single deployment path for Hub, Spoke, TreasurySpoke and TokenizationSpoke instances, both in the initial deployment and afterwards. It deploys every instance as a `TransparentUpgradeableProxy` pointing to the canonical implementation of its type, so every instance runs exactly the canonical code. A Hub comes with its `AssetInterestRateStrategy`, and a Spoke with its `AaveOracle`, bound atomically.
+
+The factory is itself upgradeable, behind a `TransparentUpgradeableProxy`, and access-managed. The canonical implementations live in storage and are updated with the restricted `setImplementation`, which checks each implementation's revision and type. Instances already deployed are not affected.
+
+The factory records every deployment, keyed by deployer: `getInstances(deployer, instanceType)` lists them in deployment order, `getInstanceInfo(instance)` returns the deployer and type of an instance, and `getTokenizationSpoke(deployer, hub, underlying)` returns the TokenizationSpoke of an asset, of which there is at most one per deployer.
+
+The orchestration deploys the factory with the canonical implementations (`hubSpokeFactory`, `hubSpokeFactoryImplementation`, `hubImplementation`, `spokeImplementation`, `treasurySpokeImplementation` and `tokenizationSpokeImplementation` in the report), with the AccessManager as authority and `proxyAdminOwner` as ProxyAdmin owner, then deploys the TreasurySpoke, Hubs and Spokes through it. The deployer calls the factory directly, so the factory binds the deployer into every salt on top of the orchestration's own salt derivation, and records these instances under the deployer.
+
+After the initial deployment, governance deploys new instances through the config engine deployment actions (`hubDeployments()`, `spokeDeployments()`, `treasurySpokeDeployments()`, see `src/config-engine/README.md`), with the factory binding the governance Executor into every salt and recording the instances under it. Deployments are permissionless, and `predict*` returns the addresses for a given caller. Records track provenance only, since a ProxyAdmin can upgrade an instance afterwards.
+
+The orchestration initializes every Spoke with `DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT`. Through the factory or the config engine, the limit is set per Spoke.
 
 ### LiquidationLogic Pre-deployment
 
@@ -55,7 +69,7 @@ This requires a **two-step deploy** because Foundry needs to re-compile with the
 **Step 2 — Main deploy script** (next invocation):
 
 1. Foundry reads `.env` at startup, sees `FOUNDRY_LIBRARIES`, and at compile time replaces all `__$<hash>$__` placeholders in `SpokeInstance`'s bytecode with the library address
-2. `AaveV4SpokeInstanceBatch` deploys `SpokeInstance` with fully linked bytecode
+2. `AaveV4SpokeImplementationBatch` deploys the canonical `SpokeInstance` with fully linked bytecode
 
 ## Architecture
 
@@ -67,11 +81,10 @@ src/deployments/
   batches/                    Batch constructors -- deploy related contracts together
     AaveV4AuthorityBatch        AccessManagerEnumerable
     AaveV4ConfiguratorBatch     HubConfigurator, SpokeConfigurator
-    AaveV4TreasurySpokeBatch    TreasurySpoke (single instance, proxy + impl)
-    AaveV4TokenizationSpokeImplementationBatch
-                                Canonical TokenizationSpokeInstance implementation (shared by all proxies)
-    AaveV4HubInstanceBatch      HubInstance (proxy + impl), InterestRateStrategy
-    AaveV4SpokeInstanceBatch    SpokeInstance (proxy + impl), AaveOracle
+    AaveV4HubImplementationBatch     Canonical HubInstance implementation
+    AaveV4SpokeImplementationBatch   Canonical SpokeInstance implementation
+    AaveV4TokenizationSpokeImplementationBatch  Canonical TokenizationSpokeInstance implementation
+    AaveV4HubSpokeFactoryBatch       Canonical TreasurySpokeInstance implementation, HubSpokeFactory (proxy + implementation)
     AaveV4GatewayBatch          NativeTokenGateway, SignatureGateway
     AaveV4PositionManagerBatch  GiverPositionManager, TakerPositionManager, ConfigPositionManager
 
@@ -103,11 +116,11 @@ src/deployments/
 
 Hub and spoke labels (provided via `FullDeployInputs.hubLabels` / `spokeLabels`) drive deterministic addressing and identify instances in deployment reports.
 
-**Salt derivation** — Deployed addresses are deterministic, derived from three inputs: the deployer address, the user-provided salt, and the instance label. First, `_deriveSalt` combines the deployer address and user salt into a root salt. Then, for each hub or spoke, `_deriveChildSalt` hashes the root salt with the contract type (`"hub"` or `"spoke"`) and the label to produce a unique child salt. This child salt is passed to `Create2Utils.create2Deploy()`. Because the deployer address is embedded in the root salt, different deployers produce valid, unique deployed contract addresses even with identical labels and user salt.
+**Salt derivation** — Deployed addresses are deterministic, derived from three inputs: the deployer address, the user-provided salt, and the instance label. First, `_deriveSalt` combines the deployer address and user salt into a root salt. Then, for each hub or spoke, `_deriveChildSalt` hashes the root salt with the contract type (`"hub"` or `"spoke"`) and the label to produce a unique child salt. This child salt is passed to `HubSpokeFactory.deployHub()` / `deploySpoke()`, which also binds the deployer into the final CREATE2 salt. Because the deployer address is embedded in the root salt, different deployers produce valid, unique deployed contract addresses even with identical labels and user salt.
 
 **Duplicate label protection** — Before deploying any hubs or spokes, the orchestration validates unique labels for each array. Duplicate hub labels or duplicate spoke labels will revert. Hub and spoke labels are validated independently. A hub and a spoke can share the same label since they use different `contractType` strings in salt derivation.
 
-**CREATE2 collision protection** — `Create2Utils.create2Deploy()` computes the deterministic address from the salt and bytecode before deploying. If a contract already exists at that address (e.g. same salt and bytecode were used in a previous deployment), it reverts with `ContractAlreadyDeployed()`. This prevents silent no-ops or collisions when re-running a deploy script.
+**CREATE2 collision protection** — `Create2Utils.create2Deploy()` computes the deterministic address from the salt and bytecode before deploying. If a contract already exists at that address (e.g. same salt and bytecode were used in a previous deployment), it reverts with `ContractAlreadyDeployed()`. This prevents silent no-ops or collisions when re-running a deploy script. Instances deployed through the `HubSpokeFactory` are protected the same way: the factory reverts with `SaltAlreadyUsed()` when the caller and salt map to an address already in use.
 
 ### Roles (`Roles.sol`)
 
@@ -200,39 +213,39 @@ AaveV4DeployBatchBase.s.sol                         (Foundry script entry point)
     |     |     AaveV4SpokeConfiguratorRolesProcedure.setupSpokeConfiguratorAllRoles()
     |     |       AccessManager.setTargetFunctionRole()  (selector -> role mappings for SpokeConfigurator)
     |     |
-    |     +-- _deployTreasurySpokeBatch()
-    |     |     AaveV4DeployBase.deployTreasurySpokeBatch()
-    |     |       new AaveV4TreasurySpokeBatch(owner, salt)
-    |     |         Create2Utils.create2Deploy() --> TreasurySpoke
-    |     |
-    |     +-- _deployTokenizationSpokeImplementationBatch()
+    |     +-- _deployHubSpokeFactory()
+    |     |     AaveV4DeployBase.deployHubImplementationBatch()
+    |     |       new AaveV4HubImplementationBatch(hubBytecode, salt)
+    |     |         Create2Utils.create2Deploy() --> HubInstance (canonical impl)
+    |     |     AaveV4DeployBase.deploySpokeImplementationBatch()
+    |     |       new AaveV4SpokeImplementationBatch(spokeBytecode, salt)
+    |     |         Create2Utils.create2Deploy() --> SpokeInstance (canonical impl)
     |     |     AaveV4DeployBase.deployTokenizationSpokeImplementationBatch()
     |     |       new AaveV4TokenizationSpokeImplementationBatch(salt)
-    |     |         Create2Utils.create2Deploy() --> TokenizationSpokeInstance (canonical implementation)
+    |     |         Create2Utils.create2Deploy() --> TokenizationSpokeInstance (canonical impl)
+    |     |     AaveV4DeployBase.deployHubSpokeFactoryBatch()
+    |     |       new AaveV4HubSpokeFactoryBatch(hubImpl, spokeImpl, tokenizationSpokeImpl, salt)
+    |     |         Create2Utils.create2Deploy() --> TreasurySpokeInstance (canonical impl)
+    |     |         Create2Utils.create2Deploy() --> HubSpokeFactory
+    |     |
+    |     +-- _deployTreasurySpoke()
+    |     |     HubSpokeFactory.deployTreasurySpoke(salt, owner, owner)  --> TreasurySpoke proxy
     |     |
     |     +-- InputUtils.validateUniqueLabels()      revert on duplicate hub or spoke labels
     |     |
     |     +-- _deployHubs(hubLabels)                for each hub label:
-    |     |     _deployHub()
-    |     |       _deployHubInstanceBatch()
-    |     |         AaveV4DeployBase.deployHubInstanceBatch()
-    |     |           new AaveV4HubInstanceBatch(proxyAdmin, authority, hubBytecode, salt)
-    |     |             Create2Utils.proxify()    --> HubInstance (proxy + impl)
-    |     |             Create2Utils.create2Deploy() --> InterestRateStrategy
-    |     |       _setupHubRoles()
-    |     |         AaveV4HubRolesProcedure.setupHubAllRoles()
-    |     |           AccessManager.setTargetFunctionRole()  (selector -> role mappings for Hub)
+    |     |     HubSpokeFactory.deployHub(childSalt, authority, proxyAdminOwner)
+    |     |       --> Hub proxy, InterestRateStrategy
+    |     |     _setupHubRoles()
+    |     |       AaveV4HubRolesProcedure.setupHubAllRoles()
+    |     |         AccessManager.setTargetFunctionRole()  (selector -> role mappings for Hub)
     |     |
     |     +-- _deploySpokes(spokeLabels)            for each spoke label:
-    |     |     _deploySpoke()
-    |     |       _deploySpokeInstanceBatch()
-    |     |         AaveV4DeployBase.deploySpokeInstanceBatch()
-    |     |           Create2Utils.create2Deploy() --> AaveV4SpokeInstanceBatch(proxyAdmin, authority, bytecode, ...)
-    |     |             new AaveOracle{salt}()       (deployer = batch, which calls setSpoke)
-    |     |             Create2Utils.proxify()    --> SpokeInstance (proxy + impl)
-    |     |       _setupSpokeRoles()
-    |     |         AaveV4SpokeRolesProcedure.setupSpokeAllRoles()
-    |     |           AccessManager.setTargetFunctionRole()  (selector -> role mappings for Spoke)
+    |     |     HubSpokeFactory.deploySpoke(childSalt, authority, proxyAdminOwner)
+    |     |       --> AaveOracle, Spoke proxy, AaveOracle.setSpoke()
+    |     |     _setupSpokeRoles()
+    |     |       AaveV4SpokeRolesProcedure.setupSpokeAllRoles()
+    |     |         AccessManager.setTargetFunctionRole()  (selector -> role mappings for Spoke)
     |     |
     |     +-- _deployGatewayBatch()                 (if deployNativeTokenGateway || deploySignatureGateway)
     |     |     AaveV4DeployBase.deployGatewaysBatch()

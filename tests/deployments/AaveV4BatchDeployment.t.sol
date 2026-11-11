@@ -25,7 +25,6 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
       grantRoles: true,
       hubLabels: _hubLabels,
       spokeLabels: _spokeLabels,
-      spokeMaxReservesLimits: _defaultSpokeMaxReservesLimits(_spokeLabels.length),
       salt: bytes32(0)
     });
   }
@@ -91,8 +90,6 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
 
   function testAaveV4BatchDeployment_withoutSpokes() public {
     _inputs.spokeLabels = new string[](0);
-    _inputs.spokeMaxReservesLimits = new uint16[](0);
-
     checkedV4Deployment();
   }
 
@@ -152,7 +149,6 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     }
     if (withoutSpokes) {
       _inputs.spokeLabels = new string[](0);
-      _inputs.spokeMaxReservesLimits = new uint16[](0);
     }
 
     (bool isExpectedError, bytes memory errorMessage) = _getExpectedError();
@@ -286,7 +282,6 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     _inputs.spokeLabels[0] = 'main';
     _inputs.spokeLabels[1] = 'lrt';
     _inputs.spokeLabels[2] = 'main';
-    _inputs.spokeMaxReservesLimits = _defaultSpokeMaxReservesLimits(3);
 
     vm.expectRevert('duplicate spoke label: main');
     this.checkedV4Deployment();
@@ -296,22 +291,8 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     _inputs.spokeLabels = new string[](2);
     _inputs.spokeLabels[0] = 'main';
     _inputs.spokeLabels[1] = 'main';
-    _inputs.spokeMaxReservesLimits = _defaultSpokeMaxReservesLimits(2);
 
     vm.expectRevert('duplicate spoke label: main');
-    this.checkedV4Deployment();
-  }
-
-  function testAaveV4BatchDeployment_withEmptySpokeMaxReservesLimits_usesDefaults() public {
-    _inputs.spokeMaxReservesLimits = new uint16[](0);
-    checkedV4Deployment();
-  }
-
-  function testAaveV4BatchDeployment_withMismatchedSpokeMaxReservesLimits_reverts() public {
-    _inputs.spokeMaxReservesLimits = new uint16[](1);
-    _inputs.spokeMaxReservesLimits[0] = 128;
-
-    vm.expectRevert('spoke labels/limits length mismatch');
     this.checkedV4Deployment();
   }
 
@@ -401,10 +382,8 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     }
     if (withoutSpokes) {
       deployInputs.spokeLabels = new string[](0);
-      deployInputs.spokeMaxReservesLimits = new uint16[](0);
     } else {
       deployInputs.spokeLabels = _inputs.spokeLabels;
-      deployInputs.spokeMaxReservesLimits = _inputs.spokeMaxReservesLimits;
     }
     _deployer = deployer;
     _inputs = deployInputs;
@@ -436,10 +415,8 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     }
     if (withoutSpokes) {
       deployInputs.spokeLabels = new string[](0);
-      deployInputs.spokeMaxReservesLimits = new uint16[](0);
     } else {
       deployInputs.spokeLabels = _inputs.spokeLabels;
-      deployInputs.spokeMaxReservesLimits = _inputs.spokeMaxReservesLimits;
     }
     _deployer = deployer;
     _inputs = deployInputs;
@@ -490,7 +467,7 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
   /// @dev Predicts the first revert error based on execution order in deployAaveV4:
   ///      1. AuthorityBatch (deployer as initial admin)
   ///      2. ConfiguratorBatch
-  ///      3. TreasurySpokeBatch (treasurySpokeOwner)
+  ///      3. TreasurySpoke (treasurySpokeOwner)
   ///      4. Hubs (proxyAdminOwner)
   ///      5. Spokes (proxyAdminOwner)
   ///      6. Gateways (gatewayOwner, nativeWrapper)
@@ -504,17 +481,14 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     // 1. deployer is initial admin for access manager
     if (_deployer == address(0)) return (true, bytes('invalid admin'));
 
-    // 2. treasury spoke requires owner
-    if (_inputs.treasurySpokeOwner == address(0)) {
-      return (true, bytes('invalid owner'));
+    // 2. the HubSpokeFactory proxy, then hubs and spokes, require proxy admin owner
+    if (_inputs.proxyAdminOwner == address(0)) {
+      return (true, bytes('invalid proxy admin owner'));
     }
 
-    // 3. hubs and spokes require proxy admin owner when deployed
-    if (
-      (_inputs.hubLabels.length > 0 || _inputs.spokeLabels.length > 0) &&
-      _inputs.proxyAdminOwner == address(0)
-    ) {
-      return (true, bytes('invalid proxy admin owner'));
+    // 3. treasury spoke requires owner
+    if (_inputs.treasurySpokeOwner == address(0)) {
+      return (true, bytes('invalid owner'));
     }
 
     // 4. gateways: native gateway checks nativeWrapper, then owner;

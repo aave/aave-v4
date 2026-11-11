@@ -5,17 +5,15 @@ import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
 import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 
 import {ProxyHelper} from 'tests/utils/ProxyHelper.sol';
-import {DeployConstants} from 'src/deployments/utils/libraries/DeployConstants.sol';
 import {TestnetERC20} from 'tests/helpers/mocks/TestnetERC20.sol';
 import {AaveV4HubConfiguratorDeployProcedureWrapper} from 'tests/helpers/mocks/deployments/procedures/AaveV4HubConfiguratorDeployProcedureWrapper.sol';
 import {AaveV4HubDeployProcedureWrapper} from 'tests/helpers/mocks/deployments/procedures/AaveV4HubDeployProcedureWrapper.sol';
-import {AaveV4InterestRateStrategyDeployProcedureWrapper} from 'tests/helpers/mocks/deployments/procedures/AaveV4InterestRateStrategyDeployProcedureWrapper.sol';
 import {AaveV4NativeTokenGatewayDeployProcedureWrapper} from 'tests/helpers/mocks/deployments/procedures/AaveV4NativeTokenGatewayDeployProcedureWrapper.sol';
 import {AaveV4SignatureGatewayDeployProcedureWrapper} from 'tests/helpers/mocks/deployments/procedures/AaveV4SignatureGatewayDeployProcedureWrapper.sol';
 import {AaveV4AccessManagerEnumerableDeployProcedureWrapper} from 'tests/helpers/mocks/deployments/procedures/AaveV4AccessManagerEnumerableDeployProcedureWrapper.sol';
-import {AaveV4AaveOracleDeployProcedureWrapper} from 'tests/helpers/mocks/deployments/procedures/AaveV4AaveOracleDeployProcedureWrapper.sol';
 import {AaveV4SpokeDeployProcedureWrapper} from 'tests/helpers/mocks/deployments/procedures/AaveV4SpokeDeployProcedureWrapper.sol';
 import {AaveV4TreasurySpokeDeployProcedureWrapper} from 'tests/helpers/mocks/deployments/procedures/AaveV4TreasurySpokeDeployProcedureWrapper.sol';
+import {AaveV4HubSpokeFactoryDeployProcedureWrapper} from 'tests/helpers/mocks/deployments/procedures/AaveV4HubSpokeFactoryDeployProcedureWrapper.sol';
 import {AaveV4SpokeConfiguratorDeployProcedureWrapper} from 'tests/helpers/mocks/deployments/procedures/AaveV4SpokeConfiguratorDeployProcedureWrapper.sol';
 import {AaveV4AccessManagerRolesProcedureWrapper} from 'tests/helpers/mocks/deployments/procedures/AaveV4AccessManagerRolesProcedureWrapper.sol';
 import {AaveV4SpokeRolesProcedureWrapper} from 'tests/helpers/mocks/deployments/procedures/AaveV4SpokeRolesProcedureWrapper.sol';
@@ -24,12 +22,9 @@ import {AaveV4HubConfiguratorRolesProcedureWrapper} from 'tests/helpers/mocks/de
 import {AaveV4SpokeConfiguratorRolesProcedureWrapper} from 'tests/helpers/mocks/deployments/procedures/AaveV4SpokeConfiguratorRolesProcedureWrapper.sol';
 import {AaveV4TokenizationSpokeDeployProcedureWrapper} from 'tests/helpers/mocks/deployments/procedures/AaveV4TokenizationSpokeDeployProcedureWrapper.sol';
 import {AaveV4HubRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
-import {AaveV4HubInstanceBatch} from 'src/deployments/batches/AaveV4HubInstanceBatch.sol';
-import {AaveV4TreasurySpokeBatch} from 'src/deployments/batches/AaveV4TreasurySpokeBatch.sol';
 import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 
-import {AaveOracle} from 'src/spoke/AaveOracle.sol';
 import {AccessManagerEnumerable} from 'src/access/AccessManagerEnumerable.sol';
 import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 
@@ -49,10 +44,7 @@ contract ProceduresBase is Create2TestHelper {
   address public hub = makeAddr('hub');
   address public nativeWrapper = makeAddr('nativeWrapper');
   address public accessManagerAdmin = makeAddr('accessManagerAdmin');
-  uint8 public oracleDecimals = 8;
-  uint16 public maxUserReservesLimit = DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT;
   address public spoke = makeAddr('spoke');
-  address public aaveOracle;
   address public feeReceiver = makeAddr('feeReceiver');
   address public admin = makeAddr('admin');
   bytes32 public salt;
@@ -65,7 +57,6 @@ contract ProceduresBase is Create2TestHelper {
     hubBytecode = vm.getCode('src/hub/instances/HubInstance.sol:HubInstance');
     spokeBytecode = vm.getCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance');
     accessManager = address(new AccessManagerEnumerable(accessManagerAdmin));
-    aaveOracle = address(new AaveOracle(oracleDecimals));
     salt = keccak256('testSalt');
   }
 

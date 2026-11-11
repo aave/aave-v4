@@ -46,6 +46,29 @@ abstract contract PostDeploymentVerificationBase is BatchTestProcedures {
       report.tokenizationSpokeImplementationBatchReport.tokenizationSpokeImplementation = vm
         .parseJsonAddress(json, '$.tokenizationSpokeImplementation');
     }
+    _skipHubSpokeFactoryCheck = !vm.keyExistsJson(json, '$.hubSpokeFactory');
+    if (!_skipHubSpokeFactoryCheck) {
+      report.hubSpokeFactoryBatchReport.hubSpokeFactory = vm.parseJsonAddress(
+        json,
+        '$.hubSpokeFactory'
+      );
+      report.hubSpokeFactoryBatchReport.hubSpokeFactoryImplementation = vm.parseJsonAddress(
+        json,
+        '$.hubSpokeFactoryImplementation'
+      );
+      report.hubSpokeFactoryBatchReport.treasurySpokeImplementation = vm.parseJsonAddress(
+        json,
+        '$.treasurySpokeImplementation'
+      );
+      report.hubImplementationBatchReport.hubImplementation = vm.parseJsonAddress(
+        json,
+        '$.hubImplementation'
+      );
+      report.spokeImplementationBatchReport.spokeImplementation = vm.parseJsonAddress(
+        json,
+        '$.spokeImplementation'
+      );
+    }
     if (vm.keyExistsJson(json, '$.nativeTokenGateway')) {
       report.gatewaysBatchReport.nativeGateway = vm.parseJsonAddress(json, '$.nativeTokenGateway');
     }
@@ -81,10 +104,10 @@ abstract contract PostDeploymentVerificationBase is BatchTestProcedures {
         json,
         string.concat('$.hub.', label)
       );
-      report.hubInstanceBatchReports[i].report.hubImplementation = vm.parseJsonAddress(
-        json,
-        string.concat('$.hubImplementation.', label)
-      );
+      // every Hub deployed through the factory points to the canonical implementation, older reports list one per Hub
+      report.hubInstanceBatchReports[i].report.hubImplementation = _skipHubSpokeFactoryCheck
+        ? vm.parseJsonAddress(json, string.concat('$.hubImplementation.', label))
+        : report.hubImplementationBatchReport.hubImplementation;
       report.hubInstanceBatchReports[i].report.irStrategy = vm.parseJsonAddress(
         json,
         string.concat('$.irStrategy.', label)
@@ -101,10 +124,9 @@ abstract contract PostDeploymentVerificationBase is BatchTestProcedures {
         json,
         string.concat('$.spoke.', label)
       );
-      report.spokeInstanceBatchReports[i].report.spokeImplementation = vm.parseJsonAddress(
-        json,
-        string.concat('$.spokeImplementation.', label)
-      );
+      report.spokeInstanceBatchReports[i].report.spokeImplementation = _skipHubSpokeFactoryCheck
+        ? vm.parseJsonAddress(json, string.concat('$.spokeImplementation.', label))
+        : report.spokeImplementationBatchReport.spokeImplementation;
       report.spokeInstanceBatchReports[i].report.aaveOracle = vm.parseJsonAddress(
         json,
         string.concat('$.oracle.', label)

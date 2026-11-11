@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: LicenseRef-BUSL
 pragma solidity ^0.8.0;
 
+import {FactoryEngine} from 'src/config-engine/libraries/FactoryEngine.sol';
 import {HubEngine} from 'src/config-engine/libraries/HubEngine.sol';
 import {SpokeEngine} from 'src/config-engine/libraries/SpokeEngine.sol';
 import {AccessManagerEngine} from 'src/config-engine/libraries/AccessManagerEngine.sol';
 import {PositionManagerEngine} from 'src/config-engine/libraries/PositionManagerEngine.sol';
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
+import {IHubSpokeFactory} from 'src/factory/interfaces/IHubSpokeFactory.sol';
 
 /// @title AaveV4ConfigEngine
 /// @author Aave Labs
@@ -13,7 +15,7 @@ import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEng
 /// each action category. Invoked via delegatecall from payload contracts.
 contract AaveV4ConfigEngine is IAaveV4ConfigEngine {
   /// @inheritdoc IAaveV4ConfigEngine
-  address public immutable TOKENIZATION_SPOKE_IMPLEMENTATION;
+  IHubSpokeFactory public immutable FACTORY;
 
   /// @dev The address of this engine deployment.
   address private immutable SELF;
@@ -25,19 +27,35 @@ contract AaveV4ConfigEngine is IAaveV4ConfigEngine {
   }
 
   /// @dev Constructor.
-  /// @param tokenizationSpokeImplementation_ The canonical TokenizationSpokeInstance implementation.
-  constructor(address tokenizationSpokeImplementation_) {
-    require(
-      tokenizationSpokeImplementation_ != address(0),
-      InvalidTokenizationSpokeImplementation()
-    );
-    TOKENIZATION_SPOKE_IMPLEMENTATION = tokenizationSpokeImplementation_;
+  /// @param factory_ The HubSpokeFactory used to deploy Hubs, Spokes, TreasurySpokes and TokenizationSpokes.
+  constructor(IHubSpokeFactory factory_) {
+    require(address(factory_) != address(0), InvalidFactory());
+    FACTORY = factory_;
     SELF = address(this);
   }
 
   /// @inheritdoc IAaveV4ConfigEngine
+  function executeHubDeployments(HubDeployment[] calldata deployments) external onlyDelegateCall {
+    FactoryEngine.executeHubDeployments(FACTORY, deployments);
+  }
+
+  /// @inheritdoc IAaveV4ConfigEngine
+  function executeSpokeDeployments(
+    SpokeDeployment[] calldata deployments
+  ) external onlyDelegateCall {
+    FactoryEngine.executeSpokeDeployments(FACTORY, deployments);
+  }
+
+  /// @inheritdoc IAaveV4ConfigEngine
+  function executeTreasurySpokeDeployments(
+    TreasurySpokeDeployment[] calldata deployments
+  ) external onlyDelegateCall {
+    FactoryEngine.executeTreasurySpokeDeployments(FACTORY, deployments);
+  }
+
+  /// @inheritdoc IAaveV4ConfigEngine
   function executeHubAssetListings(AssetListing[] calldata listings) external onlyDelegateCall {
-    HubEngine.executeHubAssetListings(listings, TOKENIZATION_SPOKE_IMPLEMENTATION);
+    HubEngine.executeHubAssetListings(listings, FACTORY);
   }
 
   /// @inheritdoc IAaveV4ConfigEngine

@@ -23,8 +23,11 @@ library OrchestrationReports {
 
   /// @dev authorityBatchReport AccessManager deployment report.
   /// @dev configuratorBatchReport Configurator deployment report.
-  /// @dev treasurySpokeBatchReport TreasurySpoke deployment report.
+  /// @dev hubImplementationBatchReport Canonical Hub implementation deployment report.
+  /// @dev spokeImplementationBatchReport Canonical Spoke implementation deployment report.
   /// @dev tokenizationSpokeImplementationBatchReport Canonical TokenizationSpoke implementation deployment report.
+  /// @dev hubSpokeFactoryBatchReport HubSpokeFactory and canonical TreasurySpoke implementation deployment report.
+  /// @dev treasurySpokeBatchReport TreasurySpoke deployment report.
   /// @dev spokeInstanceBatchReports Per-spoke deployment reports.
   /// @dev hubInstanceBatchReports Per-hub deployment reports.
   /// @dev gatewaysBatchReport Gateway deployment report.
@@ -33,8 +36,11 @@ library OrchestrationReports {
   struct FullDeploymentReport {
     BatchReports.AuthorityBatchReport authorityBatchReport;
     BatchReports.ConfiguratorBatchReport configuratorBatchReport;
-    BatchReports.TreasurySpokeBatchReport treasurySpokeBatchReport;
+    BatchReports.HubImplementationBatchReport hubImplementationBatchReport;
+    BatchReports.SpokeImplementationBatchReport spokeImplementationBatchReport;
     BatchReports.TokenizationSpokeImplementationBatchReport tokenizationSpokeImplementationBatchReport;
+    BatchReports.HubSpokeFactoryBatchReport hubSpokeFactoryBatchReport;
+    BatchReports.TreasurySpokeBatchReport treasurySpokeBatchReport;
     SpokeDeploymentReport[] spokeInstanceBatchReports;
     HubDeploymentReport[] hubInstanceBatchReports;
     BatchReports.GatewaysBatchReport gatewaysBatchReport;

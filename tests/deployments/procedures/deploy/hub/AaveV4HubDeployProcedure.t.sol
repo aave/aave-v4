@@ -10,36 +10,15 @@ contract AaveV4HubDeployProcedureTest is ProceduresBase {
     aaveV4HubDeployProcedureWrapper = new AaveV4HubDeployProcedureWrapper();
   }
 
-  function test_deployHub() public {
-    (address hubProxy, address hubImpl) = aaveV4HubDeployProcedureWrapper.deployHub(
-      admin,
-      accessManager,
-      hubBytecode,
-      salt
-    );
-    assertNotEq(hubProxy, address(0));
-    assertNotEq(hubImpl, address(0));
-    assertNotEq(hubProxy, hubImpl);
-    assertEq(IHub(hubProxy).authority(), accessManager);
+  function test_deployHubImplementation() public {
+    address hubImpl = aaveV4HubDeployProcedureWrapper.deployHubImplementation(hubBytecode, salt);
+    assertEq(hubImpl, Create2Utils.computeCreate2Address(salt, hubBytecode));
+    assertEq(ProxyHelper.getProxyInitializedVersion(hubImpl), type(uint64).max);
   }
 
-  function test_deployHub_reverts_invalidAuthority() public {
-    vm.expectRevert('invalid authority');
-    aaveV4HubDeployProcedureWrapper.deployHub({
-      proxyAdminOwner: admin,
-      authority: address(0),
-      hubBytecode: hubBytecode,
-      salt: salt
-    });
-  }
-
-  function test_deployHub_reverts_invalidProxyAdminOwner() public {
-    vm.expectRevert('invalid proxy admin owner');
-    aaveV4HubDeployProcedureWrapper.deployHub({
-      proxyAdminOwner: address(0),
-      authority: accessManager,
-      hubBytecode: hubBytecode,
-      salt: salt
-    });
+  function test_deployHubImplementation_reverts_alreadyDeployed() public {
+    aaveV4HubDeployProcedureWrapper.deployHubImplementation(hubBytecode, salt);
+    vm.expectRevert(Create2Utils.ContractAlreadyDeployed.selector);
+    aaveV4HubDeployProcedureWrapper.deployHubImplementation(hubBytecode, salt);
   }
 }

@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 import {Test} from 'forge-std/Test.sol';
 import {AaveV4DeployBatchBaseScript} from 'scripts/deploy/AaveV4DeployBatchBase.s.sol';
 import {InputUtils} from 'src/deployments/utils/libraries/InputUtils.sol';
-import {DeployConstants} from 'src/deployments/utils/libraries/DeployConstants.sol';
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 
 contract AaveV4DeployBatchBaseScriptHarness is AaveV4DeployBatchBaseScript {
@@ -67,7 +66,6 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
       grantRoles: true,
       hubLabels: _toArray('hub1', 'hub2', 'hub3'),
       spokeLabels: _toArray('spoke1', 'spoke2', 'spoke3'),
-      spokeMaxReservesLimits: _defaultSpokeMaxReservesLimits(3),
       salt: bytes32(0)
     });
 
@@ -326,7 +324,6 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
 
   function test_loadWarningsAndSanitizeInputs_revertsWith_duplicateSpokeLabel() public {
     _inputs.spokeLabels = ['spoke1', 'spoke1'];
-    _inputs.spokeMaxReservesLimits = _defaultSpokeMaxReservesLimits(2);
 
     vm.expectRevert('duplicate spoke label: spoke1');
     _harness.loadWarningsAndSanitizeInputs(_inputs, _deployer);
@@ -372,15 +369,6 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     if (!grantRoles) {
       _inputs.proxyAdminOwner = address(0);
       _inputs.treasurySpokeOwner = address(0);
-    }
-  }
-
-  function _defaultSpokeMaxReservesLimits(
-    uint256 count
-  ) internal pure returns (uint16[] memory limits) {
-    limits = new uint16[](count);
-    for (uint256 i; i < count; i++) {
-      limits[i] = DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT;
     }
   }
 

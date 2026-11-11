@@ -6,13 +6,11 @@ import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationRepor
 import {AaveV4AuthorityBatch} from 'src/deployments/batches/AaveV4AuthorityBatch.sol';
 import {AaveV4ConfiguratorBatch} from 'src/deployments/batches/AaveV4ConfiguratorBatch.sol';
 import {AaveV4GatewayBatch} from 'src/deployments/batches/AaveV4GatewayBatch.sol';
-import {AaveV4HubInstanceBatch} from 'src/deployments/batches/AaveV4HubInstanceBatch.sol';
+import {AaveV4HubImplementationBatch} from 'src/deployments/batches/AaveV4HubImplementationBatch.sol';
+import {AaveV4HubSpokeFactoryBatch} from 'src/deployments/batches/AaveV4HubSpokeFactoryBatch.sol';
 import {AaveV4PositionManagerBatch} from 'src/deployments/batches/AaveV4PositionManagerBatch.sol';
-import {AaveV4SpokeInstanceBatch} from 'src/deployments/batches/AaveV4SpokeInstanceBatch.sol';
-import {AaveV4TokenizationSpokeBatch} from 'src/deployments/batches/AaveV4TokenizationSpokeBatch.sol';
+import {AaveV4SpokeImplementationBatch} from 'src/deployments/batches/AaveV4SpokeImplementationBatch.sol';
 import {AaveV4TokenizationSpokeImplementationBatch} from 'src/deployments/batches/AaveV4TokenizationSpokeImplementationBatch.sol';
-import {AaveV4TreasurySpokeBatch} from 'src/deployments/batches/AaveV4TreasurySpokeBatch.sol';
-import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 
 /// @title AaveV4DeployBase Library
 /// @author Aave Labs
@@ -48,81 +46,62 @@ library AaveV4DeployBase {
     return configuratorBatch.getReport();
   }
 
-  /// @notice Deploys the Treasury Spoke batch containing the TreasurySpoke proxy.
-  /// @param owner The owner of the TreasurySpoke.
-  /// @param salt The CREATE2 salt for deterministic deployment.
-  /// @return The Treasury Spoke batch report.
-  function deployTreasurySpokeBatch(
-    address owner,
-    bytes32 salt
-  ) internal returns (BatchReports.TreasurySpokeBatchReport memory) {
-    AaveV4TreasurySpokeBatch treasurySpokeBatch = new AaveV4TreasurySpokeBatch({
-      owner_: owner,
-      salt_: salt
-    });
-    return treasurySpokeBatch.getReport();
-  }
-
-  /// @notice Deploys the Hub instance batch containing the Hub proxy, implementation, and IR strategy.
-  /// @param proxyAdminOwner The owner of the proxy admin.
-  /// @param authority The access-control authority for the Hub.
+  /// @notice Deploys the canonical Hub implementation batch.
   /// @param hubBytecode The creation bytecode of the HubInstance contract.
   /// @param salt The CREATE2 salt for deterministic deployment.
-  /// @return The Hub instance batch report.
-  function deployHubInstanceBatch(
-    address proxyAdminOwner,
-    address authority,
+  /// @return The Hub implementation batch report.
+  function deployHubImplementationBatch(
     bytes memory hubBytecode,
     bytes32 salt
-  ) internal returns (BatchReports.HubInstanceBatchReport memory) {
-    AaveV4HubInstanceBatch hubInstanceBatch = new AaveV4HubInstanceBatch({
-      proxyAdminOwner_: proxyAdminOwner,
-      authority_: authority,
+  ) internal returns (BatchReports.HubImplementationBatchReport memory) {
+    AaveV4HubImplementationBatch hubImplementationBatch = new AaveV4HubImplementationBatch({
       hubBytecode_: hubBytecode,
       salt_: salt
     });
-    return hubInstanceBatch.getReport();
+    return hubImplementationBatch.getReport();
   }
 
-  /// @notice Deploys the Spoke instance batch containing the Spoke proxy, implementation, and AaveOracle.
-  /// @dev Unlike the other batches, this one is deployed through the CREATE2 factory instead of `new`.
-  ///      The batch deploys the AaveOracle with `new` (the oracle's deployer must be the batch, which calls
-  ///      `setSpoke`), so the oracle address is only deterministic if the batch address is. The factory drops
-  ///      revert reasons, so the batch's input checks are repeated here.
-  /// @param proxyAdminOwner The owner of the proxy admin.
-  /// @param authority The access-control authority for the Spoke.
+  /// @notice Deploys the canonical Spoke implementation batch.
   /// @param spokeBytecode The creation bytecode of the SpokeInstance contract.
-  /// @param oracleDecimals The decimal precision for the AaveOracle.
-  /// @param maxUserReservesLimit The maximum number of reserves a user can interact with.
   /// @param salt The CREATE2 salt for deterministic deployment.
-  /// @return The Spoke instance batch report.
-  function deploySpokeInstanceBatch(
+  /// @return The Spoke implementation batch report.
+  function deploySpokeImplementationBatch(
+    bytes memory spokeBytecode,
+    bytes32 salt
+  ) internal returns (BatchReports.SpokeImplementationBatchReport memory) {
+    AaveV4SpokeImplementationBatch spokeImplementationBatch = new AaveV4SpokeImplementationBatch({
+      spokeBytecode_: spokeBytecode,
+      salt_: salt
+    });
+    return spokeImplementationBatch.getReport();
+  }
+
+  /// @notice Deploys the HubSpokeFactory batch containing the canonical TreasurySpoke implementation and the
+  /// HubSpokeFactory.
+  /// @param proxyAdminOwner The owner of the HubSpokeFactory ProxyAdmin.
+  /// @param authority The access control authority of the HubSpokeFactory.
+  /// @param hubImplementation The canonical HubInstance implementation.
+  /// @param spokeImplementation The canonical SpokeInstance implementation.
+  /// @param tokenizationSpokeImplementation The canonical TokenizationSpokeInstance implementation.
+  /// @param salt The CREATE2 salt for deterministic deployment.
+  /// @return The HubSpokeFactory batch report.
+  function deployHubSpokeFactoryBatch(
     address proxyAdminOwner,
     address authority,
-    bytes memory spokeBytecode,
-    uint8 oracleDecimals,
-    uint16 maxUserReservesLimit,
+    address hubImplementation,
+    address spokeImplementation,
+    address tokenizationSpokeImplementation,
     bytes32 salt
-  ) internal returns (BatchReports.SpokeInstanceBatchReport memory) {
-    require(oracleDecimals > 0, 'invalid oracle decimals');
-    require(proxyAdminOwner != address(0), 'invalid proxy admin owner');
-    require(authority != address(0), 'invalid authority');
-    require(maxUserReservesLimit > 0, 'invalid max user reserves limit');
-    address spokeInstanceBatch = Create2Utils.create2Deploy({
-      salt: salt,
-      bytecode: abi.encodePacked(
-        type(AaveV4SpokeInstanceBatch).creationCode,
-        abi.encode(
-          proxyAdminOwner,
-          authority,
-          spokeBytecode,
-          oracleDecimals,
-          maxUserReservesLimit,
-          salt
-        )
-      )
+  ) internal returns (BatchReports.HubSpokeFactoryBatchReport memory) {
+    AaveV4HubSpokeFactoryBatch hubSpokeFactoryBatch = new AaveV4HubSpokeFactoryBatch({
+      proxyAdminOwner_: proxyAdminOwner,
+      authority_: authority,
+      hubImplementation_: hubImplementation,
+      spokeImplementation_: spokeImplementation,
+      tokenizationSpokeImplementation_: tokenizationSpokeImplementation,
+      salt_: salt
     });
-    return AaveV4SpokeInstanceBatch(spokeInstanceBatch).getReport();
+    return hubSpokeFactoryBatch.getReport();
   }
 
   /// @notice Deploys the position manager batch containing all three position manager contracts.
@@ -174,35 +153,5 @@ library AaveV4DeployBase {
         salt_: salt
       });
     return tokenizationSpokeImplementationBatch.getReport();
-  }
-
-  /// @notice Deploys the Tokenization Spoke batch containing a TokenizationSpoke proxy pointing to `tokenizationSpokeImplementation`.
-  /// @param tokenizationSpokeImplementation The address of the canonical TokenizationSpoke implementation.
-  /// @param hub The address of the Hub the tokenization spoke connects to.
-  /// @param underlying The address of the underlying asset to tokenize.
-  /// @param proxyAdminOwner The owner of the proxy admin.
-  /// @param shareName The name of the share token.
-  /// @param shareSymbol The symbol of the share token.
-  /// @param salt The CREATE2 salt for deterministic deployment.
-  /// @return The Tokenization Spoke batch report.
-  function deployTokenizationSpokeBatch(
-    address tokenizationSpokeImplementation,
-    address hub,
-    address underlying,
-    address proxyAdminOwner,
-    string memory shareName,
-    string memory shareSymbol,
-    bytes32 salt
-  ) internal returns (BatchReports.TokenizationSpokeBatchReport memory) {
-    AaveV4TokenizationSpokeBatch tokenizationSpokeBatch = new AaveV4TokenizationSpokeBatch({
-      tokenizationSpokeImplementation_: tokenizationSpokeImplementation,
-      hub_: hub,
-      underlying_: underlying,
-      proxyAdminOwner_: proxyAdminOwner,
-      shareName_: shareName,
-      shareSymbol_: shareSymbol,
-      salt_: salt
-    });
-    return tokenizationSpokeBatch.getReport();
   }
 }

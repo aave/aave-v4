@@ -6,6 +6,7 @@ import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
+import {IHubSpokeFactory} from 'src/factory/interfaces/IHubSpokeFactory.sol';
 
 /// @title IAaveV4ConfigEngine
 /// @author Aave Labs
@@ -351,15 +352,58 @@ interface IAaveV4ConfigEngine {
     uint32 newDelay;
   }
 
-  /// @notice Thrown when the TokenizationSpoke implementation is the zero address.
-  error InvalidTokenizationSpokeImplementation();
+  /// @notice Parameters for deploying a Hub through the HubSpokeFactory.
+  /// @dev salt The salt passed to the factory, bound to the governance executor by the factory.
+  /// @dev authority The access-control authority of the Hub.
+  /// @dev proxyAdminOwner The owner of the Hub ProxyAdmin.
+  struct HubDeployment {
+    bytes32 salt;
+    address authority;
+    address proxyAdminOwner;
+  }
 
-  /// @notice Returns the canonical TokenizationSpokeInstance implementation used by TokenizationSpoke proxies
-  /// deployed on asset listings.
-  function TOKENIZATION_SPOKE_IMPLEMENTATION() external view returns (address);
+  /// @notice Parameters for deploying a Spoke and its AaveOracle through the HubSpokeFactory.
+  /// @dev salt The salt passed to the factory, bound to the governance executor by the factory.
+  /// @dev authority The access-control authority of the Spoke.
+  /// @dev maxUserReservesLimit The maximum number of collateral and borrow reserves a user can have.
+  /// @dev proxyAdminOwner The owner of the Spoke ProxyAdmin.
+  struct SpokeDeployment {
+    bytes32 salt;
+    address authority;
+    uint16 maxUserReservesLimit;
+    address proxyAdminOwner;
+  }
+
+  /// @notice Parameters for deploying a TreasurySpoke through the HubSpokeFactory.
+  /// @dev salt The salt passed to the factory, bound to the governance executor by the factory.
+  /// @dev owner The owner of the TreasurySpoke.
+  /// @dev proxyAdminOwner The owner of the TreasurySpoke ProxyAdmin.
+  struct TreasurySpokeDeployment {
+    bytes32 salt;
+    address owner;
+    address proxyAdminOwner;
+  }
+
+  /// @notice Thrown when the factory is the zero address.
+  error InvalidFactory();
+
+  /// @notice Returns the HubSpokeFactory used to deploy Hubs, Spokes, TreasurySpokes and TokenizationSpokes.
+  function FACTORY() external view returns (IHubSpokeFactory);
+
+  /// @notice Deploys Hubs and their interest rate strategies through the HubSpokeFactory.
+  /// @param deployments The Hub deployments to execute.
+  function executeHubDeployments(HubDeployment[] calldata deployments) external;
+
+  /// @notice Deploys Spokes and their AaveOracles through the HubSpokeFactory.
+  /// @param deployments The Spoke deployments to execute.
+  function executeSpokeDeployments(SpokeDeployment[] calldata deployments) external;
+
+  /// @notice Deploys TreasurySpokes through the HubSpokeFactory.
+  /// @param deployments The TreasurySpoke deployments to execute.
+  function executeTreasurySpokeDeployments(TreasurySpokeDeployment[] calldata deployments) external;
 
   /// @notice Lists new assets on Hubs via the HubConfigurator.
-  /// @dev Deploys a TokenizationSpoke proxy pointing to `TOKENIZATION_SPOKE_IMPLEMENTATION` when tokenization is set.
+  /// @dev Deploys a TokenizationSpoke through `FACTORY` when tokenization is set.
   /// @param listings The asset listings to execute.
   function executeHubAssetListings(AssetListing[] calldata listings) external;
 

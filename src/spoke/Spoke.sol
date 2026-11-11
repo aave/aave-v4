@@ -55,12 +55,6 @@ abstract contract Spoke is
   bytes32 public constant SET_USER_POSITION_MANAGERS_TYPEHASH =
     EIP712Hash.SET_USER_POSITION_MANAGERS_TYPEHASH;
 
-  /// @inheritdoc ISpoke
-  uint16 public immutable MAX_USER_RESERVES_LIMIT;
-
-  /// @inheritdoc ISpoke
-  address public immutable ORACLE;
-
   /// @dev The number of decimals used by the oracle.
   uint8 internal constant ORACLE_DECIMALS = SpokeUtils.ORACLE_DECIMALS;
 
@@ -92,18 +86,24 @@ abstract contract Spoke is
     _;
   }
 
-  /// @dev Constructor.
-  /// @param oracle_ The address of the AaveOracle contract.
-  /// @param maxUserReservesLimit_ The maximum number of collateral and borrow reserves a user can have.
-  constructor(address oracle_, uint16 maxUserReservesLimit_) {
-    require(IAaveOracle(oracle_).decimals() == ORACLE_DECIMALS, InvalidOracleDecimals());
-    require(maxUserReservesLimit_ > 0, InvalidMaxUserReservesLimit());
-    ORACLE = oracle_;
-    MAX_USER_RESERVES_LIMIT = maxUserReservesLimit_;
-  }
-
   /// @dev To be overridden by the inheriting Spoke instance contract.
-  function initialize(address authority) external virtual;
+  function initialize(
+    address authority,
+    address oracle,
+    uint16 maxUserReservesLimit
+  ) external virtual;
+
+  /// @dev Binds the oracle and the maximum user reserves limit.
+  /// @dev Must be called at every initialization, including upgrades: revision 1 held them in immutables.
+  /// @param oracle The address of the AaveOracle contract.
+  /// @param maxUserReservesLimit The maximum number of collateral and borrow reserves a user can have.
+  function __Spoke_init(address oracle, uint16 maxUserReservesLimit) internal onlyInitializing {
+    require(IAaveOracle(oracle).decimals() == ORACLE_DECIMALS, InvalidOracleDecimals());
+    require(maxUserReservesLimit > 0, InvalidMaxUserReservesLimit());
+    _oracle = oracle;
+    _maxUserReservesLimit = maxUserReservesLimit;
+    emit SetSpokeImmutables(oracle, maxUserReservesLimit);
+  }
 
   /// @inheritdoc ISpoke
   function updateLiquidationConfig(LiquidationConfig calldata config) external restricted {
@@ -285,9 +285,10 @@ abstract contract Spoke is
     uint256 drawnShares = hub.draw(reserve.assetId, amount, msg.sender);
     userPosition.drawnShares += drawnShares.toUint120();
     if (!positionStatus.isBorrowing(reserveId)) {
+      uint16 maxUserReservesLimit = _maxUserReservesLimit;
       require(
-        MAX_USER_RESERVES_LIMIT == MAX_ALLOWED_USER_RESERVES_LIMIT ||
-          positionStatus.borrowCount(_reserveCount) < MAX_USER_RESERVES_LIMIT,
+        maxUserReservesLimit == MAX_ALLOWED_USER_RESERVES_LIMIT ||
+          positionStatus.borrowCount(_reserveCount) < maxUserReservesLimit,
         MaximumUserReservesExceeded()
       );
       positionStatus.setBorrowing(reserveId, true);
@@ -356,7 +357,7 @@ abstract contract Spoke is
       collateralReserveId: collateralReserveId,
       debtReserveId: debtReserveId,
       liquidationConfig: _liquidationConfig,
-      oracle: ORACLE,
+      oracle: _oracle,
       user: user,
       debtToCover: debtToCover,
       userAccountData: userAccountData,
@@ -489,6 +490,16 @@ abstract contract Spoke is
         s: permitS
       })
     {} catch {}
+  }
+
+  /// @inheritdoc ISpoke
+  function ORACLE() external view returns (address) {
+    return _oracle;
+  }
+
+  /// @inheritdoc ISpoke
+  function MAX_USER_RESERVES_LIMIT() external view returns (uint16) {
+    return _maxUserReservesLimit;
   }
 
   /// @inheritdoc ISpoke
@@ -670,7 +681,7 @@ abstract contract Spoke is
 
   function _updateReservePriceSource(uint256 reserveId, address priceSource) internal {
     require(priceSource != address(0), InvalidAddress());
-    IAaveOracle(ORACLE).setReserveSource(reserveId, priceSource);
+    IAaveOracle(_oracle).setReserveSource(reserveId, priceSource);
     emit UpdateReservePriceSource(reserveId, priceSource);
   }
 
@@ -709,6 +720,7 @@ abstract contract Spoke is
   ) internal returns (UserAccountData memory accountData) {
     PositionStatus storage positionStatus = _positionStatus[user];
 
+    address oracle = _oracle;
     uint256 reserveId = _reserveCount;
     KeyValueList.List memory collateralInfo = KeyValueList.init(
       positionStatus.collateralCount(reserveId)
@@ -722,7 +734,7 @@ abstract contract Spoke is
       UserPosition storage userPosition = _userPositions[user][reserveId];
       Reserve storage reserve = _reserves[reserveId];
 
-      uint256 assetPrice = IAaveOracle(ORACLE).getReservePrice(reserveId);
+      uint256 assetPrice = IAaveOracle(oracle).getReservePrice(reserveId);
       uint256 assetDecimals = reserve.decimals;
 
       if (collateral) {
@@ -889,9 +901,10 @@ abstract contract Spoke is
       // disabling as collateral is allowed when reserve is frozen
       require(!flags.frozen(), ReserveFrozen());
       // this must be a new collateral, otherwise would have short-circuited
+      uint16 maxUserReservesLimit = _maxUserReservesLimit;
       require(
-        MAX_USER_RESERVES_LIMIT == MAX_ALLOWED_USER_RESERVES_LIMIT ||
-          positionStatus.collateralCount(_reserveCount) < MAX_USER_RESERVES_LIMIT,
+        maxUserReservesLimit == MAX_ALLOWED_USER_RESERVES_LIMIT ||
+          positionStatus.collateralCount(_reserveCount) < maxUserReservesLimit,
         MaximumUserReservesExceeded()
       );
     }

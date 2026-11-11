@@ -939,7 +939,6 @@ abstract contract Base is BaseHelpers, BatchTestProcedures {
     report = AaveV4TestOrchestration.deployTestHub(
       ADMIN,
       address(accessManager),
-      BytecodeHelper.getHubBytecode(),
       label,
       keccak256(abi.encodePacked(label))
     );
