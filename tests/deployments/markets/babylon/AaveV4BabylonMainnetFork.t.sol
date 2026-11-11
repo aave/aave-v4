@@ -38,6 +38,17 @@ import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 import {IPriceFeed} from 'src/spoke/interfaces/IPriceFeed.sol';
 import {TestnetERC20} from 'tests/helpers/mocks/TestnetERC20.sol';
+import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
+import {EngineFlags} from 'src/config-engine/libraries/EngineFlags.sol';
+
+/// @dev The Ethereum V4 RiskSteward entry points the tests call.
+interface IV4RiskSteward {
+  function updateHubSpokeCaps(IAaveV4ConfigEngine.SpokeConfigUpdate[] calldata updates) external;
+
+  function updateDynamicReserveConfigs(
+    IAaveV4ConfigEngine.DynamicReserveConfigUpdate[] calldata updates
+  ) external;
+}
 
 /// @dev Runs the production Babylon market scripts on an Ethereum fork and asserts the state after
 /// the handover (step 5b of the launch plan), then the state after the launch AIP actions on the
@@ -63,6 +74,9 @@ contract AaveV4BabylonMainnetForkTest is Test {
   address internal constant MAIN_SPOKE = 0x94e7A5dCbE816e498b89aB752661904E2F56c485;
   address internal constant EXECUTOR_LVL_1 = 0x5300A1a15135EA4dc7aD5a167152C01EFc9b192A;
   address internal constant V4_SECURITY_COUNCIL = 0x187AAE17d4931310B3fc75743e7F16Bdc9eD77e9;
+  // aave-address-book AaveV4Ethereum
+  address internal constant RISK_STEWARD = 0x6f48d9Cdb8EE6E17c96B2d8Aec128af426A295c1;
+  address internal constant RISK_COUNCIL = 0x47c71dFEB55Ebaa431Ae3fbF99Ea50e0D3d30fA8;
   // aave-address-book AaveV4Ethereum.POSITION_MANAGERS
   address internal constant CONFIG_POSITION_MANAGER = 0x51305839CE822a7b4b12AA7D86eA7005052d575c;
   address internal constant GIVER_POSITION_MANAGER = 0x17A54b8d6D9C68e7fa1C7112AC998EA1BA51d11e;
@@ -597,6 +611,61 @@ contract AaveV4BabylonMainnetForkTest is Test {
 
     assertTrue(ISpoke(_spoke()).getReserveConfig(BABYLON_USDC_RESERVE_ID).frozen, 'frozen');
     assertEq(IHub(_hub()).getSpokeConfig(BABYLON_USDC_ASSET_ID, _spoke()).drawCap, 1, 'draw cap');
+  }
+
+  /// @dev The RiskSteward governs the Babylon Hub through the shared HubConfigurator once the AIP maps
+  /// its selectors.
+  function test_aip_riskStewardUpdatesBabylonHubCaps() public {
+    _executeLaunchAip();
+    IAaveV4ConfigEngine.SpokeConfigUpdate[]
+      memory updates = new IAaveV4ConfigEngine.SpokeConfigUpdate[](1);
+    updates[0] = IAaveV4ConfigEngine.SpokeConfigUpdate({
+      hubConfigurator: IHubConfigurator(HUB_CONFIGURATOR),
+      hub: _hub(),
+      underlying: USDC,
+      spoke: _spoke(),
+      addCap: EngineFlags.KEEP_CURRENT,
+      drawCap: 4_500_000,
+      riskPremiumThreshold: EngineFlags.KEEP_CURRENT,
+      active: EngineFlags.KEEP_CURRENT,
+      halted: EngineFlags.KEEP_CURRENT
+    });
+    vm.prank(RISK_COUNCIL);
+    IV4RiskSteward(RISK_STEWARD).updateHubSpokeCaps(updates);
+    assertEq(
+      IHub(_hub()).getSpokeConfig(BABYLON_USDC_ASSET_ID, _spoke()).drawCap,
+      4_500_000,
+      'draw cap'
+    );
+  }
+
+  /// @dev The RiskSteward governs the BabylonSpoke through the shared SpokeConfigurator once the AIP
+  /// maps its selectors.
+  function test_aip_riskStewardUpdatesBabylonSpokeCollateralFactor() public {
+    _executeLaunchAip();
+    uint32 dynamicConfigKey = ISpoke(_spoke()).getReserve(VAULT_BTC_RESERVE_ID).dynamicConfigKey;
+    IAaveV4ConfigEngine.DynamicReserveConfigUpdate[]
+      memory updates = new IAaveV4ConfigEngine.DynamicReserveConfigUpdate[](1);
+    updates[0] = IAaveV4ConfigEngine.DynamicReserveConfigUpdate({
+      spokeConfigurator: ISpokeConfigurator(SPOKE_CONFIGURATOR),
+      spoke: _spoke(),
+      hub: _hub(),
+      underlying: _vaultBtc,
+      dynamicConfigKey: dynamicConfigKey,
+      // the RiskSteward allows at most 50 BPS per collateral factor update
+      collateralFactor: 77_50,
+      maxLiquidationBonus: EngineFlags.KEEP_CURRENT,
+      liquidationFee: EngineFlags.KEEP_CURRENT
+    });
+    vm.prank(RISK_COUNCIL);
+    IV4RiskSteward(RISK_STEWARD).updateDynamicReserveConfigs(updates);
+    assertEq(
+      ISpoke(_spoke())
+        .getDynamicReserveConfig(VAULT_BTC_RESERVE_ID, dynamicConfigKey)
+        .collateralFactor,
+      77_50,
+      'collateral factor'
+    );
   }
 
   function test_aip_revertsWith_liquidationNotFromAdapter() public {
