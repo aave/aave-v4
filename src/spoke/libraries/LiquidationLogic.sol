@@ -322,6 +322,10 @@ library LiquidationLogic {
     uint256 minLiquidationBonus = (maxLiquidationBonus - PercentageMath.PERCENTAGE_FACTOR)
       .percentMulDown(liquidationBonusFactor) + PercentageMath.PERCENTAGE_FACTOR;
 
+    if (healthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD) {
+      return minLiquidationBonus;
+    }
+
     // linear interpolation between min and max
     // denominator cannot be zero as healthFactorForMaxBonus is always < HEALTH_FACTOR_LIQUIDATION_THRESHOLD
     return
