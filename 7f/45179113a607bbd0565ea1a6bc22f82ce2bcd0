@@ -1,0 +1,31 @@
+scripts/markets/babylon/AaveV4BabylonVerify.s.sol
+  h_71908bb6884da4 25
+scripts/markets/babylon/AaveV4BabylonVerification.sol
+  s_6bf5f21c3b5ff9::t_bb01ba3347d275 7-8
+  h_71908bb6884da4 47,102,114
+  s_6bf5f21c3b5ff9::t_8ad5437c4da2bf 46
+  s_6bf5f21c3b5ff9::t_1b722195917253 101,103-113,115-126,129-131
+  s_6bf5f21c3b5ff9::t_11e1888dd08e56 127-128
+  s_6bf5f21c3b5ff9::t_0e3266d067bb1d 132-133
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7f45179113a607bbd0565ea1a6bc22f82ce2bcd0",
+  "prompts": {},
+  "humans": {
+    "h_71908bb6884da4": {
+      "author": "YBM <31329384+yan-man@users.noreply.github.com>"
+    }
+  },
+  "sessions": {
+    "s_6bf5f21c3b5ff9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d4997ce2-8d14-4308-ab7d-bf808552a658",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "YBM <31329384+yan-man@users.noreply.github.com>"
+    }
+  }
+}
