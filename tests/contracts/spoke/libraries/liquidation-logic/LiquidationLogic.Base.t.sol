@@ -90,24 +90,14 @@ contract LiquidationLogicBaseTest is Base {
 
     uint256 debtToCover = bound(params.debtToCover, 0, MAX_SUPPLY_AMOUNT);
     uint256 drawnIndex = bound(params.drawnIndex, MIN_DRAWN_INDEX, MAX_DRAWN_INDEX);
-    uint256 drawnShares = bound(
-      params.drawnShares,
-      1,
-      _convertValueToAmount(
-        MAX_SUPPLY_AMOUNT,
-        debtToTargetParams.debtAssetPrice,
-        debtToTargetParams.debtAssetUnit
-      )
+    // the amount of debt asset worth `MAX_SUPPLY_AMOUNT` units of Value
+    uint256 maxDebtAmount = _convertValueToAmount(
+      MAX_SUPPLY_AMOUNT,
+      debtToTargetParams.debtAssetPrice,
+      debtToTargetParams.debtAssetUnit
     );
-    uint256 premiumDebtRay = bound(
-      params.premiumDebtRay,
-      0,
-      _convertValueToAmount(
-        MAX_SUPPLY_AMOUNT,
-        debtToTargetParams.debtAssetPrice,
-        debtToTargetParams.debtAssetUnit
-      )
-    );
+    uint256 drawnShares = bound(params.drawnShares, 1, maxDebtAmount);
+    uint256 premiumDebtRay = bound(params.premiumDebtRay, 0, maxDebtAmount * WadRayMath.RAY);
 
     return
       LiquidationLogic.CalculateDebtToLiquidateParams({
@@ -185,26 +175,21 @@ contract LiquidationLogicBaseTest is Base {
       );
     params.collateralAssetPrice = bound(params.collateralAssetPrice, 1, MAX_ASSET_PRICE);
     params.drawnIndex = bound(params.drawnIndex, MIN_DRAWN_INDEX, MAX_DRAWN_INDEX);
+    params.debtAssetUnit =
+      10 **
+      bound(params.debtAssetUnit, MIN_ALLOWED_UNDERLYING_DECIMALS, MAX_ALLOWED_UNDERLYING_DECIMALS);
+    params.debtAssetPrice = bound(params.debtAssetPrice, 1, MAX_ASSET_PRICE);
+    // the debt to liquidate, in asset units, is at most the max supply of the debt asset
+    uint256 maxDebtAmount = MAX_SUPPLY_ASSET_UNITS * params.debtAssetUnit;
     params.drawnSharesToLiquidate = bound(
       params.drawnSharesToLiquidate,
       0,
-      MAX_SUPPLY_AMOUNT / params.drawnIndex
+      Math.mulDiv(maxDebtAmount, WadRayMath.RAY, params.drawnIndex)
     );
     params.premiumDebtRayToLiquidate = bound(
       params.premiumDebtRayToLiquidate,
       0,
-      MAX_SUPPLY_AMOUNT - params.drawnSharesToLiquidate * params.drawnIndex
-    );
-    params.debtAssetUnit =
-      10 **
-      bound(params.debtAssetUnit, MIN_ALLOWED_UNDERLYING_DECIMALS, MAX_ALLOWED_UNDERLYING_DECIMALS);
-    uint256 debtRayToLiquidate = params.drawnSharesToLiquidate * params.drawnIndex +
-      params.premiumDebtRayToLiquidate;
-    params.debtAssetPrice = bound(
-      params.debtAssetPrice,
-      1,
-      MAX_SUPPLY_AMOUNT /
-        _max(1, _convertAmountToValue(debtRayToLiquidate.fromRayUp(), 1, params.debtAssetUnit))
+      maxDebtAmount * WadRayMath.RAY
     );
     params.liquidationBonus = bound(
       params.liquidationBonus,
