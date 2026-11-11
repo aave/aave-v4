@@ -222,8 +222,12 @@ contract BabylonSpokeConfigTest is BabylonBase {
   /// @dev The guard is scoped to the managed collateral reserve, every other reserve stays borrowable.
   function test_updateReserveConfig_borrowableOtherReserve() public {
     ISpoke.ReserveConfig memory config = spoke4.getReserveConfig(debtReserveId);
-    config.borrowable = true;
+    config.borrowable = false;
+    vm.prank(SPOKE_ADMIN);
+    spoke4.updateReserveConfig(debtReserveId, config);
+    assertFalse(spoke4.getReserveConfig(debtReserveId).borrowable, 'debt reserve not borrowable');
 
+    config.borrowable = true;
     vm.prank(SPOKE_ADMIN);
     spoke4.updateReserveConfig(debtReserveId, config);
 
@@ -262,6 +266,13 @@ contract BabylonSpokeConfigTest is BabylonBase {
 
     (bool isUsingAsCollateral, ) = spoke4.getUserReserveStatus(debtReserveId, alice);
     assertFalse(isUsingAsCollateral, 'other reserve not registered as collateral');
+  }
+
+  /// @dev The override keeps the canonical caller check: nobody else can act for a user.
+  function test_revert_setUsingAsCollateral_unauthorized() public {
+    vm.expectRevert(ISpoke.Unauthorized.selector);
+    vm.prank(bob);
+    spoke4.setUsingAsCollateral(collateralReserveId, true, alice);
   }
 
   /// @dev A babylon spoke with no reserve listed, managing reserve 0.

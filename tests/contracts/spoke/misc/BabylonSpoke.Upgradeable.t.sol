@@ -3,11 +3,16 @@ pragma solidity ^0.8.0;
 
 import 'tests/setup/BabylonBase.t.sol';
 import {MockBabylonSpokeInstance} from 'tests/helpers/mocks/MockBabylonSpokeInstance.sol';
+import {BabylonSpokeInstance} from 'src/spoke/instances/BabylonSpokeInstance.sol';
 
 /// @dev Upgrades of the BabylonSpoke. Reinitializing only rejects a borrowable managed collateral
 /// reserve. It neither compares the managed collateral reserve with the previous implementation's
 /// nor checks that the reserve holds no debt.
 contract BabylonSpokeUpgradeableTest is BabylonBase {
+  /// @dev keccak256(abi.encode(uint256(keccak256("openzeppelin.storage.Initializable")) - 1)) & ~bytes32(uint256(0xff))
+  bytes32 internal constant INITIALIZABLE_STORAGE =
+    0xf0c57e16840df040f15088dc2f81fe391c3923bec73e23a9662efc9c229c6a00;
+
   uint256 internal collateralReserveId;
   uint256 internal debtReserveId;
 
@@ -25,6 +30,24 @@ contract BabylonSpokeUpgradeableTest is BabylonBase {
       liquidationManager,
       debtReserveId
     );
+
+    vm.expectRevert(IBabylonSpoke.UnsupportedBorrowableCollateral.selector);
+    vm.prank(ProxyHelper.getProxyAdmin(address(spoke4)));
+    ITransparentUpgradeableProxy(address(spoke4)).upgradeToAndCall(
+      address(implementation),
+      abi.encodeCall(ISpokeInstance.initialize, (address(accessManager)))
+    );
+  }
+
+  /// @dev The same check on the production instance, whose revision one initializer is replayed
+  /// by clearing the proxy's initialized version.
+  function test_revert_initialize_borrowableManagedCollateral() public {
+    BabylonSpokeInstance implementation = new BabylonSpokeInstance(
+      address(oracle4),
+      liquidationManager,
+      debtReserveId
+    );
+    vm.store(address(spoke4), INITIALIZABLE_STORAGE, bytes32(0));
 
     vm.expectRevert(IBabylonSpoke.UnsupportedBorrowableCollateral.selector);
     vm.prank(ProxyHelper.getProxyAdmin(address(spoke4)));

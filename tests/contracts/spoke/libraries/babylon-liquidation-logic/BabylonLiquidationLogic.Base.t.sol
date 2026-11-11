@@ -43,21 +43,20 @@ contract BabylonLiquidationLogicBaseTest is Base {
       10 **
       bound(params.debtAssetUnit, MIN_ALLOWED_UNDERLYING_DECIMALS, MAX_ALLOWED_UNDERLYING_DECIMALS);
     params.collateralAssetPrice = bound(params.collateralAssetPrice, 1, MAX_ASSET_PRICE);
+    params.debtAssetPrice = bound(params.debtAssetPrice, 1, MAX_ASSET_PRICE);
     params.drawnIndex = bound(params.drawnIndex, MIN_DRAWN_INDEX, MAX_DRAWN_INDEX);
-    params.drawnShares = bound(params.drawnShares, 0, MAX_SUPPLY_AMOUNT / params.drawnIndex);
-    params.premiumDebtRay = bound(
-      params.premiumDebtRay,
+    // the debt, in asset units, is at most the max supply of the debt asset
+    uint256 maxDebtAmount = MAX_SUPPLY_ASSET_UNITS * params.debtAssetUnit;
+    params.drawnShares = bound(
+      params.drawnShares,
       0,
-      MAX_SUPPLY_AMOUNT - params.drawnShares * params.drawnIndex
+      maxDebtAmount.mulDivDown(WadRayMath.RAY, params.drawnIndex)
     );
-    uint256 debtRay = params.drawnShares * params.drawnIndex + params.premiumDebtRay;
-    params.debtAssetPrice = bound(
-      params.debtAssetPrice,
-      1,
-      MAX_SUPPLY_AMOUNT /
-        _max(1, _convertAmountToValue(debtRay.fromRayUp(), 1, params.debtAssetUnit))
-    );
-    params.debtToCover = bound(params.debtToCover, 0, MAX_SUPPLY_AMOUNT);
+    params.premiumDebtRay = bound(params.premiumDebtRay, 0, maxDebtAmount * WadRayMath.RAY);
+    uint256 debtAmount = (params.drawnShares * params.drawnIndex + params.premiumDebtRay)
+      .fromRayUp();
+    // up to twice the debt, so partial and full repayments are both sized
+    params.debtToCover = bound(params.debtToCover, 0, 2 * _max(1, debtAmount));
 
     uint256 hubAddedShares = vm.randomUint(1, MAX_SUPPLY_AMOUNT);
     uint256 hubAddedAssets = vm.randomUint(
