@@ -11,6 +11,10 @@ import {
   AaveV4BabylonVerifyHarness
 } from 'tests/deployments/markets/babylon/AaveV4Babylon.t.sol';
 import {AaveV4BabylonConfig} from 'scripts/markets/babylon/AaveV4BabylonConfig.sol';
+import {
+  IBabylonAaveAdapter,
+  IBabylonBTCVaultSwap
+} from 'scripts/markets/babylon/interfaces/IBabylonIntegration.sol';
 import {AaveV4DeployOrchestration} from 'src/deployments/orchestration/AaveV4DeployOrchestration.sol';
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
 import {InputUtils} from 'src/deployments/utils/libraries/InputUtils.sol';
@@ -86,6 +90,7 @@ contract AaveV4BabylonMainnetForkTest is Test {
   uint256 internal constant CORE_GHO_ASSET_ID = 6;
   uint256 internal constant CORE_RLUSD_ASSET_ID = 7;
   uint256 internal constant CORE_USDG_ASSET_ID = 8;
+  uint256 internal constant CORE_WBTC_ASSET_ID = 11;
 
   uint256 internal constant BABYLON_USDC_ASSET_ID = 2;
 
@@ -110,6 +115,7 @@ contract AaveV4BabylonMainnetForkTest is Test {
   address internal _user = makeAddr('user');
   address internal _supplier = makeAddr('supplier');
   address internal _vaultBtc;
+  address internal _btcVaultSwap = makeAddr('btcVaultSwap');
   string internal _marketJson;
   AaveV4BabylonConfig.Config internal _config;
   AaveV4BabylonConfig.Deployment internal _deployment;
@@ -138,6 +144,7 @@ contract AaveV4BabylonMainnetForkTest is Test {
     _deployAndWriteReport();
     new AaveV4BabylonConfigureHarness(_config, _marketJson).run();
     new AaveV4DeployBabylonTokenizationHarness(_config, _marketJson).run();
+    _mockBabylonContracts();
     AaveV4BabylonHandoverHarness handover = new AaveV4BabylonHandoverHarness(_config);
     handover.setMarketJson(_marketJson);
     handover.run();
@@ -710,6 +717,68 @@ contract AaveV4BabylonMainnetForkTest is Test {
       });
     }
     vm.stopPrank();
+  }
+
+  /// @dev Stands in for Babylon's step 5: the AaveAdapter at its predicted address and a BTCVaultSwap
+  /// wired as LlamaRisk and the launch plan expect, so the production handover checks pass.
+  function _mockBabylonContracts() internal {
+    AaveV4BabylonConfig.Deployment memory deployment = AaveV4BabylonConfig.readDeployment(_config);
+    vm.etch(AAVE_ADAPTER, hex'00');
+    vm.mockCall(
+      AAVE_ADAPTER,
+      abi.encodeCall(IBabylonAaveAdapter.BTC_VAULT_CORE_SPOKE, ()),
+      abi.encode(deployment.babylonSpoke)
+    );
+    vm.mockCall(
+      AAVE_ADAPTER,
+      abi.encodeCall(IBabylonAaveAdapter.VAULT_BTC_RESERVE_ID, ()),
+      abi.encode(VAULT_BTC_RESERVE_ID)
+    );
+    vm.mockCall(
+      AAVE_ADAPTER,
+      abi.encodeCall(IBabylonAaveAdapter.BTC_VAULT_HUB, ()),
+      abi.encode(deployment.hubs[0])
+    );
+    vm.mockCall(
+      AAVE_ADAPTER,
+      abi.encodeCall(IBabylonAaveAdapter.EXIT_BTC_RESERVE_ID, ()),
+      abi.encode(EXIT_BTC_RESERVE_ID)
+    );
+
+    vm.etch(_btcVaultSwap, hex'00');
+    vm.store(
+      _btcVaultSwap,
+      ADMIN_SLOT,
+      bytes32(uint256(uint160(address(new ProxyAdmin(V4_SECURITY_COUNCIL)))))
+    );
+    vm.mockCall(
+      _btcVaultSwap,
+      abi.encodeCall(IBabylonBTCVaultSwap.ADAPTER, ()),
+      abi.encode(AAVE_ADAPTER)
+    );
+    vm.mockCall(_btcVaultSwap, abi.encodeCall(IBabylonBTCVaultSwap.HUB, ()), abi.encode(CORE_HUB));
+    vm.mockCall(_btcVaultSwap, abi.encodeCall(IBabylonBTCVaultSwap.EXIT_BTC, ()), abi.encode(WBTC));
+    vm.mockCall(
+      _btcVaultSwap,
+      abi.encodeCall(IBabylonBTCVaultSwap.EXIT_BTC_ASSET_ID, ()),
+      abi.encode(CORE_WBTC_ASSET_ID)
+    );
+    vm.mockCall(
+      _btcVaultSwap,
+      abi.encodeCall(IBabylonBTCVaultSwap.sellDiscountBps, ()),
+      abi.encode(2_00)
+    );
+    vm.mockCall(
+      _btcVaultSwap,
+      abi.encodeCall(IBabylonBTCVaultSwap.minimumProfitThresholdBps, ()),
+      abi.encode(50)
+    );
+    vm.mockCall(
+      _btcVaultSwap,
+      abi.encodeCall(IAccessManaged.authority, ()),
+      abi.encode(ACCESS_MANAGER)
+    );
+    _config.btcVaultSwap.swap = _btcVaultSwap;
   }
 
   function _supplyVaultBtcAsCollateral(uint256 amount) internal {

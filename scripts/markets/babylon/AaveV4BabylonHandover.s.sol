@@ -20,7 +20,8 @@ import {Ownable2StepUpgradeable} from 'src/dependencies/openzeppelin-upgradeable
 /// @title AaveV4BabylonHandover
 /// @author Aave Labs
 /// @notice Hands the Babylon market from the deployer over to the configured admin.
-/// @dev Transfers every ProxyAdmin, nominates the admin as TreasurySpoke owner and removes every role
+/// @dev Runs after Babylon's step 5. It first reverts unless the market config, the TokenizationSpokes
+/// and Babylon's contracts are verified, then transfers every ProxyAdmin, nominates the admin as TreasurySpoke owner and removes every role
 /// the deployer holds. With a configured fee receiver, the deployed TreasurySpoke is unused and it and
 /// its ProxyAdmin stay with the deployer. Without `authority`, it first grants the admin the configurator domain admin
 /// roles and the configurators their Hub and Spoke roles, then hands the AccessManager admin role to
@@ -35,12 +36,25 @@ contract AaveV4BabylonHandover is Script {
   function run() external {
     AaveV4BabylonConfig.Config memory config = _config();
     AaveV4BabylonConfig.Deployment memory deployment = AaveV4BabylonConfig.readDeployment(config);
+    AaveV4BabylonConfig.MarketConfig memory marketConfig = _marketConfig(config, deployment);
 
     AaveV4BabylonVerification.verifyDeployment({
       config: config,
       deployment: deployment,
       authority: deployment.accessManager
     });
+    // steps 4 and 4b are complete and Babylon's contracts are wired to the market
+    AaveV4BabylonVerification.verifyMarketConfig({
+      deployment: deployment,
+      marketConfig: marketConfig,
+      feeReceiver: AaveV4BabylonConfig.feeReceiver(config, deployment)
+    });
+    AaveV4BabylonVerification.verifyTokenizationSpokes({
+      config: config,
+      marketConfig: marketConfig,
+      owner: config.admin
+    });
+    AaveV4BabylonVerification.verifyBabylonContracts(config, deployment);
 
     vm.startBroadcast();
     (, address deployer, ) = vm.readCallers();
@@ -65,7 +79,7 @@ contract AaveV4BabylonHandover is Script {
     AaveV4BabylonVerification.verifyProxyAdmins({
       deployment: deployment,
       owner: config.admin,
-      externalSpokes: _externalSpokes(config, deployment),
+      externalSpokes: marketConfig.externalSpokes,
       externalFeeReceiver: config.feeReceiver,
       treasurySpokeOwner: AaveV4BabylonConfig.treasurySpokeOwner(config)
     });
@@ -83,11 +97,11 @@ contract AaveV4BabylonHandover is Script {
     return AaveV4BabylonConfig.read();
   }
 
-  function _externalSpokes(
+  function _marketConfig(
     AaveV4BabylonConfig.Config memory config,
     AaveV4BabylonConfig.Deployment memory deployment
-  ) internal view virtual returns (AaveV4BabylonConfig.ExternalSpoke[] memory) {
-    return AaveV4BabylonConfig.readExternalSpokes(config, deployment);
+  ) internal view virtual returns (AaveV4BabylonConfig.MarketConfig memory) {
+    return AaveV4BabylonConfig.readMarketConfig(config, deployment);
   }
 
   function _handover(

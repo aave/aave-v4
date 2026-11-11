@@ -53,6 +53,7 @@ contract AaveV4BabylonVerify is Script {
       marketConfig: marketConfig,
       owner: config.admin
     });
+    AaveV4BabylonVerification.verifyBabylonContracts(config, deployment);
   }
 
   function _config() internal view virtual returns (AaveV4BabylonConfig.Config memory) {

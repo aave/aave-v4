@@ -34,6 +34,10 @@ library AaveV4BabylonConfig {
   /// deployed one.
   /// @dev feeReceiver The fee receiver of every listed asset, zero for the deployed TreasurySpoke.
   /// @dev report The deployment report written by the deploy script.
+  /// @dev production Whether the config is the production market, where governance connects every
+  /// spoke and handover requires the Babylon contracts to be deployed.
+  /// @dev exitReserveId The identifier of the BabylonSpoke reserve the liquidation manager exits to.
+  /// @dev btcVaultSwap The Babylon liquidity provider the market expects, zero address if not checked.
   struct Config {
     uint256 chainId;
     bytes32 salt;
@@ -49,6 +53,21 @@ library AaveV4BabylonConfig {
     address authority;
     address feeReceiver;
     string report;
+    bool production;
+    uint256 exitReserveId;
+    BtcVaultSwap btcVaultSwap;
+  }
+
+  /// @dev The BTCVaultSwap Babylon deploys for the market, governed by the market's authority.
+  /// @dev swap The BTCVaultSwap proxy, zero address if not deployed yet.
+  /// @dev hub The Hub BTCVaultSwap draws the exit asset from.
+  /// @dev sellDiscountBps The sell discount, expressed in BPS.
+  /// @dev minimumProfitThresholdBps The minimum profit threshold, expressed in BPS.
+  struct BtcVaultSwap {
+    address swap;
+    address hub;
+    uint256 sellDiscountBps;
+    uint256 minimumProfitThresholdBps;
   }
 
   /// @dev Addresses of the deployed Babylon market read from the deployment report.
@@ -179,7 +198,18 @@ library AaveV4BabylonConfig {
         admin: vm.parseJsonAddress(json, '.admin'),
         authority: vm.parseJsonAddress(json, '.authority'),
         feeReceiver: vm.parseJsonAddress(json, '.feeReceiver'),
-        report: vm.parseJsonString(json, '.report')
+        report: vm.parseJsonString(json, '.report'),
+        production: vm.parseJsonBool(json, '.production'),
+        exitReserveId: vm.parseJsonUint(json, '.exitReserveId'),
+        btcVaultSwap: BtcVaultSwap({
+          swap: vm.parseJsonAddress(json, '.btcVaultSwap.address'),
+          hub: vm.parseJsonAddress(json, '.btcVaultSwap.hub'),
+          sellDiscountBps: vm.parseJsonUint(json, '.btcVaultSwap.sellDiscountBps'),
+          minimumProfitThresholdBps: vm.parseJsonUint(
+            json,
+            '.btcVaultSwap.minimumProfitThresholdBps'
+          )
+        })
       });
   }
 
@@ -296,16 +326,6 @@ library AaveV4BabylonConfig {
     Deployment memory deployment
   ) internal view returns (MarketConfig memory) {
     return parseMarketConfig({json: vm.readFile(path()), config: config, deployment: deployment});
-  }
-
-  /// @notice Reads the external spokes of the config named by the `BABYLON_CONFIG` env variable.
-  /// @param config The Babylon market config.
-  /// @param deployment The deployed Babylon market.
-  function readExternalSpokes(
-    Config memory config,
-    Deployment memory deployment
-  ) internal view returns (ExternalSpoke[] memory) {
-    return parseExternalSpokes({json: vm.readFile(path()), config: config, deployment: deployment});
   }
 
   /// @notice Parses the optional `externalSpokes` of a config JSON.

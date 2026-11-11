@@ -4,6 +4,10 @@ pragma solidity ^0.8.0;
 import {Vm} from 'forge-std/Vm.sol';
 
 import {AaveV4BabylonConfig} from 'scripts/markets/babylon/AaveV4BabylonConfig.sol';
+import {
+  IBabylonAaveAdapter,
+  IBabylonBTCVaultSwap
+} from 'scripts/markets/babylon/interfaces/IBabylonIntegration.sol';
 import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 import {IAccessManagerEnumerable} from 'src/access/interfaces/IAccessManagerEnumerable.sol';
 import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
@@ -318,6 +322,66 @@ library AaveV4BabylonVerification {
       );
       require(!hub.isSpokeListed(assetId, proxy), 'tokenization spoke connected');
     }
+  }
+
+  /// @notice Reverts unless Babylon's AaveAdapter and BTCVaultSwap are wired to the market as configured.
+  /// @dev On a production config both must be deployed. Otherwise each is checked only when deployed.
+  /// @param config The Babylon market config.
+  /// @param deployment The deployed Babylon market.
+  function verifyBabylonContracts(
+    AaveV4BabylonConfig.Config memory config,
+    AaveV4BabylonConfig.Deployment memory deployment
+  ) internal view {
+    ISpoke spoke = ISpoke(deployment.babylonSpoke);
+    address adapter = config.liquidationManager;
+    if (adapter.code.length == 0) {
+      require(!config.production, 'aave adapter not deployed');
+    } else {
+      IBabylonAaveAdapter aaveAdapter = IBabylonAaveAdapter(adapter);
+      require(aaveAdapter.BTC_VAULT_CORE_SPOKE() == address(spoke), 'aave adapter spoke');
+      require(
+        aaveAdapter.VAULT_BTC_RESERVE_ID() == config.managedCollateralReserveId,
+        'aave adapter vaultBTC reserve'
+      );
+      require(
+        aaveAdapter.BTC_VAULT_HUB() ==
+          address(spoke.getReserve(config.managedCollateralReserveId).hub),
+        'aave adapter hub'
+      );
+      require(
+        aaveAdapter.EXIT_BTC_RESERVE_ID() == config.exitReserveId,
+        'aave adapter exit reserve'
+      );
+    }
+
+    AaveV4BabylonConfig.BtcVaultSwap memory expected = config.btcVaultSwap;
+    if (expected.swap.code.length == 0) {
+      require(!config.production, 'btc vault swap not deployed');
+      return;
+    }
+    IBabylonBTCVaultSwap btcVaultSwap = IBabylonBTCVaultSwap(expected.swap);
+    address exitBtc = spoke.getReserve(config.exitReserveId).underlying;
+    require(btcVaultSwap.ADAPTER() == adapter, 'btc vault swap adapter');
+    require(btcVaultSwap.HUB() == expected.hub, 'btc vault swap hub');
+    require(btcVaultSwap.EXIT_BTC() == exitBtc, 'btc vault swap exit btc');
+    require(
+      btcVaultSwap.EXIT_BTC_ASSET_ID() == IHub(expected.hub).getAssetId(exitBtc),
+      'btc vault swap exit asset id'
+    );
+    require(
+      btcVaultSwap.sellDiscountBps() == expected.sellDiscountBps,
+      'btc vault swap sell discount'
+    );
+    require(
+      btcVaultSwap.minimumProfitThresholdBps() == expected.minimumProfitThresholdBps,
+      'btc vault swap minimum profit'
+    );
+    require(
+      IAccessManaged(expected.swap).authority() ==
+        AaveV4BabylonConfig.finalAuthority(config, deployment),
+      'btc vault swap authority'
+    );
+    _requireProxyAdminOwner(expected.swap, config.admin);
   }
 
   function _verifyReserve(

@@ -13,6 +13,14 @@
   "authority": "0x08aE3BE30958cDd1847ec58fFfd4C451a87fDF01",
   "feeReceiver": "0xB9B0b8616f6Bf6841972a52058132BE08d723155",
   "report": "scripts/markets/babylon/reports/mainnet.json",
+  "production": true,
+  "exitReserveId": 4,
+  "btcVaultSwap": {
+    "address": "0x0000000000000000000000000000000000000000",
+    "hub": "0xCca852Bc40e560adC3b1Cc58CA5b55638ce826c9",
+    "sellDiscountBps": 200,
+    "minimumProfitThresholdBps": 50
+  },
   "reserves": [
     {
       "hub": "babylon",
