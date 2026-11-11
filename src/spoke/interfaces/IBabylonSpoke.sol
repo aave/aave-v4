@@ -71,7 +71,6 @@ interface IBabylonSpoke is ISpoke {
   function getBabylonLiquidationLogic() external pure returns (address);
 
   /// @notice Returns the only address allowed to perform liquidations on this Spoke.
-  /// @dev The liquidation manager is trusted not to hold a position on this Spoke.
   function LIQUIDATION_MANAGER() external view returns (address);
 
   /// @notice Returns the identifier of the only reserve usable as collateral.
