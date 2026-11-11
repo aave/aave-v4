@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import {Create2TestHelper} from 'tests/utils/Create2TestHelper.sol';
 import {ProxyHelper} from 'tests/utils/ProxyHelper.sol';
+import {ProxyHelper} from 'tests/utils/ProxyHelper.sol';
 import {AaveV4DeployBabylonHub} from 'scripts/markets/babylon/AaveV4DeployBabylonHub.s.sol';
 import {AaveV4DeployBabylonTokenization} from 'scripts/markets/babylon/AaveV4DeployBabylonTokenization.s.sol';
 import {
@@ -211,12 +212,6 @@ contract AaveV4BabylonVerifyHarness is AaveV4BabylonVerify {
         deployment: deployment
       });
   }
-
-  // tests link the libraries foundry deploys, not the ones at the config salt
-  function _verifyLibraries(
-    AaveV4BabylonConfig.Config memory,
-    AaveV4BabylonConfig.Deployment memory
-  ) internal view override {}
 }
 
 contract AaveV4BabylonTest is Create2TestHelper {
