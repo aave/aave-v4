@@ -166,11 +166,11 @@ You can find all audit reports under [audits](./audits/):
 - [2026-01-28 - Aave V4 - ChainSecurity](./audits/2026-01-28_Aave-V4_ChainSecurity.pdf)
 - [2026-02-10 - TokenizationSpoke - ChainSecurity](./audits/2026-02-10_TokenizationSpoke_ChainSecurity.pdf)
 - [2026-02-24 - Aave V4 - Blackthorn](./audits/2026-02-24_Aave-V4_Blackthorn.pdf)
-- [2026-03-09 - Hub Formal Verification - Certora](./audits/2026-03-09_Hub-Fomal-Verification_Certora.pdf)
-- [2026-03-09 - Libraries Formal Verification - Certora](./audits/2026-03-09_Libraries-Fomal-Verification_Certora.pdf)
-- [2026-03-09 - Spoke Formal Verification - Certora](./audits/2026-03-09_Spoke-Fomal-Verification_Certora.pdf)
+- [2026-03-09 - Hub Formal Verification - Certora](./audits/2026-03-09_Hub-Formal-Verification_Certora.pdf)
+- [2026-03-09 - Libraries Formal Verification - Certora](./audits/2026-03-09_Libraries-Formal-Verification_Certora.pdf)
+- [2026-03-09 - Spoke Formal Verification - Certora](./audits/2026-03-09_Spoke-Formal-Verification_Certora.pdf)
 - [2026-03-23 - Aave V4 - ChainSecurity](./audits/2026-03-23_Aave-V4_ChainSecurity.pdf)
-- [2026-04-13 - TokenizationSpoke Formal Verification - Certora](./audits/2026-04-13_TokenizationSpoke-Fomal-Verification_Certora.pdf)
+- [2026-04-13 - TokenizationSpoke Formal Verification - Certora](./audits/2026-04-13_TokenizationSpoke-Formal-Verification_Certora.pdf)
 - [2026-11-02 - Config and Deploy Engine - Certora](./audits/2026-11-02_Config-and-Deploy-Engine_Certora.pdf)
 
 ### Bug Bounty
