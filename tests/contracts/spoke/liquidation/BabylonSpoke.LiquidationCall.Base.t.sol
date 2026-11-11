@@ -699,6 +699,33 @@ contract BabylonSpokeLiquidationCallBaseTest is BabylonBase, SpokeLiquidationCal
     );
   }
 
+  /// @dev The call never spends more than `debtToCover` nor pays out more than
+  /// `maxCollateralToRemove`, checked on the liquidator balances and the returned amount.
+  function _checkBabylonCallBounds(
+    CheckedBabylonLiquidationCallParams memory params,
+    BabylonAccountsSnapshot memory accountsInfoBefore,
+    BabylonAccountsSnapshot memory accountsInfoAfter,
+    uint256 collateralAmountRemoved
+  ) internal virtual {
+    assertLe(
+      accountsInfoBefore.liquidatorBalanceInfo.debtErc20Balance -
+        accountsInfoAfter.liquidatorBalanceInfo.debtErc20Balance,
+      params.debtToCover,
+      'liquidator spent above debtToCover'
+    );
+    assertLe(
+      accountsInfoAfter.liquidatorBalanceInfo.collateralErc20Balance -
+        accountsInfoBefore.liquidatorBalanceInfo.collateralErc20Balance,
+      params.maxCollateralToRemove,
+      'liquidator received above maxCollateralToRemove'
+    );
+    assertLe(
+      collateralAmountRemoved,
+      params.maxCollateralToRemove,
+      'returned collateral above maxCollateralToRemove'
+    );
+  }
+
   function _checkedBabylonLiquidationCall(
     CheckedBabylonLiquidationCallParams memory params
   ) internal virtual {
@@ -744,6 +771,7 @@ contract BabylonSpokeLiquidationCallBaseTest is BabylonBase, SpokeLiquidationCal
       'user account data'
     );
     _checkBabylonReturnData(liquidationMetadata, liquidationBonus, collateralAmountRemoved);
+    _checkBabylonCallBounds(params, accountsInfoBefore, accountsInfoAfter, collateralAmountRemoved);
     _checkBabylonHealthFactor(
       params,
       accountsInfoBefore,
