@@ -14,6 +14,9 @@ import {EIP712Types} from 'tests/helpers/mocks/EIP712Types.sol';
 /// @title SetupHelpers
 /// @notice Deploy, register, data-builder, and scenario-setup utilities for tokenization spoke tests.
 abstract contract SetupHelpers is SpokeHelpers {
+  /// @dev Canonical implementation shared by every TokenizationSpoke proxy deployed through `_deployTokenizationSpoke`.
+  address internal _tokenizationSpokeImpl;
+
   ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                  DEPLOY & REGISTER                                        //
   ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -25,14 +28,17 @@ abstract contract SetupHelpers is SpokeHelpers {
     string memory shareSymbol,
     address proxyAdminOwner
   ) internal pausePrank returns (ITokenizationSpoke) {
-    address tokenizationSpokeImpl = address(
-      new TokenizationSpokeInstance(address(hub), underlying)
-    );
+    if (_tokenizationSpokeImpl == address(0)) {
+      _tokenizationSpokeImpl = address(new TokenizationSpokeInstance());
+    }
     ITokenizationSpoke tokenizationSpoke = ITokenizationSpoke(
       AaveV4TestOrchestration.proxify(
-        tokenizationSpokeImpl,
+        _tokenizationSpokeImpl,
         proxyAdminOwner,
-        abi.encodeCall(TokenizationSpokeInstance.initialize, (shareName, shareSymbol))
+        abi.encodeCall(
+          TokenizationSpokeInstance.initialize,
+          (address(hub), underlying, shareName, shareSymbol)
+        )
       )
     );
     return tokenizationSpoke;

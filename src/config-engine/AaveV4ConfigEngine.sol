@@ -12,6 +12,9 @@ import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEng
 /// @notice Implementation of IAaveV4ConfigEngine. Delegates to external library contracts for
 /// each action category. Invoked via delegatecall from payload contracts.
 contract AaveV4ConfigEngine is IAaveV4ConfigEngine {
+  /// @inheritdoc IAaveV4ConfigEngine
+  address public immutable TOKENIZATION_SPOKE_IMPLEMENTATION;
+
   /// @dev The address of this engine deployment.
   address private immutable SELF;
 
@@ -22,13 +25,19 @@ contract AaveV4ConfigEngine is IAaveV4ConfigEngine {
   }
 
   /// @dev Constructor.
-  constructor() {
+  /// @param tokenizationSpokeImplementation_ The canonical TokenizationSpokeInstance implementation.
+  constructor(address tokenizationSpokeImplementation_) {
+    require(
+      tokenizationSpokeImplementation_ != address(0),
+      InvalidTokenizationSpokeImplementation()
+    );
+    TOKENIZATION_SPOKE_IMPLEMENTATION = tokenizationSpokeImplementation_;
     SELF = address(this);
   }
 
   /// @inheritdoc IAaveV4ConfigEngine
   function executeHubAssetListings(AssetListing[] calldata listings) external onlyDelegateCall {
-    HubEngine.executeHubAssetListings(listings);
+    HubEngine.executeHubAssetListings(listings, TOKENIZATION_SPOKE_IMPLEMENTATION);
   }
 
   /// @inheritdoc IAaveV4ConfigEngine

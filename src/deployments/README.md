@@ -32,11 +32,13 @@ This deploys `LiquidationLogic` via CREATE2 and writes `FOUNDRY_LIBRARIES` to `.
 make deploy-contracts
 ```
 
-This runs `AaveV4DeployOrchestration.deployAaveV4()`, which deploys batches in order: AccessManager → role labeling → Configurators → Configurator role setup → TreasurySpoke → Hubs → Spokes → Gateways → PositionManagers → role grants → DEFAULT_ADMIN transfer.
+This runs `AaveV4DeployOrchestration.deployAaveV4()`, which deploys batches in order: AccessManager → role labeling → Configurators → Configurator role setup → TreasurySpoke → TokenizationSpoke implementation → Hubs → Spokes → Gateways → PositionManagers → role grants → DEFAULT_ADMIN transfer.
 
 ### TokenizationSpoke
 
-`TokenizationSpoke` is **not** deployed by the orchestration, because it requires an asset to already be listed on a Hub and Spoke. Each `TokenizationSpoke` instance should be deployed separately after asset listing, one per asset.
+The orchestration deploys one canonical `TokenizationSpokeInstance` implementation (`tokenizationSpokeImplementation` in the report). It holds no Hub or asset specific state and is shared by every `TokenizationSpoke` proxy.
+
+`TokenizationSpoke` proxies are **not** deployed by the orchestration, because each requires an asset to already be listed on a Hub. Deploy one proxy per asset after listing, either through the config engine (`AssetListing.tokenization`) or with `AaveV4TokenizationSpokeBatch`, passing the canonical implementation.
 
 ### LiquidationLogic Pre-deployment
 
@@ -66,6 +68,8 @@ src/deployments/
     AaveV4AuthorityBatch        AccessManagerEnumerable
     AaveV4ConfiguratorBatch     HubConfigurator, SpokeConfigurator
     AaveV4TreasurySpokeBatch    TreasurySpoke (single instance, proxy + impl)
+    AaveV4TokenizationSpokeImplementationBatch
+                                Canonical TokenizationSpokeInstance implementation (shared by all proxies)
     AaveV4HubInstanceBatch      HubInstance (proxy + impl), InterestRateStrategy
     AaveV4SpokeInstanceBatch    SpokeInstance (proxy + impl), AaveOracle
     AaveV4GatewayBatch          NativeTokenGateway, SignatureGateway
@@ -200,6 +204,11 @@ AaveV4DeployBatchBase.s.sol                         (Foundry script entry point)
     |     |     AaveV4DeployBase.deployTreasurySpokeBatch()
     |     |       new AaveV4TreasurySpokeBatch(owner, salt)
     |     |         Create2Utils.create2Deploy() --> TreasurySpoke
+    |     |
+    |     +-- _deployTokenizationSpokeImplementationBatch()
+    |     |     AaveV4DeployBase.deployTokenizationSpokeImplementationBatch()
+    |     |       new AaveV4TokenizationSpokeImplementationBatch(salt)
+    |     |         Create2Utils.create2Deploy() --> TokenizationSpokeInstance (canonical implementation)
     |     |
     |     +-- InputUtils.validateUniqueLabels()      revert on duplicate hub or spoke labels
     |     |

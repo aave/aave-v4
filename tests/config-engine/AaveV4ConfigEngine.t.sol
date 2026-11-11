@@ -4,6 +4,16 @@ pragma solidity ^0.8.0;
 import 'tests/config-engine/BaseConfigEngine.t.sol';
 
 contract AaveV4ConfigEngineTest is BaseConfigEngineTest {
+  function test_constructor_setsTokenizationSpokeImplementation() public {
+    address impl = address(new TokenizationSpokeInstance());
+    assertEq(new AaveV4ConfigEngine(impl).TOKENIZATION_SPOKE_IMPLEMENTATION(), impl);
+  }
+
+  function test_constructor_revertsWith_InvalidTokenizationSpokeImplementation() public {
+    vm.expectRevert(IAaveV4ConfigEngine.InvalidTokenizationSpokeImplementation.selector);
+    new AaveV4ConfigEngine(address(0));
+  }
+
   function test_entryPoints_revertWith_OnlyDelegateCall_onDirectCall() public {
     bytes4[21] memory selectors = [
       IAaveV4ConfigEngine.executeHubAssetListings.selector,

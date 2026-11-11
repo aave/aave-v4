@@ -64,10 +64,16 @@ interface ITokenizationSpoke is IERC4626, IERC2612, IIntentConsumer {
     uint256 deadline;
   }
 
-  /// @notice Emitted when the immutable variables of the TokenizationSpoke are set.
+  /// @notice Emitted when the TokenizationSpoke is bound to its Hub asset at initialization.
   /// @param hub The address of the Hub.
   /// @param assetId The identifier of the asset.
-  event SetTokenizationSpokeImmutables(address indexed hub, uint256 indexed assetId);
+  event SetTokenizationSpokeInitParams(address indexed hub, uint256 indexed assetId);
+
+  /// @notice Thrown when the given address is invalid.
+  error InvalidAddress();
+
+  /// @notice Thrown when the TokenizationSpoke is already bound to a Hub asset.
+  error HubAlreadySet();
 
   /// @notice Deposits assets into the TokenizationSpoke with a signature.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
