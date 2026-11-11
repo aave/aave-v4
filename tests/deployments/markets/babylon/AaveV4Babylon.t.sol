@@ -1978,6 +1978,7 @@ contract AaveV4BabylonTest is Create2TestHelper {
   address internal constant ETHEREUM_WBTC = 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;
   address internal constant ETHEREUM_USDG = 0xe343167631d89B6Ffc58B88d6b7fB0228795491D;
   address internal constant ETHEREUM_RLUSD = 0x8292Bb45bf1Ee4d140127049757C2E0fF06317eD;
+  address internal constant ETHEREUM_VAULT_BTC = 0x69712D713FD30aBEF48b5D14eC2a9FB834D2c341;
   address internal constant ETHEREUM_BTC_USD_SVR_FEED = 0xb41E773f507F7a7EA890b1afB7d2b660c30C8B0A;
   address internal constant ETHEREUM_USDT_FEED = 0x260326c220E469358846b187eE53328303Efe19C;
   address internal constant ETHEREUM_USDC_FEED = 0x3f73F03aa83B2A48ed27E964eD0fDb590332095B;
@@ -2019,7 +2020,6 @@ contract AaveV4BabylonTest is Create2TestHelper {
 
   /// @dev Every reserve against the LlamaRisk tables, with the Babylon Hub spoke configs inactive.
   function test_mainnetMarketConfig() public {
-    address vaultBtc = makeAddr('vaultBTC');
     _useMainnetHubLabels();
     AaveV4BabylonConfig.Deployment memory deployment;
     deployment.hubs = new address[](1);
@@ -2027,7 +2027,7 @@ contract AaveV4BabylonTest is Create2TestHelper {
     deployment.irStrategies = new address[](1);
     deployment.irStrategies[0] = makeAddr('babylon hub irStrategy');
     AaveV4BabylonConfig.MarketConfig memory marketConfig = this.parseMarketConfig(
-      _mainnetJsonWithVaultBtc(vaultBtc),
+      vm.readFile(MAINNET_CONFIG),
       deployment
     );
 
@@ -2043,7 +2043,7 @@ contract AaveV4BabylonTest is Create2TestHelper {
     );
     expected[0] = _mainnetListing({
       deployment: deployment,
-      underlying: vaultBtc,
+      underlying: ETHEREUM_VAULT_BTC,
       priceSource: ETHEREUM_BTC_USD_SVR_FEED,
       liquidityFee: 0,
       irData: IAssetInterestRateStrategy.InterestRateData({
@@ -2181,7 +2181,7 @@ contract AaveV4BabylonTest is Create2TestHelper {
     deployment.hubs = new address[](1);
     deployment.irStrategies = new address[](1);
     vm.expectRevert('reserve address unset');
-    this.parseMarketConfig(vm.readFile(MAINNET_CONFIG), deployment);
+    this.parseMarketConfig(_mainnetJsonWithVaultBtc(address(0)), deployment);
   }
 
   function test_requireLiquidationManager() public {
@@ -2470,10 +2470,14 @@ contract AaveV4BabylonTest is Create2TestHelper {
 
   function _mainnetJsonWithVaultBtc(address vaultBtc) internal view returns (string memory) {
     string memory json = vm.readFile(MAINNET_CONFIG);
-    string memory placeholder = '"underlying": "0x0000000000000000000000000000000000000000"';
-    assertEq(vm.split(json, placeholder).length, 2);
+    string memory configured = string.concat(
+      '"underlying": "',
+      vm.toString(ETHEREUM_VAULT_BTC),
+      '"'
+    );
+    assertEq(vm.split(json, configured).length, 2);
     return
-      vm.replace(json, placeholder, string.concat('"underlying": "', vm.toString(vaultBtc), '"'));
+      vm.replace(json, configured, string.concat('"underlying": "', vm.toString(vaultBtc), '"'));
   }
 
   function _sepoliaAdapterConfig()

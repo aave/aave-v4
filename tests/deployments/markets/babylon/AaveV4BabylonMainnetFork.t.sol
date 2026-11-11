@@ -53,7 +53,7 @@ interface IV4RiskSteward {
 /// @dev Runs the production Babylon market scripts on an Ethereum fork and asserts the state after
 /// the handover (step 5b of the launch plan), then the state after the launch AIP actions on the
 /// shared V4 contracts. Expected values come from the LlamaRisk parameters and aave-address-book,
-/// not from `config/mainnet.json`. A mock vaultBTC stands in until Babylon deploys it.
+/// not from `config/mainnet.json`. A mock vaultBTC stands in for Babylon's, deployed after `FORK_BLOCK`.
 contract AaveV4BabylonMainnetForkTest is Test {
   uint256 internal constant FORK_BLOCK = 26_376_995;
   string internal constant OUTPUT_DIR = 'output/reports/deployments/';
@@ -62,8 +62,8 @@ contract AaveV4BabylonMainnetForkTest is Test {
   /// @dev ERC-1967 admin slot, `bytes32(uint256(keccak256('eip1967.proxy.admin')) - 1)`.
   bytes32 internal constant ADMIN_SLOT =
     0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103;
-  string internal constant VAULT_BTC_PLACEHOLDER =
-    '"underlying": "0x0000000000000000000000000000000000000000"';
+  string internal constant VAULT_BTC_CONFIG =
+    '"underlying": "0x69712D713FD30aBEF48b5D14eC2a9FB834D2c341"';
 
   // aave-address-book AaveV4Ethereum, GovernanceV3Ethereum
   address internal constant ACCESS_MANAGER = 0x08aE3BE30958cDd1847ec58fFfd4C451a87fDF01;
@@ -148,10 +148,10 @@ contract AaveV4BabylonMainnetForkTest is Test {
 
     _vaultBtc = address(new TestnetERC20('vaultBTC', 'vaultBTC', 8));
     string memory json = vm.readFile(MAINNET_CONFIG);
-    assertEq(vm.split(json, VAULT_BTC_PLACEHOLDER).length, 2, 'one vaultBTC placeholder');
+    assertEq(vm.split(json, VAULT_BTC_CONFIG).length, 2, 'one vaultBTC reserve');
     _marketJson = vm.replace(
       json,
-      VAULT_BTC_PLACEHOLDER,
+      VAULT_BTC_CONFIG,
       string.concat('"underlying": "', vm.toString(_vaultBtc), '"')
     );
 

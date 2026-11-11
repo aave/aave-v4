@@ -24,7 +24,7 @@
   "reserves": [
     {
       "hub": "babylon",
-      "underlying": "0x0000000000000000000000000000000000000000",
+      "underlying": "0x69712D713FD30aBEF48b5D14eC2a9FB834D2c341",
       "priceSource": "0xb41E773f507F7a7EA890b1afB7d2b660c30C8B0A",
       "liquidityFee": 0,
       "irData": {
