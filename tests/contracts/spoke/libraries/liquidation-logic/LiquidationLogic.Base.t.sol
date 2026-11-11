@@ -90,9 +90,9 @@ contract LiquidationLogicBaseTest is Base {
 
     uint256 debtToCover = bound(params.debtToCover, 0, MAX_SUPPLY_AMOUNT);
     uint256 drawnIndex = bound(params.drawnIndex, MIN_DRAWN_INDEX, MAX_DRAWN_INDEX);
-    // the amount of debt asset worth `MAX_SUPPLY_AMOUNT` units of Value
+    // the amount of debt asset worth the max supply in base currency
     uint256 maxDebtAmount = _convertValueToAmount(
-      MAX_SUPPLY_AMOUNT,
+      MAX_SUPPLY_IN_BASE_CURRENCY,
       debtToTargetParams.debtAssetPrice,
       debtToTargetParams.debtAssetUnit
     );
