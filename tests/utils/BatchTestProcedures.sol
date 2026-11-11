@@ -30,6 +30,7 @@ import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateS
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ITreasurySpoke} from 'src/spoke/interfaces/ITreasurySpoke.sol';
+import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {INativeTokenGateway} from 'src/position-manager/interfaces/INativeTokenGateway.sol';
 
@@ -47,6 +48,8 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
   address internal _deployer = makeAddr('deployer');
   // Skip native wrapper check when nativeWrapper address is not available (e.g. post-deployment JSON report)
   bool internal _skipNativeWrapperCheck;
+  // Skip TokenizationSpoke implementation checks for reports predating the canonical implementation
+  bool internal _skipTokenizationSpokeImplementationCheck;
 
   function setUp() public virtual {
     _spokePositionUpdaterRoleSelectors = Roles.getSpokePositionUpdaterRoleSelectors();
@@ -186,7 +189,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
   function _checkFullReport(
     OrchestrationReports.FullDeploymentReport memory report,
     InputUtils.FullDeployInputs memory inputs
-  ) internal pure {
+  ) internal view {
     if (inputs.deployNativeTokenGateway) {
       assertNotEq(report.gatewaysBatchReport.nativeGateway, address(0), 'NativeGateway');
     } else {
@@ -235,6 +238,13 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     assertNotEq(report.configuratorBatchReport.spokeConfigurator, address(0), 'SpokeConfigurator');
     assertNotEq(report.configuratorBatchReport.hubConfigurator, address(0), 'HubConfigurator');
     assertNotEq(report.treasurySpokeBatchReport.treasurySpoke, address(0), 'TreasurySpoke');
+    if (!_skipTokenizationSpokeImplementationCheck) {
+      assertNotEq(
+        report.tokenizationSpokeImplementationBatchReport.tokenizationSpokeImplementation,
+        address(0),
+        'TokenizationSpokeImplementation'
+      );
+    }
     for (uint256 i = 0; i < report.hubInstanceBatchReports.length; i++) {
       assertNotEq(report.hubInstanceBatchReports[i].report.hubProxy, address(0), 'Hub');
       assertNotEq(
@@ -361,6 +371,9 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
       _checkInterestRateStrategyDeployment({report: hubReport, label: label});
     }
     _checkTreasurySpokeDeployment(report);
+    if (!_skipTokenizationSpokeImplementationCheck) {
+      _checkTokenizationSpokeImplementationDeployment(report);
+    }
   }
 
   function _checkHubDeployment(
@@ -411,6 +424,24 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
       report.treasurySpokeBatchReport.treasurySpoke,
       address(0),
       'treasury spoke deployed'
+    );
+  }
+
+  function _checkTokenizationSpokeImplementationDeployment(
+    OrchestrationReports.FullDeploymentReport memory report
+  ) internal view {
+    address implementation = report
+      .tokenizationSpokeImplementationBatchReport
+      .tokenizationSpokeImplementation;
+    assertEq(
+      ProxyHelper.getProxyInitializedVersion(implementation),
+      type(uint64).max,
+      'tokenization spoke implementation initializers disabled'
+    );
+    assertEq(
+      ITokenizationSpoke(implementation).hub(),
+      address(0),
+      'tokenization spoke implementation unbound'
     );
   }
 
@@ -869,6 +900,12 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     _assertHasCode(report.configuratorBatchReport.hubConfigurator, 'hubConfigurator');
     _assertHasCode(report.configuratorBatchReport.spokeConfigurator, 'spokeConfigurator');
     _assertHasCode(report.treasurySpokeBatchReport.treasurySpoke, 'treasurySpoke');
+    if (!_skipTokenizationSpokeImplementationCheck) {
+      _assertHasCode(
+        report.tokenizationSpokeImplementationBatchReport.tokenizationSpokeImplementation,
+        'tokenizationSpokeImplementation'
+      );
+    }
 
     for (uint256 i; i < report.hubInstanceBatchReports.length; i++) {
       string memory label = report.hubInstanceBatchReports[i].label;

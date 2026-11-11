@@ -158,6 +158,10 @@ When a payload calls `execute()`, `AaveV4Payload` delegatecalls into `AaveV4Conf
 
 Every engine entry point is `onlyDelegateCall`: a direct call to the engine's own address reverts with `OnlyDelegateCall`. A role granted to the engine address by mistake therefore cannot be exercised through it.
 
+### TokenizationSpoke implementation
+
+`AaveV4ConfigEngine` takes the canonical `TokenizationSpokeInstance` implementation in its constructor and exposes it as `TOKENIZATION_SPOKE_IMPLEMENTATION`. The implementation holds no Hub or asset specific state. A listing with tokenization set deploys only a `TransparentUpgradeableProxy` pointing to it, initialized with `initialize(hub, underlying, name, symbol)`. Proxy addresses are CREATE2-deterministic and can be pre-computed with `TokenizationSpokeDeployer.computeProxyAddress`.
+
 ### Execution context
 
 In production the payload itself executes via delegatecall: the PayloadsController **calls** `Executor.executeTransaction`, which **delegatecalls** `payload.execute()`. Since `msg.sender` is preserved across delegatecall, for all engine code:

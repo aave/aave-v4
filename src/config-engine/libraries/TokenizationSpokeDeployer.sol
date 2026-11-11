@@ -13,9 +13,10 @@ library TokenizationSpokeDeployer {
   /// @dev Thrown when the proxy admin owner is the zero address.
   error InvalidProxyAdminOwner();
 
-  /// @notice Deploys a TokenizationSpokeInstance implementation and TransparentUpgradeableProxy via CREATE2
+  /// @notice Deploys a TransparentUpgradeableProxy pointing to the given TokenizationSpoke implementation via CREATE2
   /// through the Safe Singleton Factory.
   /// @dev The proxy admin owner must be passed explicitly, never derived from execution context.
+  /// @param implementation The address of the TokenizationSpokeInstance implementation.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
   /// @param name The ERC20 name for the TokenizationSpoke share token.
@@ -23,6 +24,7 @@ library TokenizationSpokeDeployer {
   /// @param proxyAdminOwner The initial owner of the ProxyAdmin.
   /// @return proxy The address of the deployed proxy.
   function deploy(
+    address implementation,
     address hub,
     address underlying,
     string calldata name,
@@ -31,38 +33,14 @@ library TokenizationSpokeDeployer {
   ) external returns (address proxy) {
     require(proxyAdminOwner != address(0), InvalidProxyAdminOwner());
 
-    bytes32 implSalt = _computeImplementationSalt(hub, underlying, name, symbol);
-    bytes memory implCreationCode = abi.encodePacked(
-      type(TokenizationSpokeInstance).creationCode,
-      abi.encode(hub, underlying)
+    proxy = Create2Utils.create2Deploy(
+      _computeProxySalt(hub, underlying, name, symbol),
+      _proxyCreationCode(implementation, hub, underlying, name, symbol, proxyAdminOwner)
     );
-    address impl = Create2Utils.create2Deploy(implSalt, implCreationCode);
-
-    bytes32 proxySalt = _computeProxySalt(hub, underlying, name, symbol);
-    bytes memory initData = abi.encodeCall(TokenizationSpokeInstance.initialize, (name, symbol));
-    bytes memory proxyCreationCode = abi.encodePacked(
-      type(TransparentUpgradeableProxy).creationCode,
-      abi.encode(impl, proxyAdminOwner, initData)
-    );
-    proxy = Create2Utils.create2Deploy(proxySalt, proxyCreationCode);
-  }
-
-  /// @notice Pre-computes the CREATE2 address of the TokenizationSpokeInstance implementation.
-  /// @param hub The address of the Hub.
-  /// @param underlying The address of the underlying asset.
-  /// @param name The ERC20 name for the TokenizationSpoke share token.
-  /// @param symbol The ERC20 symbol for the TokenizationSpoke share token.
-  /// @return The predicted implementation address.
-  function computeImplementationAddress(
-    address hub,
-    address underlying,
-    string memory name,
-    string memory symbol
-  ) external pure returns (address) {
-    return _computeImplementationAddress(hub, underlying, name, symbol);
   }
 
   /// @notice Pre-computes the CREATE2 address of the TransparentUpgradeableProxy.
+  /// @param implementation The address of the TokenizationSpokeInstance implementation.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
   /// @param name The ERC20 name for the TokenizationSpoke share token.
@@ -70,44 +48,37 @@ library TokenizationSpokeDeployer {
   /// @param proxyAdminOwner The initial owner of the ProxyAdmin.
   /// @return The predicted proxy address.
   function computeProxyAddress(
+    address implementation,
     address hub,
     address underlying,
     string memory name,
     string memory symbol,
     address proxyAdminOwner
   ) external pure returns (address) {
-    address impl = _computeImplementationAddress(hub, underlying, name, symbol);
-
-    bytes32 proxySalt = _computeProxySalt(hub, underlying, name, symbol);
-    bytes memory initData = abi.encodeCall(TokenizationSpokeInstance.initialize, (name, symbol));
-    bytes memory creationCode = abi.encodePacked(
-      type(TransparentUpgradeableProxy).creationCode,
-      abi.encode(impl, proxyAdminOwner, initData)
-    );
-    return Create2Utils.computeCreate2Address(proxySalt, creationCode);
+    return
+      Create2Utils.computeCreate2Address(
+        _computeProxySalt(hub, underlying, name, symbol),
+        _proxyCreationCode(implementation, hub, underlying, name, symbol, proxyAdminOwner)
+      );
   }
 
-  function _computeImplementationAddress(
+  function _proxyCreationCode(
+    address implementation,
     address hub,
     address underlying,
     string memory name,
-    string memory symbol
-  ) internal pure returns (address) {
-    bytes32 implSalt = _computeImplementationSalt(hub, underlying, name, symbol);
-    bytes memory creationCode = abi.encodePacked(
-      type(TokenizationSpokeInstance).creationCode,
-      abi.encode(hub, underlying)
+    string memory symbol,
+    address proxyAdminOwner
+  ) internal pure returns (bytes memory) {
+    bytes memory initData = abi.encodeCall(
+      TokenizationSpokeInstance.initialize,
+      (hub, underlying, name, symbol)
     );
-    return Create2Utils.computeCreate2Address(implSalt, creationCode);
-  }
-
-  function _computeImplementationSalt(
-    address hub,
-    address underlying,
-    string memory name,
-    string memory symbol
-  ) internal pure returns (bytes32) {
-    return keccak256(abi.encode(hub, underlying, name, symbol, 'impl'));
+    return
+      abi.encodePacked(
+        type(TransparentUpgradeableProxy).creationCode,
+        abi.encode(implementation, proxyAdminOwner, initData)
+      );
   }
 
   function _computeProxySalt(

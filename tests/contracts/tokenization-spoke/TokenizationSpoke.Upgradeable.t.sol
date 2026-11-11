@@ -19,7 +19,7 @@ contract TokenizationSpokeUpgradeableTest is TokenizationSpokeBaseTest {
     assertEq(ProxyHelper.getProxyInitializedVersion(vaultImplAddress), type(uint64).max);
 
     vm.expectRevert(Initializable.InvalidInitialization.selector);
-    vaultImpl.initialize(SHARE_NAME, SHARE_SYMBOL);
+    vaultImpl.initialize(address(hub1), address(tokenList.dai), SHARE_NAME, SHARE_SYMBOL);
   }
 
   function test_proxy_constructor_fuzz(uint64 revision) public {
@@ -32,7 +32,7 @@ contract TokenizationSpokeUpgradeableTest is TokenizationSpokeBaseTest {
     vm.expectEmit(vaultProxyAddress);
     emit IERC1967.Upgraded(address(vaultImpl));
     vm.expectEmit(vaultProxyAddress);
-    emit ITokenizationSpoke.SetTokenizationSpokeImmutables(address(hub1), daiAssetId);
+    emit ITokenizationSpoke.SetTokenizationSpokeInitParams(address(hub1), daiAssetId);
     vm.expectEmit(vaultProxyAddress);
     emit Initializable.Initialized(revision);
     vm.expectEmit(proxyAdminAddress);
@@ -44,7 +44,7 @@ contract TokenizationSpokeUpgradeableTest is TokenizationSpokeBaseTest {
         new TransparentUpgradeableProxy(
           address(vaultImpl),
           proxyAdminOwner,
-          abi.encodeCall(TokenizationSpokeInstance.initialize, (SHARE_NAME, SHARE_SYMBOL))
+          _getInitializeCalldata(SHARE_NAME, SHARE_SYMBOL)
         )
       )
     );
@@ -58,7 +58,9 @@ contract TokenizationSpokeUpgradeableTest is TokenizationSpokeBaseTest {
     assertEq(vaultProxy.symbol(), SHARE_SYMBOL);
   }
 
-  function test_proxy_reinitialization_fuzz(uint64 initialRevision) public {
+  function test_proxy_reinitialization_fuzz_revertsWith_HubAlreadySet(
+    uint64 initialRevision
+  ) public {
     initialRevision = uint64(bound(initialRevision, 1, type(uint64).max - 1));
     TokenizationSpokeInstance vaultImpl = _deployMockTokenizationSpokeInstance(initialRevision);
     ITransparentUpgradeableProxy vaultProxy = ITransparentUpgradeableProxy(
@@ -66,32 +68,20 @@ contract TokenizationSpokeUpgradeableTest is TokenizationSpokeBaseTest {
         new TransparentUpgradeableProxy(
           address(vaultImpl),
           proxyAdminOwner,
-          abi.encodeCall(TokenizationSpokeInstance.initialize, (SHARE_NAME, SHARE_SYMBOL))
+          _getInitializeCalldata(SHARE_NAME, SHARE_SYMBOL)
         )
       )
     );
 
-    string memory originalName = ITokenizationSpoke(address(vaultProxy)).name();
-
     uint64 secondRevision = uint64(vm.randomUint(initialRevision + 1, type(uint64).max));
     TokenizationSpokeInstance vaultImpl2 = _deployMockTokenizationSpokeInstance(secondRevision);
 
-    string memory newShareName = 'New Share Name';
-    string memory newShareSymbol = 'New Share Symbol';
-    vm.expectEmit(address(vaultProxy));
-    emit ITokenizationSpoke.SetTokenizationSpokeImmutables(address(hub1), daiAssetId);
-    vm.expectEmit(address(vaultProxy));
-    emit Initializable.Initialized(secondRevision);
-    vm.recordLogs();
+    vm.expectRevert(ITokenizationSpoke.HubAlreadySet.selector);
     vm.prank(ProxyHelper.getProxyAdmin(address(vaultProxy)));
     vaultProxy.upgradeToAndCall(
       address(vaultImpl2),
-      _getInitializeCalldata(newShareName, newShareSymbol)
+      _getInitializeCalldata('New Share Name', 'New Share Symbol')
     );
-
-    assertEq(ITokenizationSpoke(address(vaultProxy)).name(), newShareName);
-    assertEq(ITokenizationSpoke(address(vaultProxy)).symbol(), newShareSymbol);
-    assertNotEq(ITokenizationSpoke(address(vaultProxy)).name(), originalName);
   }
 
   function test_proxy_constructor_revertsWith_InvalidInitialization_ZeroRevision() public {
@@ -101,7 +91,7 @@ contract TokenizationSpokeUpgradeableTest is TokenizationSpokeBaseTest {
     new TransparentUpgradeableProxy(
       address(vaultImpl),
       proxyAdminOwner,
-      abi.encodeCall(TokenizationSpokeInstance.initialize, (SHARE_NAME, SHARE_SYMBOL))
+      _getInitializeCalldata(SHARE_NAME, SHARE_SYMBOL)
     );
   }
 
@@ -162,16 +152,17 @@ contract TokenizationSpokeUpgradeableTest is TokenizationSpokeBaseTest {
   function _getInitializeCalldata(
     string memory shareName,
     string memory shareSymbol
-  ) internal pure returns (bytes memory) {
-    return abi.encodeCall(TokenizationSpokeInstance.initialize, (shareName, shareSymbol));
+  ) internal view returns (bytes memory) {
+    return
+      abi.encodeCall(
+        TokenizationSpokeInstance.initialize,
+        (address(hub1), address(tokenList.dai), shareName, shareSymbol)
+      );
   }
 
   function _deployMockTokenizationSpokeInstance(
     uint64 revision
   ) internal returns (TokenizationSpokeInstance) {
-    return
-      TokenizationSpokeInstance(
-        address(new MockTokenizationSpokeInstance(revision, address(hub1), address(tokenList.dai)))
-      );
+    return TokenizationSpokeInstance(address(new MockTokenizationSpokeInstance(revision)));
   }
 }
