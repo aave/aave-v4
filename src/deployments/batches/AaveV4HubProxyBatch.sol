@@ -2,17 +2,17 @@
 pragma solidity ^0.8.0;
 
 import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
-import {AaveV4HubDeployProcedure} from 'src/deployments/procedures/deploy/hub/AaveV4HubDeployProcedure.sol';
+import {AaveV4HubProxyDeployProcedure} from 'src/deployments/procedures/deploy/hub/AaveV4HubProxyDeployProcedure.sol';
 import {AaveV4InterestRateStrategyDeployProcedure} from 'src/deployments/procedures/deploy/hub/AaveV4InterestRateStrategyDeployProcedure.sol';
 
-/// @title AaveV4HubInstanceBatch
+/// @title AaveV4HubProxyBatch
 /// @author Aave Labs
 /// @notice Deploys a Hub proxy for an already deployed implementation and the Hub's InterestRateStrategy.
-contract AaveV4HubInstanceBatch is
-  AaveV4HubDeployProcedure,
+contract AaveV4HubProxyBatch is
+  AaveV4HubProxyDeployProcedure,
   AaveV4InterestRateStrategyDeployProcedure
 {
-  BatchReports.HubInstanceBatchReport internal _report;
+  BatchReports.HubProxyBatchReport internal _report;
 
   /// @dev Constructor.
   /// @param proxyAdminOwner_ The owner of the proxy admin.
@@ -36,7 +36,7 @@ contract AaveV4HubInstanceBatch is
     });
     address irStrategy = _deployInterestRateStrategy({hub: hubProxy, salt: salt_});
 
-    _report = BatchReports.HubInstanceBatchReport({
+    _report = BatchReports.HubProxyBatchReport({
       hubImplementation: hubImplementation_,
       hubProxy: hubProxy,
       irStrategy: irStrategy
@@ -44,7 +44,7 @@ contract AaveV4HubInstanceBatch is
   }
 
   /// @notice Returns the batch deployment report.
-  function getReport() external view returns (BatchReports.HubInstanceBatchReport memory) {
+  function getReport() external view returns (BatchReports.HubProxyBatchReport memory) {
     return _report;
   }
 }

@@ -123,7 +123,7 @@ contract AaveV4AaveOracleBatchTest is BatchBaseTest {
       salt: spokeSalt
     });
     return
-      new AaveV4SpokeInstanceBatch({
+      new AaveV4SpokeProxyBatch({
         proxyAdminOwner_: admin,
         authority_: accessManager,
         spokeImplementation_: implementation,

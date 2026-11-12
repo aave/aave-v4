@@ -17,8 +17,8 @@ import {AaveV4HubConfiguratorRolesProcedure} from 'src/deployments/procedures/ro
 import {AaveV4SpokeConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeConfiguratorRolesProcedure.sol';
 import {AaveV4TreasurySpokeBatch} from 'src/deployments/batches/AaveV4TreasurySpokeBatch.sol';
 import {AaveV4AuthorityBatch} from 'src/deployments/batches/AaveV4AuthorityBatch.sol';
-import {AaveV4HubInstanceBatch} from 'src/deployments/batches/AaveV4HubInstanceBatch.sol';
-import {AaveV4SpokeInstanceBatch} from 'src/deployments/batches/AaveV4SpokeInstanceBatch.sol';
+import {AaveV4HubProxyBatch} from 'src/deployments/batches/AaveV4HubProxyBatch.sol';
+import {AaveV4SpokeProxyBatch} from 'src/deployments/batches/AaveV4SpokeProxyBatch.sol';
 import {TestTokensBatch} from 'tests/deployments/batches/TestTokensBatch.sol';
 import {AaveV4DeployBase} from 'src/deployments/orchestration/AaveV4DeployBase.sol';
 import {AaveV4HubImplementationDeployProcedure} from 'src/deployments/procedures/deploy/hub/AaveV4HubImplementationDeployProcedure.sol';
@@ -85,7 +85,7 @@ library AaveV4TestOrchestration {
 
     // Deploy Hub Batches
     for (uint256 i; i < hubCount; ++i) {
-      BatchReports.HubInstanceBatchReport memory hubReport = _deployHub({
+      BatchReports.HubProxyBatchReport memory hubReport = _deployHub({
         proxyAdminOwner: admin,
         authority: report.accessManager,
         hubBytecode: hubBytecode,
@@ -95,9 +95,9 @@ library AaveV4TestOrchestration {
       report.hubReports[i].irStrategy = hubReport.irStrategy;
     }
 
-    // Deploy Spoke Instance Batches
+    // Deploy Spoke Batches
     for (uint256 i; i < spokeCount; ++i) {
-      BatchReports.SpokeInstanceBatchReport memory spokeReport = _deploySpoke({
+      BatchReports.SpokeProxyBatchReport memory spokeReport = _deploySpoke({
         proxyAdminOwner: admin,
         authority: report.accessManager,
         spokeBytecode: spokeBytecode,
@@ -139,7 +139,7 @@ library AaveV4TestOrchestration {
     bytes32 salt
   ) external returns (TestTypes.TestHubReport memory) {
     TestTypes.TestHubReport memory report;
-    BatchReports.HubInstanceBatchReport memory hubReport = _deployHub({
+    BatchReports.HubProxyBatchReport memory hubReport = _deployHub({
       proxyAdminOwner: proxyAdminOwner,
       authority: accessManager,
       hubBytecode: hubBytecode,
@@ -159,7 +159,7 @@ library AaveV4TestOrchestration {
     bytes32 salt
   ) external returns (TestTypes.TestSpokeReport memory) {
     TestTypes.TestSpokeReport memory report;
-    BatchReports.SpokeInstanceBatchReport memory spokeReport = _deploySpoke({
+    BatchReports.SpokeProxyBatchReport memory spokeReport = _deploySpoke({
       proxyAdminOwner: proxyAdminOwner,
       authority: accessManager,
       spokeBytecode: spokeBytecode,
@@ -375,15 +375,15 @@ library AaveV4TestOrchestration {
     return assetIds;
   }
 
-  /// @dev Hub implementation, then the Hub instance batch, as in the deployment orchestration.
+  /// @dev Hub implementation, then the Hub proxy batch, as in the deployment orchestration.
   function _deployHub(
     address proxyAdminOwner,
     address authority,
     bytes memory hubBytecode,
     bytes32 salt
-  ) internal returns (BatchReports.HubInstanceBatchReport memory) {
+  ) internal returns (BatchReports.HubProxyBatchReport memory) {
     return
-      AaveV4DeployBase.deployHubInstanceBatch({
+      AaveV4DeployBase.deployHubProxyBatch({
         proxyAdminOwner: proxyAdminOwner,
         authority: authority,
         hubImplementation: AaveV4HubImplementationDeployProcedure.deployHubImplementation({
@@ -395,7 +395,7 @@ library AaveV4TestOrchestration {
       });
   }
 
-  /// @dev AaveOracle batch, Spoke implementation, Spoke instance batch, then `setSpoke`, as in the deployment
+  /// @dev AaveOracle batch, Spoke implementation, Spoke proxy batch, then `setSpoke`, as in the deployment
   ///      orchestration.
   function _deploySpoke(
     address proxyAdminOwner,
@@ -403,14 +403,14 @@ library AaveV4TestOrchestration {
     bytes memory spokeBytecode,
     uint16 maxUserReservesLimit,
     bytes32 salt
-  ) internal returns (BatchReports.SpokeInstanceBatchReport memory report) {
+  ) internal returns (BatchReports.SpokeProxyBatchReport memory report) {
     BatchReports.AaveOracleBatchReport memory aaveOracleReport = AaveV4DeployBase
       .deployAaveOracleBatch({
         owner: address(this),
         oracleDecimals: DeployConstants.ORACLE_DECIMALS,
         salt: salt
       });
-    report = AaveV4DeployBase.deploySpokeInstanceBatch({
+    report = AaveV4DeployBase.deploySpokeProxyBatch({
       proxyAdminOwner: proxyAdminOwner,
       authority: authority,
       spokeImplementation: AaveV4SpokeImplementationDeployProcedure.deploySpokeImplementation({

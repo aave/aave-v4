@@ -4,13 +4,13 @@ pragma solidity ^0.8.0;
 import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 import {ISpokeInstance} from 'src/deployments/utils/interfaces/ISpokeInstance.sol';
 
-/// @title AaveV4SpokeDeployProcedure
+/// @title AaveV4SpokeProxyDeployProcedure
 /// @author Aave Labs
 /// @notice Deploys the transparent proxy of a Spoke instance.
 /// @dev The implementation is deployed in its own transaction (see `AaveV4SpokeImplementationDeployProcedure.deploySpokeImplementation`)
 ///      so that each step fits on chains with a per-transaction gas cap. The implementation must be the CREATE2
 ///      deployment of `spokeInitCodeHash` under `salt`, which pins its exact code.
-contract AaveV4SpokeDeployProcedure {
+contract AaveV4SpokeProxyDeployProcedure {
   /// @notice Deploys a transparent proxy for an already deployed Spoke implementation via CREATE2.
   /// @param proxyAdminOwner The owner of the proxy admin contract.
   /// @param authority The access control authority address used to initialize the Spoke.

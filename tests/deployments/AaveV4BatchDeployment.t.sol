@@ -52,8 +52,8 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
 
     assertGt(first.spokeInstanceBatchReports.length, 0);
     for (uint256 i; i < first.spokeInstanceBatchReports.length; ++i) {
-      BatchReports.SpokeInstanceBatchReport memory a = first.spokeInstanceBatchReports[i].report;
-      BatchReports.SpokeInstanceBatchReport memory b = second.spokeInstanceBatchReports[i].report;
+      BatchReports.SpokeProxyBatchReport memory a = first.spokeInstanceBatchReports[i].report;
+      BatchReports.SpokeProxyBatchReport memory b = second.spokeInstanceBatchReports[i].report;
       assertEq(a.aaveOracle, b.aaveOracle, 'aave oracle');
       assertEq(a.spokeImplementation, b.spokeImplementation, 'spoke implementation');
       assertEq(a.spokeProxy, b.spokeProxy, 'spoke proxy');

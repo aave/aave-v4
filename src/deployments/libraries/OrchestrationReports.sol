@@ -11,14 +11,14 @@ library OrchestrationReports {
   /// @dev report The batch-level deployment report for this Spoke.
   struct SpokeDeploymentReport {
     string label;
-    BatchReports.SpokeInstanceBatchReport report;
+    BatchReports.SpokeProxyBatchReport report;
   }
 
   /// @dev label The Hub instance label.
   /// @dev report The batch-level deployment report for this Hub.
   struct HubDeploymentReport {
     string label;
-    BatchReports.HubInstanceBatchReport report;
+    BatchReports.HubProxyBatchReport report;
   }
 
   /// @dev authorityBatchReport AccessManager deployment report.

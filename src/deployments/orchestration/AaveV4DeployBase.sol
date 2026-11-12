@@ -8,10 +8,10 @@ import {AaveV4AuthorityBatch} from 'src/deployments/batches/AaveV4AuthorityBatch
 import {AaveV4HubConfiguratorBatch} from 'src/deployments/batches/AaveV4HubConfiguratorBatch.sol';
 import {AaveV4SpokeConfiguratorBatch} from 'src/deployments/batches/AaveV4SpokeConfiguratorBatch.sol';
 import {AaveV4GatewayBatch} from 'src/deployments/batches/AaveV4GatewayBatch.sol';
-import {AaveV4HubInstanceBatch} from 'src/deployments/batches/AaveV4HubInstanceBatch.sol';
+import {AaveV4HubProxyBatch} from 'src/deployments/batches/AaveV4HubProxyBatch.sol';
 import {AaveV4GiverTakerPositionManagerBatch} from 'src/deployments/batches/AaveV4GiverTakerPositionManagerBatch.sol';
 import {AaveV4ConfigPositionManagerBatch} from 'src/deployments/batches/AaveV4ConfigPositionManagerBatch.sol';
-import {AaveV4SpokeInstanceBatch} from 'src/deployments/batches/AaveV4SpokeInstanceBatch.sol';
+import {AaveV4SpokeProxyBatch} from 'src/deployments/batches/AaveV4SpokeProxyBatch.sol';
 import {AaveV4TokenizationSpokeBatch} from 'src/deployments/batches/AaveV4TokenizationSpokeBatch.sol';
 import {AaveV4TreasurySpokeBatch} from 'src/deployments/batches/AaveV4TreasurySpokeBatch.sol';
 import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
@@ -77,28 +77,28 @@ library AaveV4DeployBase {
     return treasurySpokeBatch.getReport();
   }
 
-  /// @notice Deploys the Hub instance batch containing the Hub proxy and IR strategy.
+  /// @notice Deploys the Hub proxy batch containing the Hub proxy and IR strategy.
   /// @param proxyAdminOwner The owner of the proxy admin.
   /// @param authority The access-control authority for the Hub.
   /// @param hubImplementation The address of the deployed Hub implementation.
   /// @param hubInitCodeHash The keccak256 hash of the Hub implementation creation bytecode.
   /// @param salt The CREATE2 salt for deterministic deployment.
-  /// @return The Hub instance batch report.
-  function deployHubInstanceBatch(
+  /// @return The Hub proxy batch report.
+  function deployHubProxyBatch(
     address proxyAdminOwner,
     address authority,
     address hubImplementation,
     bytes32 hubInitCodeHash,
     bytes32 salt
-  ) internal returns (BatchReports.HubInstanceBatchReport memory) {
-    AaveV4HubInstanceBatch hubInstanceBatch = new AaveV4HubInstanceBatch({
+  ) internal returns (BatchReports.HubProxyBatchReport memory) {
+    AaveV4HubProxyBatch hubProxyBatch = new AaveV4HubProxyBatch({
       proxyAdminOwner_: proxyAdminOwner,
       authority_: authority,
       hubImplementation_: hubImplementation,
       hubInitCodeHash_: hubInitCodeHash,
       salt_: salt
     });
-    return hubInstanceBatch.getReport();
+    return hubProxyBatch.getReport();
   }
 
   /// @notice Deploys the AaveOracle batch, which deploys a Spoke's AaveOracle and can bind it to the Spoke once.
@@ -134,29 +134,29 @@ library AaveV4DeployBase {
     AaveV4AaveOracleBatch(aaveOracleBatch).setSpoke(spoke);
   }
 
-  /// @notice Deploys the Spoke instance batch containing the Spoke proxy.
+  /// @notice Deploys the Spoke proxy batch containing the Spoke proxy.
   /// @param proxyAdminOwner The owner of the proxy admin.
   /// @param authority The access-control authority for the Spoke.
   /// @param spokeImplementation The address of the deployed Spoke implementation.
   /// @param spokeInitCodeHash The keccak256 hash of the Spoke implementation creation bytecode, constructor
   ///        arguments included.
   /// @param salt The CREATE2 salt for deterministic deployment.
-  /// @return The Spoke instance batch report.
-  function deploySpokeInstanceBatch(
+  /// @return The Spoke proxy batch report.
+  function deploySpokeProxyBatch(
     address proxyAdminOwner,
     address authority,
     address spokeImplementation,
     bytes32 spokeInitCodeHash,
     bytes32 salt
-  ) internal returns (BatchReports.SpokeInstanceBatchReport memory) {
-    AaveV4SpokeInstanceBatch spokeInstanceBatch = new AaveV4SpokeInstanceBatch({
+  ) internal returns (BatchReports.SpokeProxyBatchReport memory) {
+    AaveV4SpokeProxyBatch spokeProxyBatch = new AaveV4SpokeProxyBatch({
       proxyAdminOwner_: proxyAdminOwner,
       authority_: authority,
       spokeImplementation_: spokeImplementation,
       spokeInitCodeHash_: spokeInitCodeHash,
       salt_: salt
     });
-    return spokeInstanceBatch.getReport();
+    return spokeProxyBatch.getReport();
   }
 
   /// @notice Deploys the batch containing GiverPositionManager and TakerPositionManager.

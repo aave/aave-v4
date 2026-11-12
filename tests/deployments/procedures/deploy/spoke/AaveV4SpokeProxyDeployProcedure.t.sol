@@ -3,14 +3,14 @@ pragma solidity ^0.8.0;
 
 import 'tests/deployments/procedures/ProceduresBase.t.sol';
 
-contract AaveV4SpokeDeployProcedureTest is ProceduresBase {
-  AaveV4SpokeDeployProcedureWrapper public aaveV4SpokeDeployProcedureWrapper;
+contract AaveV4SpokeProxyDeployProcedureTest is ProceduresBase {
+  AaveV4SpokeProxyDeployProcedureWrapper public aaveV4SpokeDeployProcedureWrapper;
   address public spokeImplementation;
   bytes32 public spokeInitCodeHash;
 
   function setUp() public override {
     super.setUp();
-    aaveV4SpokeDeployProcedureWrapper = new AaveV4SpokeDeployProcedureWrapper();
+    aaveV4SpokeDeployProcedureWrapper = new AaveV4SpokeProxyDeployProcedureWrapper();
     bytes memory spokeInitCode = abi.encodePacked(
       spokeBytecode,
       abi.encode(aaveOracle, maxUserReservesLimit)

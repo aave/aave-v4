@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {AaveV4SpokeDeployProcedure} from 'src/deployments/procedures/deploy/spoke/AaveV4SpokeDeployProcedure.sol';
+import {AaveV4SpokeProxyDeployProcedure} from 'src/deployments/procedures/deploy/spoke/AaveV4SpokeProxyDeployProcedure.sol';
 
-contract AaveV4SpokeDeployProcedureWrapper is AaveV4SpokeDeployProcedure {
+contract AaveV4SpokeProxyDeployProcedureWrapper is AaveV4SpokeProxyDeployProcedure {
   bool public IS_TEST = true;
 
   function deploySpokeProxy(

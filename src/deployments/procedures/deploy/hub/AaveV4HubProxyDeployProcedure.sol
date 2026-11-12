@@ -4,13 +4,13 @@ pragma solidity ^0.8.0;
 import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 import {IHubInstance} from 'src/deployments/utils/interfaces/IHubInstance.sol';
 
-/// @title AaveV4HubDeployProcedure
+/// @title AaveV4HubProxyDeployProcedure
 /// @author Aave Labs
 /// @notice Deploys the transparent proxy of a Hub instance.
 /// @dev The implementation is deployed in its own transaction (see `AaveV4HubImplementationDeployProcedure.deployHubImplementation`)
 ///      so that each step fits on chains with a per-transaction gas cap. The implementation must be the CREATE2
 ///      deployment of `hubInitCodeHash` under `salt`, which pins its exact code.
-contract AaveV4HubDeployProcedure {
+contract AaveV4HubProxyDeployProcedure {
   /// @notice Deploys a transparent proxy for an already deployed Hub implementation via CREATE2.
   /// @param proxyAdminOwner The owner of the proxy admin contract.
   /// @param authority The access control authority address used to initialize the Hub.

@@ -16,7 +16,7 @@ contract AaveV4TokenizationSpokeDeployProcedureTest is ProceduresBase {
     wrapper = new AaveV4TokenizationSpokeDeployProcedureWrapper();
 
     // TokenizationSpokeInstance constructor requires hub
-    BatchReports.HubInstanceBatchReport memory hubReport = AaveV4DeployBase.deployHubInstanceBatch({
+    BatchReports.HubProxyBatchReport memory hubReport = AaveV4DeployBase.deployHubProxyBatch({
       proxyAdminOwner: admin,
       authority: accessManager,
       hubImplementation: AaveV4HubImplementationDeployProcedure.deployHubImplementation({

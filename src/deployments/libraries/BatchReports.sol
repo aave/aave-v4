@@ -30,7 +30,7 @@ library BatchReports {
   /// @dev spokeProxy The deployed Spoke proxy contract address.
   /// @dev spokeImplementation The deployed Spoke implementation contract address.
   /// @dev aaveOracle The AaveOracle used by the Spoke, deployed beforehand by `AaveV4AaveOracleBatch`.
-  struct SpokeInstanceBatchReport {
+  struct SpokeProxyBatchReport {
     address spokeProxy;
     address spokeImplementation;
     address aaveOracle;
@@ -39,7 +39,7 @@ library BatchReports {
   /// @dev hubProxy The deployed Hub proxy contract address.
   /// @dev hubImplementation The deployed Hub implementation contract address.
   /// @dev irStrategy The deployed InterestRateStrategy contract address.
-  struct HubInstanceBatchReport {
+  struct HubProxyBatchReport {
     address hubProxy;
     address hubImplementation;
     address irStrategy;

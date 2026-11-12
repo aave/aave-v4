@@ -43,7 +43,7 @@ Large contracts are spread over several transactions, so that each transaction f
 
 On Glamsterdam about 97% of each deployment transaction's gas is state gas, and none uses more than 1.4M execution gas, so the 16,777,216 cap does not bind. The block gas limit does.
 
-A 24 KB implementation alone takes about 26M gas on Tempo and 38M on Glamsterdam, so each one gets its own transaction: Hub and Spoke implementations are deployed directly by the deployer through library procedures. The configurators take two batches: `AaveV4HubConfiguratorBatch` and `AaveV4SpokeConfiguratorBatch`. The position managers also take two: `AaveV4GiverTakerPositionManagerBatch` deploys GiverPositionManager and TakerPositionManager together, and `AaveV4ConfigPositionManagerBatch` deploys ConfigPositionManager. Each Spoke takes four transactions. `AaveV4AaveOracleBatch` deploys its AaveOracle first, because the Spoke implementation reads the oracle in its constructor. The Spoke implementation follows, then `AaveV4SpokeInstanceBatch` deploys the Spoke proxy, and `AaveV4AaveOracleBatch.setSpoke` binds the oracle to it. The largest transactions are the implementations: the Spoke implementation takes about 27.3M gas on Tempo, and the Hub and Spoke implementations take 38.0M and 37.9M on Glamsterdam.
+A 24 KB implementation alone takes about 26M gas on Tempo and 38M on Glamsterdam, so each one gets its own transaction: Hub and Spoke implementations are deployed directly by the deployer through library procedures. The configurators take two batches: `AaveV4HubConfiguratorBatch` and `AaveV4SpokeConfiguratorBatch`. The position managers also take two: `AaveV4GiverTakerPositionManagerBatch` deploys GiverPositionManager and TakerPositionManager together, and `AaveV4ConfigPositionManagerBatch` deploys ConfigPositionManager. Each Spoke takes four transactions. `AaveV4AaveOracleBatch` deploys its AaveOracle first, because the Spoke implementation reads the oracle in its constructor. The Spoke implementation follows, then `AaveV4SpokeProxyBatch` deploys the Spoke proxy, and `AaveV4AaveOracleBatch.setSpoke` binds the oracle to it. The largest transactions are the implementations: the Spoke implementation takes about 27.3M gas on Tempo, and the Hub and Spoke implementations take 38.0M and 37.9M on Glamsterdam.
 
 Foundry's default gas limit is 130% of the estimate. That exceeds Tempo's 30M cap for the implementations, so on Tempo pass a lower multiplier, e.g. `--gas-estimate-multiplier 105`. On Glamsterdam the default fits a 60M block: the largest gas limit is about 49.4M.
 
@@ -82,9 +82,9 @@ src/deployments/
     AaveV4HubConfiguratorBatch          HubConfigurator
     AaveV4SpokeConfiguratorBatch        SpokeConfigurator
     AaveV4TreasurySpokeBatch            TreasurySpoke (single instance, proxy + impl)
-    AaveV4HubInstanceBatch              HubInstance proxy (impl deployed beforehand), InterestRateStrategy
+    AaveV4HubProxyBatch                 HubInstance proxy (impl deployed beforehand), InterestRateStrategy
     AaveV4AaveOracleBatch               AaveOracle; binds it to the SpokeInstance proxy once, owner-only
-    AaveV4SpokeInstanceBatch            SpokeInstance proxy (impl and AaveOracle deployed beforehand)
+    AaveV4SpokeProxyBatch               SpokeInstance proxy (impl and AaveOracle deployed beforehand)
     AaveV4GatewayBatch                  NativeTokenGateway, SignatureGateway
     AaveV4GiverTakerPositionManagerBatch GiverPositionManager, TakerPositionManager
     AaveV4ConfigPositionManagerBatch    ConfigPositionManager
@@ -230,10 +230,10 @@ AaveV4DeployBatchBase.s.sol                         (Foundry script entry point)
     |     |       _deployHubImplementation()
     |     |         AaveV4HubImplementationDeployProcedure.deployHubImplementation()
     |     |           Create2Utils.create2Deploy() --> HubInstance (impl)
-    |     |       _deployHubInstanceBatch()
-    |     |         AaveV4DeployBase.deployHubInstanceBatch()
-    |     |           new AaveV4HubInstanceBatch(proxyAdmin, authority, hubImpl, hubInitCodeHash, salt)
-    |     |             AaveV4HubDeployProcedure._deployHubProxy()
+    |     |       _deployHubProxyBatch()
+    |     |         AaveV4DeployBase.deployHubProxyBatch()
+    |     |           new AaveV4HubProxyBatch(proxyAdmin, authority, hubImpl, hubInitCodeHash, salt)
+    |     |             AaveV4HubProxyDeployProcedure._deployHubProxy()
     |     |               Create2Utils.proxify()    --> HubInstance (proxy)
     |     |             Create2Utils.create2Deploy() --> InterestRateStrategy
     |     |       _setupHubRoles()
@@ -249,10 +249,10 @@ AaveV4DeployBatchBase.s.sol                         (Foundry script entry point)
     |     |       _deploySpokeImplementation()
     |     |         AaveV4SpokeImplementationDeployProcedure.deploySpokeImplementation()
     |     |           Create2Utils.create2Deploy() --> SpokeInstance (impl)
-    |     |       _deploySpokeInstanceBatch()
-    |     |         AaveV4DeployBase.deploySpokeInstanceBatch()
-    |     |           new AaveV4SpokeInstanceBatch(proxyAdmin, authority, spokeImpl, spokeInitCodeHash, salt)
-    |     |             AaveV4SpokeDeployProcedure._deploySpokeProxy()
+    |     |       _deploySpokeProxyBatch()
+    |     |         AaveV4DeployBase.deploySpokeProxyBatch()
+    |     |           new AaveV4SpokeProxyBatch(proxyAdmin, authority, spokeImpl, spokeInitCodeHash, salt)
+    |     |             AaveV4SpokeProxyDeployProcedure._deploySpokeProxy()
     |     |               Create2Utils.proxify()    --> SpokeInstance (proxy)
     |     |       _setAaveOracleSpoke()
     |     |         AaveV4DeployBase.setAaveOracleSpoke()

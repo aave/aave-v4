@@ -3,9 +3,9 @@ pragma solidity ^0.8.0;
 
 import 'tests/deployments/batches/BatchBase.t.sol';
 
-contract AaveV4SpokeInstanceBatchTest is BatchBaseTest {
-  AaveV4SpokeInstanceBatch public spokeBatch;
-  BatchReports.SpokeInstanceBatchReport public report;
+contract AaveV4SpokeProxyBatchTest is BatchBaseTest {
+  AaveV4SpokeProxyBatch public spokeBatch;
+  BatchReports.SpokeProxyBatchReport public report;
   address public aaveOracle;
   address public spokeImplementation;
 
@@ -13,7 +13,7 @@ contract AaveV4SpokeInstanceBatchTest is BatchBaseTest {
     super.setUp();
     aaveOracle = _deployOracle(salt);
     spokeImplementation = _deploySpokeImplementation(aaveOracle, salt);
-    spokeBatch = new AaveV4SpokeInstanceBatch({
+    spokeBatch = new AaveV4SpokeProxyBatch({
       proxyAdminOwner_: admin,
       authority_: accessManager,
       spokeImplementation_: spokeImplementation,
@@ -47,7 +47,7 @@ contract AaveV4SpokeInstanceBatchTest is BatchBaseTest {
 
   function test_revert_zeroAuthority() public {
     vm.expectRevert('invalid authority');
-    new AaveV4SpokeInstanceBatch({
+    new AaveV4SpokeProxyBatch({
       proxyAdminOwner_: admin,
       authority_: address(0),
       spokeImplementation_: spokeImplementation,
@@ -58,7 +58,7 @@ contract AaveV4SpokeInstanceBatchTest is BatchBaseTest {
 
   function test_revert_zeroProxyAdminOwner() public {
     vm.expectRevert('invalid proxy admin owner');
-    new AaveV4SpokeInstanceBatch({
+    new AaveV4SpokeProxyBatch({
       proxyAdminOwner_: address(0),
       authority_: accessManager,
       spokeImplementation_: spokeImplementation,
@@ -69,7 +69,7 @@ contract AaveV4SpokeInstanceBatchTest is BatchBaseTest {
 
   function test_revert_invalidSpokeImplementation() public {
     vm.expectRevert('invalid spoke implementation');
-    new AaveV4SpokeInstanceBatch({
+    new AaveV4SpokeProxyBatch({
       proxyAdminOwner_: admin,
       authority_: accessManager,
       spokeImplementation_: makeAddr('noCode'),
@@ -82,7 +82,7 @@ contract AaveV4SpokeInstanceBatchTest is BatchBaseTest {
     bytes32 otherSalt = keccak256('undeployedSalt');
     bytes32 initCodeHash = _spokeInitCodeHash(aaveOracle);
     vm.expectRevert('invalid spoke implementation');
-    new AaveV4SpokeInstanceBatch({
+    new AaveV4SpokeProxyBatch({
       proxyAdminOwner_: admin,
       authority_: accessManager,
       spokeImplementation_: Create2Utils.computeCreate2Address(otherSalt, initCodeHash),
@@ -93,7 +93,7 @@ contract AaveV4SpokeInstanceBatchTest is BatchBaseTest {
 
   function test_revert_spokeImplementationCodeMismatch() public {
     vm.expectRevert('invalid spoke implementation');
-    new AaveV4SpokeInstanceBatch({
+    new AaveV4SpokeProxyBatch({
       proxyAdminOwner_: admin,
       authority_: accessManager,
       spokeImplementation_: spokeImplementation,

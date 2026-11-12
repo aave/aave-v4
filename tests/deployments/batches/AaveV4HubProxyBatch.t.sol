@@ -3,9 +3,9 @@ pragma solidity ^0.8.0;
 
 import 'tests/deployments/batches/BatchBase.t.sol';
 
-contract AaveV4HubInstanceBatchTest is BatchBaseTest {
-  AaveV4HubInstanceBatch public hubInstanceBatch;
-  BatchReports.HubInstanceBatchReport public report;
+contract AaveV4HubProxyBatchTest is BatchBaseTest {
+  AaveV4HubProxyBatch public hubProxyBatch;
+  BatchReports.HubProxyBatchReport public report;
   address public hubImplementation;
 
   function setUp() public override {
@@ -14,14 +14,14 @@ contract AaveV4HubInstanceBatchTest is BatchBaseTest {
       hubBytecode,
       salt
     );
-    hubInstanceBatch = new AaveV4HubInstanceBatch({
+    hubProxyBatch = new AaveV4HubProxyBatch({
       proxyAdminOwner_: admin,
       authority_: accessManager,
       hubImplementation_: hubImplementation,
       hubInitCodeHash_: keccak256(hubBytecode),
       salt_: salt
     });
-    report = hubInstanceBatch.getReport();
+    report = hubProxyBatch.getReport();
   }
 
   function test_getReport() public view {
@@ -49,7 +49,7 @@ contract AaveV4HubInstanceBatchTest is BatchBaseTest {
 
   function test_revert_zeroAuthority() public {
     vm.expectRevert('invalid authority');
-    new AaveV4HubInstanceBatch({
+    new AaveV4HubProxyBatch({
       proxyAdminOwner_: admin,
       authority_: address(0),
       hubImplementation_: hubImplementation,
@@ -60,7 +60,7 @@ contract AaveV4HubInstanceBatchTest is BatchBaseTest {
 
   function test_revert_zeroProxyAdminOwner() public {
     vm.expectRevert('invalid proxy admin owner');
-    new AaveV4HubInstanceBatch({
+    new AaveV4HubProxyBatch({
       proxyAdminOwner_: address(0),
       authority_: accessManager,
       hubImplementation_: hubImplementation,
@@ -71,7 +71,7 @@ contract AaveV4HubInstanceBatchTest is BatchBaseTest {
 
   function test_revert_invalidHubImplementation() public {
     vm.expectRevert('invalid hub implementation');
-    new AaveV4HubInstanceBatch({
+    new AaveV4HubProxyBatch({
       proxyAdminOwner_: admin,
       authority_: accessManager,
       hubImplementation_: makeAddr('noCode'),
@@ -83,7 +83,7 @@ contract AaveV4HubInstanceBatchTest is BatchBaseTest {
   function test_revert_undeployedHubImplementation() public {
     bytes32 otherSalt = keccak256('differentSalt');
     vm.expectRevert('invalid hub implementation');
-    new AaveV4HubInstanceBatch({
+    new AaveV4HubProxyBatch({
       proxyAdminOwner_: admin,
       authority_: accessManager,
       hubImplementation_: Create2Utils.computeCreate2Address(otherSalt, hubBytecode),
@@ -94,7 +94,7 @@ contract AaveV4HubInstanceBatchTest is BatchBaseTest {
 
   function test_revert_hubImplementationCodeMismatch() public {
     vm.expectRevert('invalid hub implementation');
-    new AaveV4HubInstanceBatch({
+    new AaveV4HubProxyBatch({
       proxyAdminOwner_: admin,
       authority_: accessManager,
       hubImplementation_: hubImplementation,
@@ -105,7 +105,7 @@ contract AaveV4HubInstanceBatchTest is BatchBaseTest {
 
   function test_differentSaltProducesDifferentAddress() public {
     bytes32 otherSalt = keccak256('differentSalt');
-    AaveV4HubInstanceBatch newBatch = new AaveV4HubInstanceBatch({
+    AaveV4HubProxyBatch newBatch = new AaveV4HubProxyBatch({
       proxyAdminOwner_: admin,
       authority_: accessManager,
       hubImplementation_: AaveV4HubImplementationDeployProcedure.deployHubImplementation(
