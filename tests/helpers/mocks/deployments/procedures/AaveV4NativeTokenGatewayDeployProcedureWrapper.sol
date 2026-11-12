@@ -11,6 +11,7 @@ contract AaveV4NativeTokenGatewayDeployProcedureWrapper {
     address owner,
     bytes32 salt
   ) external returns (address) {
-    return AaveV4NativeTokenGatewayDeployProcedure.deployNativeTokenGateway(nativeWrapper, owner, salt);
+    return
+      AaveV4NativeTokenGatewayDeployProcedure.deployNativeTokenGateway(nativeWrapper, owner, salt);
   }
 }

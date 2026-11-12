@@ -12,6 +12,12 @@ contract AaveV4HubDeployProcedureWrapper {
     bytes memory hubBytecode,
     bytes32 salt
   ) external returns (address hubProxy, address hubImplementation) {
-    return AaveV4HubDeployProcedure.deployUpgradeableHubInstance(proxyAdminOwner, authority, hubBytecode, salt);
+    return
+      AaveV4HubDeployProcedure.deployUpgradeableHubInstance(
+        proxyAdminOwner,
+        authority,
+        hubBytecode,
+        salt
+      );
   }
 }
