@@ -1,0 +1,45 @@
+src/deployments/procedures/deploy/AaveV4AccessManagerEnumerableDeployProcedure.sol
+  s_baa2e306a9ce7e::t_7a5ba3fb760013 7
+src/deployments/procedures/deploy/hub/AaveV4HubConfiguratorDeployProcedure.sol
+  s_baa2e306a9ce7e::t_9fc5028b226760 7
+src/deployments/procedures/deploy/hub/AaveV4HubDeployProcedure.sol
+  s_baa2e306a9ce7e::t_bb54e116b59c83 7
+src/deployments/procedures/deploy/hub/AaveV4InterestRateStrategyDeployProcedure.sol
+  s_baa2e306a9ce7e::t_7f788211db1a2e 7
+src/deployments/procedures/deploy/position-manager/AaveV4ConfigPositionManagerDeployProcedure.sol
+  s_baa2e306a9ce7e::t_01e41c79172ae7 7
+src/deployments/procedures/deploy/position-manager/AaveV4GiverPositionManagerDeployProcedure.sol
+  s_baa2e306a9ce7e::t_ac3c3c26232618 7
+src/deployments/procedures/deploy/position-manager/AaveV4NativeTokenGatewayDeployProcedure.sol
+  s_baa2e306a9ce7e::t_3fbd7d2ed97108 7
+src/deployments/procedures/deploy/position-manager/AaveV4SignatureGatewayDeployProcedure.sol
+  s_baa2e306a9ce7e::t_6edadb77ccf835 7
+src/deployments/procedures/deploy/position-manager/AaveV4TakerPositionManagerDeployProcedure.sol
+  s_baa2e306a9ce7e::t_77688cd4a49cbe 7
+src/deployments/procedures/deploy/spoke/AaveV4AaveOracleDeployProcedure.sol
+  s_baa2e306a9ce7e::t_59d95dddae3109 7
+src/deployments/procedures/deploy/spoke/AaveV4SpokeConfiguratorDeployProcedure.sol
+  s_baa2e306a9ce7e::t_653d0396af36a7 6
+src/deployments/procedures/deploy/spoke/AaveV4SpokeDeployProcedure.sol
+  s_baa2e306a9ce7e::t_9d4cb331a91386 7
+src/deployments/procedures/deploy/spoke/AaveV4TokenizationSpokeDeployProcedure.sol
+  s_baa2e306a9ce7e::t_6bf5ceefe9e553 9
+src/deployments/procedures/deploy/spoke/AaveV4TreasurySpokeDeployProcedure.sol
+  s_baa2e306a9ce7e::t_ca9dbdc829aa60 7
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "239e7ef1578fcff50d555e481cada8f1577ef4a0",
+  "prompts": {},
+  "sessions": {
+    "s_baa2e306a9ce7e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5fe9b53d-b377-4c11-b688-c311ccd286f9",
+        "model": "claude-fable-5-2"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}
