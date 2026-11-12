@@ -70,8 +70,7 @@ src/deployments/
     roles/                    Role setup procedures per component
 
   libraries/
-    BatchReports              Report structs for each deployment step (names kept from the removed batches)
-    OrchestrationReports      Full deployment report aggregation
+    OrchestrationReports      Deployment report structs (all deployed addresses)
     ConfigData                Parameter structs for config operations
 
   utils/
@@ -192,27 +191,25 @@ AaveV4DeployBatchBase.s.sol                         (Foundry script entry point)
     |     |
     |     +-- _deployHubs(hubLabels)                for each hub label:
     |     |     _deployHub()
-    |     |       _deployHubInstance()
-    |     |         AaveV4HubDeployProcedure.deployUpgradeableHubInstance()
-    |     |           Create2Utils.create2Deploy() --> HubInstance impl
-    |     |           Create2Utils.proxify()       --> HubInstance proxy
-    |     |         AaveV4InterestRateStrategyDeployProcedure.deployInterestRateStrategy()
-    |     |           Create2Utils.create2Deploy() --> InterestRateStrategy
+    |     |       AaveV4HubDeployProcedure.deployUpgradeableHubInstance()
+    |     |         Create2Utils.create2Deploy() --> HubInstance impl
+    |     |         Create2Utils.proxify()       --> HubInstance proxy
+    |     |       AaveV4InterestRateStrategyDeployProcedure.deployInterestRateStrategy()
+    |     |         Create2Utils.create2Deploy() --> InterestRateStrategy
     |     |       _setupHubRoles()
     |     |         AaveV4HubRolesProcedure.setupHubAllRoles()
     |     |           AccessManager.setTargetFunctionRole()  (selector -> role mappings for Hub)
     |     |
     |     +-- _deploySpokes(spokeLabels)            for each spoke label:
     |     |     _deploySpoke()
-    |     |       _deploySpokeInstance()
-    |     |         AaveV4AaveOracleDeployProcedure.deployAaveOracle()
-    |     |           Create2Utils.create2Deploy() --> AaveV4AaveOracleDeployer(owner = deployer, ...)
-    |     |             new AaveOracle{salt}()     (deployer = AaveV4AaveOracleDeployer)
-    |     |         AaveV4SpokeDeployProcedure.deployUpgradeableSpokeInstance()
-    |     |           Create2Utils.create2Deploy() --> SpokeInstance impl (takes the AaveOracle)
-    |     |           Create2Utils.proxify()       --> SpokeInstance proxy
-    |     |         AaveV4AaveOracleDeployProcedure.setAaveOracleSpoke()
-    |     |           AaveV4AaveOracleDeployer.setSpoke() --> AaveOracle.setSpoke()
+    |     |       AaveV4AaveOracleDeployProcedure.deployAaveOracle()
+    |     |         Create2Utils.create2Deploy() --> AaveV4AaveOracleDeployer(owner = deployer, ...)
+    |     |           new AaveOracle{salt}()     (deployer = AaveV4AaveOracleDeployer)
+    |     |       AaveV4SpokeDeployProcedure.deployUpgradeableSpokeInstance()
+    |     |         Create2Utils.create2Deploy() --> SpokeInstance impl (takes the AaveOracle)
+    |     |         Create2Utils.proxify()       --> SpokeInstance proxy
+    |     |       AaveV4AaveOracleDeployProcedure.setAaveOracleSpoke()
+    |     |         AaveV4AaveOracleDeployer.setSpoke() --> AaveOracle.setSpoke()
     |     |       _setupSpokeRoles()
     |     |         AaveV4SpokeRolesProcedure.setupSpokeAllRoles()
     |     |           AccessManager.setTargetFunctionRole()  (selector -> role mappings for Spoke)

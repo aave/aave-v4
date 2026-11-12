@@ -1,42 +1,56 @@
 // SPDX-License-Identifier: LicenseRef-BUSL
 pragma solidity ^0.8.0;
 
-import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
-
 /// @title OrchestrationReports Library
 /// @author Aave Labs
-/// @notice Aggregated deployment reports produced by the orchestration layer.
+/// @notice Deployment reports produced by the orchestration layer, holding the deployed contract addresses.
 library OrchestrationReports {
   /// @dev label The Spoke instance label.
-  /// @dev report The batch-level deployment report for this Spoke.
+  /// @dev spokeProxy The deployed Spoke proxy contract address.
+  /// @dev spokeImplementation The deployed Spoke implementation contract address.
+  /// @dev aaveOracle The deployed AaveOracle contract address.
   struct SpokeDeploymentReport {
     string label;
-    BatchReports.SpokeInstanceBatchReport report;
+    address spokeProxy;
+    address spokeImplementation;
+    address aaveOracle;
   }
 
   /// @dev label The Hub instance label.
-  /// @dev report The batch-level deployment report for this Hub.
+  /// @dev hubProxy The deployed Hub proxy contract address.
+  /// @dev hubImplementation The deployed Hub implementation contract address.
+  /// @dev irStrategy The deployed InterestRateStrategy contract address.
   struct HubDeploymentReport {
     string label;
-    BatchReports.HubInstanceBatchReport report;
+    address hubProxy;
+    address hubImplementation;
+    address irStrategy;
   }
 
-  /// @dev authorityBatchReport AccessManager deployment report.
-  /// @dev configuratorBatchReport Configurator deployment report.
-  /// @dev treasurySpokeBatchReport TreasurySpoke deployment report.
-  /// @dev spokeInstanceBatchReports Per-spoke deployment reports.
-  /// @dev hubInstanceBatchReports Per-hub deployment reports.
-  /// @dev gatewaysBatchReport Gateway deployment report.
-  /// @dev positionManagerBatchReport PositionManager deployment report.
   /// @dev salt The salt used to derive deterministic contract addresses.
+  /// @dev accessManager The deployed AccessManagerEnumerable contract address.
+  /// @dev hubConfigurator The deployed HubConfigurator contract address.
+  /// @dev spokeConfigurator The deployed SpokeConfigurator contract address.
+  /// @dev treasurySpoke The deployed TreasurySpoke contract address.
+  /// @dev hubs Per-hub deployment reports.
+  /// @dev spokes Per-spoke deployment reports.
+  /// @dev signatureGateway The deployed SignatureGateway contract address, zero if not deployed.
+  /// @dev nativeGateway The deployed NativeTokenGateway contract address, zero if not deployed.
+  /// @dev giverPositionManager The deployed GiverPositionManager contract address, zero if not deployed.
+  /// @dev takerPositionManager The deployed TakerPositionManager contract address, zero if not deployed.
+  /// @dev configPositionManager The deployed ConfigPositionManager contract address, zero if not deployed.
   struct FullDeploymentReport {
-    BatchReports.AuthorityBatchReport authorityBatchReport;
-    BatchReports.ConfiguratorBatchReport configuratorBatchReport;
-    BatchReports.TreasurySpokeBatchReport treasurySpokeBatchReport;
-    SpokeDeploymentReport[] spokeInstanceBatchReports;
-    HubDeploymentReport[] hubInstanceBatchReports;
-    BatchReports.GatewaysBatchReport gatewaysBatchReport;
-    BatchReports.PositionManagerBatchReport positionManagerBatchReport;
     bytes32 salt;
+    address accessManager;
+    address hubConfigurator;
+    address spokeConfigurator;
+    address treasurySpoke;
+    HubDeploymentReport[] hubs;
+    SpokeDeploymentReport[] spokes;
+    address signatureGateway;
+    address nativeGateway;
+    address giverPositionManager;
+    address takerPositionManager;
+    address configPositionManager;
   }
 }

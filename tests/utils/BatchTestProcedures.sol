@@ -97,13 +97,13 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     OrchestrationReports.FullDeploymentReport memory report
   ) internal view {
     assertEq(
-      IAccessManaged(report.configuratorBatchReport.hubConfigurator).authority(),
-      report.authorityBatchReport.accessManager,
+      IAccessManaged(report.hubConfigurator).authority(),
+      report.accessManager,
       'HubConfigurator authority'
     );
     assertEq(
-      IAccessManaged(report.configuratorBatchReport.spokeConfigurator).authority(),
-      report.authorityBatchReport.accessManager,
+      IAccessManaged(report.spokeConfigurator).authority(),
+      report.accessManager,
       'SpokeConfigurator authority'
     );
   }
@@ -114,7 +114,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
   ) internal view {
     if (inputs.deployNativeTokenGateway && !_skipNativeWrapperCheck) {
       assertEq(
-        INativeTokenGateway(report.gatewaysBatchReport.nativeGateway).NATIVE_TOKEN_WRAPPER(),
+        INativeTokenGateway(report.nativeGateway).NATIVE_TOKEN_WRAPPER(),
         inputs.nativeWrapper,
         'NativeGateway NATIVE_TOKEN_WRAPPER'
       );
@@ -125,9 +125,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     OrchestrationReports.FullDeploymentReport memory report,
     InputUtils.FullDeployInputs memory inputs
   ) internal view {
-    IAccessManagerEnumerable accessManager = IAccessManagerEnumerable(
-      report.authorityBatchReport.accessManager
-    );
+    IAccessManagerEnumerable accessManager = IAccessManagerEnumerable(report.accessManager);
     _checkAccessManagerRoles(accessManager, inputs);
     _checkRoleLabels(accessManager);
     _checkSpokeRoles(accessManager, report, inputs);
@@ -188,81 +186,41 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     InputUtils.FullDeployInputs memory inputs
   ) internal pure {
     if (inputs.deployNativeTokenGateway) {
-      assertNotEq(report.gatewaysBatchReport.nativeGateway, address(0), 'NativeGateway');
+      assertNotEq(report.nativeGateway, address(0), 'NativeGateway');
     } else {
-      assertEq(report.gatewaysBatchReport.nativeGateway, address(0), 'Zero NativeGateway');
+      assertEq(report.nativeGateway, address(0), 'Zero NativeGateway');
     }
     if (inputs.deploySignatureGateway) {
-      assertNotEq(report.gatewaysBatchReport.signatureGateway, address(0), 'SignatureGateway');
+      assertNotEq(report.signatureGateway, address(0), 'SignatureGateway');
     } else {
-      assertEq(report.gatewaysBatchReport.signatureGateway, address(0), 'Zero SignatureGateway');
+      assertEq(report.signatureGateway, address(0), 'Zero SignatureGateway');
     }
     if (inputs.deployPositionManagers) {
-      assertNotEq(
-        report.positionManagerBatchReport.giverPositionManager,
-        address(0),
-        'GiverPositionManager'
-      );
-      assertNotEq(
-        report.positionManagerBatchReport.takerPositionManager,
-        address(0),
-        'TakerPositionManager'
-      );
-      assertNotEq(
-        report.positionManagerBatchReport.configPositionManager,
-        address(0),
-        'ConfigPositionManager'
-      );
+      assertNotEq(report.giverPositionManager, address(0), 'GiverPositionManager');
+      assertNotEq(report.takerPositionManager, address(0), 'TakerPositionManager');
+      assertNotEq(report.configPositionManager, address(0), 'ConfigPositionManager');
     } else {
-      assertEq(
-        report.positionManagerBatchReport.giverPositionManager,
-        address(0),
-        'Zero GiverPositionManager'
-      );
-      assertEq(
-        report.positionManagerBatchReport.takerPositionManager,
-        address(0),
-        'Zero TakerPositionManager'
-      );
-      assertEq(
-        report.positionManagerBatchReport.configPositionManager,
-        address(0),
-        'Zero ConfigPositionManager'
-      );
+      assertEq(report.giverPositionManager, address(0), 'Zero GiverPositionManager');
+      assertEq(report.takerPositionManager, address(0), 'Zero TakerPositionManager');
+      assertEq(report.configPositionManager, address(0), 'Zero ConfigPositionManager');
     }
 
-    assertNotEq(report.authorityBatchReport.accessManager, address(0), 'AccessManager');
-    assertNotEq(report.configuratorBatchReport.spokeConfigurator, address(0), 'SpokeConfigurator');
-    assertNotEq(report.configuratorBatchReport.hubConfigurator, address(0), 'HubConfigurator');
-    assertNotEq(report.treasurySpokeBatchReport.treasurySpoke, address(0), 'TreasurySpoke');
-    for (uint256 i = 0; i < report.hubInstanceBatchReports.length; i++) {
-      assertNotEq(report.hubInstanceBatchReports[i].report.hubProxy, address(0), 'Hub');
-      assertNotEq(
-        report.hubInstanceBatchReports[i].report.hubImplementation,
-        address(0),
-        'HubImplementation'
-      );
-      assertNotEq(report.hubInstanceBatchReports[i].report.irStrategy, address(0), 'IRStrategy');
+    assertNotEq(report.accessManager, address(0), 'AccessManager');
+    assertNotEq(report.spokeConfigurator, address(0), 'SpokeConfigurator');
+    assertNotEq(report.hubConfigurator, address(0), 'HubConfigurator');
+    assertNotEq(report.treasurySpoke, address(0), 'TreasurySpoke');
+    for (uint256 i = 0; i < report.hubs.length; i++) {
+      assertNotEq(report.hubs[i].hubProxy, address(0), 'Hub');
+      assertNotEq(report.hubs[i].hubImplementation, address(0), 'HubImplementation');
+      assertNotEq(report.hubs[i].irStrategy, address(0), 'IRStrategy');
     }
-    for (uint256 i = 0; i < report.spokeInstanceBatchReports.length; i++) {
-      assertNotEq(report.spokeInstanceBatchReports[i].report.spokeProxy, address(0), 'SpokeProxy');
-      assertNotEq(
-        report.spokeInstanceBatchReports[i].report.spokeImplementation,
-        address(0),
-        'SpokeImplementation'
-      );
-      assertNotEq(report.spokeInstanceBatchReports[i].report.aaveOracle, address(0), 'AaveOracle');
+    for (uint256 i = 0; i < report.spokes.length; i++) {
+      assertNotEq(report.spokes[i].spokeProxy, address(0), 'SpokeProxy');
+      assertNotEq(report.spokes[i].spokeImplementation, address(0), 'SpokeImplementation');
+      assertNotEq(report.spokes[i].aaveOracle, address(0), 'AaveOracle');
     }
-    assertEq(
-      report.hubInstanceBatchReports.length,
-      inputs.hubLabels.length,
-      'HubBatchReportsLength'
-    );
-    assertEq(
-      report.spokeInstanceBatchReports.length,
-      inputs.spokeLabels.length,
-      'SpokeInstanceBatchReportsLength'
-    );
+    assertEq(report.hubs.length, inputs.hubLabels.length, 'HubReportsLength');
+    assertEq(report.spokes.length, inputs.spokeLabels.length, 'SpokeReportsLength');
   }
 
   function _checkSpokeBatchDeployments(
@@ -272,11 +230,10 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     string memory globalLabel = 'SpokeDeployment';
     for (uint256 i = 0; i < inputs.spokeLabels.length; i++) {
       string memory label = string.concat(globalLabel, ', ', inputs.spokeLabels[i]);
-      OrchestrationReports.SpokeDeploymentReport memory spokeReport = report
-        .spokeInstanceBatchReports[i];
+      OrchestrationReports.SpokeDeploymentReport memory spokeReport = report.spokes[i];
       _checkSpokeDeployment({
         report: spokeReport,
-        accessManager: report.authorityBatchReport.accessManager,
+        accessManager: report.accessManager,
         expectedMaxReservesLimit: inputs.spokeMaxReservesLimits.length > i
           ? inputs.spokeMaxReservesLimits[i]
           : DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT,
@@ -293,35 +250,33 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     string memory label
   ) internal view {
     assertEq(
-      ProxyHelper.getImplementation(report.report.spokeProxy),
-      report.report.spokeImplementation,
+      ProxyHelper.getImplementation(report.spokeProxy),
+      report.spokeImplementation,
       string.concat(label, ' implementation')
     );
     assertEq(
-      ISpoke(report.report.spokeProxy).ORACLE(),
-      report.report.aaveOracle,
+      ISpoke(report.spokeProxy).ORACLE(),
+      report.aaveOracle,
       string.concat(label, ' oracle on spoke')
     );
     assertEq(
-      IAccessManaged(report.report.spokeProxy).authority(),
+      IAccessManaged(report.spokeProxy).authority(),
       accessManager,
       string.concat(label, ' spoke authority')
     );
     assertEq(
-      ISpoke(report.report.spokeProxy).MAX_USER_RESERVES_LIMIT(),
+      ISpoke(report.spokeProxy).MAX_USER_RESERVES_LIMIT(),
       expectedMaxReservesLimit,
       string.concat(label, ' max user reserves limit')
     );
     assertEq(
-      ProxyHelper.getProxyInitializedVersion(
-        ProxyHelper.getImplementation(report.report.spokeProxy)
-      ),
+      ProxyHelper.getProxyInitializedVersion(ProxyHelper.getImplementation(report.spokeProxy)),
       type(uint64).max,
       string.concat(label, ' implementation initializers disabled')
     );
     // verify the non-immutable portions match
     _assertBytecodeMatchExcludingImmutables(
-      ProxyHelper.getImplementation(report.report.spokeProxy).code,
+      ProxyHelper.getImplementation(report.spokeProxy).code,
       vm.getDeployedCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance'),
       string.concat(label, ' spoke implementation bytecode')
     );
@@ -332,12 +287,12 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     string memory label
   ) internal view {
     assertEq(
-      IAaveOracle(report.report.aaveOracle).spoke(),
-      report.report.spokeProxy,
+      IAaveOracle(report.aaveOracle).spoke(),
+      report.spokeProxy,
       string.concat(label, ' spoke on oracle')
     );
     assertEq(
-      IAaveOracle(report.report.aaveOracle).decimals(),
+      IAaveOracle(report.aaveOracle).decimals(),
       DeployConstants.ORACLE_DECIMALS,
       string.concat(label, ' oracle decimals')
     );
@@ -350,11 +305,11 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     string memory globalLabel = 'HubDeployment';
     for (uint256 i = 0; i < inputs.hubLabels.length; i++) {
       string memory label = string.concat(globalLabel, ', ', inputs.hubLabels[i]);
-      OrchestrationReports.HubDeploymentReport memory hubReport = report.hubInstanceBatchReports[i];
+      OrchestrationReports.HubDeploymentReport memory hubReport = report.hubs[i];
 
       _checkHubDeployment({
         report: hubReport,
-        accessManager: report.authorityBatchReport.accessManager,
+        accessManager: report.accessManager,
         expectedProxyAdminOwner: inputs.proxyAdminOwner,
         label: label
       });
@@ -370,24 +325,24 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     string memory label
   ) internal view {
     assertEq(
-      ProxyHelper.getImplementation(report.report.hubProxy),
-      report.report.hubImplementation,
+      ProxyHelper.getImplementation(report.hubProxy),
+      report.hubImplementation,
       string.concat(label, ' implementation')
     );
-    address proxyAdminOwner = Ownable(ProxyHelper.getProxyAdmin(report.report.hubProxy)).owner();
+    address proxyAdminOwner = Ownable(ProxyHelper.getProxyAdmin(report.hubProxy)).owner();
     assertEq(proxyAdminOwner, expectedProxyAdminOwner, string.concat(label, ' proxy admin owner'));
     assertEq(
-      IAccessManaged(report.report.hubProxy).authority(),
+      IAccessManaged(report.hubProxy).authority(),
       accessManager,
       string.concat(label, ' hub authority')
     );
     assertEq(
-      ProxyHelper.getProxyInitializedVersion(ProxyHelper.getImplementation(report.report.hubProxy)),
+      ProxyHelper.getProxyInitializedVersion(ProxyHelper.getImplementation(report.hubProxy)),
       type(uint64).max,
       string.concat(label, ' implementation initializers disabled')
     );
     assertEq(
-      ProxyHelper.getImplementation(report.report.hubProxy).codehash,
+      ProxyHelper.getImplementation(report.hubProxy).codehash,
       keccak256(vm.getDeployedCode('src/hub/instances/HubInstance.sol:HubInstance')),
       string.concat(label, ' hub implementation bytecode')
     );
@@ -398,8 +353,8 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     string memory label
   ) internal view {
     assertEq(
-      IAssetInterestRateStrategy(report.report.irStrategy).HUB(),
-      report.report.hubProxy,
+      IAssetInterestRateStrategy(report.irStrategy).HUB(),
+      report.hubProxy,
       string.concat(label, ' hub on interest rate strategy')
     );
   }
@@ -407,11 +362,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
   function _checkTreasurySpokeDeployment(
     OrchestrationReports.FullDeploymentReport memory report
   ) internal pure {
-    assertNotEq(
-      report.treasurySpokeBatchReport.treasurySpoke,
-      address(0),
-      'treasury spoke deployed'
-    );
+    assertNotEq(report.treasurySpoke, address(0), 'treasury spoke deployed');
   }
 
   function _checkAccessManagerRoles(
@@ -506,7 +457,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
       );
       assertEq(
         accessManager.getRoleMember(Roles.SPOKE_CONFIGURATOR_ROLE, 1),
-        report.configuratorBatchReport.spokeConfigurator,
+        report.spokeConfigurator,
         'SpokeConfiguratorRole member - spoke configurator'
       );
     } else {
@@ -521,7 +472,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
       for (uint256 j = 0; j < _spokeConfiguratorRoleSelectors.length; j++) {
         assertEq(
           accessManager.getTargetFunctionRole(
-            report.spokeInstanceBatchReports[i].report.spokeProxy,
+            report.spokes[i].spokeProxy,
             _spokeConfiguratorRoleSelectors[j]
           ),
           Roles.SPOKE_CONFIGURATOR_ROLE,
@@ -529,8 +480,8 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
         );
 
         (bool allowed, uint32 delay) = accessManager.canCall(
-          report.configuratorBatchReport.spokeConfigurator,
-          report.spokeInstanceBatchReports[i].report.spokeProxy,
+          report.spokeConfigurator,
+          report.spokes[i].spokeProxy,
           _spokeConfiguratorRoleSelectors[j]
         );
         assertEq(
@@ -543,7 +494,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
         // spoke admin role encompasses spoke configurator role
         (allowed, delay) = accessManager.canCall(
           inputs.spokeAdmin,
-          report.spokeInstanceBatchReports[i].report.spokeProxy,
+          report.spokes[i].spokeProxy,
           _spokeConfiguratorRoleSelectors[j]
         );
         assertEq(
@@ -581,9 +532,8 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     }
 
     for (uint256 i = 0; i < inputs.spokeLabels.length; i++) {
-      address proxyAdminOwner = Ownable(
-        ProxyHelper.getProxyAdmin(report.spokeInstanceBatchReports[i].report.spokeProxy)
-      ).owner();
+      address proxyAdminOwner = Ownable(ProxyHelper.getProxyAdmin(report.spokes[i].spokeProxy))
+        .owner();
       assertEq(
         proxyAdminOwner,
         inputs.proxyAdminOwner,
@@ -593,7 +543,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
       for (uint256 j = 0; j < _spokePositionUpdaterRoleSelectors.length; j++) {
         (bool allowed, uint32 delay) = accessManager.canCall(
           inputs.spokeAdmin,
-          report.spokeInstanceBatchReports[i].report.spokeProxy,
+          report.spokes[i].spokeProxy,
           _spokePositionUpdaterRoleSelectors[j]
         );
         assertEq(allowed, inputs.grantRoles ? true : false, 'SpokePositionUpdaterRole allowed');
@@ -601,7 +551,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
 
         assertEq(
           accessManager.getTargetFunctionRole(
-            report.spokeInstanceBatchReports[i].report.spokeProxy,
+            report.spokes[i].spokeProxy,
             _spokePositionUpdaterRoleSelectors[j]
           ),
           Roles.SPOKE_USER_POSITION_UPDATER_ROLE,
@@ -643,12 +593,12 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
         'HubFeeMinterRoleCount'
       );
     }
-    _checkTreasurySpokeRoles(report.treasurySpokeBatchReport.treasurySpoke, inputs);
+    _checkTreasurySpokeRoles(report.treasurySpoke, inputs);
     for (uint256 i = 0; i < inputs.hubLabels.length; i++) {
       for (uint256 j = 0; j < _hubFeeMinterRoleSelectors.length; j++) {
         assertEq(
           accessManager.getTargetFunctionRole(
-            report.hubInstanceBatchReports[i].report.hubProxy,
+            report.hubs[i].hubProxy,
             _hubFeeMinterRoleSelectors[j]
           ),
           Roles.HUB_FEE_MINTER_ROLE,
@@ -657,7 +607,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
 
         (bool allowed, uint32 delay) = accessManager.canCall(
           inputs.hubAdmin,
-          report.hubInstanceBatchReports[i].report.hubProxy,
+          report.hubs[i].hubProxy,
           _hubFeeMinterRoleSelectors[j]
         );
         assertEq(allowed, inputs.grantRoles ? true : false, 'HubFeeMinterRole allowed');
@@ -696,7 +646,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
       );
       assertEq(
         accessManager.getRoleMember(Roles.HUB_CONFIGURATOR_ROLE, 1),
-        report.configuratorBatchReport.hubConfigurator,
+        report.hubConfigurator,
         'HubConfiguratorRole member - hub configurator'
       );
     } else {
@@ -710,7 +660,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
       for (uint256 j = 0; j < _hubConfiguratorRoleSelectors.length; j++) {
         assertEq(
           accessManager.getTargetFunctionRole(
-            report.hubInstanceBatchReports[i].report.hubProxy,
+            report.hubs[i].hubProxy,
             _hubConfiguratorRoleSelectors[j]
           ),
           Roles.HUB_CONFIGURATOR_ROLE,
@@ -720,8 +670,8 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
         uint32 delay;
 
         (allowed, delay) = accessManager.canCall(
-          report.configuratorBatchReport.hubConfigurator,
-          report.hubInstanceBatchReports[i].report.hubProxy,
+          report.hubConfigurator,
+          report.hubs[i].hubProxy,
           _hubConfiguratorRoleSelectors[j]
         );
         assertEq(
@@ -733,7 +683,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
 
         (allowed, delay) = accessManager.canCall(
           inputs.hubAdmin,
-          report.hubInstanceBatchReports[i].report.hubProxy,
+          report.hubs[i].hubProxy,
           _hubConfiguratorRoleSelectors[j]
         );
         assertEq(allowed, inputs.grantRoles ? true : false, 'HubConfiguratorRole allowed - admin');
@@ -747,19 +697,17 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     InputUtils.FullDeployInputs memory inputs
   ) internal view {
     assertEq(
-      IAccessManaged(report.configuratorBatchReport.hubConfigurator).authority(),
-      report.authorityBatchReport.accessManager,
+      IAccessManaged(report.hubConfigurator).authority(),
+      report.accessManager,
       'HubConfigurator authority'
     );
     assertEq(
-      IAccessManaged(report.configuratorBatchReport.spokeConfigurator).authority(),
-      report.authorityBatchReport.accessManager,
+      IAccessManaged(report.spokeConfigurator).authority(),
+      report.accessManager,
       'SpokeConfigurator authority'
     );
 
-    IAccessManagerEnumerable accessManager = IAccessManagerEnumerable(
-      report.authorityBatchReport.accessManager
-    );
+    IAccessManagerEnumerable accessManager = IAccessManagerEnumerable(report.accessManager);
 
     _checkHubConfiguratorBatchRoles(accessManager, report, inputs);
     _checkSpokeConfiguratorBatchRoles(accessManager, report, inputs);
@@ -770,7 +718,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     OrchestrationReports.FullDeploymentReport memory report,
     InputUtils.FullDeployInputs memory inputs
   ) internal view {
-    address hubConfigurator = report.configuratorBatchReport.hubConfigurator;
+    address hubConfigurator = report.hubConfigurator;
     bytes4[] memory selectors = Roles.getHubConfiguratorDomainAdminRoleSelectors();
 
     for (uint256 i; i < selectors.length; i++) {
@@ -798,7 +746,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     OrchestrationReports.FullDeploymentReport memory report,
     InputUtils.FullDeployInputs memory inputs
   ) internal view {
-    address spokeConfigurator = report.configuratorBatchReport.spokeConfigurator;
+    address spokeConfigurator = report.spokeConfigurator;
     bytes4[] memory selectors = Roles.getSpokeConfiguratorDomainAdminRoleSelectors();
 
     for (uint256 i; i < selectors.length; i++) {
@@ -826,32 +774,28 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     InputUtils.FullDeployInputs memory inputs
   ) internal view {
     if (inputs.deployNativeTokenGateway) {
-      assertEq(
-        Ownable(report.gatewaysBatchReport.nativeGateway).owner(),
-        inputs.gatewayOwner,
-        'NativeGateway owner'
-      );
+      assertEq(Ownable(report.nativeGateway).owner(), inputs.gatewayOwner, 'NativeGateway owner');
     }
     if (inputs.deploySignatureGateway) {
       assertEq(
-        Ownable(report.gatewaysBatchReport.signatureGateway).owner(),
+        Ownable(report.signatureGateway).owner(),
         inputs.gatewayOwner,
         'SignatureGateway owner'
       );
     }
     if (inputs.deployPositionManagers) {
       assertEq(
-        Ownable(report.positionManagerBatchReport.giverPositionManager).owner(),
+        Ownable(report.giverPositionManager).owner(),
         inputs.positionManagerOwner,
         'GiverPositionManager owner'
       );
       assertEq(
-        Ownable(report.positionManagerBatchReport.takerPositionManager).owner(),
+        Ownable(report.takerPositionManager).owner(),
         inputs.positionManagerOwner,
         'TakerPositionManager owner'
       );
       assertEq(
-        Ownable(report.positionManagerBatchReport.configPositionManager).owner(),
+        Ownable(report.configPositionManager).owner(),
         inputs.positionManagerOwner,
         'ConfigPositionManager owner'
       );
@@ -865,66 +809,39 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
   function _checkAddressesHaveCode(
     OrchestrationReports.FullDeploymentReport memory report
   ) internal view {
-    _assertHasCode(report.authorityBatchReport.accessManager, 'accessManager');
-    _assertHasCode(report.configuratorBatchReport.hubConfigurator, 'hubConfigurator');
-    _assertHasCode(report.configuratorBatchReport.spokeConfigurator, 'spokeConfigurator');
-    _assertHasCode(report.treasurySpokeBatchReport.treasurySpoke, 'treasurySpoke');
+    _assertHasCode(report.accessManager, 'accessManager');
+    _assertHasCode(report.hubConfigurator, 'hubConfigurator');
+    _assertHasCode(report.spokeConfigurator, 'spokeConfigurator');
+    _assertHasCode(report.treasurySpoke, 'treasurySpoke');
 
-    for (uint256 i; i < report.hubInstanceBatchReports.length; i++) {
-      string memory label = report.hubInstanceBatchReports[i].label;
-      _assertHasCode(
-        report.hubInstanceBatchReports[i].report.hubProxy,
-        string.concat('hub proxy: ', label)
-      );
-      _assertHasCode(
-        report.hubInstanceBatchReports[i].report.hubImplementation,
-        string.concat('hub impl: ', label)
-      );
-      _assertHasCode(
-        report.hubInstanceBatchReports[i].report.irStrategy,
-        string.concat('irStrategy: ', label)
-      );
+    for (uint256 i; i < report.hubs.length; i++) {
+      string memory label = report.hubs[i].label;
+      _assertHasCode(report.hubs[i].hubProxy, string.concat('hub proxy: ', label));
+      _assertHasCode(report.hubs[i].hubImplementation, string.concat('hub impl: ', label));
+      _assertHasCode(report.hubs[i].irStrategy, string.concat('irStrategy: ', label));
     }
 
-    for (uint256 i; i < report.spokeInstanceBatchReports.length; i++) {
-      string memory label = report.spokeInstanceBatchReports[i].label;
-      _assertHasCode(
-        report.spokeInstanceBatchReports[i].report.spokeProxy,
-        string.concat('spoke proxy: ', label)
-      );
-      _assertHasCode(
-        report.spokeInstanceBatchReports[i].report.spokeImplementation,
-        string.concat('spoke impl: ', label)
-      );
-      _assertHasCode(
-        report.spokeInstanceBatchReports[i].report.aaveOracle,
-        string.concat('oracle: ', label)
-      );
+    for (uint256 i; i < report.spokes.length; i++) {
+      string memory label = report.spokes[i].label;
+      _assertHasCode(report.spokes[i].spokeProxy, string.concat('spoke proxy: ', label));
+      _assertHasCode(report.spokes[i].spokeImplementation, string.concat('spoke impl: ', label));
+      _assertHasCode(report.spokes[i].aaveOracle, string.concat('oracle: ', label));
     }
 
-    if (report.gatewaysBatchReport.nativeGateway != address(0)) {
-      _assertHasCode(report.gatewaysBatchReport.nativeGateway, 'nativeTokenGateway');
+    if (report.nativeGateway != address(0)) {
+      _assertHasCode(report.nativeGateway, 'nativeTokenGateway');
     }
-    if (report.gatewaysBatchReport.signatureGateway != address(0)) {
-      _assertHasCode(report.gatewaysBatchReport.signatureGateway, 'signatureGateway');
+    if (report.signatureGateway != address(0)) {
+      _assertHasCode(report.signatureGateway, 'signatureGateway');
     }
-    if (report.positionManagerBatchReport.giverPositionManager != address(0)) {
-      _assertHasCode(
-        report.positionManagerBatchReport.giverPositionManager,
-        'giverPositionManager'
-      );
+    if (report.giverPositionManager != address(0)) {
+      _assertHasCode(report.giverPositionManager, 'giverPositionManager');
     }
-    if (report.positionManagerBatchReport.takerPositionManager != address(0)) {
-      _assertHasCode(
-        report.positionManagerBatchReport.takerPositionManager,
-        'takerPositionManager'
-      );
+    if (report.takerPositionManager != address(0)) {
+      _assertHasCode(report.takerPositionManager, 'takerPositionManager');
     }
-    if (report.positionManagerBatchReport.configPositionManager != address(0)) {
-      _assertHasCode(
-        report.positionManagerBatchReport.configPositionManager,
-        'configPositionManager'
-      );
+    if (report.configPositionManager != address(0)) {
+      _assertHasCode(report.configPositionManager, 'configPositionManager');
     }
   }
 

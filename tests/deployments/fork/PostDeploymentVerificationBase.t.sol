@@ -28,79 +28,55 @@ abstract contract PostDeploymentVerificationBase is BatchTestProcedures {
   function _parseReportFromJson(
     string memory json
   ) internal view returns (OrchestrationReports.FullDeploymentReport memory report) {
-    report.authorityBatchReport.accessManager = vm.parseJsonAddress(json, '$.accessManager');
-    report.configuratorBatchReport.hubConfigurator = vm.parseJsonAddress(json, '$.hubConfigurator');
-    report.configuratorBatchReport.spokeConfigurator = vm.parseJsonAddress(
-      json,
-      '$.spokeConfigurator'
-    );
-    report.treasurySpokeBatchReport.treasurySpoke = vm.parseJsonAddress(json, '$.treasurySpoke');
+    report.accessManager = vm.parseJsonAddress(json, '$.accessManager');
+    report.hubConfigurator = vm.parseJsonAddress(json, '$.hubConfigurator');
+    report.spokeConfigurator = vm.parseJsonAddress(json, '$.spokeConfigurator');
+    report.treasurySpoke = vm.parseJsonAddress(json, '$.treasurySpoke');
     report.salt = vm.parseJsonBytes32(json, '$.salt');
 
     // Optional fields (conditionally written by MetadataLogger)
     if (vm.keyExistsJson(json, '$.nativeTokenGateway')) {
-      report.gatewaysBatchReport.nativeGateway = vm.parseJsonAddress(json, '$.nativeTokenGateway');
+      report.nativeGateway = vm.parseJsonAddress(json, '$.nativeTokenGateway');
     }
     if (vm.keyExistsJson(json, '$.signatureGateway')) {
-      report.gatewaysBatchReport.signatureGateway = vm.parseJsonAddress(json, '$.signatureGateway');
+      report.signatureGateway = vm.parseJsonAddress(json, '$.signatureGateway');
     }
     if (vm.keyExistsJson(json, '$.giverPositionManager')) {
-      report.positionManagerBatchReport.giverPositionManager = vm.parseJsonAddress(
-        json,
-        '$.giverPositionManager'
-      );
+      report.giverPositionManager = vm.parseJsonAddress(json, '$.giverPositionManager');
     }
     if (vm.keyExistsJson(json, '$.takerPositionManager')) {
-      report.positionManagerBatchReport.takerPositionManager = vm.parseJsonAddress(
-        json,
-        '$.takerPositionManager'
-      );
+      report.takerPositionManager = vm.parseJsonAddress(json, '$.takerPositionManager');
     }
     if (vm.keyExistsJson(json, '$.configPositionManager')) {
-      report.positionManagerBatchReport.configPositionManager = vm.parseJsonAddress(
-        json,
-        '$.configPositionManager'
-      );
+      report.configPositionManager = vm.parseJsonAddress(json, '$.configPositionManager');
     }
 
     uint256 hubCount = _inputs.hubLabels.length;
-    report.hubInstanceBatchReports = new OrchestrationReports.HubDeploymentReport[](hubCount);
+    report.hubs = new OrchestrationReports.HubDeploymentReport[](hubCount);
     for (uint256 i; i < hubCount; i++) {
       string memory label = _inputs.hubLabels[i];
-      report.hubInstanceBatchReports[i].label = label;
+      report.hubs[i].label = label;
 
-      report.hubInstanceBatchReports[i].report.hubProxy = vm.parseJsonAddress(
-        json,
-        string.concat('$.hub.', label)
-      );
-      report.hubInstanceBatchReports[i].report.hubImplementation = vm.parseJsonAddress(
+      report.hubs[i].hubProxy = vm.parseJsonAddress(json, string.concat('$.hub.', label));
+      report.hubs[i].hubImplementation = vm.parseJsonAddress(
         json,
         string.concat('$.hubImplementation.', label)
       );
-      report.hubInstanceBatchReports[i].report.irStrategy = vm.parseJsonAddress(
-        json,
-        string.concat('$.irStrategy.', label)
-      );
+      report.hubs[i].irStrategy = vm.parseJsonAddress(json, string.concat('$.irStrategy.', label));
     }
 
     uint256 spokeCount = _inputs.spokeLabels.length;
-    report.spokeInstanceBatchReports = new OrchestrationReports.SpokeDeploymentReport[](spokeCount);
+    report.spokes = new OrchestrationReports.SpokeDeploymentReport[](spokeCount);
     for (uint256 i; i < spokeCount; i++) {
       string memory label = _inputs.spokeLabels[i];
-      report.spokeInstanceBatchReports[i].label = label;
+      report.spokes[i].label = label;
 
-      report.spokeInstanceBatchReports[i].report.spokeProxy = vm.parseJsonAddress(
-        json,
-        string.concat('$.spoke.', label)
-      );
-      report.spokeInstanceBatchReports[i].report.spokeImplementation = vm.parseJsonAddress(
+      report.spokes[i].spokeProxy = vm.parseJsonAddress(json, string.concat('$.spoke.', label));
+      report.spokes[i].spokeImplementation = vm.parseJsonAddress(
         json,
         string.concat('$.spokeImplementation.', label)
       );
-      report.spokeInstanceBatchReports[i].report.aaveOracle = vm.parseJsonAddress(
-        json,
-        string.concat('$.oracle.', label)
-      );
+      report.spokes[i].aaveOracle = vm.parseJsonAddress(json, string.concat('$.oracle.', label));
     }
   }
 

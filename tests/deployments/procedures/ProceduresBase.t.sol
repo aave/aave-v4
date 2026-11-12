@@ -26,7 +26,6 @@ import {AaveV4TokenizationSpokeDeployProcedureWrapper} from 'tests/helpers/mocks
 import {AaveV4HubRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
 import {AaveV4InterestRateStrategyDeployProcedure} from 'src/deployments/procedures/deploy/hub/AaveV4InterestRateStrategyDeployProcedure.sol';
 import {AaveV4HubDeployProcedure} from 'src/deployments/procedures/deploy/hub/AaveV4HubDeployProcedure.sol';
-import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 
 import {AaveOracle} from 'src/spoke/AaveOracle.sol';

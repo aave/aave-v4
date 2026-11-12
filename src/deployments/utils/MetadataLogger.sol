@@ -13,31 +13,31 @@ contract MetadataLogger is Logger {
   constructor(string memory outputPath_) Logger(outputPath_) {}
 
   /// @notice Writes a structured JSON report for a full market deployment.
-  /// @param report The full deployment report containing all batch sub-reports.
+  /// @param report The full deployment report containing all deployed addresses.
   function writeJsonReportMarket(OrchestrationReports.FullDeploymentReport memory report) public {
     _write('salt', report.salt);
-    _write('accessManager', report.authorityBatchReport.accessManager);
-    _write('hubConfigurator', report.configuratorBatchReport.hubConfigurator);
-    _write('spokeConfigurator', report.configuratorBatchReport.spokeConfigurator);
-    _write('treasurySpoke', report.treasurySpokeBatchReport.treasurySpoke);
+    _write('accessManager', report.accessManager);
+    _write('hubConfigurator', report.hubConfigurator);
+    _write('spokeConfigurator', report.spokeConfigurator);
+    _write('treasurySpoke', report.treasurySpoke);
 
     // Group hubs by property type
-    uint256 hubLen = report.hubInstanceBatchReports.length;
+    uint256 hubLen = report.hubs.length;
     Logger.AddressEntry[] memory hubEntries = new Logger.AddressEntry[](hubLen);
     Logger.AddressEntry[] memory hubImplEntries = new Logger.AddressEntry[](hubLen);
     Logger.AddressEntry[] memory irEntries = new Logger.AddressEntry[](hubLen);
     for (uint256 i; i < hubLen; i++) {
       hubEntries[i] = Logger.AddressEntry({
-        label: report.hubInstanceBatchReports[i].label,
-        value: report.hubInstanceBatchReports[i].report.hubProxy
+        label: report.hubs[i].label,
+        value: report.hubs[i].hubProxy
       });
       hubImplEntries[i] = Logger.AddressEntry({
-        label: report.hubInstanceBatchReports[i].label,
-        value: report.hubInstanceBatchReports[i].report.hubImplementation
+        label: report.hubs[i].label,
+        value: report.hubs[i].hubImplementation
       });
       irEntries[i] = Logger.AddressEntry({
-        label: report.hubInstanceBatchReports[i].label,
-        value: report.hubInstanceBatchReports[i].report.irStrategy
+        label: report.hubs[i].label,
+        value: report.hubs[i].irStrategy
       });
     }
     _writeGroup('hub', hubEntries);
@@ -45,42 +45,42 @@ contract MetadataLogger is Logger {
     _writeGroup('irStrategy', irEntries);
 
     // Group spokes by property type
-    uint256 spokeLen = report.spokeInstanceBatchReports.length;
+    uint256 spokeLen = report.spokes.length;
     Logger.AddressEntry[] memory spokeEntries = new Logger.AddressEntry[](spokeLen);
     Logger.AddressEntry[] memory spokeImplEntries = new Logger.AddressEntry[](spokeLen);
     Logger.AddressEntry[] memory oracleEntries = new Logger.AddressEntry[](spokeLen);
     for (uint256 i; i < spokeLen; i++) {
       spokeEntries[i] = Logger.AddressEntry({
-        label: report.spokeInstanceBatchReports[i].label,
-        value: report.spokeInstanceBatchReports[i].report.spokeProxy
+        label: report.spokes[i].label,
+        value: report.spokes[i].spokeProxy
       });
       spokeImplEntries[i] = Logger.AddressEntry({
-        label: report.spokeInstanceBatchReports[i].label,
-        value: report.spokeInstanceBatchReports[i].report.spokeImplementation
+        label: report.spokes[i].label,
+        value: report.spokes[i].spokeImplementation
       });
       oracleEntries[i] = Logger.AddressEntry({
-        label: report.spokeInstanceBatchReports[i].label,
-        value: report.spokeInstanceBatchReports[i].report.aaveOracle
+        label: report.spokes[i].label,
+        value: report.spokes[i].aaveOracle
       });
     }
     _writeGroup('spoke', spokeEntries);
     _writeGroup('spokeImplementation', spokeImplEntries);
     _writeGroup('oracle', oracleEntries);
 
-    if (report.gatewaysBatchReport.signatureGateway != address(0)) {
-      _write('signatureGateway', report.gatewaysBatchReport.signatureGateway);
+    if (report.signatureGateway != address(0)) {
+      _write('signatureGateway', report.signatureGateway);
     }
-    if (report.gatewaysBatchReport.nativeGateway != address(0)) {
-      _write('nativeTokenGateway', report.gatewaysBatchReport.nativeGateway);
+    if (report.nativeGateway != address(0)) {
+      _write('nativeTokenGateway', report.nativeGateway);
     }
-    if (report.positionManagerBatchReport.giverPositionManager != address(0)) {
-      _write('giverPositionManager', report.positionManagerBatchReport.giverPositionManager);
+    if (report.giverPositionManager != address(0)) {
+      _write('giverPositionManager', report.giverPositionManager);
     }
-    if (report.positionManagerBatchReport.takerPositionManager != address(0)) {
-      _write('takerPositionManager', report.positionManagerBatchReport.takerPositionManager);
+    if (report.takerPositionManager != address(0)) {
+      _write('takerPositionManager', report.takerPositionManager);
     }
-    if (report.positionManagerBatchReport.configPositionManager != address(0)) {
-      _write('configPositionManager', report.positionManagerBatchReport.configPositionManager);
+    if (report.configPositionManager != address(0)) {
+      _write('configPositionManager', report.configPositionManager);
     }
   }
 }

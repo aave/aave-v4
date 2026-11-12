@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 import 'tests/utils/BatchTestProcedures.sol';
-import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 
 contract AaveV4BatchDeploymentTest is BatchTestProcedures {
   function setUp() public override {
@@ -50,10 +49,10 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     vm.setNonce(address(this), vm.getNonce(address(this)) + callerNonceBump);
     OrchestrationReports.FullDeploymentReport memory second = _deployV4();
 
-    assertGt(first.spokeInstanceBatchReports.length, 0);
-    for (uint256 i; i < first.spokeInstanceBatchReports.length; ++i) {
-      BatchReports.SpokeInstanceBatchReport memory a = first.spokeInstanceBatchReports[i].report;
-      BatchReports.SpokeInstanceBatchReport memory b = second.spokeInstanceBatchReports[i].report;
+    assertGt(first.spokes.length, 0);
+    for (uint256 i; i < first.spokes.length; ++i) {
+      OrchestrationReports.SpokeDeploymentReport memory a = first.spokes[i];
+      OrchestrationReports.SpokeDeploymentReport memory b = second.spokes[i];
       assertEq(a.aaveOracle, b.aaveOracle, 'aave oracle');
       assertEq(a.spokeImplementation, b.spokeImplementation, 'spoke implementation');
       assertEq(a.spokeProxy, b.spokeProxy, 'spoke proxy');
@@ -327,9 +326,7 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
       .deployAaveV4(_logger, _deployer, _inputs, hubBytecode, spokeBytecode);
     vm.stopPrank();
 
-    IAccessManagerEnumerable accessManager = IAccessManagerEnumerable(
-      report.authorityBatchReport.accessManager
-    );
+    IAccessManagerEnumerable accessManager = IAccessManagerEnumerable(report.accessManager);
 
     // newAdmin has DEFAULT_ADMIN_ROLE
     (bool newAdminHasRole, ) = accessManager.hasRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, newAdmin);
@@ -363,9 +360,7 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
       .deployAaveV4(_logger, _deployer, _inputs, hubBytecode, spokeBytecode);
     vm.stopPrank();
 
-    IAccessManagerEnumerable accessManager = IAccessManagerEnumerable(
-      report.authorityBatchReport.accessManager
-    );
+    IAccessManagerEnumerable accessManager = IAccessManagerEnumerable(report.accessManager);
 
     (bool deployerHasRole, ) = accessManager.hasRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, _deployer);
     assertTrue(deployerHasRole, 'deployer should retain DEFAULT_ADMIN_ROLE');
