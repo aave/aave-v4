@@ -16,13 +16,16 @@ contract AaveV4TokenizationSpokeDeployProcedureTest is ProceduresBase {
     wrapper = new AaveV4TokenizationSpokeDeployProcedureWrapper();
 
     // TokenizationSpokeInstance constructor requires hub
-    AaveV4HubInstanceBatch hubInstanceBatch = new AaveV4HubInstanceBatch({
-      proxyAdminOwner_: admin,
-      authority_: accessManager,
-      hubBytecode_: hubBytecode,
-      salt_: salt
+    BatchReports.HubProxyBatchReport memory hubReport = AaveV4DeployBase.deployHubProxyBatch({
+      proxyAdminOwner: admin,
+      authority: accessManager,
+      hubImplementation: AaveV4HubImplementationDeployProcedure.deployHubImplementation({
+        hubBytecode: hubBytecode,
+        salt: salt
+      }),
+      hubInitCodeHash: keccak256(hubBytecode),
+      salt: salt
     });
-    BatchReports.HubInstanceBatchReport memory hubReport = hubInstanceBatch.getReport();
     deployedHub = hubReport.hubProxy;
 
     // Deploy test ERC20

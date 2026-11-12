@@ -1,0 +1,132 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import 'tests/deployments/batches/BatchBase.t.sol';
+
+contract AaveV4SpokeProxyBatchTest is BatchBaseTest {
+  AaveV4SpokeProxyBatch public spokeBatch;
+  BatchReports.SpokeProxyBatchReport public report;
+  address public aaveOracle;
+  address public spokeImplementation;
+
+  function setUp() public override {
+    super.setUp();
+    aaveOracle = _deployOracle(salt);
+    spokeImplementation = _deploySpokeImplementation(aaveOracle, salt);
+    spokeBatch = new AaveV4SpokeProxyBatch({
+      proxyAdminOwner_: admin,
+      authority_: accessManager,
+      spokeImplementation_: spokeImplementation,
+      spokeInitCodeHash_: _spokeInitCodeHash(aaveOracle),
+      salt_: salt
+    });
+    report = spokeBatch.getReport();
+  }
+
+  function test_getReport() public view {
+    assertNotEq(report.spokeProxy, address(0));
+    assertEq(report.spokeImplementation, spokeImplementation);
+    assertEq(report.aaveOracle, aaveOracle);
+  }
+
+  function test_spokeImplementation() public view {
+    assertEq(ProxyHelper.getImplementation(report.spokeProxy), spokeImplementation);
+  }
+
+  function test_spokeAuthority() public view {
+    assertEq(IAccessManaged(report.spokeProxy).authority(), accessManager);
+  }
+
+  function test_spokeOracle() public view {
+    assertEq(ISpoke(report.spokeProxy).ORACLE(), aaveOracle);
+  }
+
+  function test_spokeMaxUserReservesLimit() public view {
+    assertEq(ISpoke(report.spokeProxy).MAX_USER_RESERVES_LIMIT(), 128);
+  }
+
+  function test_revert_zeroAuthority() public {
+    vm.expectRevert('invalid authority');
+    new AaveV4SpokeProxyBatch({
+      proxyAdminOwner_: admin,
+      authority_: address(0),
+      spokeImplementation_: spokeImplementation,
+      spokeInitCodeHash_: _spokeInitCodeHash(aaveOracle),
+      salt_: keccak256('zeroAuthoritySalt')
+    });
+  }
+
+  function test_revert_zeroProxyAdminOwner() public {
+    vm.expectRevert('invalid proxy admin owner');
+    new AaveV4SpokeProxyBatch({
+      proxyAdminOwner_: address(0),
+      authority_: accessManager,
+      spokeImplementation_: spokeImplementation,
+      spokeInitCodeHash_: _spokeInitCodeHash(aaveOracle),
+      salt_: keccak256('zeroProxyAdminOwnerSalt')
+    });
+  }
+
+  function test_revert_invalidSpokeImplementation() public {
+    vm.expectRevert('invalid spoke implementation');
+    new AaveV4SpokeProxyBatch({
+      proxyAdminOwner_: admin,
+      authority_: accessManager,
+      spokeImplementation_: makeAddr('noCode'),
+      spokeInitCodeHash_: _spokeInitCodeHash(aaveOracle),
+      salt_: keccak256('noCodeSalt')
+    });
+  }
+
+  function test_revert_undeployedSpokeImplementation() public {
+    bytes32 otherSalt = keccak256('undeployedSalt');
+    bytes32 initCodeHash = _spokeInitCodeHash(aaveOracle);
+    vm.expectRevert('invalid spoke implementation');
+    new AaveV4SpokeProxyBatch({
+      proxyAdminOwner_: admin,
+      authority_: accessManager,
+      spokeImplementation_: Create2Utils.computeCreate2Address(otherSalt, initCodeHash),
+      spokeInitCodeHash_: initCodeHash,
+      salt_: otherSalt
+    });
+  }
+
+  function test_revert_spokeImplementationCodeMismatch() public {
+    vm.expectRevert('invalid spoke implementation');
+    new AaveV4SpokeProxyBatch({
+      proxyAdminOwner_: admin,
+      authority_: accessManager,
+      spokeImplementation_: spokeImplementation,
+      spokeInitCodeHash_: _spokeInitCodeHash(makeAddr('otherOracle')),
+      salt_: salt
+    });
+  }
+
+  function _deployOracle(bytes32 salt_) internal returns (address) {
+    return
+      new AaveV4AaveOracleBatch({owner_: admin, oracleDecimals_: 8, salt_: salt_})
+        .getReport()
+        .aaveOracle;
+  }
+
+  function _spokeInitCodeHash(address oracle) internal view returns (bytes32) {
+    return
+      keccak256(
+        AaveV4SpokeImplementationDeployProcedure.getSpokeInstanceInitCode(
+          spokeBytecode,
+          oracle,
+          128
+        )
+      );
+  }
+
+  function _deploySpokeImplementation(address oracle, bytes32 salt_) internal returns (address) {
+    return
+      AaveV4SpokeImplementationDeployProcedure.deploySpokeImplementation({
+        oracle: oracle,
+        spokeBytecode: spokeBytecode,
+        maxUserReservesLimit: 128,
+        salt: salt_
+      });
+  }
+}

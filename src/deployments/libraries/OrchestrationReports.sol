@@ -11,32 +11,36 @@ library OrchestrationReports {
   /// @dev report The batch-level deployment report for this Spoke.
   struct SpokeDeploymentReport {
     string label;
-    BatchReports.SpokeInstanceBatchReport report;
+    BatchReports.SpokeProxyBatchReport report;
   }
 
   /// @dev label The Hub instance label.
   /// @dev report The batch-level deployment report for this Hub.
   struct HubDeploymentReport {
     string label;
-    BatchReports.HubInstanceBatchReport report;
+    BatchReports.HubProxyBatchReport report;
   }
 
   /// @dev authorityBatchReport AccessManager deployment report.
-  /// @dev configuratorBatchReport Configurator deployment report.
+  /// @dev hubConfiguratorBatchReport HubConfigurator deployment report.
+  /// @dev spokeConfiguratorBatchReport SpokeConfigurator deployment report.
   /// @dev treasurySpokeBatchReport TreasurySpoke deployment report.
   /// @dev spokeInstanceBatchReports Per-spoke deployment reports.
   /// @dev hubInstanceBatchReports Per-hub deployment reports.
   /// @dev gatewaysBatchReport Gateway deployment report.
-  /// @dev positionManagerBatchReport PositionManager deployment report.
+  /// @dev giverTakerPositionManagerBatchReport GiverPositionManager and TakerPositionManager deployment report.
+  /// @dev configPositionManagerBatchReport ConfigPositionManager deployment report.
   /// @dev salt The salt used to derive deterministic contract addresses.
   struct FullDeploymentReport {
     BatchReports.AuthorityBatchReport authorityBatchReport;
-    BatchReports.ConfiguratorBatchReport configuratorBatchReport;
+    BatchReports.HubConfiguratorBatchReport hubConfiguratorBatchReport;
+    BatchReports.SpokeConfiguratorBatchReport spokeConfiguratorBatchReport;
     BatchReports.TreasurySpokeBatchReport treasurySpokeBatchReport;
     SpokeDeploymentReport[] spokeInstanceBatchReports;
     HubDeploymentReport[] hubInstanceBatchReports;
     BatchReports.GatewaysBatchReport gatewaysBatchReport;
-    BatchReports.PositionManagerBatchReport positionManagerBatchReport;
+    BatchReports.GiverTakerPositionManagerBatchReport giverTakerPositionManagerBatchReport;
+    BatchReports.ConfigPositionManagerBatchReport configPositionManagerBatchReport;
     bytes32 salt;
   }
 }

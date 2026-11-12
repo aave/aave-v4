@@ -34,6 +34,21 @@ make deploy-contracts
 
 This runs `AaveV4DeployOrchestration.deployAaveV4()`, which deploys batches in order: AccessManager → role labeling → Configurators → Configurator role setup → TreasurySpoke → Hubs → Spokes → Gateways → PositionManagers → role grants → DEFAULT_ADMIN transfer.
 
+### Transaction gas limits (Tempo, Glamsterdam)
+
+Large contracts are spread over several transactions, so that each transaction fits on the two networks that limit them:
+
+- **Tempo** caps a transaction at 30M gas and charges 1,000 gas per byte of deployed code.
+- **Ethereum after Glamsterdam** ([EIP-8037](https://eips.ethereum.org/EIPS/eip-8037)) charges 1,530 gas per byte of deployed code as state gas. The 16,777,216 per-transaction cap applies only to execution gas; the gas limit above it becomes a state gas reservoir. A transaction's whole gas limit must still fit in the block's remaining state gas budget, which is the block gas limit (60M on mainnet when this was written) minus the state gas of earlier transactions in the block.
+
+On Glamsterdam about 97% of each deployment transaction's gas is state gas, and none uses more than 1.4M execution gas, so the 16,777,216 cap does not bind. The block gas limit does.
+
+A 24 KB implementation alone takes about 26M gas on Tempo and 38M on Glamsterdam, so each one gets its own transaction: Hub and Spoke implementations are deployed directly by the deployer through library procedures. The configurators take two batches: `AaveV4HubConfiguratorBatch` and `AaveV4SpokeConfiguratorBatch`. The position managers also take two: `AaveV4GiverTakerPositionManagerBatch` deploys GiverPositionManager and TakerPositionManager together, and `AaveV4ConfigPositionManagerBatch` deploys ConfigPositionManager. Each Spoke takes four transactions. `AaveV4AaveOracleBatch` deploys its AaveOracle first, because the Spoke implementation reads the oracle in its constructor. The Spoke implementation follows, then `AaveV4SpokeProxyBatch` deploys the Spoke proxy, and `AaveV4AaveOracleBatch.setSpoke` binds the oracle to it. The largest transactions are the implementations: the Spoke implementation takes about 27.3M gas on Tempo, and the Hub and Spoke implementations take 38.0M and 37.9M on Glamsterdam.
+
+Foundry's default gas limit is 130% of the estimate. That exceeds Tempo's 30M cap for the implementations, so on Tempo pass a lower multiplier, e.g. `--gas-estimate-multiplier 105`. On Glamsterdam the default fits a 60M block: the largest gas limit is about 49.4M.
+
+Glamsterdam needs Foundry 1.9.0 or later. Earlier versions plan gas limits with the pre-Glamsterdam prices, and the transactions revert.
+
 ### TokenizationSpoke
 
 `TokenizationSpoke` is **not** deployed by the orchestration, because it requires an asset to already be listed on a Hub and Spoke. Each `TokenizationSpoke` instance should be deployed separately after asset listing, one per asset.
@@ -53,7 +68,7 @@ This requires a **two-step deploy** because Foundry needs to re-compile with the
 **Step 2 — Main deploy script** (next invocation):
 
 1. Foundry reads `.env` at startup, sees `FOUNDRY_LIBRARIES`, and at compile time replaces all `__$<hash>$__` placeholders in `SpokeInstance`'s bytecode with the library address
-2. `AaveV4SpokeInstanceBatch` deploys `SpokeInstance` with fully linked bytecode
+2. `AaveV4SpokeImplementationDeployProcedure.deploySpokeImplementation` deploys `SpokeInstance` with fully linked bytecode
 
 ## Architecture
 
@@ -62,22 +77,26 @@ scripts/deploy/
   AaveV4DeployBatchBase.s.sol     Base: deploy-only run()
 
 src/deployments/
-  batches/                    Batch constructors -- deploy related contracts together
-    AaveV4AuthorityBatch        AccessManagerEnumerable
-    AaveV4ConfiguratorBatch     HubConfigurator, SpokeConfigurator
-    AaveV4TreasurySpokeBatch    TreasurySpoke (single instance, proxy + impl)
-    AaveV4HubInstanceBatch      HubInstance (proxy + impl), InterestRateStrategy
-    AaveV4SpokeInstanceBatch    SpokeInstance (proxy + impl), AaveOracle
-    AaveV4GatewayBatch          NativeTokenGateway, SignatureGateway
-    AaveV4PositionManagerBatch  GiverPositionManager, TakerPositionManager, ConfigPositionManager
+  batches/                    Batch constructors -- deploy related contracts together, one transaction each
+    AaveV4AuthorityBatch                AccessManagerEnumerable
+    AaveV4HubConfiguratorBatch          HubConfigurator
+    AaveV4SpokeConfiguratorBatch        SpokeConfigurator
+    AaveV4TreasurySpokeBatch            TreasurySpoke (single instance, proxy + impl)
+    AaveV4HubProxyBatch                 HubInstance proxy (impl deployed beforehand), InterestRateStrategy
+    AaveV4AaveOracleBatch               AaveOracle; binds it to the SpokeInstance proxy once, owner-only
+    AaveV4SpokeProxyBatch               SpokeInstance proxy (impl and AaveOracle deployed beforehand)
+    AaveV4GatewayBatch                  NativeTokenGateway, SignatureGateway
+    AaveV4GiverTakerPositionManagerBatch GiverPositionManager, TakerPositionManager
+    AaveV4ConfigPositionManagerBatch    ConfigPositionManager
 
   orchestration/              High-level orchestrators
     AaveV4DeployOrchestration   Main entry: deployAaveV4() -- calls batches in order
     AaveV4DeployBase            Static deploy helpers for each batch
 
   procedures/                 Granular operations
-    deploy/                   Individual contract deploy procedures
-    roles/                    Role setup procedures per component
+    deploy/                   Individual contract deploy procedures. Contracts are inherited by batches;
+                              libraries (Hub/Spoke implementation) run directly from the orchestration
+    roles/                    Role setup procedures per component (libraries, run directly from the orchestration)
 
   libraries/
     BatchReports              Report structs for each batch
@@ -178,15 +197,18 @@ AaveV4DeployBatchBase.s.sol                         (Foundry script entry point)
     |     |         AaveV4AccessManagerEnumerableDeployProcedure._deployAccessManagerEnumerable()
     |     |           Create2Utils.create2Deploy() --> AccessManagerEnumerable
     |     |
-    |     +-- _labelRoles()
-    |     |     AaveV4AccessManagerRolesProcedure.labelAllRoles()
-    |     |       AccessManager.labelRole()  (labels all roles with the associated Roles.sol constant names)
+    |     +-- AaveV4AccessManagerRolesProcedure.labelAllRoles()
+    |     |     AccessManager.labelRole()  (labels all roles with the associated Roles.sol constant names)
     |     |
-    |     +-- _deployConfiguratorBatch()
-    |     |     AaveV4DeployBase.deployConfiguratorBatch()
-    |     |       new AaveV4ConfiguratorBatch(hubAuth, spokeAuth, salt)
+    |     +-- _deployHubConfiguratorBatch()
+    |     |     AaveV4DeployBase.deployHubConfiguratorBatch()
+    |     |       new AaveV4HubConfiguratorBatch(authority, salt)
     |     |         AaveV4HubConfiguratorDeployProcedure._deployHubConfigurator()
     |     |           Create2Utils.create2Deploy() --> HubConfigurator
+    |     |
+    |     +-- _deploySpokeConfiguratorBatch()
+    |     |     AaveV4DeployBase.deploySpokeConfiguratorBatch()
+    |     |       new AaveV4SpokeConfiguratorBatch(authority, salt)
     |     |         AaveV4SpokeConfiguratorDeployProcedure._deploySpokeConfigurator()
     |     |           Create2Utils.create2Deploy() --> SpokeConfigurator
     |     |
@@ -205,10 +227,14 @@ AaveV4DeployBatchBase.s.sol                         (Foundry script entry point)
     |     |
     |     +-- _deployHubs(hubLabels)                for each hub label:
     |     |     _deployHub()
-    |     |       _deployHubInstanceBatch()
-    |     |         AaveV4DeployBase.deployHubInstanceBatch()
-    |     |           new AaveV4HubInstanceBatch(proxyAdmin, authority, hubBytecode, salt)
-    |     |             Create2Utils.proxify()    --> HubInstance (proxy + impl)
+    |     |       _deployHubImplementation()
+    |     |         AaveV4HubImplementationDeployProcedure.deployHubImplementation()
+    |     |           Create2Utils.create2Deploy() --> HubInstance (impl)
+    |     |       _deployHubProxyBatch()
+    |     |         AaveV4DeployBase.deployHubProxyBatch()
+    |     |           new AaveV4HubProxyBatch(proxyAdmin, authority, hubImpl, hubInitCodeHash, salt)
+    |     |             AaveV4HubProxyDeployProcedure._deployHubProxy()
+    |     |               Create2Utils.proxify()    --> HubInstance (proxy)
     |     |             Create2Utils.create2Deploy() --> InterestRateStrategy
     |     |       _setupHubRoles()
     |     |         AaveV4HubRolesProcedure.setupHubAllRoles()
@@ -216,11 +242,22 @@ AaveV4DeployBatchBase.s.sol                         (Foundry script entry point)
     |     |
     |     +-- _deploySpokes(spokeLabels)            for each spoke label:
     |     |     _deploySpoke()
-    |     |       _deploySpokeInstanceBatch()
-    |     |         AaveV4DeployBase.deploySpokeInstanceBatch()
-    |     |           Create2Utils.create2Deploy() --> AaveV4SpokeInstanceBatch(proxyAdmin, authority, bytecode, ...)
-    |     |             new AaveOracle{salt}()       (deployer = batch, which calls setSpoke)
-    |     |             Create2Utils.proxify()    --> SpokeInstance (proxy + impl)
+    |     |       _deployAaveOracleBatch()
+    |     |         AaveV4DeployBase.deployAaveOracleBatch()
+    |     |           Create2Utils.create2Deploy() --> AaveV4AaveOracleBatch(owner = deployer, decimals, salt)
+    |     |             new AaveOracle{salt}()       (deployer = batch)
+    |     |       _deploySpokeImplementation()
+    |     |         AaveV4SpokeImplementationDeployProcedure.deploySpokeImplementation()
+    |     |           Create2Utils.create2Deploy() --> SpokeInstance (impl)
+    |     |       _deploySpokeProxyBatch()
+    |     |         AaveV4DeployBase.deploySpokeProxyBatch()
+    |     |           new AaveV4SpokeProxyBatch(proxyAdmin, authority, spokeImpl, spokeInitCodeHash, salt)
+    |     |             AaveV4SpokeProxyDeployProcedure._deploySpokeProxy()
+    |     |               Create2Utils.proxify()    --> SpokeInstance (proxy)
+    |     |       _setAaveOracleSpoke()
+    |     |         AaveV4DeployBase.setAaveOracleSpoke()
+    |     |           AaveV4AaveOracleBatch.setSpoke(spokeProxy)    (owner-only)
+    |     |             AaveOracle.setSpoke(spokeProxy)            (one-shot, checks spoke.ORACLE())
     |     |       _setupSpokeRoles()
     |     |         AaveV4SpokeRolesProcedure.setupSpokeAllRoles()
     |     |           AccessManager.setTargetFunctionRole()  (selector -> role mappings for Spoke)
@@ -230,11 +267,13 @@ AaveV4DeployBatchBase.s.sol                         (Foundry script entry point)
     |     |       new AaveV4GatewayBatch(owner, nativeWrapper, deployNativeTokenGateway, deploySignatureGateway, salt)
     |     |         Create2Utils.create2Deploy() --> NativeTokenGateway, SignatureGateway
     |     |
-    |     +-- _deployPositionManagerBatch()         (if deployPositionManagers)
-    |     |     AaveV4DeployBase.deployPositionManagerBatch()
-    |     |       new AaveV4PositionManagerBatch(owner, salt)
-    |     |         Create2Utils.create2Deploy() --> GiverPositionManager
-    |     |         Create2Utils.create2Deploy() --> TakerPositionManager
+    |     +-- _deployGiverTakerPositionManagerBatch() (if deployPositionManagers)
+    |     |     AaveV4DeployBase.deployGiverTakerPositionManagerBatch()
+    |     |       new AaveV4GiverTakerPositionManagerBatch(owner, salt)
+    |     |         Create2Utils.create2Deploy() --> GiverPositionManager, TakerPositionManager
+    |     +-- _deployConfigPositionManagerBatch()   (if deployPositionManagers)
+    |     |     AaveV4DeployBase.deployConfigPositionManagerBatch()
+    |     |       new AaveV4ConfigPositionManagerBatch(owner, salt)
     |     |         Create2Utils.create2Deploy() --> ConfigPositionManager
     |     |
     |     +-- grantRoles (if grantRoles == true)
@@ -260,3 +299,5 @@ AaveV4DeployBatchBase.s.sol                         (Foundry script entry point)
     _logDeploySummary(logger)                       write deployment summary to logger
     logger.save()                                   save logs to output/reports/deployments/
 ```
+
+// weave: run 'weave explain src/deployments/README.md' for per-hunk detail, 'weave check' to verify your resolution

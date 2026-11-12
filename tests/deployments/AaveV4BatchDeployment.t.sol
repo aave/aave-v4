@@ -52,8 +52,8 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
 
     assertGt(first.spokeInstanceBatchReports.length, 0);
     for (uint256 i; i < first.spokeInstanceBatchReports.length; ++i) {
-      BatchReports.SpokeInstanceBatchReport memory a = first.spokeInstanceBatchReports[i].report;
-      BatchReports.SpokeInstanceBatchReport memory b = second.spokeInstanceBatchReports[i].report;
+      BatchReports.SpokeProxyBatchReport memory a = first.spokeInstanceBatchReports[i].report;
+      BatchReports.SpokeProxyBatchReport memory b = second.spokeInstanceBatchReports[i].report;
       assertEq(a.aaveOracle, b.aaveOracle, 'aave oracle');
       assertEq(a.spokeImplementation, b.spokeImplementation, 'spoke implementation');
       assertEq(a.spokeProxy, b.spokeProxy, 'spoke proxy');
@@ -489,7 +489,7 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
 
   /// @dev Predicts the first revert error based on execution order in deployAaveV4:
   ///      1. AuthorityBatch (deployer as initial admin)
-  ///      2. ConfiguratorBatch
+  ///      2. HubConfiguratorBatch, SpokeConfiguratorBatch
   ///      3. TreasurySpokeBatch (treasurySpokeOwner)
   ///      4. Hubs (proxyAdminOwner)
   ///      5. Spokes (proxyAdminOwner)

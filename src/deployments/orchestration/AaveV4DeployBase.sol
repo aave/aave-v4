@@ -3,12 +3,15 @@ pragma solidity ^0.8.0;
 
 import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
+import {AaveV4AaveOracleBatch} from 'src/deployments/batches/AaveV4AaveOracleBatch.sol';
 import {AaveV4AuthorityBatch} from 'src/deployments/batches/AaveV4AuthorityBatch.sol';
-import {AaveV4ConfiguratorBatch} from 'src/deployments/batches/AaveV4ConfiguratorBatch.sol';
+import {AaveV4HubConfiguratorBatch} from 'src/deployments/batches/AaveV4HubConfiguratorBatch.sol';
+import {AaveV4SpokeConfiguratorBatch} from 'src/deployments/batches/AaveV4SpokeConfiguratorBatch.sol';
 import {AaveV4GatewayBatch} from 'src/deployments/batches/AaveV4GatewayBatch.sol';
-import {AaveV4HubInstanceBatch} from 'src/deployments/batches/AaveV4HubInstanceBatch.sol';
-import {AaveV4PositionManagerBatch} from 'src/deployments/batches/AaveV4PositionManagerBatch.sol';
-import {AaveV4SpokeInstanceBatch} from 'src/deployments/batches/AaveV4SpokeInstanceBatch.sol';
+import {AaveV4HubProxyBatch} from 'src/deployments/batches/AaveV4HubProxyBatch.sol';
+import {AaveV4GiverTakerPositionManagerBatch} from 'src/deployments/batches/AaveV4GiverTakerPositionManagerBatch.sol';
+import {AaveV4ConfigPositionManagerBatch} from 'src/deployments/batches/AaveV4ConfigPositionManagerBatch.sol';
+import {AaveV4SpokeProxyBatch} from 'src/deployments/batches/AaveV4SpokeProxyBatch.sol';
 import {AaveV4TokenizationSpokeBatch} from 'src/deployments/batches/AaveV4TokenizationSpokeBatch.sol';
 import {AaveV4TreasurySpokeBatch} from 'src/deployments/batches/AaveV4TreasurySpokeBatch.sol';
 import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
@@ -29,22 +32,34 @@ library AaveV4DeployBase {
     return authorityBatch.getReport();
   }
 
-  /// @notice Deploys the configurator batch containing HubConfigurator and SpokeConfigurator.
-  /// @param hubConfiguratorAuthority The authority for the HubConfigurator.
-  /// @param spokeConfiguratorAuthority The authority for the SpokeConfigurator.
+  /// @notice Deploys the HubConfigurator batch.
+  /// @param authority The authority for the HubConfigurator.
   /// @param salt The CREATE2 salt for deterministic deployment.
-  /// @return The configurator batch report.
-  function deployConfiguratorBatch(
-    address hubConfiguratorAuthority,
-    address spokeConfiguratorAuthority,
+  /// @return The HubConfigurator batch report.
+  function deployHubConfiguratorBatch(
+    address authority,
     bytes32 salt
-  ) internal returns (BatchReports.ConfiguratorBatchReport memory) {
-    AaveV4ConfiguratorBatch configuratorBatch = new AaveV4ConfiguratorBatch({
-      hubConfiguratorAuthority_: hubConfiguratorAuthority,
-      spokeConfiguratorAuthority_: spokeConfiguratorAuthority,
+  ) internal returns (BatchReports.HubConfiguratorBatchReport memory) {
+    AaveV4HubConfiguratorBatch hubConfiguratorBatch = new AaveV4HubConfiguratorBatch({
+      authority_: authority,
       salt_: salt
     });
-    return configuratorBatch.getReport();
+    return hubConfiguratorBatch.getReport();
+  }
+
+  /// @notice Deploys the SpokeConfigurator batch.
+  /// @param authority The authority for the SpokeConfigurator.
+  /// @param salt The CREATE2 salt for deterministic deployment.
+  /// @return The SpokeConfigurator batch report.
+  function deploySpokeConfiguratorBatch(
+    address authority,
+    bytes32 salt
+  ) internal returns (BatchReports.SpokeConfiguratorBatchReport memory) {
+    AaveV4SpokeConfiguratorBatch spokeConfiguratorBatch = new AaveV4SpokeConfiguratorBatch({
+      authority_: authority,
+      salt_: salt
+    });
+    return spokeConfiguratorBatch.getReport();
   }
 
   /// @notice Deploys the Treasury Spoke batch containing the TreasurySpoke proxy.
@@ -62,81 +77,116 @@ library AaveV4DeployBase {
     return treasurySpokeBatch.getReport();
   }
 
-  /// @notice Deploys the Hub instance batch containing the Hub proxy, implementation, and IR strategy.
+  /// @notice Deploys the Hub proxy batch containing the Hub proxy and IR strategy.
   /// @param proxyAdminOwner The owner of the proxy admin.
   /// @param authority The access-control authority for the Hub.
-  /// @param hubBytecode The creation bytecode of the HubInstance contract.
+  /// @param hubImplementation The address of the deployed Hub implementation.
+  /// @param hubInitCodeHash The keccak256 hash of the Hub implementation creation bytecode.
   /// @param salt The CREATE2 salt for deterministic deployment.
-  /// @return The Hub instance batch report.
-  function deployHubInstanceBatch(
+  /// @return The Hub proxy batch report.
+  function deployHubProxyBatch(
     address proxyAdminOwner,
     address authority,
-    bytes memory hubBytecode,
+    address hubImplementation,
+    bytes32 hubInitCodeHash,
     bytes32 salt
-  ) internal returns (BatchReports.HubInstanceBatchReport memory) {
-    AaveV4HubInstanceBatch hubInstanceBatch = new AaveV4HubInstanceBatch({
+  ) internal returns (BatchReports.HubProxyBatchReport memory) {
+    AaveV4HubProxyBatch hubProxyBatch = new AaveV4HubProxyBatch({
       proxyAdminOwner_: proxyAdminOwner,
       authority_: authority,
-      hubBytecode_: hubBytecode,
+      hubImplementation_: hubImplementation,
+      hubInitCodeHash_: hubInitCodeHash,
       salt_: salt
     });
-    return hubInstanceBatch.getReport();
+    return hubProxyBatch.getReport();
   }
 
-  /// @notice Deploys the Spoke instance batch containing the Spoke proxy, implementation, and AaveOracle.
-  /// @dev Unlike the other batches, this one is deployed through the CREATE2 factory instead of `new`.
-  ///      The batch deploys the AaveOracle with `new` (the oracle's deployer must be the batch, which calls
-  ///      `setSpoke`), so the oracle address is only deterministic if the batch address is. The factory drops
-  ///      revert reasons, so the batch's input checks are repeated here.
-  /// @param proxyAdminOwner The owner of the proxy admin.
-  /// @param authority The access-control authority for the Spoke.
-  /// @param spokeBytecode The creation bytecode of the SpokeInstance contract.
+  /// @notice Deploys the AaveOracle batch, which deploys a Spoke's AaveOracle and can bind it to the Spoke once.
+  /// @dev Deployed through the CREATE2 factory so that the AaveOracle, and the Spoke implementation and proxy
+  ///      built on it, do not depend on the deployer's nonce.
+  /// @param owner The account allowed to bind the AaveOracle to its Spoke.
   /// @param oracleDecimals The decimal precision for the AaveOracle.
-  /// @param maxUserReservesLimit The maximum number of reserves a user can interact with.
   /// @param salt The CREATE2 salt for deterministic deployment.
-  /// @return The Spoke instance batch report.
-  function deploySpokeInstanceBatch(
-    address proxyAdminOwner,
-    address authority,
-    bytes memory spokeBytecode,
+  /// @return The AaveOracle batch report.
+  function deployAaveOracleBatch(
+    address owner,
     uint8 oracleDecimals,
-    uint16 maxUserReservesLimit,
     bytes32 salt
-  ) internal returns (BatchReports.SpokeInstanceBatchReport memory) {
+  ) internal returns (BatchReports.AaveOracleBatchReport memory) {
+    // the CREATE2 factory drops revert reasons, so repeat the batch's input checks here
+    require(owner != address(0), 'invalid owner');
     require(oracleDecimals > 0, 'invalid oracle decimals');
-    require(proxyAdminOwner != address(0), 'invalid proxy admin owner');
-    require(authority != address(0), 'invalid authority');
-    require(maxUserReservesLimit > 0, 'invalid max user reserves limit');
-    address spokeInstanceBatch = Create2Utils.create2Deploy({
+    address aaveOracleBatch = Create2Utils.create2Deploy({
       salt: salt,
       bytecode: abi.encodePacked(
-        type(AaveV4SpokeInstanceBatch).creationCode,
-        abi.encode(
-          proxyAdminOwner,
-          authority,
-          spokeBytecode,
-          oracleDecimals,
-          maxUserReservesLimit,
-          salt
-        )
+        type(AaveV4AaveOracleBatch).creationCode,
+        abi.encode(owner, oracleDecimals, salt)
       )
     });
-    return AaveV4SpokeInstanceBatch(spokeInstanceBatch).getReport();
+    return AaveV4AaveOracleBatch(aaveOracleBatch).getReport();
   }
 
-  /// @notice Deploys the position manager batch containing all three position manager contracts.
-  /// @param owner The owner of the position managers.
+  /// @notice Binds a Spoke's AaveOracle to the Spoke through the batch that deployed it.
+  /// @dev Must be called by the batch owner, after the Spoke proxy is deployed.
+  /// @param aaveOracleBatch The AaveOracle batch.
+  /// @param spoke The address of the Spoke proxy.
+  function setAaveOracleSpoke(address aaveOracleBatch, address spoke) internal {
+    AaveV4AaveOracleBatch(aaveOracleBatch).setSpoke(spoke);
+  }
+
+  /// @notice Deploys the Spoke proxy batch containing the Spoke proxy.
+  /// @param proxyAdminOwner The owner of the proxy admin.
+  /// @param authority The access-control authority for the Spoke.
+  /// @param spokeImplementation The address of the deployed Spoke implementation.
+  /// @param spokeInitCodeHash The keccak256 hash of the Spoke implementation creation bytecode, constructor
+  ///        arguments included.
   /// @param salt The CREATE2 salt for deterministic deployment.
-  /// @return The position manager batch report.
-  function deployPositionManagerBatch(
-    address owner,
+  /// @return The Spoke proxy batch report.
+  function deploySpokeProxyBatch(
+    address proxyAdminOwner,
+    address authority,
+    address spokeImplementation,
+    bytes32 spokeInitCodeHash,
     bytes32 salt
-  ) internal returns (BatchReports.PositionManagerBatchReport memory) {
-    AaveV4PositionManagerBatch positionManagerBatch = new AaveV4PositionManagerBatch({
-      owner_: owner,
+  ) internal returns (BatchReports.SpokeProxyBatchReport memory) {
+    AaveV4SpokeProxyBatch spokeProxyBatch = new AaveV4SpokeProxyBatch({
+      proxyAdminOwner_: proxyAdminOwner,
+      authority_: authority,
+      spokeImplementation_: spokeImplementation,
+      spokeInitCodeHash_: spokeInitCodeHash,
       salt_: salt
     });
-    return positionManagerBatch.getReport();
+    return spokeProxyBatch.getReport();
+  }
+
+  /// @notice Deploys the batch containing GiverPositionManager and TakerPositionManager.
+  /// @param owner The owner of the GiverPositionManager and TakerPositionManager.
+  /// @param salt The CREATE2 salt for deterministic deployment.
+  /// @return The GiverPositionManager and TakerPositionManager batch report.
+  function deployGiverTakerPositionManagerBatch(
+    address owner,
+    bytes32 salt
+  ) internal returns (BatchReports.GiverTakerPositionManagerBatchReport memory) {
+    AaveV4GiverTakerPositionManagerBatch giverTakerPositionManagerBatch = new AaveV4GiverTakerPositionManagerBatch({
+        owner_: owner,
+        salt_: salt
+      });
+    return giverTakerPositionManagerBatch.getReport();
+  }
+
+  /// @notice Deploys the ConfigPositionManager batch.
+  /// @param owner The owner of the ConfigPositionManager.
+  /// @param salt The CREATE2 salt for deterministic deployment.
+  /// @return The ConfigPositionManager batch report.
+  function deployConfigPositionManagerBatch(
+    address owner,
+    bytes32 salt
+  ) internal returns (BatchReports.ConfigPositionManagerBatchReport memory) {
+    AaveV4ConfigPositionManagerBatch configPositionManagerBatch = new AaveV4ConfigPositionManagerBatch({
+        owner_: owner,
+        salt_: salt
+      });
+    return configPositionManagerBatch.getReport();
   }
 
   /// @notice Deploys the gateways batch containing NativeTokenGateway and SignatureGateway.
