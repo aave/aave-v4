@@ -1,0 +1,33 @@
+src/deployments/libraries/OrchestrationReports.sol
+  s_baa2e306a9ce7e::t_f42696a408671d 6,9-11,14-16,20-22,25-27,31-41,44-54
+src/deployments/README.md
+  s_baa2e306a9ce7e::t_3be79a312d4574 73,194-198,205-212
+src/deployments/orchestration/AaveV4DeployOrchestration.sol
+  s_baa2e306a9ce7e::t_04e6f684d679ce 42,56,62,69,80,91,101,112,124-128,177,179,182,192,202-214,218-219,221,231,235,238,253,266-275,278-280,283-285,288-291,293-296,304,307-310,312,314,322,324,329,334-335,337,344,346,350,352,362,365,370,374,378,380,387-394,396-411,421-422,427-428,432,434,437,439,448,453,457,473,478,482,494,496,504,506
+src/deployments/utils/MetadataLogger.sol
+  s_baa2e306a9ce7e::t_0b610662bfd3c0 16,19-22,25,31-32,35-36,39-40,48,54-55,58-59,62-63,70-71,73-74,76-77,79-80,82-83
+tests/deployments/AaveV4BatchDeployment.t.sol
+  s_baa2e306a9ce7e::t_5772736760a140 52-55,329,363
+tests/deployments/fork/PostDeploymentVerificationBase.t.sol
+  s_baa2e306a9ce7e::t_87259cd91e563d 31-34,39,42,45,48,51,55,58,60-61,65,69,72,74-75,79
+tests/deployments/utils/MetadataLogger.t.sol
+  s_baa2e306a9ce7e::t_b794df4c7ac357 16-46,58-61,64,67,69-70,73,76,78-79,82-83,86-88,94-95,103,109-111,124-128,141,151-166,181-186
+tests/utils/BatchTestProcedures.sol
+  s_baa2e306a9ce7e::t_b8ff944c4f570a 100-101,105-106,117,128,189,191,194,196,199-201,203-205,208-215,217-223,233,236,253-254,258-259,263,268,273,279,290-291,295,308,312,328-329,332,335,340,345,356-357,365,460,475,483-484,497,535-536,546,554,596,601,610,649,663,673-674,686,700-701,705-706,710,721,749,777,781,788,793,798,812-821,824-828,831-832,834-835,837-838,840-841,843-844
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b531abdece95cc5e24a9af4d31f9a2b51051c9f6",
+  "prompts": {},
+  "sessions": {
+    "s_baa2e306a9ce7e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5fe9b53d-b377-4c11-b688-c311ccd286f9",
+        "model": "claude-fable-5-2"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}
