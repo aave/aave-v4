@@ -7,7 +7,7 @@ import {AaveV4InterestRateStrategyDeployProcedure} from 'src/deployments/procedu
 
 /// @title AaveV4HubInstanceBatch
 /// @author Aave Labs
-/// @notice Deploys a Hub proxy in front of an already deployed implementation and its InterestRateStrategy, producing a batch report.
+/// @notice Deploys a Hub proxy for an already deployed implementation and the Hub's InterestRateStrategy.
 contract AaveV4HubInstanceBatch is
   AaveV4HubDeployProcedure,
   AaveV4InterestRateStrategyDeployProcedure
