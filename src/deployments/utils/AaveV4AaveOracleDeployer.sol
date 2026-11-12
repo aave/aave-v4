@@ -7,14 +7,7 @@ import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 /// @title AaveV4AaveOracleDeployer
 /// @author Aave Labs
 /// @notice Deploys the AaveOracle of a Spoke and later binds it to the Spoke.
-/// @dev The only deployment helper contract left: every other component is deployed directly from the
-///      deployer through the CREATE2 factory. It breaks the Spoke <> AaveOracle cycle: the Spoke
-///      implementation takes the oracle in its constructor, and only the oracle's deployer can call
-///      `AaveOracle.setSpoke`. A factory-deployed oracle would have the factory as its deployer, and an
-///      oracle deployed with CREATE from the deployer would have a nonce-dependent address (I-06).
-///      This contract is deployed through the CREATE2 factory and deploys the oracle with CREATE2 from
-///      itself, so both addresses are deterministic and this contract can bind the oracle later.
-///      `AaveOracle.setSpoke` is one-shot, so `setSpoke` here can succeed only once.
+/// @dev Only the deployer of an AaveOracle can call `AaveOracle.setSpoke`.
 contract AaveV4AaveOracleDeployer {
   /// @notice The only account allowed to call `setSpoke`.
   /// @dev Without it, anyone could bind the oracle first to a Spoke of their own that reports this
