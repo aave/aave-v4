@@ -1,0 +1,61 @@
+src/deployments/README.md
+  s_b5a8ba063f759a::t_82556d5d453ad8 46,85,87,233-236,252-255
+src/deployments/batches/AaveV4HubProxyBatch.sol
+  s_b5a8ba063f759a::t_d37881041ce89d 5,8,11-12,15,39,47
+src/deployments/batches/AaveV4SpokeProxyBatch.sol
+  s_b5a8ba063f759a::t_30c47f1031b227 5,8,13-14,38,46
+src/deployments/libraries/BatchReports.sol
+  s_b5a8ba063f759a::t_83be8a104469c9 33,42
+src/deployments/libraries/OrchestrationReports.sol
+  s_b5a8ba063f759a::t_a0247fc898f420 14,21
+src/deployments/orchestration/AaveV4DeployBase.sol
+  s_b5a8ba063f759a::t_177fedb8b03033 11,14,80,86-87,93-94,101,137,144-145,151-152,159
+src/deployments/orchestration/AaveV4DeployOrchestration.sol
+  s_b5a8ba063f759a::t_11f58477f1e6b7 93,204,278,316,323,325,410,417-419,509,521,586,597
+src/deployments/procedures/deploy/hub/AaveV4HubProxyDeployProcedure.sol
+  s_b5a8ba063f759a::t_dffbcc1bf724ec 7,13
+src/deployments/procedures/deploy/spoke/AaveV4SpokeProxyDeployProcedure.sol
+  s_b5a8ba063f759a::t_879b6e31ebb423 7,13
+tests/deployments/AaveV4BatchDeployment.t.sol
+  s_b5a8ba063f759a::t_5db8ebe461a402 55-56
+tests/deployments/batches/AaveV4AaveOracleBatch.t.sol
+  s_b5a8ba063f759a::t_5fc0b5264ad736 126
+tests/deployments/batches/AaveV4HubProxyBatch.t.sol
+  s_b5a8ba063f759a::t_d9442d74a551ea 6-8,17,24,52,63,74,86,97,108
+tests/deployments/batches/AaveV4SpokeProxyBatch.t.sol
+  s_b5a8ba063f759a::t_ce6dbad8a6f7cf 6-8,16,50,61,72,85,96
+tests/deployments/batches/AaveV4TokenizationSpokeBatch.t.sol
+  s_b5a8ba063f759a::t_765892a458eaf5 21,28
+tests/deployments/batches/BatchBase.t.sol
+  s_b5a8ba063f759a::t_42f2324e53d66e 16-17
+tests/deployments/orchestration/AaveV4TestOrchestration.sol
+  s_b5a8ba063f759a::t_5cd5921a1c52c6 20-21,88,98,100,142,162,378,384,386,398,406,413
+tests/deployments/procedures/ProceduresBase.t.sol
+  s_b5a8ba063f759a::t_eee335dd4adf1b 11,17
+tests/deployments/procedures/deploy/hub/AaveV4HubProxyDeployProcedure.t.sol
+  s_b5a8ba063f759a::t_fb0fcc3d5c5714 6-7,12
+tests/deployments/procedures/deploy/spoke/AaveV4SpokeProxyDeployProcedure.t.sol
+  s_b5a8ba063f759a::t_f1ea27e87aba44 6-7,13
+tests/deployments/procedures/deploy/spoke/AaveV4TokenizationSpokeDeployProcedure.t.sol
+  s_b5a8ba063f759a::t_9d20c412981d3e 19
+tests/helpers/mocks/deployments/procedures/AaveV4HubProxyDeployProcedureWrapper.sol
+  s_b5a8ba063f759a::t_817920d9f2106f 4,6
+tests/helpers/mocks/deployments/procedures/AaveV4SpokeProxyDeployProcedureWrapper.sol
+  s_b5a8ba063f759a::t_862b3583ad89a3 4,6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "27086250771731203af26fabe832972c613261d2",
+  "prompts": {},
+  "sessions": {
+    "s_b5a8ba063f759a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e21f9af4-2976-4fc6-9fca-5c29e8c8d9fc",
+        "model": "claude-fable-5-2"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}
