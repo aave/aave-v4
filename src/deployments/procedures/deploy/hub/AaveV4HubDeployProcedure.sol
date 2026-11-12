@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 import {IHubInstance} from 'src/deployments/utils/interfaces/IHubInstance.sol';
 
-/// @title AaveV4HubDeployProcedure Library
+/// @title AaveV4HubDeployProcedure
 /// @author Aave Labs
 /// @notice Deploys an upgradeable Hub instance behind a transparent proxy.
 library AaveV4HubDeployProcedure {

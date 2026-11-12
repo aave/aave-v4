@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 import {AccessManagerEnumerable} from 'src/access/AccessManagerEnumerable.sol';
 
-/// @title AaveV4AccessManagerEnumerableDeployProcedure Library
+/// @title AaveV4AccessManagerEnumerableDeployProcedure
 /// @author Aave Labs
 /// @notice Deploys the AccessManagerEnumerable contract for access control.
 library AaveV4AccessManagerEnumerableDeployProcedure {

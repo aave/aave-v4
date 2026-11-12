@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import {AssetInterestRateStrategy} from 'src/hub/AssetInterestRateStrategy.sol';
 import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 
-/// @title AaveV4InterestRateStrategyDeployProcedure Library
+/// @title AaveV4InterestRateStrategyDeployProcedure
 /// @author Aave Labs
 /// @notice Deploys the AssetInterestRateStrategy contract for the Hub.
 library AaveV4InterestRateStrategyDeployProcedure {

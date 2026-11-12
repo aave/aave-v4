@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 import {HubConfigurator} from 'src/hub/HubConfigurator.sol';
 
-/// @title AaveV4HubConfiguratorDeployProcedure Library
+/// @title AaveV4HubConfiguratorDeployProcedure
 /// @author Aave Labs
 /// @notice Deploys the HubConfigurator contract for configuring the Hub.
 library AaveV4HubConfiguratorDeployProcedure {

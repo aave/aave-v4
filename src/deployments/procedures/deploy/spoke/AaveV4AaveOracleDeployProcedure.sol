@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 import {AaveV4AaveOracleDeployer} from 'src/deployments/utils/AaveV4AaveOracleDeployer.sol';
 
-/// @title AaveV4AaveOracleDeployProcedure Library
+/// @title AaveV4AaveOracleDeployProcedure
 /// @author Aave Labs
 /// @notice Deploys the AaveOracle of a Spoke through an AaveV4AaveOracleDeployer and binds it to the Spoke.
 library AaveV4AaveOracleDeployProcedure {

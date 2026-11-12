@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 import {SpokeConfigurator} from 'src/spoke/SpokeConfigurator.sol';
 
-/// @title AaveV4SpokeConfiguratorDeployProcedure Library
+/// @title AaveV4SpokeConfiguratorDeployProcedure
 /// @author Aave Labs
 /// @notice Deploys the SpokeConfigurator contract for configuring Spoke instances.
 library AaveV4SpokeConfiguratorDeployProcedure {

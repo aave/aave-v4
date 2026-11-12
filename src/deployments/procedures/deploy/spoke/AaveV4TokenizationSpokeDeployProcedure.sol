@@ -6,7 +6,7 @@ import {ITokenizationSpokeInstance} from 'src/deployments/utils/interfaces/IToke
 import {TokenizationSpokeInstance} from 'src/spoke/instances/TokenizationSpokeInstance.sol';
 import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
 
-/// @title AaveV4TokenizationSpokeDeployProcedure Library
+/// @title AaveV4TokenizationSpokeDeployProcedure
 /// @author Aave Labs
 /// @notice Deploys an upgradeable TokenizationSpoke instance behind a transparent proxy.
 library AaveV4TokenizationSpokeDeployProcedure {

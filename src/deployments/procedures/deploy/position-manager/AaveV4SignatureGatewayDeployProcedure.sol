@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 import {SignatureGateway} from 'src/position-manager/SignatureGateway.sol';
 
-/// @title AaveV4SignatureGatewayDeployProcedure Library
+/// @title AaveV4SignatureGatewayDeployProcedure
 /// @author Aave Labs
 /// @notice Deploys the SignatureGateway contract.
 library AaveV4SignatureGatewayDeployProcedure {

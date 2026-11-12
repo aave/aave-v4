@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 import {TreasurySpokeInstance} from 'src/spoke/instances/TreasurySpokeInstance.sol';
 
-/// @title AaveV4TreasurySpokeDeployProcedure Library
+/// @title AaveV4TreasurySpokeDeployProcedure
 /// @author Aave Labs
 /// @notice Deploys the TreasurySpoke contract behind a transparent proxy.
 library AaveV4TreasurySpokeDeployProcedure {

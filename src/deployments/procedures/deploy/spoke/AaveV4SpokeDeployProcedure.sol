@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 import {ISpokeInstance} from 'src/deployments/utils/interfaces/ISpokeInstance.sol';
 
-/// @title AaveV4SpokeDeployProcedure Library
+/// @title AaveV4SpokeDeployProcedure
 /// @author Aave Labs
 /// @notice Deploys an upgradeable Spoke instance behind a transparent proxy.
 library AaveV4SpokeDeployProcedure {

@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 import {NativeTokenGateway} from 'src/position-manager/NativeTokenGateway.sol';
 
-/// @title AaveV4NativeTokenGatewayDeployProcedure Library
+/// @title AaveV4NativeTokenGatewayDeployProcedure
 /// @author Aave Labs
 /// @notice Deploys the NativeTokenGateway contract.
 library AaveV4NativeTokenGatewayDeployProcedure {

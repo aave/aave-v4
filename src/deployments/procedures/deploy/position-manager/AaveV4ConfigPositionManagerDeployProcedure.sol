@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 import {ConfigPositionManager} from 'src/position-manager/ConfigPositionManager.sol';
 
-/// @title AaveV4ConfigPositionManagerDeployProcedure Library
+/// @title AaveV4ConfigPositionManagerDeployProcedure
 /// @author Aave Labs
 /// @notice Deploys the ConfigPositionManager contract.
 library AaveV4ConfigPositionManagerDeployProcedure {

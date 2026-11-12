@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 import {GiverPositionManager} from 'src/position-manager/GiverPositionManager.sol';
 
-/// @title AaveV4GiverPositionManagerDeployProcedure Library
+/// @title AaveV4GiverPositionManagerDeployProcedure
 /// @author Aave Labs
 /// @notice Deploys the GiverPositionManager contract.
 library AaveV4GiverPositionManagerDeployProcedure {
