@@ -6,8 +6,9 @@ import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 /// @title AaveV4SpokeImplementationDeployProcedure Library
 /// @author Aave Labs
 /// @notice Deploys a Spoke implementation in its own transaction.
-/// @dev A library rather than a batch base: the implementation is close to the 24 KB code size limit, so it does not
-///      share a transaction with other contracts on chains with a per-transaction gas cap.
+/// @dev Deploying the implementation alone uses most of the gas a transaction can carry on Tempo and on Ethereum
+///      after Glamsterdam, so no batch wraps it. The deployer calls this library directly, instead of the usual
+///      convention where a batch contract inherits the deploy procedure and runs it in its constructor.
 library AaveV4SpokeImplementationDeployProcedure {
   /// @notice Deploys a Spoke implementation via CREATE2.
   /// @param oracle The AaveOracle used by the Spoke instance; must already be deployed.
