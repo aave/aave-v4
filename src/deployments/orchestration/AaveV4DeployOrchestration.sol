@@ -28,8 +28,6 @@ import {DeployConstants} from 'src/deployments/utils/libraries/DeployConstants.s
 /// @title AaveV4DeployOrchestration Library
 /// @author Aave Labs
 /// @notice Main orchestrator that deploys all Aave V4 contracts in order and configures roles.
-/// @dev Every procedure is an internal library call that runs in the caller's context, so when a script
-///      broadcasts, each CREATE2 factory call and each AccessManager call is its own transaction.
 library AaveV4DeployOrchestration {
   bytes32 public constant SALT = keccak256('AAVE_V4');
 

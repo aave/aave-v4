@@ -32,7 +32,7 @@ This deploys `LiquidationLogic` via CREATE2 and writes `FOUNDRY_LIBRARIES` to `.
 make deploy-contracts
 ```
 
-This runs `AaveV4DeployOrchestration.deployAaveV4()`, which deploys each contract in its own transaction, in order: AccessManager → role labeling → Configurators → Configurator role setup → TreasurySpoke → Hubs → Spokes → Gateways → PositionManagers → role grants → DEFAULT_ADMIN transfer.
+This runs `AaveV4DeployOrchestration.deployAaveV4()`, which deploys the contracts in order: AccessManager → role labeling → Configurators → Configurator role setup → TreasurySpoke → Hubs → Spokes → Gateways → PositionManagers → role grants → DEFAULT_ADMIN transfer.
 
 ### TokenizationSpoke
 
@@ -66,11 +66,11 @@ src/deployments/
     AaveV4DeployOrchestration   Main entry: deployAaveV4() -- calls procedures in order
 
   procedures/                 Granular operations
-    deploy/                   Individual contract deploy procedures (libraries, one transaction per contract)
+    deploy/                   Individual contract deploy procedures
     roles/                    Role setup procedures per component
 
   libraries/
-    OrchestrationReports      Deployment report structs (all deployed addresses)
+    OrchestrationReports      Deployment report structs
     ConfigData                Parameter structs for config operations
 
   utils/
@@ -82,7 +82,7 @@ src/deployments/
       BytecodeHelper          Hub/Spoke bytecode retrieval
       DeployConstants         Shared deploy constants
     Logger & MetadataLogger    Deployment logging and JSON output
-    AaveV4AaveOracleDeployer   Deploys a Spoke's AaveOracle and binds it to the Spoke (owner only)
+    AaveV4AaveOracleDeployer   Deploys a Spoke's AaveOracle and binds it to the Spoke
 ```
 
 ### Labels and Deterministic Deployment
@@ -157,7 +157,7 @@ AaveV4DeployBatchBase.s.sol                         (Foundry script entry point)
     vm.startBroadcast()
     _loadWarningsAndSanitizeInputs()                validate labels, default zero addresses to deployer
     |
-    +-- AaveV4DeployOrchestration.deployAaveV4     (library — every factory and AccessManager call is its own transaction)
+    +-- AaveV4DeployOrchestration.deployAaveV4     (library — all calls execute as deployer)
     |     |
     |     +-- _deriveSalt(deployer, salt)           Combines deployer address (upper 160 bits) with hash of the BASE SALT (keccak256('AAVE_V4')) and
     |     |                                         the user-provided salt (lower 96 bits) into a single deterministic salt
@@ -206,7 +206,7 @@ AaveV4DeployBatchBase.s.sol                         (Foundry script entry point)
     |     |         Create2Utils.create2Deploy() --> AaveV4AaveOracleDeployer(owner = deployer, ...)
     |     |           new AaveOracle{salt}()     (deployer = AaveV4AaveOracleDeployer)
     |     |       AaveV4SpokeDeployProcedure.deployUpgradeableSpokeInstance()
-    |     |         Create2Utils.create2Deploy() --> SpokeInstance impl (takes the AaveOracle)
+    |     |         Create2Utils.create2Deploy() --> SpokeInstance impl
     |     |         Create2Utils.proxify()       --> SpokeInstance proxy
     |     |       AaveV4AaveOracleDeployProcedure.setAaveOracleSpoke()
     |     |         AaveV4AaveOracleDeployer.setSpoke() --> AaveOracle.setSpoke()
