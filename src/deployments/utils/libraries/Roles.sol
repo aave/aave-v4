@@ -18,7 +18,9 @@ import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 ///   - SpokeConfigurator: 400-499
 ///   - Babylon BTCVaultSwap: 2000-2099
 ///
-/// Core contracts use three-digit domains. Integrations use four-digit domains from 2000.
+/// Core contracts use three-digit domains. 1000-1999 is left to curated markets, which run on their
+/// own AccessManager and define their roles outside this library. Integrations use four-digit
+/// domains from 2000.
 ///
 /// ## Role strategy
 ///
