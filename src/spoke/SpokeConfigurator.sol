@@ -3,6 +3,7 @@ pragma solidity 0.8.28;
 
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {AccessManagedUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
+import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
@@ -426,6 +427,22 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
   }
 
   /// @inheritdoc ISpokeConfigurator
+  function unfreezeAsset(address hub, address underlying) external restricted {
+    IHub targetHub = IHub(hub);
+    uint256 assetId = targetHub.getAssetId(underlying);
+    uint256 spokeCount = targetHub.getSpokeCount(assetId);
+    for (uint256 i = 0; i < spokeCount; ++i) {
+      ISpoke targetSpoke = ISpoke(targetHub.getSpokeAddress(assetId, i));
+      (bool listed, uint256 reserveId) = _tryGetReserveId(targetSpoke, hub, assetId);
+      if (listed) {
+        _unfreezeReserve(
+          ReserveKey({spoke: targetSpoke, hub: hub, underlying: underlying, reserveId: reserveId})
+        );
+      }
+    }
+  }
+
+  /// @inheritdoc ISpokeConfigurator
   function zeroCollateralFactor(
     address spoke,
     address hub,
@@ -692,6 +709,21 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
         underlying: reserve.underlying,
         reserveId: reserveId
       });
+  }
+
+  /// @dev Returns false when the Spoke has no reserve for the Hub asset. This covers Spokes registered on the
+  /// Hub without reserves, such as the TreasurySpoke and TokenizationSpoke, which do not implement
+  /// `getReserveId`. Only the lookup is guarded; reverts from the subsequent configuration calls propagate.
+  function _tryGetReserveId(
+    ISpoke spoke,
+    address hub,
+    uint256 assetId
+  ) internal view returns (bool, uint256) {
+    try spoke.getReserveId(hub, assetId) returns (uint256 reserveId) {
+      return (true, reserveId);
+    } catch {
+      return (false, 0);
+    }
   }
 
   function _copy(

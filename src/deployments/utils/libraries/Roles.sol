@@ -147,7 +147,7 @@ library Roles {
 
   /// @notice Returns the function selectors associated with the SpokeConfigurator Domain Admin role.
   function getSpokeConfiguratorDomainAdminRoleSelectors() internal pure returns (bytes4[] memory) {
-    bytes4[] memory selectors = new bytes4[](28);
+    bytes4[] memory selectors = new bytes4[](29);
     selectors[0] = ISpokeConfigurator.updateReservePriceSource.selector;
     selectors[1] = ISpokeConfigurator.updateLiquidationTargetHealthFactor.selector;
     selectors[2] = ISpokeConfigurator.updateHealthFactorForMaxBonus.selector;
@@ -176,6 +176,7 @@ library Roles {
     selectors[25] = ISpokeConfigurator.zeroCollateralFactor.selector;
     selectors[26] = ISpokeConfigurator.restoreCollateralFactor.selector;
     selectors[27] = ISpokeConfigurator.updatePositionManager.selector;
+    selectors[28] = ISpokeConfigurator.unfreezeAsset.selector;
     return selectors;
   }
 }

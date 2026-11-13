@@ -1421,6 +1421,78 @@ contract SpokeConfiguratorTest is SpokeConfiguratorBaseTest {
     }
   }
 
+  function test_unfreezeAsset_revertsWith_AccessManagedUnauthorized() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
+    vm.prank(alice);
+    spokeConfigurator.unfreezeAsset(hubAddr, underlying);
+  }
+
+  /// @dev DAI on hub1 is registered for several Spokes and for the TreasurySpoke, which has no reserves
+  /// and does not implement `getReserveId`, so it must be skipped.
+  function test_unfreezeAsset() public {
+    address dai = address(tokenList.dai);
+    uint256 spokeCount = hub1.getSpokeCount(daiAssetId);
+    assertTrue(hub1.isSpokeListed(daiAssetId, address(treasurySpoke)), 'treasury spoke listed');
+
+    for (uint256 i; i < spokeCount; ++i) {
+      address spokeAddress = hub1.getSpokeAddress(daiAssetId, i);
+      if (spokeAddress == address(treasurySpoke)) continue;
+      _grantSpokeConfiguratorRole(ISpoke(spokeAddress), address(spokeConfigurator));
+      vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+      spokeConfigurator.freezeReserve(spokeAddress, hubAddr, dai);
+    }
+
+    vm.recordLogs();
+    uint256 frozenCount;
+    for (uint256 i; i < spokeCount; ++i) {
+      address spokeAddress = hub1.getSpokeAddress(daiAssetId, i);
+      if (spokeAddress == address(treasurySpoke)) continue;
+      ISpoke targetSpoke = ISpoke(spokeAddress);
+      uint256 id = targetSpoke.getReserveId(hubAddr, daiAssetId);
+      ISpoke.ReserveConfig memory reserveConfig = targetSpoke.getReserveConfig(id);
+      reserveConfig.frozen = false;
+      vm.expectCall(spokeAddress, abi.encodeCall(ISpoke.updateReserveConfig, (id, reserveConfig)));
+      _expectReserveFrozenUpdated(targetSpoke, id, true, false);
+      ++frozenCount;
+    }
+    assertGt(frozenCount, 1, 'dai reserve on several spokes');
+
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.unfreezeAsset(hubAddr, dai);
+
+    assertEq(_configuratorLogCount(), frozenCount);
+    for (uint256 i; i < spokeCount; ++i) {
+      address spokeAddress = hub1.getSpokeAddress(daiAssetId, i);
+      if (spokeAddress == address(treasurySpoke)) continue;
+      ISpoke targetSpoke = ISpoke(spokeAddress);
+      uint256 id = targetSpoke.getReserveId(hubAddr, daiAssetId);
+      assertFalse(targetSpoke.getReserveConfig(id).frozen);
+      // only the flag is cleared; the collateral factor zeroed by the freeze stays zero
+      assertEq(_getLatestDynamicReserveConfig(targetSpoke, id).collateralFactor, 0);
+    }
+
+    // a second call skips every reserve and does not revert
+    vm.recordLogs();
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.unfreezeAsset(hubAddr, dai);
+    assertEq(_configuratorLogCount(), 0);
+  }
+
+  function test_unfreezeAsset_leavesOtherAssetsFrozen() public {
+    uint256 daiId = _daiReserveId(spoke);
+    uint256 wethId = _wethReserveId(spoke);
+    vm.startPrank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.freezeReserve(spokeAddr, hubAddr, address(tokenList.dai));
+    spokeConfigurator.freezeReserve(spokeAddr, hubAddr, address(tokenList.weth));
+    spokeConfigurator.unfreezeAsset(hubAddr, address(tokenList.dai));
+    vm.stopPrank();
+
+    assertFalse(spoke.getReserveConfig(daiId).frozen);
+    assertTrue(spoke.getReserveConfig(wethId).frozen);
+  }
+
   function test_zeroCollateralFactor_revertsWith_AccessManagedUnauthorized() public {
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
