@@ -1,14 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Test, Vm} from 'forge-std/Test.sol';
+import {Test} from 'forge-std/Test.sol';
 import {
   AaveV4DeployBabylonSpokeHarness,
   AaveV4BabylonVerifyHarness
 } from 'tests/deployments/markets/babylon/AaveV4Babylon.t.sol';
 import {AaveV4BabylonConfig} from 'scripts/markets/babylon/AaveV4BabylonConfig.sol';
-import {AaveV4BabylonHandover} from 'scripts/markets/babylon/AaveV4BabylonHandover.s.sol';
-import {AaveV4BabylonVerification} from 'scripts/markets/babylon/AaveV4BabylonVerification.sol';
 import {IBabylonBTCVaultSwap} from 'scripts/markets/babylon/interfaces/IBabylonIntegration.sol';
 import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
@@ -202,96 +200,12 @@ interface IApplicationRegistry {
   ) external view returns (bytes32);
 }
 
-/// @dev Repeats `AaveV4BabylonHandover.run` on the mainnet config, broadcasting as the config
-/// deployer, whose key a test cannot use.
-contract AaveV4BabylonHandoverForkHarness is AaveV4BabylonHandover {
-  string internal constant CONFIG_NAME = 'mainnet';
-
-  function runAsConfigDeployer() external {
-    AaveV4BabylonConfig.Config memory config = _config();
-    AaveV4BabylonConfig.Deployment memory deployment = AaveV4BabylonConfig.readDeployment(config);
-    AaveV4BabylonConfig.MarketConfig memory marketConfig = _marketConfig(config, deployment);
-
-    AaveV4BabylonVerification.verifyDeployment({
-      config: config,
-      deployment: deployment,
-      authority: deployment.accessManager
-    });
-    AaveV4BabylonVerification.verifyMarketConfig({
-      deployment: deployment,
-      marketConfig: marketConfig,
-      feeReceiver: AaveV4BabylonConfig.feeReceiver(config, deployment)
-    });
-    AaveV4BabylonVerification.verifyTokenizationSpokes({
-      config: config,
-      marketConfig: marketConfig,
-      owner: config.admin
-    });
-    AaveV4BabylonVerification.verifyBabylonContracts(config, deployment);
-    AaveV4BabylonVerification.verifyProductionConfig(config);
-    AaveV4BabylonVerification.verifyAuthorityTargets(config, deployment);
-
-    vm.startBroadcast(config.deployer);
-    (, address deployer, ) = vm.readCallers();
-    AaveV4BabylonConfig.requireDeployer(config, deployer);
-    _handover({config: config, deployment: deployment, deployer: deployer});
-    vm.stopBroadcast();
-
-    AaveV4BabylonVerification.verifyDeployment({
-      config: config,
-      deployment: deployment,
-      authority: AaveV4BabylonConfig.finalAuthority(config, deployment)
-    });
-    if (config.authority == address(0)) {
-      AaveV4BabylonVerification.verifyRoles({
-        deployment: deployment,
-        admin: config.admin,
-        deployer: config.deployer
-      });
-    } else {
-      AaveV4BabylonVerification.verifyAbandonedAccessManager({
-        deployment: deployment,
-        admin: config.admin,
-        deployer: deployer
-      });
-    }
-    AaveV4BabylonVerification.verifyProxyAdmins({
-      deployment: deployment,
-      owner: config.admin,
-      externalSpokes: marketConfig.externalSpokes,
-      externalFeeReceiver: config.feeReceiver,
-      treasurySpokeOwner: AaveV4BabylonConfig.treasurySpokeOwner(config)
-    });
-    AaveV4BabylonVerification.verifyTreasurySpokeOwner({
-      deployment: deployment,
-      owner: AaveV4BabylonConfig.treasurySpokeOwner(config),
-      allowPending: config.feeReceiver == address(0)
-    });
-  }
-
-  function _config() internal view override returns (AaveV4BabylonConfig.Config memory) {
-    return AaveV4BabylonConfig.read(CONFIG_NAME);
-  }
-
-  function _marketConfig(
-    AaveV4BabylonConfig.Config memory config,
-    AaveV4BabylonConfig.Deployment memory deployment
-  ) internal view override returns (AaveV4BabylonConfig.MarketConfig memory) {
-    return
-      AaveV4BabylonConfig.parseMarketConfig({
-        json: vm.readFile(AaveV4BabylonConfig.path(CONFIG_NAME)),
-        config: config,
-        deployment: deployment
-      });
-  }
-}
-
-/// @dev Runs the production handover on the deployed Babylon market on an Ethereum fork and asserts
-/// the state after it (step 5b of the launch plan), then the state after the launch AIP actions on
-/// the shared V4 contracts. Expected values come from the LlamaRisk parameters, aave-address-book
+/// @dev Asserts the state of the deployed Babylon market on an Ethereum fork after its handover
+/// (step 5b of the launch plan), then the state after the launch AIP actions on the shared V4
+/// contracts. Expected values come from the LlamaRisk parameters, aave-address-book
 /// and Babylon's deployment, not from `config/mainnet.json`.
 contract AaveV4BabylonMainnetForkTest is Test {
-  uint256 internal constant FORK_BLOCK = 26_407_250;
+  uint256 internal constant FORK_BLOCK = 26_409_250;
   uint256 internal constant SPOKE_DEPLOY_BLOCK = 26_394_302;
   string internal constant MAINNET_CONFIG = 'scripts/markets/babylon/config/mainnet.json';
 
@@ -383,7 +297,6 @@ contract AaveV4BabylonMainnetForkTest is Test {
   string internal _marketJson;
   AaveV4BabylonConfig.Config internal _config;
   AaveV4BabylonConfig.Deployment internal _deployment;
-  uint256 internal _handoverPositionManagerUpdates;
 
   function setUp() public {
     vm.createSelectFork(vm.rpcUrl('mainnet'), FORK_BLOCK);
@@ -392,15 +305,6 @@ contract AaveV4BabylonMainnetForkTest is Test {
     _deployer = _config.deployer;
     _marketJson = vm.readFile(MAINNET_CONFIG);
     _deployment = AaveV4BabylonConfig.readDeployment(_config);
-
-    vm.recordLogs();
-    new AaveV4BabylonHandoverForkHarness().runAsConfigDeployer();
-    Vm.Log[] memory logs = vm.getRecordedLogs();
-    for (uint256 i; i < logs.length; ++i) {
-      if (logs[i].topics[0] == ISpoke.UpdatePositionManager.selector) {
-        ++_handoverPositionManagerUpdates;
-      }
-    }
   }
 
   function test_verify() public {
@@ -633,7 +537,6 @@ contract AaveV4BabylonMainnetForkTest is Test {
       0,
       'position manager updates'
     );
-    assertEq(_handoverPositionManagerUpdates, 0, 'handover position manager updates');
     address[5] memory positionManagers = [
       CONFIG_POSITION_MANAGER,
       GIVER_POSITION_MANAGER,
