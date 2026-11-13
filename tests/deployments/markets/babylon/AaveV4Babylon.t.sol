@@ -18,7 +18,8 @@ import {AaveV4BabylonVerify} from 'scripts/markets/babylon/AaveV4BabylonVerify.s
 import {AaveV4BabylonVerification} from 'scripts/markets/babylon/AaveV4BabylonVerification.sol';
 import {
   IBabylonAaveAdapter,
-  IBabylonBTCVaultSwap
+  IBabylonBTCVaultSwap,
+  IBabylonVaultBTC
 } from 'scripts/markets/babylon/interfaces/IBabylonIntegration.sol';
 import {AaveV4DeployOrchestration} from 'src/deployments/orchestration/AaveV4DeployOrchestration.sol';
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
@@ -28,6 +29,7 @@ import {MetadataLogger} from 'src/deployments/utils/MetadataLogger.sol';
 import {BytecodeHelper} from 'src/deployments/utils/libraries/BytecodeHelper.sol';
 import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
+import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 import {IAccessManagerEnumerable} from 'src/access/interfaces/IAccessManagerEnumerable.sol';
 import {ProxyAdmin} from 'src/dependencies/openzeppelin/ProxyAdmin.sol';
@@ -1381,12 +1383,30 @@ contract AaveV4BabylonTest is Create2TestHelper {
     handover.run();
   }
 
+  /// @dev A production config: an external authority, fee receiver and reference Hub, an admin with
+  /// code and both Babylon contracts deployed.
   function test_handover_babylonContracts() public {
-    AaveV4BabylonConfig.Deployment memory deployment = _configuredDeployment();
+    (
+      address externalHub,
+      address externalAccessManager,
+      address externalTreasury
+    ) = _deployExternalMarket();
+    _config.authority = externalAccessManager;
+    _config.feeReceiver = externalTreasury;
+    _config.referenceHub = externalHub;
+    _config.liquidationManagerDeployer = makeAddr('liquidation manager deployer');
+    vm.etch(_admin, hex'00');
+    string memory json = _sepoliaJsonWithExternalReserves(externalHub);
+    _deployAndWriteReport();
+    new AaveV4BabylonConfigureHarness(_config, json).run();
+    AaveV4BabylonConfig.Deployment memory deployment = AaveV4BabylonConfig.readDeployment(_config);
     _mockAaveAdapter(deployment);
     _mockBtcVaultSwap(deployment);
     _config.production = true;
-    new AaveV4BabylonHandoverHarness(_config).run();
+    AaveV4BabylonHandoverHarness handover = new AaveV4BabylonHandoverHarness(_config);
+    handover.setMarketJson(json);
+    handover.run();
+    new AaveV4BabylonVerifyHarness(_config, json).run();
   }
 
   function test_verifyBabylonContracts_skipsUndeployedOutsideProduction() public {
@@ -1452,6 +1472,171 @@ contract AaveV4BabylonTest is Create2TestHelper {
     );
     vm.expectRevert('aave adapter liquidation fee');
     this.verifyBabylonContracts(deployment);
+  }
+
+  function test_verifyBabylonContracts_revertsWith_aaveAdapterVaultBtc() public {
+    AaveV4BabylonConfig.Deployment memory deployment = _configuredDeployment();
+    _mockAaveAdapter(deployment);
+    vm.mockCall(
+      _liquidationManager,
+      abi.encodeCall(IBabylonAaveAdapter.VAULT_BTC, ()),
+      abi.encode(makeAddr('other vaultBTC'))
+    );
+    vm.expectRevert('aave adapter vaultBTC');
+    this.verifyBabylonContracts(deployment);
+  }
+
+  function test_verifyBabylonContracts_revertsWith_vaultBtcAdapter() public {
+    AaveV4BabylonConfig.Deployment memory deployment = _configuredDeployment();
+    _mockAaveAdapter(deployment);
+    vm.mockCall(
+      _vaultBtc(deployment),
+      abi.encodeCall(IBabylonVaultBTC.adapter, ()),
+      abi.encode(makeAddr('other minter'))
+    );
+    vm.expectRevert('vaultBTC adapter');
+    this.verifyBabylonContracts(deployment);
+  }
+
+  function test_verifyBabylonContracts_revertsWith_vaultBtcHub() public {
+    AaveV4BabylonConfig.Deployment memory deployment = _configuredDeployment();
+    _mockAaveAdapter(deployment);
+    vm.mockCall(
+      _vaultBtc(deployment),
+      abi.encodeCall(IBabylonVaultBTC.HUB, ()),
+      abi.encode(deployment.hubs[1])
+    );
+    vm.expectRevert('vaultBTC hub');
+    this.verifyBabylonContracts(deployment);
+  }
+
+  function test_verifyBabylonContracts_revertsWith_productionVaultBtcSupply() public {
+    AaveV4BabylonConfig.Deployment memory deployment = _configuredDeployment();
+    _mockAaveAdapter(deployment);
+    _config.production = true;
+    vm.mockCall(_vaultBtc(deployment), abi.encodeCall(IERC20.totalSupply, ()), abi.encode(1));
+    vm.expectRevert('vaultBTC supply');
+    this.verifyBabylonContracts(deployment);
+  }
+
+  function test_verifyProductionConfig() public {
+    this.verifyProductionConfig();
+    _setProductionConfig();
+    this.verifyProductionConfig();
+  }
+
+  function test_verifyProductionConfig_revertsWith_adminCode() public {
+    _setProductionConfig();
+    _config.admin = makeAddr('admin without code');
+    vm.expectRevert('production admin code');
+    this.verifyProductionConfig();
+  }
+
+  function test_verifyProductionConfig_revertsWith_authority() public {
+    _setProductionConfig();
+    _config.authority = address(0);
+    vm.expectRevert('production authority');
+    this.verifyProductionConfig();
+  }
+
+  function test_verifyProductionConfig_revertsWith_feeReceiver() public {
+    _setProductionConfig();
+    _config.feeReceiver = address(0);
+    vm.expectRevert('production fee receiver');
+    this.verifyProductionConfig();
+  }
+
+  function test_verifyProductionConfig_revertsWith_referenceHub() public {
+    _setProductionConfig();
+    _config.referenceHub = address(0);
+    vm.expectRevert('production reference hub');
+    this.verifyProductionConfig();
+  }
+
+  function test_verifyProductionConfig_revertsWith_liquidationManagerDeployer() public {
+    _setProductionConfig();
+    _config.liquidationManagerDeployer = address(0);
+    vm.expectRevert('production liquidation manager deployer');
+    this.verifyProductionConfig();
+  }
+
+  function test_verifyProductionConfig_revertsWith_btcVaultSwap() public {
+    _setProductionConfig();
+    _config.btcVaultSwap.hub = address(0);
+    vm.expectRevert('production btc vault swap');
+    this.verifyProductionConfig();
+    _setProductionConfig();
+    _config.btcVaultSwap.swap = address(0);
+    vm.expectRevert('production btc vault swap');
+    this.verifyProductionConfig();
+  }
+
+  function test_verifyAuthorityTargets_skipsWithoutAuthority() public {
+    AaveV4BabylonConfig.Deployment memory deployment = _configuredDeployment();
+    this.verifyAuthorityTargets(deployment);
+  }
+
+  function test_verifyAuthorityTargets_revertsWith_deployerHoldsTheAuthority() public {
+    (AaveV4BabylonConfig.Deployment memory deployment, address authority) = _externalAuthority();
+    vm.prank(_governance);
+    IAccessManager(authority).grantRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, _deployer, 0);
+    vm.expectRevert('deployer holds the authority');
+    this.verifyAuthorityTargets(deployment);
+  }
+
+  function test_verifyAuthorityTargets_revertsWith_deployerHoldsAnAuthorityRole() public {
+    (AaveV4BabylonConfig.Deployment memory deployment, address authority) = _externalAuthority();
+    vm.prank(_governance);
+    IAccessManager(authority).grantRole(Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE, _deployer, 0);
+    vm.expectRevert('deployer holds an authority role');
+    this.verifyAuthorityTargets(deployment);
+  }
+
+  function test_verifyAuthorityTargets_revertsWith_targetClosed() public {
+    (AaveV4BabylonConfig.Deployment memory deployment, address authority) = _externalAuthority();
+    vm.prank(_governance);
+    IAccessManager(authority).setTargetClosed(deployment.babylonSpoke, true);
+    vm.expectRevert('authority target closed');
+    this.verifyAuthorityTargets(deployment);
+  }
+
+  function test_verifyAuthorityTargets_revertsWith_targetAdminDelay() public {
+    (AaveV4BabylonConfig.Deployment memory deployment, address authority) = _externalAuthority();
+    vm.prank(_governance);
+    IAccessManager(authority).setTargetAdminDelay(deployment.hubs[0], 1 days);
+    // a new delay applies after the AccessManager's minimum setback
+    this.verifyAuthorityTargets(deployment);
+    skip(IAccessManager(authority).minSetback());
+    vm.expectRevert('authority target admin delay');
+    this.verifyAuthorityTargets(deployment);
+  }
+
+  function test_verifyAuthorityTargets_revertsWith_hubFunctionMapped() public {
+    (AaveV4BabylonConfig.Deployment memory deployment, address authority) = _externalAuthority();
+    bytes4[] memory selectors = new bytes4[](1);
+    selectors[0] = IHub.eliminateDeficit.selector;
+    vm.prank(_governance);
+    IAccessManager(authority).setTargetFunctionRole(
+      deployment.hubs[1],
+      selectors,
+      Roles.HUB_DEFICIT_ELIMINATOR_ROLE
+    );
+    vm.expectRevert('authority target function mapped');
+    this.verifyAuthorityTargets(deployment);
+  }
+
+  function test_verifyAuthorityTargets_revertsWith_spokeFunctionMapped() public {
+    (AaveV4BabylonConfig.Deployment memory deployment, address authority) = _externalAuthority();
+    bytes4[] memory selectors = new bytes4[](1);
+    selectors[0] = ISpoke.updateUserRiskPremium.selector;
+    vm.prank(_governance);
+    IAccessManager(authority).setTargetFunctionRole(
+      deployment.babylonSpoke,
+      selectors,
+      Roles.SPOKE_USER_POSITION_UPDATER_ROLE
+    );
+    vm.expectRevert('authority target function mapped');
+    this.verifyAuthorityTargets(deployment);
   }
 
   function test_verifyBabylonContracts_revertsWith_btcVaultSwapAdapter() public {
@@ -1641,6 +1826,42 @@ contract AaveV4BabylonTest is Create2TestHelper {
     AaveV4BabylonVerification.verifyBabylonContracts(_config, deployment);
   }
 
+  function verifyProductionConfig() external view {
+    AaveV4BabylonVerification.verifyProductionConfig(_config);
+  }
+
+  function verifyAuthorityTargets(AaveV4BabylonConfig.Deployment memory deployment) external view {
+    AaveV4BabylonVerification.verifyAuthorityTargets(_config, deployment);
+  }
+
+  /// @dev A production config with every field `verifyProductionConfig` requires.
+  function _setProductionConfig() internal {
+    _config.production = true;
+    _config.admin = address(this);
+    _config.authority = makeAddr('authority');
+    _config.feeReceiver = makeAddr('fee receiver');
+    _config.referenceHub = makeAddr('reference hub');
+    _config.liquidationManagerDeployer = makeAddr('liquidation manager deployer');
+    _config.btcVaultSwap.swap = makeAddr('btc vault swap');
+    _config.btcVaultSwap.hub = makeAddr('btc vault swap hub');
+  }
+
+  /// @dev A configured market whose config points at the AccessManager of another market, held by
+  /// `_governance`.
+  function _externalAuthority()
+    internal
+    returns (AaveV4BabylonConfig.Deployment memory deployment, address authority)
+  {
+    address externalHub;
+    address externalTreasury;
+    (externalHub, authority, externalTreasury) = _deployExternalMarket();
+    _config.authority = authority;
+    _config.feeReceiver = externalTreasury;
+    _deployAndWriteReport();
+    new AaveV4BabylonConfigureHarness(_config, _sepoliaJsonWithExternalReserves(externalHub)).run();
+    deployment = AaveV4BabylonConfig.readDeployment(_config);
+  }
+
   function verifyAbandonedAccessManager(
     AaveV4BabylonConfig.Deployment memory deployment,
     address admin,
@@ -1659,6 +1880,13 @@ contract AaveV4BabylonTest is Create2TestHelper {
   {
     _deployConfigureAndWriteReport();
     deployment = AaveV4BabylonConfig.readDeployment(_config);
+  }
+
+  function _vaultBtc(
+    AaveV4BabylonConfig.Deployment memory deployment
+  ) internal view returns (address) {
+    return
+      ISpoke(deployment.babylonSpoke).getReserve(_config.managedCollateralReserveId).underlying;
   }
 
   /// @dev Mocks an AaveAdapter wired to the market at the liquidation manager address.
@@ -1689,6 +1917,18 @@ contract AaveV4BabylonTest is Create2TestHelper {
       abi.encodeCall(IBabylonAaveAdapter.liquidationFeeBps, ()),
       abi.encode(_config.liquidationManagerFeeBps)
     );
+    address vaultBtc = _vaultBtc(deployment);
+    vm.mockCall(
+      _liquidationManager,
+      abi.encodeCall(IBabylonAaveAdapter.VAULT_BTC, ()),
+      abi.encode(vaultBtc)
+    );
+    vm.mockCall(
+      vaultBtc,
+      abi.encodeCall(IBabylonVaultBTC.adapter, ()),
+      abi.encode(_liquidationManager)
+    );
+    vm.mockCall(vaultBtc, abi.encodeCall(IBabylonVaultBTC.HUB, ()), abi.encode(deployment.hubs[0]));
   }
 
   /// @dev Mocks a BTCVaultSwap drawing WBTC from the first Hub, behind a ProxyAdmin owned by the admin,
@@ -1730,7 +1970,7 @@ contract AaveV4BabylonTest is Create2TestHelper {
     vm.mockCall(
       _btcVaultSwap,
       abi.encodeCall(IAccessManaged.authority, ()),
-      abi.encode(deployment.accessManager)
+      abi.encode(AaveV4BabylonConfig.finalAuthority(_config, deployment))
     );
     _config.btcVaultSwap = AaveV4BabylonConfig.BtcVaultSwap({
       swap: _btcVaultSwap,

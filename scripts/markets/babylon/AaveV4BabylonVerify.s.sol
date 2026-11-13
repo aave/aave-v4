@@ -9,7 +9,8 @@ import {AaveV4BabylonVerification} from 'scripts/markets/babylon/AaveV4BabylonVe
 /// @title AaveV4BabylonVerify
 /// @author Aave Labs
 /// @notice Asserts that the deployed, configured and handed-over Babylon market matches its config.
-/// @dev Read-only. Run last, after the admin accepted TreasurySpoke ownership when it was transferred.
+/// @dev Read-only. Run after the handover transactions are mined, and after the admin accepted
+/// TreasurySpoke ownership when it was transferred. Holds until governance connects the spokes.
 contract AaveV4BabylonVerify is Script {
   function run() external view {
     AaveV4BabylonConfig.Config memory config = _config();
@@ -58,6 +59,8 @@ contract AaveV4BabylonVerify is Script {
       owner: config.admin
     });
     AaveV4BabylonVerification.verifyBabylonContracts(config, deployment);
+    AaveV4BabylonVerification.verifyProductionConfig(config);
+    AaveV4BabylonVerification.verifyAuthorityTargets(config, deployment);
   }
 
   function _config() internal view virtual returns (AaveV4BabylonConfig.Config memory) {

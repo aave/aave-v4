@@ -6,11 +6,13 @@ import {Vm} from 'forge-std/Vm.sol';
 import {AaveV4BabylonConfig} from 'scripts/markets/babylon/AaveV4BabylonConfig.sol';
 import {
   IBabylonAaveAdapter,
-  IBabylonBTCVaultSwap
+  IBabylonBTCVaultSwap,
+  IBabylonVaultBTC
 } from 'scripts/markets/babylon/interfaces/IBabylonIntegration.sol';
 import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 import {IAccessManagerEnumerable} from 'src/access/interfaces/IAccessManagerEnumerable.sol';
 import {ERC1967Utils} from 'src/dependencies/openzeppelin/ERC1967Utils.sol';
+import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 import {ProxyAdmin} from 'src/dependencies/openzeppelin/ProxyAdmin.sol';
 import {Ownable2StepUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/Ownable2StepUpgradeable.sol';
@@ -149,6 +151,65 @@ library AaveV4BabylonVerification {
         _requireNoMembers(accessManager, role);
       }
     }
+  }
+
+  /// @notice Reverts unless a production config sets every field its checks depend on.
+  /// @param config The Babylon market config.
+  function verifyProductionConfig(AaveV4BabylonConfig.Config memory config) internal view {
+    if (!config.production) {
+      return;
+    }
+    require(config.admin.code.length > 0, 'production admin code');
+    require(config.authority != address(0), 'production authority');
+    require(config.feeReceiver != address(0), 'production fee receiver');
+    require(config.referenceHub != address(0), 'production reference hub');
+    require(
+      config.liquidationManagerDeployer != address(0),
+      'production liquidation manager deployer'
+    );
+    require(
+      config.btcVaultSwap.swap != address(0) && config.btcVaultSwap.hub != address(0),
+      'production btc vault swap'
+    );
+  }
+
+  /// @notice Reverts unless `config.authority` has left the Hubs and the BabylonSpoke untouched: open,
+  /// with no admin delay and no restricted function mapped, and the deployer holds no role on it.
+  /// @dev Holds from the handover until governance maps the roles. Skipped without `authority`. A
+  /// target admin delay that is scheduled but not yet in effect is not visible to it.
+  /// @param config The Babylon market config.
+  /// @param deployment The deployed Babylon market.
+  function verifyAuthorityTargets(
+    AaveV4BabylonConfig.Config memory config,
+    AaveV4BabylonConfig.Deployment memory deployment
+  ) internal view {
+    if (config.authority == address(0)) {
+      return;
+    }
+    require(config.authority != deployment.accessManager, 'authority is the deployed one');
+    require(config.authority.code.length > 0, 'authority code');
+    IAccessManagerEnumerable authority = IAccessManagerEnumerable(config.authority);
+    (bool deployerIsAdmin, ) = authority.hasRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, config.deployer);
+    require(!deployerIsAdmin, 'deployer holds the authority');
+    uint256 roleCount = authority.getRoleCount();
+    for (uint256 i; i < roleCount; ++i) {
+      (bool hasRole, ) = authority.hasRole(authority.getRole(i), config.deployer);
+      require(!hasRole, 'deployer holds an authority role');
+    }
+
+    for (uint256 i; i < deployment.hubs.length; ++i) {
+      _requireUntouchedTarget(authority, deployment.hubs[i]);
+      _requireUnmapped(authority, deployment.hubs[i], Roles.getHubConfiguratorRoleSelectors());
+      _requireUnmapped(authority, deployment.hubs[i], Roles.getHubFeeMinterRoleSelectors());
+      _requireUnmapped(authority, deployment.hubs[i], Roles.getHubDeficitEliminatorRoleSelectors());
+    }
+    _requireUntouchedTarget(authority, deployment.babylonSpoke);
+    _requireUnmapped(authority, deployment.babylonSpoke, Roles.getSpokeConfiguratorRoleSelectors());
+    _requireUnmapped(
+      authority,
+      deployment.babylonSpoke,
+      Roles.getSpokePositionUpdaterRoleSelectors()
+    );
   }
 
   /// @notice Reverts unless the deployed AccessManager, left behind when the Hubs and the BabylonSpoke
@@ -362,6 +423,17 @@ library AaveV4BabylonVerification {
       require(
         aaveAdapter.liquidationFeeBps() == config.liquidationManagerFeeBps,
         'aave adapter liquidation fee'
+      );
+      ISpoke.Reserve memory collateral = spoke.getReserve(config.managedCollateralReserveId);
+      require(aaveAdapter.VAULT_BTC() == collateral.underlying, 'aave adapter vaultBTC');
+      require(IBabylonVaultBTC(collateral.underlying).adapter() == adapter, 'vaultBTC adapter');
+      require(
+        IBabylonVaultBTC(collateral.underlying).HUB() == address(collateral.hub),
+        'vaultBTC hub'
+      );
+      require(
+        !config.production || IERC20(collateral.underlying).totalSupply() == 0,
+        'vaultBTC supply'
       );
     }
 
@@ -584,6 +656,27 @@ library AaveV4BabylonVerification {
       isMember && accessManager.getRoleMemberCount(role) == 1,
       string.concat('unexpected role members: ', vm.toString(role))
     );
+  }
+
+  function _requireUntouchedTarget(
+    IAccessManagerEnumerable authority,
+    address target
+  ) private view {
+    require(!authority.isTargetClosed(target), 'authority target closed');
+    require(authority.getTargetAdminDelay(target) == 0, 'authority target admin delay');
+  }
+
+  function _requireUnmapped(
+    IAccessManagerEnumerable authority,
+    address target,
+    bytes4[] memory selectors
+  ) private view {
+    for (uint256 i; i < selectors.length; ++i) {
+      require(
+        authority.getTargetFunctionRole(target, selectors[i]) == Roles.ACCESS_MANAGER_ADMIN_ROLE,
+        'authority target function mapped'
+      );
+    }
   }
 
   function _requireNoMembers(IAccessManagerEnumerable accessManager, uint64 role) private view {

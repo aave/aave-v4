@@ -228,6 +228,8 @@ contract AaveV4BabylonHandoverForkHarness is AaveV4BabylonHandover {
       owner: config.admin
     });
     AaveV4BabylonVerification.verifyBabylonContracts(config, deployment);
+    AaveV4BabylonVerification.verifyProductionConfig(config);
+    AaveV4BabylonVerification.verifyAuthorityTargets(config, deployment);
 
     vm.startBroadcast(config.deployer);
     (, address deployer, ) = vm.readCallers();

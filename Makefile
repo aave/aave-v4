@@ -83,6 +83,7 @@ babylon-handover :;
 	BABYLON_CONFIG=${config} forge script scripts/markets/babylon/AaveV4BabylonHandover.s.sol:AaveV4BabylonHandover \
 	--rpc-url ${chain} --account ${account} --slow \
 	$(if ${dry},, --broadcast) \
+	$(if ${resume},--resume) \
 	$(if ${gas_multiplier},--gas-estimate-multiplier ${gas_multiplier}) \
 
 babylon-verify :; BABYLON_CONFIG=${config} forge script scripts/markets/babylon/AaveV4BabylonVerify.s.sol:AaveV4BabylonVerify --rpc-url ${chain}

@@ -11,6 +11,9 @@ interface IBabylonAaveAdapter {
   /// @notice Returns the Hub of the vaultBTC reserve.
   function BTC_VAULT_HUB() external view returns (address);
 
+  /// @notice Returns vaultBTC.
+  function VAULT_BTC() external view returns (address);
+
   /// @notice Returns the identifier of the vaultBTC reserve on the BabylonSpoke.
   function VAULT_BTC_RESERVE_ID() external view returns (uint256);
 
@@ -19,6 +22,17 @@ interface IBabylonAaveAdapter {
 
   /// @notice Returns the fee charged on the liquidation bonus, expressed in BPS.
   function liquidationFeeBps() external view returns (uint256);
+}
+
+/// @title IBabylonVaultBTC
+/// @author Aave Labs
+/// @notice Getters of Babylon's vaultBTC read by the Babylon market scripts.
+interface IBabylonVaultBTC {
+  /// @notice Returns the only minter and burner of vaultBTC.
+  function adapter() external view returns (address);
+
+  /// @notice Returns the Hub vaultBTC can be transferred to.
+  function HUB() external view returns (address);
 }
 
 /// @title IBabylonBTCVaultSwap

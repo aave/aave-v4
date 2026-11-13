@@ -51,6 +51,8 @@ contract AaveV4BabylonHandover is Script {
       owner: config.admin
     });
     AaveV4BabylonVerification.verifyBabylonContracts(config, deployment);
+    AaveV4BabylonVerification.verifyProductionConfig(config);
+    AaveV4BabylonVerification.verifyAuthorityTargets(config, deployment);
 
     vm.startBroadcast();
     (, address deployer, ) = vm.readCallers();
