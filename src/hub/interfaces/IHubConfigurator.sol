@@ -369,6 +369,13 @@ interface IHubConfigurator {
   /// @param spoke The address of the Spoke.
   function haltSpoke(address hub, address spoke) external;
 
+  /// @notice Unhalts all assets of a Spoke on a specified Hub by setting the halted flag to false.
+  /// @dev Clears the flag on every asset the Spoke is listed on, including assets halted by other means
+  /// such as `haltAsset`.
+  /// @param hub The address of the Hub.
+  /// @param spoke The address of the Spoke.
+  function unhaltSpoke(address hub, address spoke) external;
+
   /// @notice Resets draw cap and add cap to zero for a Spoke on a specified Hub.
   /// @param hub The address of the Hub.
   /// @param spoke The address of the Spoke.

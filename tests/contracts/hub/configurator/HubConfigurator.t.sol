@@ -1249,6 +1249,47 @@ contract HubConfiguratorTest is Base {
     }
   }
 
+  function test_unhaltSpoke_revertsWith_AccessManagedUnauthorized() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
+    vm.prank(alice);
+    hubConfigurator.unhaltSpoke(address(hub1), address(spoke3));
+  }
+
+  function test_unhaltSpoke() public {
+    /// @dev Spoke3 is listed on hub1 on 4 assets: dai, weth, wbtc, usdx
+    assertGt(hub1.getAssetCount(), 4, 'hub1 has less than 4 assets listed');
+
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.haltSpoke(address(hub1), address(spoke3));
+
+    for (uint256 assetId = 0; assetId < 4; ++assetId) {
+      vm.expectCall(address(hub1), abi.encodeCall(IHub.isSpokeListed, (assetId, address(spoke3))));
+
+      IHub.SpokeConfig memory expectedSpokeConfig = hub1.getSpokeConfig(assetId, address(spoke3));
+      expectedSpokeConfig.halted = false;
+      vm.expectCall(
+        address(hub1),
+        abi.encodeCall(IHub.updateSpokeConfig, (assetId, address(spoke3), expectedSpokeConfig))
+      );
+      _expectSpokeHaltedEvent(assetId, address(spoke3), false);
+    }
+
+    for (uint256 assetId = 4; assetId < hub1.getAssetCount(); ++assetId) {
+      assertFalse(hub1.isSpokeListed(assetId, address(spoke3)));
+      vm.expectCall(address(hub1), abi.encodeCall(IHub.isSpokeListed, (assetId, address(spoke3))));
+    }
+
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.unhaltSpoke(address(hub1), address(spoke3));
+
+    for (uint256 assetId = 0; assetId < 4; ++assetId) {
+      IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(assetId, address(spoke3));
+      assertEq(spokeConfig.halted, false);
+    }
+  }
+
   function test_resetSpokeCaps_revertsWith_AccessManagedUnauthorized() public {
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
