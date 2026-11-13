@@ -86,6 +86,120 @@ interface IV4RiskSteward {
   ) external;
 }
 
+/// @dev Babylon's BTCVaultRegistry vault record, as the AaveAdapter reads it.
+struct BTCVaultBasicInfo {
+  address depositor;
+  bytes32 depositorBtcPubKey;
+  uint256 amount;
+  address vaultProvider;
+  uint8 status;
+  address applicationEntryPoint;
+  uint256 createdAt;
+}
+
+struct BTCVaultProtocolInfo {
+  bytes depositorSignedPeginTx;
+  uint16 universalChallengersVersion;
+  uint16 appVaultKeepersVersion;
+  uint16 offchainParamsVersion;
+  uint256 verifiedAt;
+  bytes32 depositorWotsPkHash;
+  bytes32 hashlock;
+  uint8 htlcVout;
+  bytes depositorPopSignature;
+  bytes32 prePeginTxHash;
+  uint16 vaultProviderCommissionBps;
+  uint256 claimExpiredUntil;
+  uint16 vaultCoreVersion;
+  uint64 vpKeyEpoch;
+  uint64 appKeeperKeyEpoch;
+  uint64 ucKeyEpoch;
+}
+
+struct TokenAmount {
+  address token;
+  uint256 amount;
+}
+
+struct MarketPosition {
+  bytes32[] vaultIds;
+  uint256 totalCollateralBTC;
+  address proxyContract;
+}
+
+/// @dev The AaveAdapter entry points the liquidation tests call.
+interface IAaveAdapterFlows {
+  function activateVault(
+    bytes32 vaultId,
+    BTCVaultBasicInfo memory info,
+    bytes memory data
+  ) external;
+
+  function borrowFromCorePosition(
+    uint256 debtReserveId,
+    uint256 amount,
+    address receiver
+  ) external returns (uint256, uint256);
+
+  function liquidate(
+    address borrower,
+    uint256 debtReserveId,
+    uint256 maxDebtToRepay,
+    uint256 maxExitBtc,
+    bytes32 claimerBtcPubKey
+  ) external returns (bytes32, uint256);
+
+  function liquidateWithLLP(
+    address borrower,
+    address llp,
+    uint256 debtReserveId,
+    uint256 maxDebtToRepay,
+    uint256 maxExitBtc,
+    TokenAmount[] memory minPayouts
+  ) external returns (bytes32, uint256, TokenAmount[] memory);
+
+  function getPosition(address borrower) external view returns (MarketPosition memory);
+
+  function unfreeze() external;
+
+  function applicationRecipient() external view returns (address);
+
+  function BTC_VAULT_REGISTRY() external view returns (address);
+
+  function APP_REGISTRY() external view returns (address);
+}
+
+interface IBTCVaultSwapFlows {
+  function swapExitBtcForVault(bytes32 vaultId, uint256 maxExitBtc) external returns (uint256);
+}
+
+interface IBTCVaultRegistry {
+  function getBtcVaultBasicInfo(bytes32 vaultId) external view returns (BTCVaultBasicInfo memory);
+
+  function getBTCVaultAmountsBatch(
+    bytes32[] calldata vaultIds
+  ) external view returns (uint256[] memory);
+
+  function redeemVaultForAVK(bytes32 vaultId, bytes32 claimerBtcPubKey) external;
+
+  function redeemVaultForDepositor(bytes32 vaultId) external;
+
+  function getBtcVaultProtocolInfo(
+    bytes32 vaultId
+  ) external view returns (BTCVaultProtocolInfo memory);
+}
+
+interface IApplicationRegistry {
+  function getVaultKeeperBTCKeyInVersion(address, address, uint16) external view returns (bytes32);
+
+  function getOperationBtcKeyAtEpochOrGenesis(
+    address,
+    address,
+    uint64,
+    bytes32
+  ) external view returns (bytes32);
+}
+
 /// @dev Repeats `AaveV4BabylonHandover.run` on the mainnet config, broadcasting as the config
 /// deployer, whose key a test cannot use.
 contract AaveV4BabylonHandoverForkHarness is AaveV4BabylonHandover {
@@ -207,6 +321,9 @@ contract AaveV4BabylonMainnetForkTest is Test {
   address internal constant BTC_VAULT_SWAP = 0xFe354b6A67E9a308B600d35B0b3e2e6F33f3c6d9;
   // 2-of-3 Safe setting the BTCVaultSwap fees
   address internal constant BTC_VAULT_SWAP_MULTISIG = 0x828AA986e31D60Eb07EFC1543FF9297835f4A9f7;
+  // Babylon's Interim Governance Safe, which unfreezes the AaveAdapter
+  address internal constant BABYLON_INTERIM_GOVERNANCE = 0xcd9e54acA1B7fb9BcE10208201b01559A6B01949;
+  bytes32 internal constant VAULT_ID = keccak256('vault');
   address internal constant USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
   address internal constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
   address internal constant GHO = 0x40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f;
@@ -256,6 +373,7 @@ contract AaveV4BabylonMainnetForkTest is Test {
   address internal _deployer;
   address internal _user = makeAddr('user');
   address internal _supplier = makeAddr('supplier');
+  address internal _liquidator = makeAddr('liquidator');
   string internal _marketJson;
   AaveV4BabylonConfig.Config internal _config;
   AaveV4BabylonConfig.Deployment internal _deployment;
@@ -590,6 +708,33 @@ contract AaveV4BabylonMainnetForkTest is Test {
     vm.startPrank(_user);
     IERC20(VAULT_BTC).approve(_spoke(), 1e8);
     vm.expectRevert(IHub.SpokeNotActive.selector);
+    ISpoke(_spoke()).supply(VAULT_BTC_RESERVE_ID, 1e8, _user);
+    vm.stopPrank();
+  }
+
+  function test_aip_supply() public {
+    _executeLaunchAip();
+    _mintVaultBtc(_user, 1e8);
+    vm.startPrank(_user);
+    IERC20(VAULT_BTC).approve(_spoke(), 1e8);
+    ISpoke(_spoke()).supply(VAULT_BTC_RESERVE_ID, 1e8, _user);
+    vm.stopPrank();
+    assertEq(ISpoke(_spoke()).getUserSuppliedAssets(VAULT_BTC_RESERVE_ID, _user), 1e8, 'supplied');
+    assertEq(
+      IHub(_hub()).getSpokeAddedAssets(BABYLON_VAULT_BTC_ASSET_ID, _spoke()),
+      1e8,
+      'hub added assets'
+    );
+    assertEq(IERC20(VAULT_BTC).balanceOf(_hub()), 1e8, 'hub balance');
+  }
+
+  /// @dev No position manager is active, so nobody supplies on behalf of another account.
+  function test_aip_revertsWith_supplyOnBehalfOf() public {
+    _executeLaunchAip();
+    _mintVaultBtc(_supplier, 1e8);
+    vm.startPrank(_supplier);
+    IERC20(VAULT_BTC).approve(_spoke(), 1e8);
+    vm.expectRevert(ISpoke.Unauthorized.selector);
     ISpoke(_spoke()).supply(VAULT_BTC_RESERVE_ID, 1e8, _user);
     vm.stopPrank();
   }
@@ -1073,6 +1218,75 @@ contract AaveV4BabylonMainnetForkTest is Test {
     ISpoke(_spoke()).liquidationCall(VAULT_BTC_RESERVE_ID, CORE_USDC_RESERVE_ID, _user, 1, false);
   }
 
+  /// @dev Babylon's deployed AaveAdapter liquidates a position on the BabylonSpoke. The liquidator
+  /// repays the debt, takes the whole vault and pays the adapter fee and the fairness payment in WBTC.
+  function test_aip_liquidation() public {
+    _executeLaunchAip();
+    address proxy = _openAdapterPositionAndDropPrice();
+    uint256 debt = ISpoke(_spoke()).getUserTotalDebt(CORE_USDC_RESERVE_ID, proxy);
+    _fundLiquidator({usdc: debt * 2, wbtc: 1e8});
+    address recipient = IAaveAdapterFlows(AAVE_ADAPTER).applicationRecipient();
+    uint256 recipientBefore = IERC20(WBTC).balanceOf(recipient);
+
+    vm.prank(_liquidator);
+    (bytes32 vaultId, uint256 seized) = IAaveAdapterFlows(AAVE_ADAPTER).liquidate({
+      borrower: _user,
+      debtReserveId: CORE_USDC_RESERVE_ID,
+      maxDebtToRepay: debt * 2,
+      maxExitBtc: type(uint256).max,
+      claimerBtcPubKey: bytes32(uint256(7))
+    });
+
+    assertEq(vaultId, VAULT_ID, 'vault');
+    assertEq(seized, 1e8, 'whole vault seized');
+    assertEq(debt * 2 - IERC20(USDC).balanceOf(_liquidator), debt, 'debt repaid by liquidator');
+    assertGt(IERC20(WBTC).balanceOf(recipient), recipientBefore, 'adapter fee');
+    assertGt(IERC20(WBTC).balanceOf(_user), 0, 'fairness payment');
+    assertEq(ISpoke(_spoke()).getUserSuppliedAssets(VAULT_BTC_RESERVE_ID, proxy), 0, 'collateral');
+    assertEq(ISpoke(_spoke()).getUserTotalDebt(CORE_USDC_RESERVE_ID, proxy), 0, 'debt');
+    assertEq(IERC20(VAULT_BTC).totalSupply(), 0, 'vaultBTC burned');
+    assertEq(IHub(CORE_HUB).getSpokeDrawnShares(CORE_USDC_ASSET_ID, _spoke()), 0, 'drawn');
+    assertEq(IHub(CORE_HUB).getSpokeDeficitRay(CORE_USDC_ASSET_ID, _spoke()), 0, 'deficit');
+  }
+
+  /// @dev BTCVaultSwap pays the liquidator in WBTC drawn from its Core Hub credit line, then an
+  /// arbitrageur buys the escrowed vault and the draw is repaid.
+  function test_aip_liquidationWithBtcVaultSwap() public {
+    _executeLaunchAip();
+    uint256 liquidityBefore = IHub(CORE_HUB).getAssetLiquidity(CORE_WBTC_ASSET_ID);
+    address proxy = _openAdapterPositionAndDropPrice();
+    uint256 debt = ISpoke(_spoke()).getUserTotalDebt(CORE_USDC_RESERVE_ID, proxy);
+    _fundLiquidator({usdc: debt * 2, wbtc: 0});
+
+    vm.prank(_liquidator);
+    (, , TokenAmount[] memory payouts) = IAaveAdapterFlows(AAVE_ADAPTER).liquidateWithLLP({
+      borrower: _user,
+      llp: BTC_VAULT_SWAP,
+      debtReserveId: CORE_USDC_RESERVE_ID,
+      maxDebtToRepay: debt * 2,
+      maxExitBtc: type(uint256).max,
+      minPayouts: new TokenAmount[](0)
+    });
+
+    IAaveOracle oracle = IAaveOracle(ISpoke(_spoke()).ORACLE());
+    uint256 vaultValue = (1e8 * oracle.getReservePrice(VAULT_BTC_RESERVE_ID)) /
+      oracle.getReservePrice(EXIT_BTC_RESERVE_ID);
+    // 2% sell discount
+    assertApproxEqAbs(payouts[0].amount, (vaultValue * 98) / 100, 3, 'payout');
+    assertEq(
+      liquidityBefore - IHub(CORE_HUB).getAssetLiquidity(CORE_WBTC_ASSET_ID),
+      payouts[0].amount,
+      'core hub liquidity drawn'
+    );
+    assertEq(ISpoke(_spoke()).getUserTotalDebt(CORE_USDC_RESERVE_ID, proxy), 0, 'debt');
+    assertEq(ISpoke(_spoke()).getUserSuppliedAssets(VAULT_BTC_RESERVE_ID, proxy), 0, 'collateral');
+
+    _buyEscrowedVault();
+    assertEq(IHub(CORE_HUB).getSpokeDrawnShares(CORE_WBTC_ASSET_ID, BTC_VAULT_SWAP), 0, 'repaid');
+    assertEq(IHub(CORE_HUB).getSpokeDeficitRay(CORE_WBTC_ASSET_ID, BTC_VAULT_SWAP), 0, 'deficit');
+    assertGe(IHub(CORE_HUB).getAssetLiquidity(CORE_WBTC_ASSET_ID), liquidityBefore, 'restored');
+  }
+
   function test_babylon_vaultBtc() public view {
     assertEq(IVaultBTC(VAULT_BTC).HUB(), _hub(), 'hub');
     assertEq(IVaultBTC(VAULT_BTC).adapter(), AAVE_ADAPTER, 'adapter');
@@ -1243,6 +1457,114 @@ contract AaveV4BabylonMainnetForkTest is Test {
   function _btcVaultSwapGuardians() internal pure returns (address[4] memory) {
     return
       [BTC_VAULT_SWAP_MULTISIG, V4_SECURITY_COUNCIL, V4_SECURITY_COUNCIL_EXECUTOR, EXECUTOR_LVL_1];
+  }
+
+  /// @dev Activates a 1 BTC vault for `_user` through the AaveAdapter, borrows USDC at 75% of its
+  /// value and lowers both BTC prices by 6%. No BTC is pegged in on the fork, so the BTCVaultRegistry
+  /// reads and redemptions are mocked, and the Chainlink answers are mocked to move the price.
+  function _openAdapterPositionAndDropPrice() internal returns (address proxy) {
+    IAaveAdapterFlows adapter = IAaveAdapterFlows(AAVE_ADAPTER);
+    address registry = adapter.BTC_VAULT_REGISTRY();
+    BTCVaultBasicInfo memory info = BTCVaultBasicInfo({
+      depositor: _user,
+      depositorBtcPubKey: bytes32(uint256(1)),
+      amount: 1e8,
+      vaultProvider: address(0xBEEF),
+      status: 2,
+      applicationEntryPoint: AAVE_ADAPTER,
+      createdAt: block.number
+    });
+    vm.mockCall(
+      registry,
+      abi.encodeCall(IBTCVaultRegistry.getBtcVaultBasicInfo, (VAULT_ID)),
+      abi.encode(info)
+    );
+    vm.mockCall(
+      registry,
+      abi.encodeWithSelector(IBTCVaultRegistry.redeemVaultForAVK.selector, VAULT_ID),
+      ''
+    );
+    vm.mockCall(
+      registry,
+      abi.encodeCall(IBTCVaultRegistry.redeemVaultForDepositor, (VAULT_ID)),
+      ''
+    );
+    bytes32[] memory vaultIds = new bytes32[](1);
+    vaultIds[0] = VAULT_ID;
+    uint256[] memory amounts = new uint256[](1);
+    amounts[0] = 1e8;
+    vm.mockCall(
+      registry,
+      abi.encodeCall(IBTCVaultRegistry.getBTCVaultAmountsBatch, (vaultIds)),
+      abi.encode(amounts)
+    );
+    vm.prank(registry);
+    adapter.activateVault(VAULT_ID, info, '');
+    // Babylon unfreezes the AaveAdapter once the AIP has executed
+    vm.prank(BABYLON_INTERIM_GOVERNANCE);
+    adapter.unfreeze();
+
+    IAaveOracle oracle = IAaveOracle(ISpoke(_spoke()).ORACLE());
+    uint256 vaultBtcPrice = oracle.getReservePrice(VAULT_BTC_RESERVE_ID);
+    uint256 wbtcPrice = oracle.getReservePrice(EXIT_BTC_RESERVE_ID);
+    // prices have 8 decimals and USDC has 6
+    vm.prank(_user);
+    adapter.borrowFromCorePosition(
+      CORE_USDC_RESERVE_ID,
+      (vaultBtcPrice * 75_00) / 100_00 / 100,
+      _user
+    );
+
+    vm.mockCall(
+      BTC_USD_SVR_FEED,
+      abi.encodeWithSignature('latestAnswer()'),
+      abi.encode(int256((vaultBtcPrice * 94_00) / 100_00))
+    );
+    vm.mockCall(
+      WBTC_FEED,
+      abi.encodeWithSignature('latestAnswer()'),
+      abi.encode(int256((wbtcPrice * 94_00) / 100_00))
+    );
+    proxy = adapter.getPosition(_user).proxyContract;
+    assertLt(ISpoke(_spoke()).getUserAccountData(proxy).healthFactor, 1e18, 'liquidatable');
+  }
+
+  function _fundLiquidator(uint256 usdc, uint256 wbtc) internal {
+    deal(USDC, _liquidator, usdc);
+    deal(WBTC, _liquidator, wbtc);
+    vm.startPrank(_liquidator);
+    IERC20(USDC).approve(AAVE_ADAPTER, type(uint256).max);
+    IERC20(WBTC).approve(AAVE_ADAPTER, type(uint256).max);
+    vm.stopPrank();
+  }
+
+  /// @dev An arbitrageur buys the escrowed vault from BTCVaultSwap. The vault protocol info and the
+  /// two Bitcoin keys its redemption reads are mocked.
+  function _buyEscrowedVault() internal {
+    IAaveAdapterFlows adapter = IAaveAdapterFlows(AAVE_ADAPTER);
+    BTCVaultProtocolInfo memory protocolInfo;
+    vm.mockCall(
+      adapter.BTC_VAULT_REGISTRY(),
+      abi.encodeCall(IBTCVaultRegistry.getBtcVaultProtocolInfo, (VAULT_ID)),
+      abi.encode(protocolInfo)
+    );
+    vm.mockCall(
+      adapter.APP_REGISTRY(),
+      abi.encodeWithSelector(IApplicationRegistry.getVaultKeeperBTCKeyInVersion.selector),
+      abi.encode(bytes32(uint256(9)))
+    );
+    vm.mockCall(
+      adapter.APP_REGISTRY(),
+      abi.encodeWithSelector(IApplicationRegistry.getOperationBtcKeyAtEpochOrGenesis.selector),
+      abi.encode(bytes32(uint256(9)))
+    );
+    skip(4 days);
+    address arbitrageur = makeAddr('arbitrageur');
+    deal(WBTC, arbitrageur, 2e8);
+    vm.startPrank(arbitrageur);
+    IERC20(WBTC).approve(BTC_VAULT_SWAP, type(uint256).max);
+    IBTCVaultSwapFlows(BTC_VAULT_SWAP).swapExitBtcForVault(VAULT_ID, type(uint256).max);
+    vm.stopPrank();
   }
 
   function _supplyVaultBtcAsCollateral(uint256 amount) internal {
