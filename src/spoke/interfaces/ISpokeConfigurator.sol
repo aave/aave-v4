@@ -473,6 +473,8 @@ interface ISpokeConfigurator {
   function pauseAllReserves(address spoke) external;
 
   /// @notice Unpauses all reserves of a spoke.
+  /// @dev Unpauses every reserve, including reserves paused individually before a spoke-wide pause; the
+  /// pre-pause state is not tracked. Reserves that should stay paused must be re-paused in the same batch.
   /// @param spoke The address of the Spoke.
   function unpauseAllReserves(address spoke) external;
 
