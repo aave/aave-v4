@@ -16,7 +16,7 @@ contract RolesTest is Test {
     assertEq(Roles.SPOKE_CONFIGURATOR_ROLE, 301);
     assertEq(Roles.SPOKE_USER_POSITION_UPDATER_ROLE, 302);
     assertEq(Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE, 400);
-    assertEq(Roles.BTC_VAULT_SWAP_FEE_ROLE, 500);
-    assertEq(Roles.BTC_VAULT_SWAP_GUARDIAN_ROLE, 501);
+    assertEq(Roles.BTC_VAULT_SWAP_FEE_ROLE, 2000);
+    assertEq(Roles.BTC_VAULT_SWAP_GUARDIAN_ROLE, 2001);
   }
 }

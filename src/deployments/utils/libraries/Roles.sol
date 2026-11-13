@@ -16,7 +16,9 @@ import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 ///   - HubConfigurator:   200-299
 ///   - Spoke:             300-399
 ///   - SpokeConfigurator: 400-499
-///   - BTCVaultSwap:      500-599
+///   - Babylon BTCVaultSwap: 2000-2099
+///
+/// Core contracts use three-digit domains. Integrations use four-digit domains from 2000.
 ///
 /// ## Role strategy
 ///
@@ -61,9 +63,9 @@ library Roles {
   // SpokeConfigurator roles — granularize as needed with new roles appended
   uint64 public constant SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE = 400;
 
-  // BTCVaultSwap roles
-  uint64 public constant BTC_VAULT_SWAP_FEE_ROLE = 500;
-  uint64 public constant BTC_VAULT_SWAP_GUARDIAN_ROLE = 501;
+  // Babylon BTCVaultSwap roles
+  uint64 public constant BTC_VAULT_SWAP_FEE_ROLE = 2000;
+  uint64 public constant BTC_VAULT_SWAP_GUARDIAN_ROLE = 2001;
 
   // ─── Hub selector getters ───
 
