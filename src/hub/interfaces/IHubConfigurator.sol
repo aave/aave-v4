@@ -270,6 +270,13 @@ interface IHubConfigurator {
   /// @param underlying The address of the underlying asset.
   function haltAsset(address hub, address underlying) external;
 
+  /// @notice Unhalts an asset on a specified Hub by setting the halted flag to false on every Spoke of the asset.
+  /// @dev Clears the flag on every Spoke of the asset, including Spokes halted by other means such as
+  /// `haltSpoke` or `updateSpokeHalted`; the pre-halt state is not tracked.
+  /// @param hub The address of the Hub.
+  /// @param underlying The address of the underlying asset.
+  function unhaltAsset(address hub, address underlying) external;
+
   /// @notice Registers the Spoke for the specified asset on a specified Hub.
   /// @param hub The address of the Hub.
   /// @param spoke The address of the Spoke.

@@ -39,8 +39,8 @@ contract HubConfiguratorGranularAccessControlTest is Base {
     manager.grantRole(ASSET_MANAGER_ROLE, ASSET_MANAGER, 0);
     manager.grantRole(SPOKE_MANAGER_ROLE, SPOKE_MANAGER, 0);
 
-    // Set up ASSET_MANAGER_ROLE permissions (11 functions)
-    bytes4[] memory assetSelectors = new bytes4[](11);
+    // Set up ASSET_MANAGER_ROLE permissions (12 functions)
+    bytes4[] memory assetSelectors = new bytes4[](12);
     assetSelectors[0] = IHubConfigurator.addAsset.selector;
     assetSelectors[1] = IHubConfigurator.addAssetWithDecimals.selector;
     assetSelectors[2] = IHubConfigurator.updateLiquidityFee.selector;
@@ -52,6 +52,7 @@ contract HubConfiguratorGranularAccessControlTest is Base {
     assetSelectors[8] = IHubConfigurator.resetAssetCaps.selector;
     assetSelectors[9] = IHubConfigurator.deactivateAsset.selector;
     assetSelectors[10] = IHubConfigurator.haltAsset.selector;
+    assetSelectors[11] = IHubConfigurator.unhaltAsset.selector;
     manager.setTargetFunctionRole(address(hubConfigurator), assetSelectors, ASSET_MANAGER_ROLE);
 
     // Set up SPOKE_MANAGER_ROLE permissions (12 functions)
@@ -137,6 +138,9 @@ contract HubConfiguratorGranularAccessControlTest is Base {
     );
     assetManagerCalldata.push(
       abi.encodeCall(IHubConfigurator.haltAsset, (address(hub1), underlying))
+    );
+    assetManagerCalldata.push(
+      abi.encodeCall(IHubConfigurator.unhaltAsset, (address(hub1), underlying))
     );
   }
 
@@ -300,6 +304,17 @@ contract HubConfiguratorGranularAccessControlTest is Base {
 
     IHub.SpokeConfig memory config = hub1.getSpokeConfig(assetId, spokeAddr);
     assertTrue(config.halted);
+  }
+
+  function test_assetManager_canCall_unhaltAsset() public {
+    vm.startPrank(ASSET_MANAGER);
+    hubConfigurator.haltAsset(address(hub1), underlying);
+    hubConfigurator.unhaltAsset(address(hub1), underlying);
+    vm.stopPrank();
+
+    for (uint256 i = 0; i < hub1.getSpokeCount(assetId); ++i) {
+      assertFalse(hub1.getSpokeConfig(assetId, hub1.getSpokeAddress(assetId, i)).halted);
+    }
   }
 
   function test_spokeManager_canCall_addSpoke() public {

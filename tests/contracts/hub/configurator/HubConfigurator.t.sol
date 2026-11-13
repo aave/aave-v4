@@ -838,6 +838,54 @@ contract HubConfiguratorTest is Base {
     }
   }
 
+  function test_unhaltAsset_revertsWith_AccessManagedUnauthorized() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
+    vm.prank(alice);
+    hubConfigurator.unhaltAsset(address(hub1), _assetUnderlying);
+  }
+
+  function test_unhaltAsset() public {
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.haltAsset(address(hub1), _assetUnderlying);
+
+    assertEq(hub1.getSpokeCount(_assetId), spokeAddresses.length, 'spoke count');
+    for (uint256 i; i < spokeAddresses.length; i++) {
+      IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(_assetId, spokeAddresses[i]);
+      spokeConfig.halted = false;
+      vm.expectCall(
+        address(hub1),
+        abi.encodeCall(IHub.updateSpokeConfig, (_assetId, spokeAddresses[i], spokeConfig))
+      );
+    }
+    for (uint256 i; i < spokeAddresses.length; i++) {
+      _expectSpokeHaltedEvent(_assetId, hub1.getSpokeAddress(_assetId, i), false);
+    }
+
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.unhaltAsset(address(hub1), _assetUnderlying);
+
+    for (uint256 i; i < spokeAddresses.length; i++) {
+      IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(_assetId, spokeAddresses[i]);
+      assertEq(spokeConfig.halted, false);
+    }
+  }
+
+  function test_unhaltAsset_leavesOtherAssetsHalted() public {
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.haltSpoke(address(hub1), address(spoke1));
+
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.unhaltAsset(address(hub1), _assetUnderlying);
+
+    for (uint256 assetId; assetId < hub1.getAssetCount(); ++assetId) {
+      if (hub1.isSpokeListed(assetId, address(spoke1))) {
+        assertEq(hub1.getSpokeConfig(assetId, address(spoke1)).halted, assetId != _assetId);
+      }
+    }
+  }
+
   function test_addSpoke_revertsWith_AccessManagedUnauthorized() public {
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
