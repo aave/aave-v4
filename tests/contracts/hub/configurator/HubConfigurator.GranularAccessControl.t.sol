@@ -212,6 +212,8 @@ contract HubConfiguratorGranularAccessControlTest is Base {
 
   function test_fuzz_unauthorized_cannotCall_assetManagerMethods(address caller) public {
     vm.assume(caller != ASSET_MANAGER && caller != address(0) && caller != address(manager));
+    // the proxy rejects its admin with `ProxyDeniedAdminAccess` before access control runs
+    vm.assume(caller != ProxyHelper.getProxyAdmin(address(hubConfigurator)));
 
     for (uint256 i = 0; i < assetManagerCalldata.length; ++i) {
       vm.prank(caller);
@@ -226,6 +228,8 @@ contract HubConfiguratorGranularAccessControlTest is Base {
 
   function test_fuzz_unauthorized_cannotCall_spokeManagerMethods(address caller) public {
     vm.assume(caller != SPOKE_MANAGER && caller != address(0) && caller != address(manager));
+    // the proxy rejects its admin with `ProxyDeniedAdminAccess` before access control runs
+    vm.assume(caller != ProxyHelper.getProxyAdmin(address(hubConfigurator)));
 
     for (uint256 i = 0; i < spokeManagerCalldata.length; ++i) {
       vm.prank(caller);
