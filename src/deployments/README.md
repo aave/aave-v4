@@ -112,7 +112,7 @@ Hub, spoke and Babylon spoke labels (provided via `FullDeployInputs.hubLabels` /
 
 ### Roles (`Roles.sol`)
 
-Roles are namespaced by contract domain: Hub (100-199), HubConfigurator (200-299), Spoke (300-399), SpokeConfigurator (400-499).
+Roles are namespaced by contract domain: Hub (100-199), HubConfigurator (200-299), Spoke (300-399), SpokeConfigurator (400-499), BTCVaultSwap (500-599).
 
 For configurators, initially a single Domain Admin role (HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE = 200, SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE = 400) holds all target selectors. As more granular roles are introduced, they should be added at the next available ID (201, 202, ... / 401, 402, ...) and the corresponding selectors reassigned from the Domain Admin role to the new granular role:
 
@@ -161,6 +161,15 @@ Domain admin role holds all selectors initially. Granular roles (201+) are carve
 | 400 | SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE | spokeConfiguratorAdmin | All 24 SpokeConfigurator selectors (see Roles.sol) |
 
 Domain admin role holds all selectors initially. Granular roles (401+) are carved out as needed.
+
+#### `BTCVaultSwap` Roles (on Babylon's BTCVaultSwap contract)
+
+| ID  | Name                         | Granted To        | Functions                        |
+| --- | ---------------------------- | ----------------- | -------------------------------- |
+| 500 | BTC_VAULT_SWAP_FEE_ROLE      | set by governance | setSwapFeeBps                    |
+| 501 | BTC_VAULT_SWAP_GUARDIAN_ROLE | set by governance | pause, unpause, freeze, unfreeze |
+
+The deployment scripts do not label, map or grant these roles. Governance does it on the chain where BTCVaultSwap is deployed. Role 501 is the guardian of role 500.
 
 ## Data Flow
 
