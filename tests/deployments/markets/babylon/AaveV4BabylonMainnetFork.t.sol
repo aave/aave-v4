@@ -3,23 +3,13 @@ pragma solidity ^0.8.0;
 
 import {Test, Vm} from 'forge-std/Test.sol';
 import {
-  AaveV4DeployBabylonHubHarness,
   AaveV4DeployBabylonSpokeHarness,
-  AaveV4DeployBabylonTokenizationHarness,
-  AaveV4BabylonConfigureHarness,
-  AaveV4BabylonHandoverHarness,
   AaveV4BabylonVerifyHarness
 } from 'tests/deployments/markets/babylon/AaveV4Babylon.t.sol';
 import {AaveV4BabylonConfig} from 'scripts/markets/babylon/AaveV4BabylonConfig.sol';
-import {
-  IBabylonAaveAdapter,
-  IBabylonBTCVaultSwap
-} from 'scripts/markets/babylon/interfaces/IBabylonIntegration.sol';
-import {AaveV4DeployOrchestration} from 'src/deployments/orchestration/AaveV4DeployOrchestration.sol';
-import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
-import {InputUtils} from 'src/deployments/utils/libraries/InputUtils.sol';
-import {MetadataLogger} from 'src/deployments/utils/MetadataLogger.sol';
-import {BytecodeHelper} from 'src/deployments/utils/libraries/BytecodeHelper.sol';
+import {AaveV4BabylonHandover} from 'scripts/markets/babylon/AaveV4BabylonHandover.s.sol';
+import {AaveV4BabylonVerification} from 'scripts/markets/babylon/AaveV4BabylonVerification.sol';
+import {IBabylonBTCVaultSwap} from 'scripts/markets/babylon/interfaces/IBabylonIntegration.sol';
 import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 import {IAccessManagerEnumerable} from 'src/access/interfaces/IAccessManagerEnumerable.sol';
@@ -39,8 +29,6 @@ import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 import {IPriceFeed} from 'src/spoke/interfaces/IPriceFeed.sol';
 import {SpokeDeployUtils} from 'scripts/utils/SpokeDeployUtils.sol';
 import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
-import {TestnetERC20} from 'tests/helpers/mocks/TestnetERC20.sol';
-import {ERC1967Utils} from 'src/dependencies/openzeppelin/ERC1967Utils.sol';
 import {ProxyHelper} from 'tests/utils/ProxyHelper.sol';
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
 import {EngineFlags} from 'src/config-engine/libraries/EngineFlags.sol';
@@ -49,6 +37,10 @@ interface IVaultBTC {
   function HUB() external view returns (address);
 
   function adapter() external view returns (address);
+
+  function mint(address to, uint256 amount) external;
+
+  function addValidProxy(address proxyAddress) external;
 }
 
 interface IAaveAdapter {
@@ -80,17 +72,92 @@ interface IV4RiskSteward {
   ) external;
 }
 
-/// @dev Runs the production Babylon market scripts on an Ethereum fork and asserts the state after
-/// the handover (step 5b of the launch plan), then the state after the launch AIP actions on the
-/// shared V4 contracts. Expected values come from the LlamaRisk parameters and aave-address-book,
-/// not from `config/mainnet.json`. A mock vaultBTC stands in for Babylon's, deployed after `FORK_BLOCK`.
+/// @dev Repeats `AaveV4BabylonHandover.run` on the mainnet config, broadcasting as the config
+/// deployer, whose key a test cannot use.
+contract AaveV4BabylonHandoverForkHarness is AaveV4BabylonHandover {
+  string internal constant CONFIG_NAME = 'mainnet';
+
+  function runAsConfigDeployer() external {
+    AaveV4BabylonConfig.Config memory config = _config();
+    AaveV4BabylonConfig.Deployment memory deployment = AaveV4BabylonConfig.readDeployment(config);
+    AaveV4BabylonConfig.MarketConfig memory marketConfig = _marketConfig(config, deployment);
+
+    AaveV4BabylonVerification.verifyDeployment({
+      config: config,
+      deployment: deployment,
+      authority: deployment.accessManager
+    });
+    AaveV4BabylonVerification.verifyMarketConfig({
+      deployment: deployment,
+      marketConfig: marketConfig,
+      feeReceiver: AaveV4BabylonConfig.feeReceiver(config, deployment)
+    });
+    AaveV4BabylonVerification.verifyTokenizationSpokes({
+      config: config,
+      marketConfig: marketConfig,
+      owner: config.admin
+    });
+    AaveV4BabylonVerification.verifyBabylonContracts(config, deployment);
+
+    vm.startBroadcast(config.deployer);
+    (, address deployer, ) = vm.readCallers();
+    AaveV4BabylonConfig.requireDeployer(config, deployer);
+    _handover({config: config, deployment: deployment, deployer: deployer});
+    vm.stopBroadcast();
+
+    AaveV4BabylonVerification.verifyDeployment({
+      config: config,
+      deployment: deployment,
+      authority: AaveV4BabylonConfig.finalAuthority(config, deployment)
+    });
+    if (config.authority == address(0)) {
+      AaveV4BabylonVerification.verifyRoles(deployment, config.admin);
+    } else {
+      AaveV4BabylonVerification.verifyAbandonedAccessManager({
+        deployment: deployment,
+        admin: config.admin,
+        deployer: deployer
+      });
+    }
+    AaveV4BabylonVerification.verifyProxyAdmins({
+      deployment: deployment,
+      owner: config.admin,
+      externalSpokes: marketConfig.externalSpokes,
+      externalFeeReceiver: config.feeReceiver,
+      treasurySpokeOwner: AaveV4BabylonConfig.treasurySpokeOwner(config)
+    });
+    AaveV4BabylonVerification.verifyTreasurySpokeOwner({
+      deployment: deployment,
+      owner: AaveV4BabylonConfig.treasurySpokeOwner(config),
+      allowPending: config.feeReceiver == address(0)
+    });
+  }
+
+  function _config() internal view override returns (AaveV4BabylonConfig.Config memory) {
+    return AaveV4BabylonConfig.read(CONFIG_NAME);
+  }
+
+  function _marketConfig(
+    AaveV4BabylonConfig.Config memory config,
+    AaveV4BabylonConfig.Deployment memory deployment
+  ) internal view override returns (AaveV4BabylonConfig.MarketConfig memory) {
+    return
+      AaveV4BabylonConfig.parseMarketConfig({
+        json: vm.readFile(AaveV4BabylonConfig.path(CONFIG_NAME)),
+        config: config,
+        deployment: deployment
+      });
+  }
+}
+
+/// @dev Runs the production handover on the deployed Babylon market on an Ethereum fork and asserts
+/// the state after it (step 5b of the launch plan), then the state after the launch AIP actions on
+/// the shared V4 contracts. Expected values come from the LlamaRisk parameters, aave-address-book
+/// and Babylon's deployment, not from `config/mainnet.json`.
 contract AaveV4BabylonMainnetForkTest is Test {
-  uint256 internal constant FORK_BLOCK = 26_387_600;
-  string internal constant OUTPUT_DIR = 'output/reports/deployments/';
-  string internal constant REPORT_NAME = 'babylon-mainnet-fork-test';
+  uint256 internal constant FORK_BLOCK = 26_405_000;
+  uint256 internal constant SPOKE_DEPLOY_BLOCK = 26_394_302;
   string internal constant MAINNET_CONFIG = 'scripts/markets/babylon/config/mainnet.json';
-  string internal constant VAULT_BTC_CONFIG =
-    '"underlying": "0x69712D713FD30aBEF48b5D14eC2a9FB834D2c341"';
 
   // aave-address-book AaveV4Ethereum
   address internal constant ACCESS_MANAGER = 0x08aE3BE30958cDd1847ec58fFfd4C451a87fDF01;
@@ -116,10 +183,8 @@ contract AaveV4BabylonMainnetForkTest is Test {
   address internal constant TAKER_POSITION_MANAGER = 0x6c044c0D3801499bCAbfAd458B70880bc518e9F7;
 
   address internal constant AAVE_ADAPTER = 0xadca531564f3B26d0aAF48a044d741fD6cD571Ea;
-  // set once deployd
-  address internal constant VAULT_BTC = address(0);
-  // set once deployed
-  address internal constant BTC_VAULT_SWAP = address(0);
+  address internal constant VAULT_BTC = 0x69712D713FD30aBEF48b5D14eC2a9FB834D2c341;
+  address internal constant BTC_VAULT_SWAP = 0xFe354b6A67E9a308B600d35B0b3e2e6F33f3c6d9;
   address internal constant USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
   address internal constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
   address internal constant GHO = 0x40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f;
@@ -161,57 +226,30 @@ contract AaveV4BabylonMainnetForkTest is Test {
     uint32 maxLiquidationBonus;
   }
 
-  address internal _deployer = DEFAULT_SENDER;
+  address internal _deployer;
   address internal _user = makeAddr('user');
   address internal _supplier = makeAddr('supplier');
-  address internal _vaultBtc;
-  address internal _btcVaultSwap = makeAddr('btcVaultSwap');
   string internal _marketJson;
   AaveV4BabylonConfig.Config internal _config;
   AaveV4BabylonConfig.Deployment internal _deployment;
-  uint256 internal _positionManagerUpdates;
-  uint256 internal _reserveAdditions;
+  uint256 internal _handoverPositionManagerUpdates;
 
   function setUp() public {
     vm.createSelectFork(vm.rpcUrl('mainnet'), FORK_BLOCK);
-    // deploying the market and the script harnesses exceeds the fork block gas limit
-    vm.pauseGasMetering();
-    vm.recordLogs();
 
     _config = AaveV4BabylonConfig.read('mainnet');
-    _config.deployer = _deployer;
-    _config.report = string.concat(OUTPUT_DIR, '1-', REPORT_NAME, '.json');
-
-    _vaultBtc = address(new TestnetERC20('vaultBTC', 'vaultBTC', 8));
-    string memory json = vm.readFile(MAINNET_CONFIG);
-    assertEq(vm.split(json, VAULT_BTC_CONFIG).length, 2, 'one vaultBTC reserve');
-    _marketJson = vm.replace(
-      json,
-      VAULT_BTC_CONFIG,
-      string.concat('"underlying": "', vm.toString(_vaultBtc), '"')
-    );
-
-    _deployAndWriteReport();
-    new AaveV4BabylonConfigureHarness(_config, _marketJson).run();
-    new AaveV4DeployBabylonTokenizationHarness(_config, _marketJson).run();
-    _mockBabylonContracts();
-    AaveV4BabylonHandoverHarness handover = new AaveV4BabylonHandoverHarness(_config);
-    handover.setMarketJson(_marketJson);
-    handover.run();
-
+    _deployer = _config.deployer;
+    _marketJson = vm.readFile(MAINNET_CONFIG);
     _deployment = AaveV4BabylonConfig.readDeployment(_config);
+
+    vm.recordLogs();
+    new AaveV4BabylonHandoverForkHarness().runAsConfigDeployer();
     Vm.Log[] memory logs = vm.getRecordedLogs();
     for (uint256 i; i < logs.length; ++i) {
       if (logs[i].topics[0] == ISpoke.UpdatePositionManager.selector) {
-        ++_positionManagerUpdates;
-      } else if (
-        logs[i].topics[0] == ISpoke.AddReserve.selector &&
-        logs[i].emitter == _deployment.babylonSpoke
-      ) {
-        ++_reserveAdditions;
+        ++_handoverPositionManagerUpdates;
       }
     }
-    vm.resumeGasMetering();
   }
 
   function test_verify() public {
@@ -342,7 +380,7 @@ contract AaveV4BabylonMainnetForkTest is Test {
     assertEq(hub.getAssetCount(), 5, 'asset count');
     _assertBabylonHubAsset({
       assetId: 0,
-      underlying: _vaultBtc,
+      underlying: VAULT_BTC,
       liquidityFee: 0,
       irData: _irData(99_00, 0, 0, 0)
     });
@@ -411,8 +449,20 @@ contract AaveV4BabylonMainnetForkTest is Test {
 
   /// @dev No step activates a position manager, so only the AIP or later governance can.
   function test_noPositionManagers() public view {
-    assertEq(_reserveAdditions, RESERVE_COUNT, 'deployment logs recorded');
-    assertEq(_positionManagerUpdates, 0, 'position manager updates');
+    bytes32[] memory topics = new bytes32[](1);
+    topics[0] = ISpoke.AddReserve.selector;
+    assertEq(
+      vm.eth_getLogs(SPOKE_DEPLOY_BLOCK, FORK_BLOCK, _spoke(), topics).length,
+      RESERVE_COUNT,
+      'deployment logs read'
+    );
+    topics[0] = ISpoke.UpdatePositionManager.selector;
+    assertEq(
+      vm.eth_getLogs(SPOKE_DEPLOY_BLOCK, FORK_BLOCK, _spoke(), topics).length,
+      0,
+      'position manager updates'
+    );
+    assertEq(_handoverPositionManagerUpdates, 0, 'handover position manager updates');
     address[5] memory positionManagers = [
       CONFIG_POSITION_MANAGER,
       GIVER_POSITION_MANAGER,
@@ -439,7 +489,7 @@ contract AaveV4BabylonMainnetForkTest is Test {
     assertEq(spoke.MANAGED_COLLATERAL_RESERVE_ID(), VAULT_BTC_RESERVE_ID, 'managed collateral');
     ISpoke.Reserve memory vaultBtc = spoke.getReserve(VAULT_BTC_RESERVE_ID);
     assertEq(address(vaultBtc.hub), _hub(), 'vaultBTC hub');
-    assertEq(vaultBtc.underlying, _vaultBtc, 'vaultBTC underlying');
+    assertEq(vaultBtc.underlying, VAULT_BTC, 'vaultBTC underlying');
     assertEq(vaultBtc.decimals, 8, 'vaultBTC decimals');
     ISpoke.Reserve memory exitBtc = spoke.getReserve(EXIT_BTC_RESERVE_ID);
     assertEq(address(exitBtc.hub), _hub(), 'exitBTC hub');
@@ -489,9 +539,9 @@ contract AaveV4BabylonMainnetForkTest is Test {
   }
 
   function test_revert_supply_marketInactive() public {
-    TestnetERC20(_vaultBtc).mint(_user, 1e8);
+    _mintVaultBtc(_user, 1e8);
     vm.startPrank(_user);
-    IERC20(_vaultBtc).approve(_spoke(), 1e8);
+    IERC20(VAULT_BTC).approve(_spoke(), 1e8);
     vm.expectRevert(IHub.SpokeNotActive.selector);
     ISpoke(_spoke()).supply(VAULT_BTC_RESERVE_ID, 1e8, _user);
     vm.stopPrank();
@@ -620,9 +670,9 @@ contract AaveV4BabylonMainnetForkTest is Test {
 
   function test_aip_revertsWith_vaultBtcAddCapExceeded() public {
     _executeLaunchAip();
-    TestnetERC20(_vaultBtc).mint(_user, 301e8);
+    _mintVaultBtc(_user, 301e8);
     vm.startPrank(_user);
-    IERC20(_vaultBtc).approve(_spoke(), 301e8);
+    IERC20(VAULT_BTC).approve(_spoke(), 301e8);
     vm.expectRevert(abi.encodeWithSelector(IHub.AddCapExceeded.selector, 300));
     ISpoke(_spoke()).supply(VAULT_BTC_RESERVE_ID, 301e8, _user);
     vm.stopPrank();
@@ -715,7 +765,7 @@ contract AaveV4BabylonMainnetForkTest is Test {
       spokeConfigurator: ISpokeConfigurator(SPOKE_CONFIGURATOR),
       spoke: _spoke(),
       hub: _hub(),
-      underlying: _vaultBtc,
+      underlying: VAULT_BTC,
       dynamicConfigKey: dynamicConfigKey,
       // the RiskSteward allows at most 50 BPS per collateral factor update
       collateralFactor: 77_50,
@@ -741,16 +791,12 @@ contract AaveV4BabylonMainnetForkTest is Test {
     ISpoke(_spoke()).liquidationCall(VAULT_BTC_RESERVE_ID, CORE_USDC_RESERVE_ID, _user, 1, false);
   }
 
-  // will fail until Babylon deploys vaultBTC
-  function test_babylon_vaultBtc() public {
-    vm.skip(true, 'post-babylon deployment, step 3');
+  function test_babylon_vaultBtc() public view {
     assertEq(IVaultBTC(VAULT_BTC).HUB(), _hub(), 'hub');
     assertEq(IVaultBTC(VAULT_BTC).adapter(), AAVE_ADAPTER, 'adapter');
   }
 
-  // will fail until Babylon deploys the AaveAdapter
-  function test_babylon_aaveAdapter() public {
-    vm.skip(true, 'post-babylon deployment, step 5');
+  function test_babylon_aaveAdapter() public view {
     assertEq(IAaveAdapter(AAVE_ADAPTER).BTC_VAULT_CORE_SPOKE(), _spoke(), 'babylon spoke');
     assertEq(IAaveAdapter(AAVE_ADAPTER).EXIT_BTC_RESERVE_ID(), EXIT_BTC_RESERVE_ID, 'exitBTC');
     assertEq(
@@ -766,34 +812,21 @@ contract AaveV4BabylonMainnetForkTest is Test {
     );
   }
 
-  // will fail until Babylon deploys BTCVaultSwap
-  function test_babylon_btcVaultSwap() public {
-    vm.skip(true, 'post-babylon deployment, step 5');
+  function test_babylon_btcVaultSwap() public view {
+    assertEq(_config.btcVaultSwap.swap, BTC_VAULT_SWAP, 'configured swap');
     IBTCVaultSwap btcVaultSwap = IBTCVaultSwap(BTC_VAULT_SWAP);
     assertEq(btcVaultSwap.ADAPTER(), AAVE_ADAPTER, 'adapter');
     assertEq(btcVaultSwap.HUB(), CORE_HUB, 'hub');
+    assertEq(IBabylonBTCVaultSwap(BTC_VAULT_SWAP).EXIT_BTC(), WBTC, 'exitBTC');
     assertEq(btcVaultSwap.EXIT_BTC_ASSET_ID(), CORE_WBTC_ASSET_ID, 'exitBTC asset id');
+    assertEq(IBabylonBTCVaultSwap(BTC_VAULT_SWAP).sellDiscountBps(), 2_00, 'sell discount');
+    assertEq(
+      IBabylonBTCVaultSwap(BTC_VAULT_SWAP).minimumProfitThresholdBps(),
+      50,
+      'minimum profit threshold'
+    );
     assertEq(IAccessManaged(BTC_VAULT_SWAP).authority(), ACCESS_MANAGER, 'authority');
     assertEq(_proxyAdminOwner(BTC_VAULT_SWAP), V4_SECURITY_COUNCIL, 'proxy admin owner');
-  }
-
-  function deployHubs() external returns (OrchestrationReports.FullDeploymentReport memory report) {
-    InputUtils.FullDeployInputs memory inputs = new AaveV4DeployBabylonHubHarness(_config)
-      .sanitizedDeployInputs(_deployer);
-    MetadataLogger logger = new MetadataLogger(OUTPUT_DIR);
-    bytes memory hubBytecode = BytecodeHelper.getHubBytecode();
-    bytes memory spokeBytecode = BytecodeHelper.getSpokeBytecode();
-    bytes memory babylonSpokeBytecode = BytecodeHelper.getBabylonSpokeBytecode();
-    vm.startPrank(_deployer);
-    report = AaveV4DeployOrchestration.deployAaveV4({
-      logger: logger,
-      deployer: _deployer,
-      deployInputs: inputs,
-      hubBytecode: hubBytecode,
-      spokeBytecode: spokeBytecode,
-      babylonSpokeBytecode: babylonSpokeBytecode
-    });
-    vm.stopPrank();
   }
 
   /// @dev Launch AIP actions in proposal order: the Hub and BabylonSpoke role mappings, the BabylonSpoke
@@ -889,85 +922,22 @@ contract AaveV4BabylonMainnetForkTest is Test {
     vm.stopPrank();
   }
 
-  /// @dev Stands in for Babylon's step 5: the AaveAdapter at its predicted address and a BTCVaultSwap
-  /// wired as LlamaRisk and the launch plan expect, so the production handover checks pass.
-  function _mockBabylonContracts() internal {
-    AaveV4BabylonConfig.Deployment memory deployment = AaveV4BabylonConfig.readDeployment(_config);
-    vm.etch(AAVE_ADAPTER, hex'00');
-    vm.mockCall(
-      AAVE_ADAPTER,
-      abi.encodeCall(IBabylonAaveAdapter.BTC_VAULT_CORE_SPOKE, ()),
-      abi.encode(deployment.babylonSpoke)
-    );
-    vm.mockCall(
-      AAVE_ADAPTER,
-      abi.encodeCall(IBabylonAaveAdapter.VAULT_BTC_RESERVE_ID, ()),
-      abi.encode(VAULT_BTC_RESERVE_ID)
-    );
-    vm.mockCall(
-      AAVE_ADAPTER,
-      abi.encodeCall(IBabylonAaveAdapter.BTC_VAULT_HUB, ()),
-      abi.encode(deployment.hubs[0])
-    );
-    vm.mockCall(
-      AAVE_ADAPTER,
-      abi.encodeCall(IBabylonAaveAdapter.EXIT_BTC_RESERVE_ID, ()),
-      abi.encode(EXIT_BTC_RESERVE_ID)
-    );
-
-    vm.etch(_btcVaultSwap, hex'00');
-    vm.store(
-      _btcVaultSwap,
-      ERC1967Utils.ADMIN_SLOT,
-      bytes32(uint256(uint160(address(new ProxyAdmin(V4_SECURITY_COUNCIL)))))
-    );
-    vm.mockCall(
-      _btcVaultSwap,
-      abi.encodeCall(IBabylonBTCVaultSwap.ADAPTER, ()),
-      abi.encode(AAVE_ADAPTER)
-    );
-    vm.mockCall(_btcVaultSwap, abi.encodeCall(IBabylonBTCVaultSwap.HUB, ()), abi.encode(CORE_HUB));
-    vm.mockCall(_btcVaultSwap, abi.encodeCall(IBabylonBTCVaultSwap.EXIT_BTC, ()), abi.encode(WBTC));
-    vm.mockCall(
-      _btcVaultSwap,
-      abi.encodeCall(IBabylonBTCVaultSwap.EXIT_BTC_ASSET_ID, ()),
-      abi.encode(CORE_WBTC_ASSET_ID)
-    );
-    vm.mockCall(
-      _btcVaultSwap,
-      abi.encodeCall(IBabylonBTCVaultSwap.sellDiscountBps, ()),
-      abi.encode(2_00)
-    );
-    vm.mockCall(
-      _btcVaultSwap,
-      abi.encodeCall(IBabylonBTCVaultSwap.minimumProfitThresholdBps, ()),
-      abi.encode(50)
-    );
-    vm.mockCall(
-      _btcVaultSwap,
-      abi.encodeCall(IAccessManaged.authority, ()),
-      abi.encode(ACCESS_MANAGER)
-    );
-    _config.btcVaultSwap.swap = _btcVaultSwap;
-  }
-
   function _supplyVaultBtcAsCollateral(uint256 amount) internal {
-    TestnetERC20(_vaultBtc).mint(_user, amount);
+    _mintVaultBtc(_user, amount);
     vm.startPrank(_user);
-    IERC20(_vaultBtc).approve(_spoke(), amount);
+    IERC20(VAULT_BTC).approve(_spoke(), amount);
     ISpoke(_spoke()).supply(VAULT_BTC_RESERVE_ID, amount, _user);
     ISpoke(_spoke()).setUsingAsCollateral(VAULT_BTC_RESERVE_ID, true, _user);
     vm.stopPrank();
   }
 
-  /// @dev Step 2 deploys the Hub and writes the report, step 3 runs the BabylonSpoke script on it.
-  function _deployAndWriteReport() internal {
-    OrchestrationReports.FullDeploymentReport memory report = this.deployHubs();
-    vm.createDir(OUTPUT_DIR, true);
-    MetadataLogger logger = new MetadataLogger(OUTPUT_DIR);
-    logger.writeJsonReportMarket(report);
-    logger.save({fileName: REPORT_NAME, withTimestamp: false});
-    new AaveV4DeployBabylonSpokeHarness(_config, false).run();
+  /// @dev vaultBTC is minted by the AaveAdapter and moves only to the Hub, the adapter or a
+  /// registered position proxy.
+  function _mintVaultBtc(address to, uint256 amount) internal {
+    vm.startPrank(AAVE_ADAPTER);
+    IVaultBTC(VAULT_BTC).addValidProxy(to);
+    IVaultBTC(VAULT_BTC).mint(to, amount);
+    vm.stopPrank();
   }
 
   function _assertBabylonHubAsset(
@@ -1022,7 +992,7 @@ contract AaveV4BabylonMainnetForkTest is Test {
     expected[0] = ExpectedReserve({
       hub: _hub(),
       assetId: 0,
-      underlying: _vaultBtc,
+      underlying: VAULT_BTC,
       priceSource: BTC_USD_SVR_FEED,
       borrowable: false,
       collateralFactor: 78_00,

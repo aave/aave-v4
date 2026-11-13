@@ -1973,6 +1973,7 @@ contract AaveV4BabylonTest is Create2TestHelper {
   address internal constant ETHEREUM_ACCESS_MANAGER = 0x08aE3BE30958cDd1847ec58fFfd4C451a87fDF01;
   address internal constant ETHEREUM_TREASURY_SPOKE = 0xB9B0b8616f6Bf6841972a52058132BE08d723155;
   address internal constant ETHEREUM_CORE_HUB = 0xCca852Bc40e560adC3b1Cc58CA5b55638ce826c9;
+  address internal constant ETHEREUM_BTC_VAULT_SWAP = 0xFe354b6A67E9a308B600d35B0b3e2e6F33f3c6d9;
   address internal constant ETHEREUM_USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
   address internal constant ETHEREUM_USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
   address internal constant ETHEREUM_GHO = 0x40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f;
@@ -2015,8 +2016,8 @@ contract AaveV4BabylonTest is Create2TestHelper {
     assertTrue(config.production);
     // the Babylon Hub WBTC reserve, the launch plan's exit reserve
     assertEq(config.exitReserveId, 4);
-    // set once Babylon deploys BTCVaultSwap, drawing WBTC from the Core Hub with the LlamaRisk fees
-    assertEq(config.btcVaultSwap.swap, address(0));
+    // Babylon's BTCVaultSwap, drawing WBTC from the Core Hub with the LlamaRisk fees
+    assertEq(config.btcVaultSwap.swap, ETHEREUM_BTC_VAULT_SWAP);
     assertEq(config.btcVaultSwap.hub, ETHEREUM_CORE_HUB);
     assertEq(config.btcVaultSwap.sellDiscountBps, 2_00);
     assertEq(config.btcVaultSwap.minimumProfitThresholdBps, 50);
