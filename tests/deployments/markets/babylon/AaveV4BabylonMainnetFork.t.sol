@@ -779,6 +779,12 @@ contract AaveV4BabylonMainnetForkTest is Test {
   /// its selectors.
   function test_aip_riskStewardUpdatesBabylonHubCaps() public {
     _executeLaunchAip();
+    IHub.SpokeConfig memory spokeConfig = IHub(_hub()).getSpokeConfig(
+      BABYLON_USDC_ASSET_ID,
+      _spoke()
+    );
+    uint40 addCap = spokeConfig.addCap + 1;
+    uint40 drawCap = spokeConfig.drawCap - 1;
     IAaveV4ConfigEngine.SpokeConfigUpdate[]
       memory updates = new IAaveV4ConfigEngine.SpokeConfigUpdate[](1);
     updates[0] = IAaveV4ConfigEngine.SpokeConfigUpdate({
@@ -786,19 +792,17 @@ contract AaveV4BabylonMainnetForkTest is Test {
       hub: _hub(),
       underlying: USDC,
       spoke: _spoke(),
-      addCap: EngineFlags.KEEP_CURRENT,
-      drawCap: 240_000,
+      addCap: addCap,
+      drawCap: drawCap,
       riskPremiumThreshold: EngineFlags.KEEP_CURRENT,
       active: EngineFlags.KEEP_CURRENT,
       halted: EngineFlags.KEEP_CURRENT
     });
     vm.prank(RISK_COUNCIL);
     IV4RiskSteward(RISK_STEWARD).updateHubSpokeCaps(updates);
-    assertEq(
-      IHub(_hub()).getSpokeConfig(BABYLON_USDC_ASSET_ID, _spoke()).drawCap,
-      240_000,
-      'draw cap'
-    );
+    spokeConfig = IHub(_hub()).getSpokeConfig(BABYLON_USDC_ASSET_ID, _spoke());
+    assertEq(spokeConfig.addCap, addCap, 'add cap');
+    assertEq(spokeConfig.drawCap, drawCap, 'draw cap');
   }
 
   /// @dev The RiskSteward governs the BabylonSpoke through the shared SpokeConfigurator once the AIP
