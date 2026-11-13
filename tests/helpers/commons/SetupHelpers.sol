@@ -32,7 +32,7 @@ abstract contract SetupHelpers is Test {
     return _makeEntity('user', vm.randomBytes8());
   }
 
-  function _randomAddressOmit(address omit) internal returns (address) {
+  function _randomAddressOmit(address omit) internal view returns (address) {
     address addr = vm.randomAddress();
     while (addr == omit) addr = vm.randomAddress();
     return addr;

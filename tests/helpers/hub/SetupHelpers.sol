@@ -225,11 +225,11 @@ abstract contract SetupHelpers is MathHelpers {
       });
   }
 
-  function _randomAssetId(IHub hub) internal returns (uint256) {
+  function _randomAssetId(IHub hub) internal view returns (uint256) {
     return vm.randomUint(0, hub.getAssetCount() - 1);
   }
 
-  function _randomInvalidAssetId(IHub hub) internal returns (uint256) {
+  function _randomInvalidAssetId(IHub hub) internal view returns (uint256) {
     return vm.randomUint(hub.getAssetCount(), UINT256_MAX);
   }
 }
