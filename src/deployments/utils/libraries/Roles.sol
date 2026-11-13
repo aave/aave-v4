@@ -66,8 +66,9 @@ library Roles {
   uint64 public constant SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE = 400;
 
   // Babylon BTCVaultSwap roles
-  uint64 public constant BTC_VAULT_SWAP_FEE_ROLE = 2000;
-  uint64 public constant BTC_VAULT_SWAP_GUARDIAN_ROLE = 2001;
+  uint64 public constant BTC_VAULT_SWAP_DOMAIN_ADMIN_ROLE = 2000;
+  uint64 public constant BTC_VAULT_SWAP_FEE_ROLE = 2001;
+  uint64 public constant BTC_VAULT_SWAP_GUARDIAN_ROLE = 2002;
 
   // ─── Hub selector getters ───
 

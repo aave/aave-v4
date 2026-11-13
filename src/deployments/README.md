@@ -164,12 +164,13 @@ Domain admin role holds all selectors initially. Granular roles (401+) are carve
 
 #### Babylon `BTCVaultSwap` Roles (on Babylon's BTCVaultSwap contract)
 
-| ID   | Name                         | Granted To        | Functions                        |
-| ---- | ---------------------------- | ----------------- | -------------------------------- |
-| 2000 | BTC_VAULT_SWAP_FEE_ROLE      | set by governance | setSwapFeeBps                    |
-| 2001 | BTC_VAULT_SWAP_GUARDIAN_ROLE | set by governance | pause, unpause, freeze, unfreeze |
+| ID   | Name                             | Granted To        | Functions                        |
+| ---- | -------------------------------- | ----------------- | -------------------------------- |
+| 2000 | BTC_VAULT_SWAP_DOMAIN_ADMIN_ROLE | nobody            | (reserved for future use)        |
+| 2001 | BTC_VAULT_SWAP_FEE_ROLE          | set by governance | setSwapFeeBps                    |
+| 2002 | BTC_VAULT_SWAP_GUARDIAN_ROLE     | set by governance | pause, unpause, freeze, unfreeze |
 
-The deployment scripts do not label, map or grant these roles. Governance does it on the chain where BTCVaultSwap is deployed. Role 2001 is the guardian of role 2000.
+The deployment scripts do not label, map or grant these roles. Governance does it on the chain where BTCVaultSwap is deployed. Role 2002 is the guardian of role 2001.
 
 ## Data Flow
 
