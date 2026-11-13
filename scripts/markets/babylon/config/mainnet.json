@@ -16,7 +16,7 @@
   "production": true,
   "exitReserveId": 4,
   "btcVaultSwap": {
-    "address": "0x0000000000000000000000000000000000000000",
+    "address": "0xFe354b6A67E9a308B600d35B0b3e2e6F33f3c6d9",
     "hub": "0xCca852Bc40e560adC3b1Cc58CA5b55638ce826c9",
     "sellDiscountBps": 200,
     "minimumProfitThresholdBps": 50
