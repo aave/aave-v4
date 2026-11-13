@@ -237,7 +237,7 @@ contract AaveV4BabylonMainnetForkTest is Test {
   uint64 internal constant BTC_VAULT_SWAP_FEE_ROLE = 500;
   uint64 internal constant BTC_VAULT_SWAP_GUARDIAN_ROLE = 501;
   uint32 internal constant BTC_VAULT_SWAP_FEE_DELAY = 5 days;
-  uint40 internal constant BTC_VAULT_SWAP_DRAW_CAP = 100;
+  uint40 internal constant BTC_VAULT_SWAP_DRAW_CAP = 20;
 
   struct ExpectedReserve {
     address hub;
@@ -614,11 +614,11 @@ contract AaveV4BabylonMainnetForkTest is Test {
     _executeLaunchAip();
     uint256[5] memory assetIds = _coreHubAssetIds();
     uint40[5] memory drawCaps = [
-      uint40(8_000_000),
-      uint40(8_000_000),
-      uint40(1_000_000),
-      uint40(2_000_000),
-      uint40(2_000_000)
+      uint40(500_000),
+      uint40(500_000),
+      uint40(100_000),
+      uint40(250_000),
+      uint40(100_000)
     ];
     for (uint256 i; i < assetIds.length; ++i) {
       assertEq(
@@ -631,7 +631,7 @@ contract AaveV4BabylonMainnetForkTest is Test {
 
   function test_aip_babylonHubActive() public {
     uint40[5] memory addCaps = [
-      uint40(300),
+      uint40(20),
       uint40(5_000_000),
       uint40(5_000_000),
       uint40(1_000_000),
@@ -639,10 +639,10 @@ contract AaveV4BabylonMainnetForkTest is Test {
     ];
     uint40[5] memory drawCaps = [
       uint40(0),
-      uint40(4_600_000),
-      uint40(4_600_000),
-      uint40(920_000),
-      uint40(80)
+      uint40(250_000),
+      uint40(250_000),
+      uint40(100_000),
+      uint40(20)
     ];
     _executeLaunchAip();
     for (uint256 assetId; assetId < 5; ++assetId) {
@@ -705,19 +705,19 @@ contract AaveV4BabylonMainnetForkTest is Test {
 
   function test_aip_revertsWith_coreHubDrawCapExceeded() public {
     _executeLaunchAip();
-    _supplyVaultBtcAsCollateral(300e8);
-    vm.expectRevert(abi.encodeWithSelector(IHub.DrawCapExceeded.selector, 8_000_000));
+    _supplyVaultBtcAsCollateral(20e8);
+    vm.expectRevert(abi.encodeWithSelector(IHub.DrawCapExceeded.selector, 500_000));
     vm.prank(_user);
-    ISpoke(_spoke()).borrow(CORE_USDC_RESERVE_ID, 8_000_001e6, _user);
+    ISpoke(_spoke()).borrow(CORE_USDC_RESERVE_ID, 500_001e6, _user);
   }
 
   function test_aip_revertsWith_vaultBtcAddCapExceeded() public {
     _executeLaunchAip();
-    _mintVaultBtc(_user, 301e8);
+    _mintVaultBtc(_user, 21e8);
     vm.startPrank(_user);
-    IERC20(VAULT_BTC).approve(_spoke(), 301e8);
-    vm.expectRevert(abi.encodeWithSelector(IHub.AddCapExceeded.selector, 300));
-    ISpoke(_spoke()).supply(VAULT_BTC_RESERVE_ID, 301e8, _user);
+    IERC20(VAULT_BTC).approve(_spoke(), 21e8);
+    vm.expectRevert(abi.encodeWithSelector(IHub.AddCapExceeded.selector, 20));
+    ISpoke(_spoke()).supply(VAULT_BTC_RESERVE_ID, 21e8, _user);
     vm.stopPrank();
   }
 
@@ -783,7 +783,7 @@ contract AaveV4BabylonMainnetForkTest is Test {
       underlying: USDC,
       spoke: _spoke(),
       addCap: EngineFlags.KEEP_CURRENT,
-      drawCap: 4_500_000,
+      drawCap: 240_000,
       riskPremiumThreshold: EngineFlags.KEEP_CURRENT,
       active: EngineFlags.KEEP_CURRENT,
       halted: EngineFlags.KEEP_CURRENT
@@ -792,7 +792,7 @@ contract AaveV4BabylonMainnetForkTest is Test {
     IV4RiskSteward(RISK_STEWARD).updateHubSpokeCaps(updates);
     assertEq(
       IHub(_hub()).getSpokeConfig(BABYLON_USDC_ASSET_ID, _spoke()).drawCap,
-      4_500_000,
+      240_000,
       'draw cap'
     );
   }
@@ -1040,21 +1040,21 @@ contract AaveV4BabylonMainnetForkTest is Test {
     _executeLaunchAip();
     assertEq(
       abi.encode(IHub(CORE_HUB).getSpokeConfig(CORE_WBTC_ASSET_ID, BTC_VAULT_SWAP)),
-      abi.encode(_spokeConfig({addCap: 0, drawCap: 100, active: true})),
+      abi.encode(_spokeConfig({addCap: 0, drawCap: 20, active: true})),
       'credit line'
     );
 
     uint256 balanceBefore = IERC20(WBTC).balanceOf(BTC_VAULT_SWAP);
     vm.prank(BTC_VAULT_SWAP);
-    IHub(CORE_HUB).draw(CORE_WBTC_ASSET_ID, 100e8, BTC_VAULT_SWAP);
-    assertEq(IERC20(WBTC).balanceOf(BTC_VAULT_SWAP), balanceBefore + 100e8, 'drawn');
+    IHub(CORE_HUB).draw(CORE_WBTC_ASSET_ID, 20e8, BTC_VAULT_SWAP);
+    assertEq(IERC20(WBTC).balanceOf(BTC_VAULT_SWAP), balanceBefore + 20e8, 'drawn');
   }
 
   function test_aip_revertsWith_btcVaultSwapDrawCapExceeded() public {
     _executeLaunchAip();
-    vm.expectRevert(abi.encodeWithSelector(IHub.DrawCapExceeded.selector, 100));
+    vm.expectRevert(abi.encodeWithSelector(IHub.DrawCapExceeded.selector, 20));
     vm.prank(BTC_VAULT_SWAP);
-    IHub(CORE_HUB).draw(CORE_WBTC_ASSET_ID, 100e8 + 1, BTC_VAULT_SWAP);
+    IHub(CORE_HUB).draw(CORE_WBTC_ASSET_ID, 20e8 + 1, BTC_VAULT_SWAP);
   }
 
   function test_aip_revertsWith_liquidationNotFromAdapter() public {
@@ -1137,7 +1137,7 @@ contract AaveV4BabylonMainnetForkTest is Test {
     );
 
     uint40[5] memory babylonAddCaps = [
-      uint40(300),
+      uint40(20),
       uint40(5_000_000),
       uint40(5_000_000),
       uint40(1_000_000),
@@ -1145,10 +1145,10 @@ contract AaveV4BabylonMainnetForkTest is Test {
     ];
     uint40[5] memory babylonDrawCaps = [
       uint40(0),
-      uint40(4_600_000),
-      uint40(4_600_000),
-      uint40(920_000),
-      uint40(80)
+      uint40(250_000),
+      uint40(250_000),
+      uint40(100_000),
+      uint40(20)
     ];
     for (uint256 assetId; assetId < 5; ++assetId) {
       IHubConfigurator(HUB_CONFIGURATOR).addSpoke({
@@ -1179,11 +1179,11 @@ contract AaveV4BabylonMainnetForkTest is Test {
     }
     uint256[5] memory assetIds = _coreHubAssetIds();
     uint40[5] memory drawCaps = [
-      uint40(8_000_000),
-      uint40(8_000_000),
-      uint40(1_000_000),
-      uint40(2_000_000),
-      uint40(2_000_000)
+      uint40(500_000),
+      uint40(500_000),
+      uint40(100_000),
+      uint40(250_000),
+      uint40(100_000)
     ];
     for (uint256 i; i < assetIds.length; ++i) {
       IHubConfigurator(HUB_CONFIGURATOR).addSpoke({
