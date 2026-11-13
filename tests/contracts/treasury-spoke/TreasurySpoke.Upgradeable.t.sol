@@ -157,6 +157,39 @@ contract TreasurySpokeUpgradeableTest is Base {
     );
   }
 
+  function test_spokeRevision() public {
+    assertEq(new TreasurySpokeInstance().SPOKE_REVISION(), 2);
+  }
+
+  function test_proxy_upgrade_preservesClaimer() public {
+    MockTreasurySpokeInstance impl = _deployMockTreasurySpokeInstance(1);
+    ITransparentUpgradeableProxy proxy = ITransparentUpgradeableProxy(
+      AaveV4TestOrchestration.proxify(
+        address(impl),
+        proxyAdminOwner,
+        abi.encodeCall(MockTreasurySpokeInstance.initialize, (TREASURY_ADMIN))
+      )
+    );
+    address claimer = makeAddr('claimer');
+    vm.prank(TREASURY_ADMIN);
+    ITreasurySpoke(address(proxy)).setClaimer(claimer);
+
+    // keccak256(abi.encode(uint256(keccak256("aave-v4.storage.TreasurySpoke")) - 1)) & ~bytes32(uint256(0xff))
+    bytes32 namespaceSlot = 0x1bd55573e426b29802faed3dc9cc719d77a1c32772e7e4624ead2291f5530800;
+    assertEq(vm.load(address(proxy), namespaceSlot), bytes32(uint256(uint160(claimer))));
+
+    MockTreasurySpokeInstance impl2 = _deployMockTreasurySpokeInstance(2);
+    vm.prank(_getProxyAdminAddress(address(proxy)));
+    proxy.upgradeToAndCall(
+      address(impl2),
+      abi.encodeCall(MockTreasurySpokeInstance.initialize, (TREASURY_ADMIN))
+    );
+
+    assertEq(_getProxyInitializedVersion(address(proxy)), 2);
+    assertEq(ITreasurySpoke(address(proxy)).getClaimer(), claimer);
+    assertEq(Ownable2Step(address(proxy)).owner(), TREASURY_ADMIN);
+  }
+
   function _deployMockTreasurySpokeInstance(
     uint64 revision
   ) internal returns (MockTreasurySpokeInstance) {

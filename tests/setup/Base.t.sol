@@ -74,6 +74,9 @@ import {KeyValueList} from 'src/spoke/libraries/KeyValueList.sol';
 import {TokenizationSpoke, ITokenizationSpoke} from 'src/spoke/TokenizationSpoke.sol';
 import {TokenizationSpokeInstance} from 'src/spoke/instances/TokenizationSpokeInstance.sol';
 
+// treasury
+import {RevenueSplitter, IRevenueSplitter} from 'src/treasury/RevenueSplitter.sol';
+
 // position manager
 import {
   PositionManagerBase,

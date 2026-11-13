@@ -280,14 +280,14 @@ interface IHubBase {
   function getAssetDeficitRay(uint256 assetId) external view returns (uint256);
 
   /// @notice Returns the total amount of the specified assets added to the Hub by the specified spoke.
-  /// @dev If spoke is `asset.feeReceiver`, includes converted `unrealizedFeeShares` in return value.
+  /// @dev Excludes accrued fees not yet minted to `asset.feeReceiver` (see `IHub.getAssetAccruedFees`).
   /// @param assetId The identifier of the asset.
   /// @param spoke The address of the Spoke.
   /// @return The amount of added assets.
   function getSpokeAddedAssets(uint256 assetId, address spoke) external view returns (uint256);
 
   /// @notice Returns the total amount of shares of the specified asset added to the Hub by the specified spoke.
-  /// @dev If spoke is `asset.feeReceiver`, includes `unrealizedFeeShares` in return value.
+  /// @dev Excludes shares of accrued fees not yet minted to `asset.feeReceiver`.
   /// @param assetId The identifier of the asset.
   /// @param spoke The address of the Spoke.
   /// @return The amount of added shares.

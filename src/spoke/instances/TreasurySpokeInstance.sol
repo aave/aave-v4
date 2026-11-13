@@ -7,7 +7,7 @@ import {TreasurySpoke} from 'src/spoke/TreasurySpoke.sol';
 /// @author Aave Labs
 /// @notice Implementation contract for the TreasurySpoke.
 contract TreasurySpokeInstance is TreasurySpoke {
-  uint64 public constant SPOKE_REVISION = 1;
+  uint64 public constant SPOKE_REVISION = 2;
 
   /// @dev Constructor.
   constructor() {
