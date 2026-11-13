@@ -384,6 +384,15 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
   }
 
   /// @inheritdoc ISpokeConfigurator
+  function unpauseAllReserves(address spoke) external restricted {
+    ISpoke targetSpoke = ISpoke(spoke);
+    uint256 reserveCount = targetSpoke.getReserveCount();
+    for (uint256 reserveId = 0; reserveId < reserveCount; ++reserveId) {
+      _updatePaused(_getReserveKey(targetSpoke, reserveId), false);
+    }
+  }
+
+  /// @inheritdoc ISpokeConfigurator
   function pauseReserve(address spoke, address hub, address underlying) external restricted {
     _updatePaused(_resolveReserveKey(spoke, hub, underlying), true);
   }

@@ -44,8 +44,8 @@ contract SpokeConfiguratorGranularAccessControlTest is Base {
     manager.grantRole(LIQUIDATION_CONFIG_MANAGER_ROLE, LIQUIDATION_CONFIG_MANAGER, 0);
     manager.grantRole(POSITION_MANAGER_ADMIN_ROLE, POSITION_MANAGER_ADMIN, 0);
 
-    // Set up RESERVE_MANAGER_ROLE permissions (22 functions)
-    bytes4[] memory reserveSelectors = new bytes4[](22);
+    // Set up RESERVE_MANAGER_ROLE permissions (23 functions)
+    bytes4[] memory reserveSelectors = new bytes4[](23);
     reserveSelectors[0] = ISpokeConfigurator.updateReservePriceSource.selector;
     reserveSelectors[1] = ISpokeConfigurator.addReserve.selector;
     reserveSelectors[2] = ISpokeConfigurator.updatePaused.selector;
@@ -68,6 +68,7 @@ contract SpokeConfiguratorGranularAccessControlTest is Base {
     reserveSelectors[19] = ISpokeConfigurator.unfreezeSpoke.selector;
     reserveSelectors[20] = ISpokeConfigurator.zeroCollateralFactor.selector;
     reserveSelectors[21] = ISpokeConfigurator.restoreCollateralFactor.selector;
+    reserveSelectors[22] = ISpokeConfigurator.unpauseAllReserves.selector;
     manager.setTargetFunctionRole(
       address(spokeConfigurator),
       reserveSelectors,
@@ -189,6 +190,7 @@ contract SpokeConfiguratorGranularAccessControlTest is Base {
       )
     );
     reserveManagerCalldata.push(abi.encodeCall(ISpokeConfigurator.pauseAllReserves, (spokeAddr)));
+    reserveManagerCalldata.push(abi.encodeCall(ISpokeConfigurator.unpauseAllReserves, (spokeAddr)));
     reserveManagerCalldata.push(
       abi.encodeCall(ISpokeConfigurator.pauseReserve, (spokeAddr, hubAddr, underlying))
     );
@@ -402,6 +404,17 @@ contract SpokeConfiguratorGranularAccessControlTest is Base {
 
     assertTrue(spoke.getReserveConfig(reserveId).frozen);
     assertEq(_getLatestDynamicReserveConfig(spoke, reserveId).collateralFactor, 0);
+  }
+
+  function test_reserveManager_canCall_unpauseAllReserves() public {
+    vm.startPrank(RESERVE_MANAGER);
+    spokeConfigurator.pauseAllReserves(spokeAddr);
+    spokeConfigurator.unpauseAllReserves(spokeAddr);
+    vm.stopPrank();
+
+    for (uint256 i = 0; i < spoke.getReserveCount(); ++i) {
+      assertFalse(spoke.getReserveConfig(i).paused);
+    }
   }
 
   function test_reserveManager_canCall_pauseAllReserves() public {

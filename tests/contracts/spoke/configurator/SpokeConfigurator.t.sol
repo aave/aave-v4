@@ -1166,6 +1166,50 @@ contract SpokeConfiguratorTest is SpokeConfiguratorBaseTest {
     }
   }
 
+  function test_unpauseAllReserves_revertsWith_AccessManagedUnauthorized() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
+    vm.prank(alice);
+    spokeConfigurator.unpauseAllReserves(spokeAddr);
+  }
+
+  function test_unpauseAllReserves() public {
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.pauseAllReserves(spokeAddr);
+
+    uint256 reserveCount = spoke.getReserveCount();
+    vm.recordLogs();
+    for (uint256 reserveIdx = 0; reserveIdx < reserveCount; ++reserveIdx) {
+      ISpoke.Reserve memory reserve = spoke.getReserve(reserveIdx);
+      ISpoke.ReserveConfig memory reserveConfig = spoke.getReserveConfig(reserveIdx);
+      reserveConfig.paused = false;
+      vm.expectCall(
+        spokeAddr,
+        abi.encodeCall(ISpoke.updateReserveConfig, (reserveIdx, reserveConfig))
+      );
+      vm.expectEmit(address(spoke));
+      emit ISpoke.UpdateReserveConfig(reserveIdx, reserveConfig);
+      vm.expectEmit(address(spokeConfigurator));
+      emit ISpokeConfigurator.ReservePausedUpdated(
+        spokeAddr,
+        address(reserve.hub),
+        reserve.underlying,
+        reserveIdx,
+        true,
+        false
+      );
+    }
+
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.unpauseAllReserves(spokeAddr);
+
+    assertEq(_configuratorLogCount(), reserveCount);
+    for (uint256 reserveIdx; reserveIdx < reserveCount; ++reserveIdx) {
+      assertEq(spoke.getReserveConfig(reserveIdx).paused, false);
+    }
+  }
+
   function test_pauseReserve_revertsWith_AccessManagedUnauthorized() public {
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)

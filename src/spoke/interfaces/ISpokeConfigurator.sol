@@ -472,6 +472,10 @@ interface ISpokeConfigurator {
   /// @param spoke The address of the Spoke.
   function pauseAllReserves(address spoke) external;
 
+  /// @notice Unpauses all reserves of a spoke.
+  /// @param spoke The address of the Spoke.
+  function unpauseAllReserves(address spoke) external;
+
   /// @notice Pauses a reserve of a spoke.
   /// @param spoke The address of the Spoke.
   /// @param hub The address of the Hub.

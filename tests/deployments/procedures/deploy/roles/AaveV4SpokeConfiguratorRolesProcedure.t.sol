@@ -98,7 +98,7 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
 
   function test_getSpokeConfiguratorDomainAdminRoleSelectors() public view {
     bytes4[] memory selectors = wrapper.getSpokeConfiguratorDomainAdminRoleSelectors();
-    assertEq(selectors.length, 27);
+    assertEq(selectors.length, 28);
     assertEq(selectors[0], ISpokeConfigurator.updateReservePriceSource.selector);
     assertEq(selectors[1], ISpokeConfigurator.updateLiquidationTargetHealthFactor.selector);
     assertEq(selectors[2], ISpokeConfigurator.updateHealthFactorForMaxBonus.selector);
@@ -118,14 +118,15 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
     assertEq(selectors[16], ISpokeConfigurator.addDynamicReserveConfig.selector);
     assertEq(selectors[17], ISpokeConfigurator.updateDynamicReserveConfig.selector);
     assertEq(selectors[18], ISpokeConfigurator.pauseAllReserves.selector);
-    assertEq(selectors[19], ISpokeConfigurator.pauseReserve.selector);
-    assertEq(selectors[20], ISpokeConfigurator.freezeReserve.selector);
-    assertEq(selectors[21], ISpokeConfigurator.unfreezeReserve.selector);
-    assertEq(selectors[22], ISpokeConfigurator.freezeSpoke.selector);
-    assertEq(selectors[23], ISpokeConfigurator.unfreezeSpoke.selector);
-    assertEq(selectors[24], ISpokeConfigurator.zeroCollateralFactor.selector);
-    assertEq(selectors[25], ISpokeConfigurator.restoreCollateralFactor.selector);
-    assertEq(selectors[26], ISpokeConfigurator.updatePositionManager.selector);
+    assertEq(selectors[19], ISpokeConfigurator.unpauseAllReserves.selector);
+    assertEq(selectors[20], ISpokeConfigurator.pauseReserve.selector);
+    assertEq(selectors[21], ISpokeConfigurator.freezeReserve.selector);
+    assertEq(selectors[22], ISpokeConfigurator.unfreezeReserve.selector);
+    assertEq(selectors[23], ISpokeConfigurator.freezeSpoke.selector);
+    assertEq(selectors[24], ISpokeConfigurator.unfreezeSpoke.selector);
+    assertEq(selectors[25], ISpokeConfigurator.zeroCollateralFactor.selector);
+    assertEq(selectors[26], ISpokeConfigurator.restoreCollateralFactor.selector);
+    assertEq(selectors[27], ISpokeConfigurator.updatePositionManager.selector);
   }
 
   function test_canCall_spokeConfiguratorAllRoles() public {
