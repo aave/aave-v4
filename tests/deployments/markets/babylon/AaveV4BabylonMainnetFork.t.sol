@@ -125,7 +125,11 @@ contract AaveV4BabylonHandoverForkHarness is AaveV4BabylonHandover {
       authority: AaveV4BabylonConfig.finalAuthority(config, deployment)
     });
     if (config.authority == address(0)) {
-      AaveV4BabylonVerification.verifyRoles(deployment, config.admin);
+      AaveV4BabylonVerification.verifyRoles({
+        deployment: deployment,
+        admin: config.admin,
+        deployer: config.deployer
+      });
     } else {
       AaveV4BabylonVerification.verifyAbandonedAccessManager({
         deployment: deployment,

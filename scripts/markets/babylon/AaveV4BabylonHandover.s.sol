@@ -26,7 +26,7 @@ import {Ownable2StepUpgradeable} from 'src/dependencies/openzeppelin-upgradeable
 /// its ProxyAdmin stay with the deployer. Without `authority`, it first grants the admin the configurator domain admin
 /// roles and the configurators their Hub and Spoke roles, then hands the AccessManager admin role to
 /// the admin. With `authority`, it moves the Hubs and the BabylonSpoke to that AccessManager and the
-/// deployer renounces the deployed one, which keeps no admin. Without a configured fee receiver, the
+/// deployer renounces the deployed one, which keeps no admin and no role member. Without a configured fee receiver, the
 /// admin must then call `acceptOwnership` on the TreasurySpoke. The role end state is in `AaveV4BabylonVerification`.
 contract AaveV4BabylonHandover is Script {
   function run() external {
@@ -64,7 +64,11 @@ contract AaveV4BabylonHandover is Script {
       authority: AaveV4BabylonConfig.finalAuthority(config, deployment)
     });
     if (config.authority == address(0)) {
-      AaveV4BabylonVerification.verifyRoles(deployment, config.admin);
+      AaveV4BabylonVerification.verifyRoles({
+        deployment: deployment,
+        admin: config.admin,
+        deployer: deployer
+      });
     } else {
       AaveV4BabylonVerification.verifyAbandonedAccessManager({
         deployment: deployment,
@@ -138,6 +142,14 @@ contract AaveV4BabylonHandover is Script {
       }
       IAccessManager(accessManager).updateAuthority(deployment.babylonSpoke, config.authority);
       _revokeDeployerRoles(accessManager, deployer);
+      IAccessManager(accessManager).revokeRole(
+        Roles.HUB_CONFIGURATOR_ROLE,
+        deployment.hubConfigurator
+      );
+      IAccessManager(accessManager).revokeRole(
+        Roles.SPOKE_CONFIGURATOR_ROLE,
+        deployment.spokeConfigurator
+      );
       IAccessManager(accessManager).renounceRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, deployer);
     }
   }

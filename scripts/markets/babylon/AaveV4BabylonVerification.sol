@@ -36,7 +36,7 @@ import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
 /// | every other role                    | nobody                |
 ///
 /// When the config sets `authority`, the Hubs and the BabylonSpoke move to it and the deployed
-/// AccessManager is left with no admin, see `verifyAbandonedAccessManager`.
+/// AccessManager is left with no admin and no role member, see `verifyAbandonedAccessManager`.
 library AaveV4BabylonVerification {
   Vm internal constant vm = Vm(address(uint160(uint256(keccak256('hevm cheat code')))));
 
@@ -96,10 +96,13 @@ library AaveV4BabylonVerification {
   /// @dev Exact member lists also prove the deployer holds no role, since `admin` is not the deployer.
   /// @param deployment The deployed Babylon market.
   /// @param admin The address the market is handed over to.
+  /// @param deployer The deployer.
   function verifyRoles(
     AaveV4BabylonConfig.Deployment memory deployment,
-    address admin
+    address admin,
+    address deployer
   ) internal view {
+    require(admin != deployer, 'admin is deployer');
     IAccessManagerEnumerable accessManager = IAccessManagerEnumerable(deployment.accessManager);
     _requireOnlyMember(accessManager, Roles.ACCESS_MANAGER_ADMIN_ROLE, admin);
     _requireOnlyMember(accessManager, Roles.HUB_CONFIGURATOR_ROLE, deployment.hubConfigurator);
@@ -134,7 +137,7 @@ library AaveV4BabylonVerification {
   }
 
   /// @notice Reverts unless the deployed AccessManager, left behind when the Hubs and the BabylonSpoke
-  /// moved to `config.authority`, has no holder except the configurators on their own roles.
+  /// moved to `config.authority`, has no holder.
   /// @dev The admin role is not enumerated, so `admin` and `deployer` are checked by address.
   /// @param deployment The deployed Babylon market.
   /// @param admin The address the market is handed over to.
@@ -144,6 +147,7 @@ library AaveV4BabylonVerification {
     address admin,
     address deployer
   ) internal view {
+    require(admin != deployer, 'admin is deployer');
     IAccessManagerEnumerable accessManager = IAccessManagerEnumerable(deployment.accessManager);
     (bool adminIsAdmin, ) = accessManager.hasRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, admin);
     require(!adminIsAdmin, 'admin holds the deployed access manager');
@@ -152,14 +156,7 @@ library AaveV4BabylonVerification {
 
     uint256 roleCount = accessManager.getRoleCount();
     for (uint256 i; i < roleCount; ++i) {
-      uint64 role = accessManager.getRole(i);
-      if (role == Roles.HUB_CONFIGURATOR_ROLE) {
-        _requireAtMostMember(accessManager, role, deployment.hubConfigurator);
-      } else if (role == Roles.SPOKE_CONFIGURATOR_ROLE) {
-        _requireAtMostMember(accessManager, role, deployment.spokeConfigurator);
-      } else {
-        _requireNoMembers(accessManager, role);
-      }
+      _requireNoMembers(accessManager, accessManager.getRole(i));
     }
   }
 
@@ -565,19 +562,6 @@ library AaveV4BabylonVerification {
     (bool isMember, ) = accessManager.hasRole(role, account);
     require(
       isMember && accessManager.getRoleMemberCount(role) == 1,
-      string.concat('unexpected role members: ', vm.toString(role))
-    );
-  }
-
-  function _requireAtMostMember(
-    IAccessManagerEnumerable accessManager,
-    uint64 role,
-    address account
-  ) private view {
-    uint256 memberCount = accessManager.getRoleMemberCount(role);
-    (bool isMember, ) = accessManager.hasRole(role, account);
-    require(
-      memberCount == 0 || (memberCount == 1 && isMember),
       string.concat('unexpected role members: ', vm.toString(role))
     );
   }

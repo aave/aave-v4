@@ -670,6 +670,14 @@ contract AaveV4BabylonTest is Create2TestHelper {
     verifier.run();
   }
 
+  function test_verify_revertsWith_adminIsDeployer() public {
+    _configureHandoverAndAccept();
+    _config.deployer = _admin;
+    AaveV4BabylonVerifyHarness verifier = _verifier();
+    vm.expectRevert('admin is deployer');
+    verifier.run();
+  }
+
   function test_verify_revertsWith_treasurySpokeOwnershipPending() public {
     _deployAndWriteReport();
     _deploySepoliaTokensAndFeeds();
@@ -2289,8 +2297,7 @@ contract AaveV4BabylonTest is Create2TestHelper {
     (bool adminIsAdmin, ) = accessManager.hasRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, _admin);
     assertFalse(adminIsAdmin);
     for (uint256 i; i < accessManager.getRoleCount(); ++i) {
-      (bool hasRole, ) = accessManager.hasRole(accessManager.getRole(i), _deployer);
-      assertFalse(hasRole);
+      assertEq(accessManager.getRoleMemberCount(accessManager.getRole(i)), 0);
     }
 
     // the deployer lost the market, the external AccessManager admin holds it
