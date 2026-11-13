@@ -272,6 +272,8 @@ contract AaveV4BabylonTest is Create2TestHelper {
       report: string.concat(OUTPUT_DIR, vm.toString(block.chainid), '-', REPORT_NAME, '.json'),
       production: false,
       exitReserveId: 2,
+      liquidationManagerFeeBps: 10_00,
+      referenceHub: address(0),
       btcVaultSwap: AaveV4BabylonConfig.BtcVaultSwap({
         swap: address(0),
         hub: address(0),
@@ -302,6 +304,8 @@ contract AaveV4BabylonTest is Create2TestHelper {
     assertFalse(config.production);
     // the exit reserve of the live AaveAdapter
     assertEq(config.exitReserveId, 2);
+    assertEq(config.liquidationManagerFeeBps, 50);
+    assertEq(config.referenceHub, address(0));
     assertEq(config.btcVaultSwap.swap, address(0));
   }
 
@@ -327,6 +331,8 @@ contract AaveV4BabylonTest is Create2TestHelper {
     assertFalse(config.production);
     // the exit reserve of the live AaveAdapter
     assertEq(config.exitReserveId, 3);
+    assertEq(config.liquidationManagerFeeBps, 50);
+    assertEq(config.referenceHub, address(0));
     assertEq(config.btcVaultSwap.swap, address(0));
   }
 
@@ -676,6 +682,44 @@ contract AaveV4BabylonTest is Create2TestHelper {
     AaveV4BabylonVerifyHarness verifier = _verifier();
     vm.expectRevert('admin is deployer');
     verifier.run();
+  }
+
+  function test_verify_referenceHub() public {
+    AaveV4BabylonConfig.Deployment memory deployment = _configureHandoverAndAccept();
+    _config.referenceHub = deployment.hubs[1];
+    _verifier().run();
+  }
+
+  /// @dev The BabylonSpoke is a proxy too, with other implementation code.
+  function test_verify_revertsWith_hubImplementationCode() public {
+    AaveV4BabylonConfig.Deployment memory deployment = _configureHandoverAndAccept();
+    _config.referenceHub = deployment.babylonSpoke;
+    AaveV4BabylonVerifyHarness verifier = _verifier();
+    vm.expectRevert('hub implementation code');
+    verifier.run();
+  }
+
+  function test_verify_revertsWith_babylonLiquidationLogic() public {
+    AaveV4BabylonConfig.Deployment memory deployment = _configureHandoverAndAccept();
+    vm.mockCall(
+      IBabylonSpoke(deployment.babylonSpoke).getBabylonLiquidationLogic(),
+      abi.encodeCall(ISpoke.getLiquidationLogic, ()),
+      abi.encode(makeAddr('other liquidation logic'))
+    );
+    AaveV4BabylonVerifyHarness verifier = _verifier();
+    vm.expectRevert('babylon liquidation logic');
+    verifier.run();
+  }
+
+  /// @dev The deployer still holds the admin role before the handover.
+  function test_verifyAbandonedAccessManager_revertsWith_adminRoleMember() public {
+    AaveV4BabylonConfig.Deployment memory deployment = _configuredDeployment();
+    vm.expectRevert('unexpected role members: 0');
+    this.verifyAbandonedAccessManager({
+      deployment: deployment,
+      admin: _admin,
+      deployer: makeAddr('other deployer')
+    });
   }
 
   function test_verify_revertsWith_treasurySpokeOwnershipPending() public {
@@ -1398,6 +1442,18 @@ contract AaveV4BabylonTest is Create2TestHelper {
     this.verifyBabylonContracts(deployment);
   }
 
+  function test_verifyBabylonContracts_revertsWith_aaveAdapterLiquidationFee() public {
+    AaveV4BabylonConfig.Deployment memory deployment = _configuredDeployment();
+    _mockAaveAdapter(deployment);
+    vm.mockCall(
+      _liquidationManager,
+      abi.encodeCall(IBabylonAaveAdapter.liquidationFeeBps, ()),
+      abi.encode(50)
+    );
+    vm.expectRevert('aave adapter liquidation fee');
+    this.verifyBabylonContracts(deployment);
+  }
+
   function test_verifyBabylonContracts_revertsWith_btcVaultSwapAdapter() public {
     AaveV4BabylonConfig.Deployment memory deployment = _configuredDeployment();
     _mockAaveAdapter(deployment);
@@ -1561,6 +1617,21 @@ contract AaveV4BabylonTest is Create2TestHelper {
   {
     report = this.deploy(_config);
     _writeReport(report, _reportName);
+    _mockLibraries(AaveV4BabylonConfig.readDeployment(_config).babylonSpoke);
+  }
+
+  /// @dev Unit tests do not deploy the libraries the BabylonSpoke links, so the BabylonLiquidationLogic
+  /// getter is mocked. The fork test reads the deployed ones.
+  function _mockLibraries(address babylonSpoke) internal {
+    address liquidationLogic = ISpoke(babylonSpoke).getLiquidationLogic();
+    address babylonLiquidationLogic = IBabylonSpoke(babylonSpoke).getBabylonLiquidationLogic();
+    vm.etch(liquidationLogic, hex'00');
+    vm.etch(babylonLiquidationLogic, hex'00');
+    vm.mockCall(
+      babylonLiquidationLogic,
+      abi.encodeCall(ISpoke.getLiquidationLogic, ()),
+      abi.encode(liquidationLogic)
+    );
   }
 
   /// @dev Writes to its own report, since tests run in parallel and the others read the full one.
@@ -1568,6 +1639,18 @@ contract AaveV4BabylonTest is Create2TestHelper {
 
   function verifyBabylonContracts(AaveV4BabylonConfig.Deployment memory deployment) external view {
     AaveV4BabylonVerification.verifyBabylonContracts(_config, deployment);
+  }
+
+  function verifyAbandonedAccessManager(
+    AaveV4BabylonConfig.Deployment memory deployment,
+    address admin,
+    address deployer
+  ) external view {
+    AaveV4BabylonVerification.verifyAbandonedAccessManager({
+      deployment: deployment,
+      admin: admin,
+      deployer: deployer
+    });
   }
 
   function _configuredDeployment()
@@ -1600,6 +1683,11 @@ contract AaveV4BabylonTest is Create2TestHelper {
       _liquidationManager,
       abi.encodeCall(IBabylonAaveAdapter.EXIT_BTC_RESERVE_ID, ()),
       abi.encode(_config.exitReserveId)
+    );
+    vm.mockCall(
+      _liquidationManager,
+      abi.encodeCall(IBabylonAaveAdapter.liquidationFeeBps, ()),
+      abi.encode(_config.liquidationManagerFeeBps)
     );
   }
 
@@ -2024,6 +2112,8 @@ contract AaveV4BabylonTest is Create2TestHelper {
     assertTrue(config.production);
     // the Babylon Hub WBTC reserve, the launch plan's exit reserve
     assertEq(config.exitReserveId, 4);
+    assertEq(config.liquidationManagerFeeBps, 10_00);
+    assertEq(config.referenceHub, ETHEREUM_CORE_HUB);
     // Babylon's BTCVaultSwap, drawing WBTC from the Core Hub with the LlamaRisk fees
     assertEq(config.btcVaultSwap.swap, ETHEREUM_BTC_VAULT_SWAP);
     assertEq(config.btcVaultSwap.hub, ETHEREUM_CORE_HUB);

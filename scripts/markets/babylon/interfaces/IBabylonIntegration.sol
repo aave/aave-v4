@@ -16,6 +16,9 @@ interface IBabylonAaveAdapter {
 
   /// @notice Returns the identifier of the exit reserve on the BabylonSpoke.
   function EXIT_BTC_RESERVE_ID() external view returns (uint256);
+
+  /// @notice Returns the fee charged on the liquidation bonus, expressed in BPS.
+  function liquidationFeeBps() external view returns (uint256);
 }
 
 /// @title IBabylonBTCVaultSwap

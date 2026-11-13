@@ -50,6 +50,8 @@ interface IAaveAdapter {
 
   function EXIT_BTC_RESERVE_ID() external view returns (uint256);
 
+  function liquidationFeeBps() external view returns (uint256);
+
   function VAULT_BTC_ASSET_ID() external view returns (uint256);
 
   function VAULT_BTC_RESERVE_ID() external view returns (uint256);
@@ -1301,6 +1303,8 @@ contract AaveV4BabylonMainnetForkTest is Test {
       'vaultBTC reserve id'
     );
     assertEq(IAaveAdapter(AAVE_ADAPTER).BTC_VAULT_HUB(), _hub(), 'babylon hub');
+    // 10% of the liquidator's bonus
+    assertEq(IAaveAdapter(AAVE_ADAPTER).liquidationFeeBps(), 10_00, 'liquidation fee');
     assertEq(
       IAaveAdapter(AAVE_ADAPTER).VAULT_BTC_ASSET_ID(),
       BABYLON_VAULT_BTC_ASSET_ID,

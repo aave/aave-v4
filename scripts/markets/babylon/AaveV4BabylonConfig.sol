@@ -37,6 +37,8 @@ library AaveV4BabylonConfig {
   /// @dev production Whether the config is the production market, where governance connects every
   /// spoke and handover requires the Babylon contracts to be deployed.
   /// @dev exitReserveId The identifier of the BabylonSpoke reserve the liquidation manager exits to.
+  /// @dev liquidationManagerFeeBps The fee the liquidation manager charges on the liquidation bonus, expressed in BPS.
+  /// @dev referenceHub A live Hub whose implementation code every deployed Hub must match, zero address if not checked.
   /// @dev btcVaultSwap The Babylon liquidity provider the market expects, zero address if not checked.
   struct Config {
     uint256 chainId;
@@ -55,6 +57,8 @@ library AaveV4BabylonConfig {
     string report;
     bool production;
     uint256 exitReserveId;
+    uint256 liquidationManagerFeeBps;
+    address referenceHub;
     BtcVaultSwap btcVaultSwap;
   }
 
@@ -201,6 +205,8 @@ library AaveV4BabylonConfig {
         report: vm.parseJsonString(json, '.report'),
         production: vm.parseJsonBool(json, '.production'),
         exitReserveId: vm.parseJsonUint(json, '.exitReserveId'),
+        liquidationManagerFeeBps: vm.parseJsonUint(json, '.liquidationManagerFeeBps'),
+        referenceHub: vm.parseJsonAddress(json, '.referenceHub'),
         btcVaultSwap: BtcVaultSwap({
           swap: vm.parseJsonAddress(json, '.btcVaultSwap.address'),
           hub: vm.parseJsonAddress(json, '.btcVaultSwap.hub'),

@@ -15,6 +15,8 @@
   "report": "scripts/markets/babylon/reports/mainnet.json",
   "production": true,
   "exitReserveId": 4,
+  "liquidationManagerFeeBps": 1000,
+  "referenceHub": "0xCca852Bc40e560adC3b1Cc58CA5b55638ce826c9",
   "btcVaultSwap": {
     "address": "0xFe354b6A67E9a308B600d35B0b3e2e6F33f3c6d9",
     "hub": "0xCca852Bc40e560adC3b1Cc58CA5b55638ce826c9",

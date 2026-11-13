@@ -69,6 +69,12 @@ library AaveV4BabylonVerification {
         'hub implementation'
       );
       require(
+        config.referenceHub == address(0) ||
+          deployment.hubImplementations[i].codehash ==
+            getImplementation(config.referenceHub).codehash,
+        'hub implementation code'
+      );
+      require(
         IAssetInterestRateStrategy(deployment.irStrategies[i]).HUB() == deployment.hubs[i],
         'ir strategy hub'
       );
@@ -85,6 +91,15 @@ library AaveV4BabylonVerification {
     );
     require(ISpoke(deployment.babylonSpoke).ORACLE() == deployment.oracle, 'babylon spoke oracle');
     require(IAaveOracle(deployment.oracle).spoke() == deployment.babylonSpoke, 'oracle spoke');
+    address liquidationLogic = ISpoke(deployment.babylonSpoke).getLiquidationLogic();
+    address babylonLiquidationLogic = babylonSpoke.getBabylonLiquidationLogic();
+    _requireCode(liquidationLogic, 'liquidation logic code');
+    _requireCode(babylonLiquidationLogic, 'babylon liquidation logic code');
+    // BabylonLiquidationLogic exposes the LiquidationLogic it links through the Spoke's getter
+    require(
+      ISpoke(babylonLiquidationLogic).getLiquidationLogic() == liquidationLogic,
+      'babylon liquidation logic'
+    );
     require(babylonSpoke.LIQUIDATION_MANAGER() == config.liquidationManager, 'liquidation manager');
     require(
       babylonSpoke.MANAGED_COLLATERAL_RESERVE_ID() == config.managedCollateralReserveId,
@@ -138,7 +153,7 @@ library AaveV4BabylonVerification {
 
   /// @notice Reverts unless the deployed AccessManager, left behind when the Hubs and the BabylonSpoke
   /// moved to `config.authority`, has no holder.
-  /// @dev The admin role is not enumerated, so `admin` and `deployer` are checked by address.
+  /// @dev `getRole` does not list the admin role, so it is checked on its own.
   /// @param deployment The deployed Babylon market.
   /// @param admin The address the market is handed over to.
   /// @param deployer The deployer.
@@ -153,6 +168,7 @@ library AaveV4BabylonVerification {
     require(!adminIsAdmin, 'admin holds the deployed access manager');
     (bool deployerIsAdmin, ) = accessManager.hasRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, deployer);
     require(!deployerIsAdmin, 'deployer holds the deployed access manager');
+    _requireNoMembers(accessManager, Roles.ACCESS_MANAGER_ADMIN_ROLE);
 
     uint256 roleCount = accessManager.getRoleCount();
     for (uint256 i; i < roleCount; ++i) {
@@ -342,6 +358,10 @@ library AaveV4BabylonVerification {
       require(
         aaveAdapter.EXIT_BTC_RESERVE_ID() == config.exitReserveId,
         'aave adapter exit reserve'
+      );
+      require(
+        aaveAdapter.liquidationFeeBps() == config.liquidationManagerFeeBps,
+        'aave adapter liquidation fee'
       );
     }
 
