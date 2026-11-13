@@ -1338,6 +1338,46 @@ contract HubConfiguratorTest is Base {
     }
   }
 
+  function test_unhaltHub_revertsWith_AccessManagedUnauthorized() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
+    vm.prank(alice);
+    hubConfigurator.unhaltHub(address(hub1));
+  }
+
+  function test_unhaltHub() public {
+    uint256 assetCount = hub1.getAssetCount();
+    vm.startPrank(HUB_CONFIGURATOR_ADMIN);
+    for (uint256 assetId; assetId < assetCount; ++assetId) {
+      hubConfigurator.haltAsset(address(hub1), _hub1Underlying(assetId));
+    }
+    vm.stopPrank();
+
+    for (uint256 assetId; assetId < assetCount; ++assetId) {
+      for (uint256 i; i < hub1.getSpokeCount(assetId); ++i) {
+        address spoke_ = hub1.getSpokeAddress(assetId, i);
+        IHub.SpokeConfig memory expectedSpokeConfig = hub1.getSpokeConfig(assetId, spoke_);
+        assertTrue(expectedSpokeConfig.halted, 'spoke halted before unhaltHub');
+        expectedSpokeConfig.halted = false;
+        vm.expectCall(
+          address(hub1),
+          abi.encodeCall(IHub.updateSpokeConfig, (assetId, spoke_, expectedSpokeConfig))
+        );
+        _expectSpokeHaltedEvent(assetId, spoke_, false);
+      }
+    }
+
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.unhaltHub(address(hub1));
+
+    for (uint256 assetId; assetId < assetCount; ++assetId) {
+      for (uint256 i; i < hub1.getSpokeCount(assetId); ++i) {
+        assertFalse(hub1.getSpokeConfig(assetId, hub1.getSpokeAddress(assetId, i)).halted);
+      }
+    }
+  }
+
   function test_resetSpokeCaps_revertsWith_AccessManagedUnauthorized() public {
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)

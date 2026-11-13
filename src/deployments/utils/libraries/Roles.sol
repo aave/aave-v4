@@ -91,7 +91,7 @@ library Roles {
 
   /// @notice Returns the function selectors associated with the HubConfigurator Domain Admin role.
   function getHubConfiguratorDomainAdminRoleSelectors() internal pure returns (bytes4[] memory) {
-    bytes4[] memory selectors = new bytes4[](24);
+    bytes4[] memory selectors = new bytes4[](25);
     selectors[0] = IHubConfigurator.addAsset.selector;
     selectors[1] = IHubConfigurator.addAssetWithDecimals.selector;
     selectors[2] = IHubConfigurator.updateLiquidityFee.selector;
@@ -116,6 +116,7 @@ library Roles {
     selectors[21] = IHubConfigurator.updateInterestRateData.selector;
     selectors[22] = IHubConfigurator.unhaltSpoke.selector;
     selectors[23] = IHubConfigurator.unhaltAsset.selector;
+    selectors[24] = IHubConfigurator.unhaltHub.selector;
     return selectors;
   }
 

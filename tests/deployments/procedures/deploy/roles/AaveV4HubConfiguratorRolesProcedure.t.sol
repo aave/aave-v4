@@ -98,7 +98,7 @@ contract AaveV4HubConfiguratorRolesProcedureTest is ProceduresBase {
 
   function test_getHubConfiguratorDomainAdminRoleSelectors() public view {
     bytes4[] memory selectors = wrapper.getHubConfiguratorDomainAdminRoleSelectors();
-    assertEq(selectors.length, 24);
+    assertEq(selectors.length, 25);
     assertEq(selectors[0], IHubConfigurator.addAsset.selector);
     assertEq(selectors[1], IHubConfigurator.addAssetWithDecimals.selector);
     assertEq(selectors[2], IHubConfigurator.updateLiquidityFee.selector);
@@ -123,6 +123,7 @@ contract AaveV4HubConfiguratorRolesProcedureTest is ProceduresBase {
     assertEq(selectors[21], IHubConfigurator.updateInterestRateData.selector);
     assertEq(selectors[22], IHubConfigurator.unhaltSpoke.selector);
     assertEq(selectors[23], IHubConfigurator.unhaltAsset.selector);
+    assertEq(selectors[24], IHubConfigurator.unhaltHub.selector);
   }
 
   function test_canCall_hubConfiguratorAllRoles() public {

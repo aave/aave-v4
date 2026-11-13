@@ -189,6 +189,15 @@ abstract contract HubConfigurator is AccessManagedUpgradeable, IHubConfigurator 
   }
 
   /// @inheritdoc IHubConfigurator
+  function unhaltHub(address hub) external restricted {
+    IHub targetHub = IHub(hub);
+    uint256 assetCount = targetHub.getAssetCount();
+    for (uint256 assetId = 0; assetId < assetCount; ++assetId) {
+      _updateAssetHalted(targetHub, _getUnderlying(targetHub, assetId), assetId, false);
+    }
+  }
+
+  /// @inheritdoc IHubConfigurator
   function addSpoke(
     address hub,
     address spoke,
