@@ -328,6 +328,8 @@ contract AaveV4BabylonMainnetForkTest is Test {
   // Babylon's Interim Governance Safe, which unfreezes the AaveAdapter
   address internal constant BABYLON_INTERIM_GOVERNANCE = 0xcd9e54acA1B7fb9BcE10208201b01559A6B01949;
   bytes32 internal constant VAULT_ID = keccak256('vault');
+  // 1 BTC, the size of the vault the tests supply and liquidate
+  uint256 internal constant VAULT_SIZE = 1e8;
   address internal constant USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
   address internal constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
   address internal constant GHO = 0x40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f;
@@ -708,38 +710,42 @@ contract AaveV4BabylonMainnetForkTest is Test {
   }
 
   function test_revert_supply_marketInactive() public {
-    _mintVaultBtc(_user, 1e8);
+    _mintVaultBtc(_user, VAULT_SIZE);
     vm.startPrank(_user);
-    IERC20(VAULT_BTC).approve(_spoke(), 1e8);
+    IERC20(VAULT_BTC).approve(_spoke(), VAULT_SIZE);
     vm.expectRevert(IHub.SpokeNotActive.selector);
-    ISpoke(_spoke()).supply(VAULT_BTC_RESERVE_ID, 1e8, _user);
+    ISpoke(_spoke()).supply(VAULT_BTC_RESERVE_ID, VAULT_SIZE, _user);
     vm.stopPrank();
   }
 
   function test_aip_supply() public {
     _executeLaunchAip();
-    _mintVaultBtc(_user, 1e8);
+    _mintVaultBtc(_user, VAULT_SIZE);
     vm.startPrank(_user);
-    IERC20(VAULT_BTC).approve(_spoke(), 1e8);
-    ISpoke(_spoke()).supply(VAULT_BTC_RESERVE_ID, 1e8, _user);
+    IERC20(VAULT_BTC).approve(_spoke(), VAULT_SIZE);
+    ISpoke(_spoke()).supply(VAULT_BTC_RESERVE_ID, VAULT_SIZE, _user);
     vm.stopPrank();
-    assertEq(ISpoke(_spoke()).getUserSuppliedAssets(VAULT_BTC_RESERVE_ID, _user), 1e8, 'supplied');
+    assertEq(
+      ISpoke(_spoke()).getUserSuppliedAssets(VAULT_BTC_RESERVE_ID, _user),
+      VAULT_SIZE,
+      'supplied'
+    );
     assertEq(
       IHub(_hub()).getSpokeAddedAssets(BABYLON_VAULT_BTC_ASSET_ID, _spoke()),
-      1e8,
+      VAULT_SIZE,
       'hub added assets'
     );
-    assertEq(IERC20(VAULT_BTC).balanceOf(_hub()), 1e8, 'hub balance');
+    assertEq(IERC20(VAULT_BTC).balanceOf(_hub()), VAULT_SIZE, 'hub balance');
   }
 
   /// @dev No position manager is active, so nobody supplies on behalf of another account.
   function test_aip_revertsWith_supplyOnBehalfOf() public {
     _executeLaunchAip();
-    _mintVaultBtc(_supplier, 1e8);
+    _mintVaultBtc(_supplier, VAULT_SIZE);
     vm.startPrank(_supplier);
-    IERC20(VAULT_BTC).approve(_spoke(), 1e8);
+    IERC20(VAULT_BTC).approve(_spoke(), VAULT_SIZE);
     vm.expectRevert(ISpoke.Unauthorized.selector);
-    ISpoke(_spoke()).supply(VAULT_BTC_RESERVE_ID, 1e8, _user);
+    ISpoke(_spoke()).supply(VAULT_BTC_RESERVE_ID, VAULT_SIZE, _user);
     vm.stopPrank();
   }
 
@@ -1228,7 +1234,7 @@ contract AaveV4BabylonMainnetForkTest is Test {
     _executeLaunchAip();
     address proxy = _openAdapterPositionAndDropPrice();
     uint256 debt = ISpoke(_spoke()).getUserTotalDebt(CORE_USDC_RESERVE_ID, proxy);
-    _fundLiquidator({usdc: debt * 2, wbtc: 1e8});
+    _fundLiquidator({usdc: debt * 2, wbtc: VAULT_SIZE});
     address recipient = IAaveAdapterFlows(AAVE_ADAPTER).applicationRecipient();
     uint256 recipientBefore = IERC20(WBTC).balanceOf(recipient);
 
@@ -1237,12 +1243,12 @@ contract AaveV4BabylonMainnetForkTest is Test {
       borrower: _user,
       debtReserveId: CORE_USDC_RESERVE_ID,
       maxDebtToRepay: debt * 2,
-      maxExitBtc: type(uint256).max,
+      maxExitBtc: UINT256_MAX,
       claimerBtcPubKey: bytes32(uint256(7))
     });
 
     assertEq(vaultId, VAULT_ID, 'vault');
-    assertEq(seized, 1e8, 'whole vault seized');
+    assertEq(seized, VAULT_SIZE, 'whole vault seized');
     assertEq(debt * 2 - IERC20(USDC).balanceOf(_liquidator), debt, 'debt repaid by liquidator');
     assertGt(IERC20(WBTC).balanceOf(recipient), recipientBefore, 'adapter fee');
     assertGt(IERC20(WBTC).balanceOf(_user), 0, 'fairness payment');
@@ -1268,12 +1274,12 @@ contract AaveV4BabylonMainnetForkTest is Test {
       llp: BTC_VAULT_SWAP,
       debtReserveId: CORE_USDC_RESERVE_ID,
       maxDebtToRepay: debt * 2,
-      maxExitBtc: type(uint256).max,
+      maxExitBtc: UINT256_MAX,
       minPayouts: new TokenAmount[](0)
     });
 
     IAaveOracle oracle = IAaveOracle(ISpoke(_spoke()).ORACLE());
-    uint256 vaultValue = (1e8 * oracle.getReservePrice(VAULT_BTC_RESERVE_ID)) /
+    uint256 vaultValue = (VAULT_SIZE * oracle.getReservePrice(VAULT_BTC_RESERVE_ID)) /
       oracle.getReservePrice(EXIT_BTC_RESERVE_ID);
     // 2% sell discount
     assertApproxEqAbs(payouts[0].amount, (vaultValue * 98) / 100, 3, 'payout');
@@ -1474,7 +1480,7 @@ contract AaveV4BabylonMainnetForkTest is Test {
     BTCVaultBasicInfo memory info = BTCVaultBasicInfo({
       depositor: _user,
       depositorBtcPubKey: bytes32(uint256(1)),
-      amount: 1e8,
+      amount: VAULT_SIZE,
       vaultProvider: address(0xBEEF),
       status: 2,
       applicationEntryPoint: AAVE_ADAPTER,
@@ -1498,7 +1504,7 @@ contract AaveV4BabylonMainnetForkTest is Test {
     bytes32[] memory vaultIds = new bytes32[](1);
     vaultIds[0] = VAULT_ID;
     uint256[] memory amounts = new uint256[](1);
-    amounts[0] = 1e8;
+    amounts[0] = VAULT_SIZE;
     vm.mockCall(
       registry,
       abi.encodeCall(IBTCVaultRegistry.getBTCVaultAmountsBatch, (vaultIds)),
@@ -1539,8 +1545,8 @@ contract AaveV4BabylonMainnetForkTest is Test {
     deal(USDC, _liquidator, usdc);
     deal(WBTC, _liquidator, wbtc);
     vm.startPrank(_liquidator);
-    IERC20(USDC).approve(AAVE_ADAPTER, type(uint256).max);
-    IERC20(WBTC).approve(AAVE_ADAPTER, type(uint256).max);
+    IERC20(USDC).approve(AAVE_ADAPTER, UINT256_MAX);
+    IERC20(WBTC).approve(AAVE_ADAPTER, UINT256_MAX);
     vm.stopPrank();
   }
 
@@ -1568,8 +1574,8 @@ contract AaveV4BabylonMainnetForkTest is Test {
     address arbitrageur = makeAddr('arbitrageur');
     deal(WBTC, arbitrageur, 2e8);
     vm.startPrank(arbitrageur);
-    IERC20(WBTC).approve(BTC_VAULT_SWAP, type(uint256).max);
-    IBTCVaultSwapFlows(BTC_VAULT_SWAP).swapExitBtcForVault(VAULT_ID, type(uint256).max);
+    IERC20(WBTC).approve(BTC_VAULT_SWAP, UINT256_MAX);
+    IBTCVaultSwapFlows(BTC_VAULT_SWAP).swapExitBtcForVault(VAULT_ID, UINT256_MAX);
     vm.stopPrank();
   }
 
