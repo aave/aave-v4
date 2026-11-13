@@ -112,7 +112,7 @@ Hub, spoke and Babylon spoke labels (provided via `FullDeployInputs.hubLabels` /
 
 ### Roles (`Roles.sol`)
 
-Roles are namespaced by contract domain: Hub (100-199), HubConfigurator (200-299), Spoke (300-399), SpokeConfigurator (400-499). 1000-1999 is left to curated markets, which run on their own AccessManager and define their roles outside `Roles.sol`. Integrations use four-digit domains from 2000: Babylon BTCVaultSwap (2000-2099).
+Roles are namespaced by contract domain: Hub (100-199), HubConfigurator (200-299), Spoke (300-399), SpokeConfigurator (400-499). 1000-1999 is left to curated markets, which run on their own AccessManager and define their roles outside `Roles.sol`. Integrations use four-digit domains from 2000. Babylon BTCVaultSwap uses 2000-2099.
 
 For configurators, initially a single Domain Admin role (HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE = 200, SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE = 400) holds all target selectors. As more granular roles are introduced, they should be added at the next available ID (201, 202, ... / 401, 402, ...) and the corresponding selectors reassigned from the Domain Admin role to the new granular role:
 
