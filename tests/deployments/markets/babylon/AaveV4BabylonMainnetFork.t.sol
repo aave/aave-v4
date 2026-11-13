@@ -61,6 +61,20 @@ interface IBTCVaultSwap {
   function HUB() external view returns (address);
 
   function EXIT_BTC_ASSET_ID() external view returns (uint256);
+
+  function isPaused() external view returns (bool);
+
+  function isFrozen() external view returns (bool);
+
+  function setSwapFeeBps(uint256 sellDiscountBps, uint256 minimumProfitThresholdBps) external;
+
+  function pause() external;
+
+  function unpause() external;
+
+  function freeze() external;
+
+  function unfreeze() external;
 }
 
 /// @dev The Ethereum V4 RiskSteward entry points the tests call.
@@ -172,6 +186,8 @@ contract AaveV4BabylonMainnetForkTest is Test {
   address internal constant EXECUTOR_LVL_1 = 0x5300A1a15135EA4dc7aD5a167152C01EFc9b192A;
   // aave-address-book MiscEthereum
   address internal constant V4_SECURITY_COUNCIL = 0x187AAE17d4931310B3fc75743e7F16Bdc9eD77e9;
+  address internal constant V4_SECURITY_COUNCIL_EXECUTOR =
+    0x14339e2178A954d5FB839D5Ff31644fE0F25F517;
   // aave-address-book AaveV4Ethereum
   address internal constant RISK_STEWARD = 0x6f48d9Cdb8EE6E17c96B2d8Aec128af426A295c1;
   address internal constant RISK_COUNCIL = 0x47c71dFEB55Ebaa431Ae3fbF99Ea50e0D3d30fA8;
@@ -185,6 +201,8 @@ contract AaveV4BabylonMainnetForkTest is Test {
   address internal constant AAVE_ADAPTER = 0xadca531564f3B26d0aAF48a044d741fD6cD571Ea;
   address internal constant VAULT_BTC = 0x69712D713FD30aBEF48b5D14eC2a9FB834D2c341;
   address internal constant BTC_VAULT_SWAP = 0xFe354b6A67E9a308B600d35B0b3e2e6F33f3c6d9;
+  // 2-of-3 Safe setting the BTCVaultSwap fees
+  address internal constant BTC_VAULT_SWAP_MULTISIG = 0x828AA986e31D60Eb07EFC1543FF9297835f4A9f7;
   address internal constant USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
   address internal constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
   address internal constant GHO = 0x40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f;
@@ -215,6 +233,11 @@ contract AaveV4BabylonMainnetForkTest is Test {
   uint256 internal constant CORE_USDT_RESERVE_ID = 5;
   uint256 internal constant CORE_USDC_RESERVE_ID = 6;
   uint256 internal constant RESERVE_COUNT = 10;
+
+  uint64 internal constant BTC_VAULT_SWAP_FEE_ROLE = 500;
+  uint64 internal constant BTC_VAULT_SWAP_GUARDIAN_ROLE = 501;
+  uint32 internal constant BTC_VAULT_SWAP_FEE_DELAY = 5 days;
+  uint40 internal constant BTC_VAULT_SWAP_DRAW_CAP = 100;
 
   struct ExpectedReserve {
     address hub;
@@ -278,6 +301,26 @@ contract AaveV4BabylonMainnetForkTest is Test {
   function test_restrictedFunctionsUnmappedBeforeAip() public view {
     _assertUnmapped(_hub(), _hubSelectors());
     _assertUnmapped(_spoke(), _spokeSelectors());
+  }
+
+  function test_btcVaultSwapUnmappedBeforeAip() public view {
+    IAccessManagerEnumerable accessManager = IAccessManagerEnumerable(ACCESS_MANAGER);
+    assertEq(
+      accessManager.getTargetFunctionRole(BTC_VAULT_SWAP, IBTCVaultSwap.setSwapFeeBps.selector),
+      Roles.ACCESS_MANAGER_ADMIN_ROLE,
+      'fee selector'
+    );
+    bytes4[] memory selectors = _btcVaultSwapGuardianSelectors();
+    for (uint256 i; i < selectors.length; ++i) {
+      assertEq(
+        accessManager.getTargetFunctionRole(BTC_VAULT_SWAP, selectors[i]),
+        Roles.ACCESS_MANAGER_ADMIN_ROLE,
+        'guardian selector'
+      );
+    }
+    assertFalse(accessManager.isRole(BTC_VAULT_SWAP_FEE_ROLE), 'fee role');
+    assertFalse(accessManager.isRole(BTC_VAULT_SWAP_GUARDIAN_ROLE), 'guardian role');
+    assertFalse(IHub(CORE_HUB).isSpokeListed(CORE_WBTC_ASSET_ID, BTC_VAULT_SWAP), 'credit line');
   }
 
   function test_deployerHoldsNothingOnTheMarket() public {
@@ -783,6 +826,237 @@ contract AaveV4BabylonMainnetForkTest is Test {
     );
   }
 
+  function test_aip_btcVaultSwapRoles() public {
+    _executeLaunchAip();
+    IAccessManagerEnumerable accessManager = IAccessManagerEnumerable(ACCESS_MANAGER);
+    assertEq(IBTCVaultSwap.setSwapFeeBps.selector, bytes4(0x1891b442), 'fee selector');
+    assertEq(
+      accessManager.getTargetFunctionRole(BTC_VAULT_SWAP, IBTCVaultSwap.setSwapFeeBps.selector),
+      BTC_VAULT_SWAP_FEE_ROLE,
+      'fee selector role'
+    );
+    bytes4[] memory selectors = _btcVaultSwapGuardianSelectors();
+    for (uint256 i; i < selectors.length; ++i) {
+      assertEq(
+        accessManager.getTargetFunctionRole(BTC_VAULT_SWAP, selectors[i]),
+        BTC_VAULT_SWAP_GUARDIAN_ROLE,
+        'guardian selector role'
+      );
+    }
+    assertEq(accessManager.getRoleTargetSelectorCount(BTC_VAULT_SWAP_FEE_ROLE, BTC_VAULT_SWAP), 1);
+    assertEq(
+      accessManager.getRoleTargetSelectorCount(BTC_VAULT_SWAP_GUARDIAN_ROLE, BTC_VAULT_SWAP),
+      4
+    );
+    assertEq(accessManager.getRoleTargetCount(BTC_VAULT_SWAP_FEE_ROLE), 1, 'fee role targets');
+    assertEq(
+      accessManager.getRoleTargetCount(BTC_VAULT_SWAP_GUARDIAN_ROLE),
+      1,
+      'guardian role targets'
+    );
+
+    assertEq(
+      accessManager.getLabelOfRole(BTC_VAULT_SWAP_FEE_ROLE),
+      'BTC_VAULT_SWAP_FEE_ROLE',
+      'fee role label'
+    );
+    assertEq(
+      accessManager.getLabelOfRole(BTC_VAULT_SWAP_GUARDIAN_ROLE),
+      'BTC_VAULT_SWAP_GUARDIAN_ROLE',
+      'guardian role label'
+    );
+    assertEq(
+      accessManager.getRoleGuardian(BTC_VAULT_SWAP_FEE_ROLE),
+      BTC_VAULT_SWAP_GUARDIAN_ROLE,
+      'fee role guardian'
+    );
+    assertEq(
+      accessManager.getRoleGuardian(BTC_VAULT_SWAP_GUARDIAN_ROLE),
+      0,
+      'guardian role guardian'
+    );
+    uint64[2] memory roles = [BTC_VAULT_SWAP_FEE_ROLE, BTC_VAULT_SWAP_GUARDIAN_ROLE];
+    for (uint256 i; i < roles.length; ++i) {
+      assertEq(accessManager.getRoleAdmin(roles[i]), Roles.ACCESS_MANAGER_ADMIN_ROLE, 'role admin');
+      assertEq(accessManager.getRoleGrantDelay(roles[i]), 0, 'grant delay');
+    }
+
+    assertEq(accessManager.getRoleMemberCount(BTC_VAULT_SWAP_FEE_ROLE), 1, 'fee role members');
+    (bool isMember, uint32 executionDelay) = accessManager.hasRole(
+      BTC_VAULT_SWAP_FEE_ROLE,
+      BTC_VAULT_SWAP_MULTISIG
+    );
+    assertTrue(isMember, 'multisig fee role');
+    assertEq(executionDelay, BTC_VAULT_SWAP_FEE_DELAY, 'fee role execution delay');
+    assertEq(executionDelay, 432_000, 'five days');
+
+    address[4] memory guardians = _btcVaultSwapGuardians();
+    assertEq(
+      accessManager.getRoleMemberCount(BTC_VAULT_SWAP_GUARDIAN_ROLE),
+      guardians.length,
+      'guardian role members'
+    );
+    for (uint256 i; i < guardians.length; ++i) {
+      (isMember, executionDelay) = accessManager.hasRole(
+        BTC_VAULT_SWAP_GUARDIAN_ROLE,
+        guardians[i]
+      );
+      assertTrue(isMember, 'guardian role');
+      assertEq(executionDelay, 0, 'guardian execution delay');
+    }
+  }
+
+  function test_aip_btcVaultSwapFeeChange() public {
+    _executeLaunchAip();
+    IAccessManager accessManager = IAccessManager(ACCESS_MANAGER);
+    bytes memory data = abi.encodeCall(IBTCVaultSwap.setSwapFeeBps, (2_50, 60));
+    bytes32 operationId = accessManager.hashOperation(
+      BTC_VAULT_SWAP_MULTISIG,
+      BTC_VAULT_SWAP,
+      data
+    );
+
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManager.AccessManagerNotScheduled.selector, operationId)
+    );
+    vm.prank(BTC_VAULT_SWAP_MULTISIG);
+    IBTCVaultSwap(BTC_VAULT_SWAP).setSwapFeeBps(2_50, 60);
+
+    vm.prank(BTC_VAULT_SWAP_MULTISIG);
+    accessManager.schedule(BTC_VAULT_SWAP, data, 0);
+
+    skip(BTC_VAULT_SWAP_FEE_DELAY - 1);
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManager.AccessManagerNotReady.selector, operationId)
+    );
+    vm.prank(BTC_VAULT_SWAP_MULTISIG);
+    IBTCVaultSwap(BTC_VAULT_SWAP).setSwapFeeBps(2_50, 60);
+
+    skip(1);
+    vm.prank(BTC_VAULT_SWAP_MULTISIG);
+    IBTCVaultSwap(BTC_VAULT_SWAP).setSwapFeeBps(2_50, 60);
+    assertEq(IBabylonBTCVaultSwap(BTC_VAULT_SWAP).sellDiscountBps(), 2_50, 'sell discount');
+    assertEq(
+      IBabylonBTCVaultSwap(BTC_VAULT_SWAP).minimumProfitThresholdBps(),
+      60,
+      'minimum profit threshold'
+    );
+  }
+
+  function test_aip_btcVaultSwapFeeChange_cancelledByGuardian() public {
+    _executeLaunchAip();
+    IAccessManager accessManager = IAccessManager(ACCESS_MANAGER);
+    bytes memory data = abi.encodeCall(IBTCVaultSwap.setSwapFeeBps, (2_50, 60));
+    bytes32 operationId = accessManager.hashOperation(
+      BTC_VAULT_SWAP_MULTISIG,
+      BTC_VAULT_SWAP,
+      data
+    );
+    address[4] memory guardians = _btcVaultSwapGuardians();
+    for (uint256 i; i < guardians.length; ++i) {
+      vm.prank(BTC_VAULT_SWAP_MULTISIG);
+      accessManager.schedule(BTC_VAULT_SWAP, data, 0);
+
+      vm.prank(guardians[i]);
+      accessManager.cancel(BTC_VAULT_SWAP_MULTISIG, BTC_VAULT_SWAP, data);
+
+      skip(BTC_VAULT_SWAP_FEE_DELAY);
+      vm.expectRevert(
+        abi.encodeWithSelector(IAccessManager.AccessManagerNotScheduled.selector, operationId)
+      );
+      vm.prank(BTC_VAULT_SWAP_MULTISIG);
+      IBTCVaultSwap(BTC_VAULT_SWAP).setSwapFeeBps(2_50, 60);
+    }
+    assertEq(IBabylonBTCVaultSwap(BTC_VAULT_SWAP).sellDiscountBps(), 2_00, 'sell discount');
+  }
+
+  function test_aip_revertsWith_feeChangeNotFromMultisig() public {
+    _executeLaunchAip();
+    bytes memory data = abi.encodeCall(IBTCVaultSwap.setSwapFeeBps, (2_50, 60));
+    address[5] memory callers = [
+      V4_SECURITY_COUNCIL,
+      V4_SECURITY_COUNCIL_EXECUTOR,
+      EXECUTOR_LVL_1,
+      RISK_STEWARD,
+      _user
+    ];
+    for (uint256 i; i < callers.length; ++i) {
+      vm.expectRevert(
+        abi.encodeWithSelector(
+          IAccessManager.AccessManagerUnauthorizedCall.selector,
+          callers[i],
+          BTC_VAULT_SWAP,
+          IBTCVaultSwap.setSwapFeeBps.selector
+        )
+      );
+      vm.prank(callers[i]);
+      IAccessManager(ACCESS_MANAGER).schedule(BTC_VAULT_SWAP, data, 0);
+
+      vm.expectRevert(
+        abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, callers[i])
+      );
+      vm.prank(callers[i]);
+      IBTCVaultSwap(BTC_VAULT_SWAP).setSwapFeeBps(2_50, 60);
+    }
+  }
+
+  function test_aip_btcVaultSwapGuardiansPauseAndFreeze() public {
+    _executeLaunchAip();
+    IBTCVaultSwap btcVaultSwap = IBTCVaultSwap(BTC_VAULT_SWAP);
+    address[4] memory guardians = _btcVaultSwapGuardians();
+    for (uint256 i; i < guardians.length; ++i) {
+      vm.startPrank(guardians[i]);
+      btcVaultSwap.pause();
+      assertTrue(btcVaultSwap.isPaused(), 'paused');
+      btcVaultSwap.unpause();
+      assertFalse(btcVaultSwap.isPaused(), 'unpaused');
+      btcVaultSwap.freeze();
+      assertTrue(btcVaultSwap.isFrozen(), 'frozen');
+      btcVaultSwap.unfreeze();
+      assertFalse(btcVaultSwap.isFrozen(), 'unfrozen');
+      vm.stopPrank();
+    }
+  }
+
+  function test_aip_revertsWith_pauseNotFromGuardian() public {
+    _executeLaunchAip();
+    address[2] memory callers = [RISK_STEWARD, _user];
+    for (uint256 i; i < callers.length; ++i) {
+      vm.expectRevert(
+        abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, callers[i])
+      );
+      vm.prank(callers[i]);
+      IBTCVaultSwap(BTC_VAULT_SWAP).pause();
+
+      vm.expectRevert(
+        abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, callers[i])
+      );
+      vm.prank(callers[i]);
+      IBTCVaultSwap(BTC_VAULT_SWAP).freeze();
+    }
+  }
+
+  function test_aip_btcVaultSwapCreditLine() public {
+    _executeLaunchAip();
+    assertEq(
+      abi.encode(IHub(CORE_HUB).getSpokeConfig(CORE_WBTC_ASSET_ID, BTC_VAULT_SWAP)),
+      abi.encode(_spokeConfig({addCap: 0, drawCap: 100, active: true})),
+      'credit line'
+    );
+
+    uint256 balanceBefore = IERC20(WBTC).balanceOf(BTC_VAULT_SWAP);
+    vm.prank(BTC_VAULT_SWAP);
+    IHub(CORE_HUB).draw(CORE_WBTC_ASSET_ID, 100e8, BTC_VAULT_SWAP);
+    assertEq(IERC20(WBTC).balanceOf(BTC_VAULT_SWAP), balanceBefore + 100e8, 'drawn');
+  }
+
+  function test_aip_revertsWith_btcVaultSwapDrawCapExceeded() public {
+    _executeLaunchAip();
+    vm.expectRevert(abi.encodeWithSelector(IHub.DrawCapExceeded.selector, 100));
+    vm.prank(BTC_VAULT_SWAP);
+    IHub(CORE_HUB).draw(CORE_WBTC_ASSET_ID, 100e8 + 1, BTC_VAULT_SWAP);
+  }
+
   function test_aip_revertsWith_liquidationNotFromAdapter() public {
     _executeLaunchAip();
     vm.expectRevert(ISpoke.Unauthorized.selector);
@@ -830,8 +1104,8 @@ contract AaveV4BabylonMainnetForkTest is Test {
   }
 
   /// @dev Launch AIP actions in proposal order: the Hub and BabylonSpoke role mappings, the BabylonSpoke
-  /// and TokenizationSpoke connections on the Babylon Hub, then the Core Hub credit lines. Caps follow
-  /// the LlamaRisk parameters of 10 Nov 2026. BTCVaultSwap, which Babylon deploys, is not covered.
+  /// and TokenizationSpoke connections on the Babylon Hub, the Core Hub credit lines, then the
+  /// BTCVaultSwap roles and its WBTC credit line. Caps follow the LlamaRisk parameters of 10 Nov 2026.
   function _executeLaunchAip() internal {
     vm.deal(EXECUTOR_LVL_1, 1 ether);
     vm.startPrank(EXECUTOR_LVL_1);
@@ -919,7 +1193,48 @@ contract AaveV4BabylonMainnetForkTest is Test {
         config: _spokeConfig({addCap: 0, drawCap: drawCaps[i], active: true})
       });
     }
+
+    bytes4[] memory feeSelectors = new bytes4[](1);
+    feeSelectors[0] = IBTCVaultSwap.setSwapFeeBps.selector;
+    accessManager.setTargetFunctionRole(BTC_VAULT_SWAP, feeSelectors, BTC_VAULT_SWAP_FEE_ROLE);
+    accessManager.setTargetFunctionRole(
+      BTC_VAULT_SWAP,
+      _btcVaultSwapGuardianSelectors(),
+      BTC_VAULT_SWAP_GUARDIAN_ROLE
+    );
+    accessManager.labelRole(BTC_VAULT_SWAP_FEE_ROLE, 'BTC_VAULT_SWAP_FEE_ROLE');
+    accessManager.labelRole(BTC_VAULT_SWAP_GUARDIAN_ROLE, 'BTC_VAULT_SWAP_GUARDIAN_ROLE');
+    accessManager.setRoleGuardian(BTC_VAULT_SWAP_FEE_ROLE, BTC_VAULT_SWAP_GUARDIAN_ROLE);
+    accessManager.grantRole(
+      BTC_VAULT_SWAP_FEE_ROLE,
+      BTC_VAULT_SWAP_MULTISIG,
+      BTC_VAULT_SWAP_FEE_DELAY
+    );
+    address[4] memory guardians = _btcVaultSwapGuardians();
+    for (uint256 i; i < guardians.length; ++i) {
+      accessManager.grantRole(BTC_VAULT_SWAP_GUARDIAN_ROLE, guardians[i], 0);
+    }
+    IHubConfigurator(HUB_CONFIGURATOR).addSpoke({
+      hub: CORE_HUB,
+      spoke: BTC_VAULT_SWAP,
+      assetId: CORE_WBTC_ASSET_ID,
+      config: _spokeConfig({addCap: 0, drawCap: BTC_VAULT_SWAP_DRAW_CAP, active: true})
+    });
     vm.stopPrank();
+  }
+
+  function _btcVaultSwapGuardianSelectors() internal pure returns (bytes4[] memory) {
+    bytes4[] memory selectors = new bytes4[](4);
+    selectors[0] = IBTCVaultSwap.pause.selector;
+    selectors[1] = IBTCVaultSwap.unpause.selector;
+    selectors[2] = IBTCVaultSwap.freeze.selector;
+    selectors[3] = IBTCVaultSwap.unfreeze.selector;
+    return selectors;
+  }
+
+  function _btcVaultSwapGuardians() internal pure returns (address[4] memory) {
+    return
+      [BTC_VAULT_SWAP_MULTISIG, V4_SECURITY_COUNCIL, V4_SECURITY_COUNCIL_EXECUTOR, EXECUTOR_LVL_1];
   }
 
   function _supplyVaultBtcAsCollateral(uint256 amount) internal {
