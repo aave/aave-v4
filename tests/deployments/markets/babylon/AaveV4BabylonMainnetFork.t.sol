@@ -238,8 +238,8 @@ contract AaveV4BabylonMainnetForkTest is Test {
   uint256 internal constant CORE_USDC_RESERVE_ID = 6;
   uint256 internal constant RESERVE_COUNT = 10;
 
-  uint64 internal constant BTC_VAULT_SWAP_FEE_ROLE = 2000;
-  uint64 internal constant BTC_VAULT_SWAP_GUARDIAN_ROLE = 2001;
+  uint64 internal constant BTC_VAULT_SWAP_FEE_ROLE = 2001;
+  uint64 internal constant BTC_VAULT_SWAP_GUARDIAN_ROLE = 2002;
   uint32 internal constant BTC_VAULT_SWAP_FEE_DELAY = 5 days;
   uint40 internal constant BTC_VAULT_SWAP_DRAW_CAP = 20;
 
