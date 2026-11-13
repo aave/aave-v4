@@ -169,7 +169,7 @@ contract AaveV4BabylonHandoverForkHarness is AaveV4BabylonHandover {
 /// the shared V4 contracts. Expected values come from the LlamaRisk parameters, aave-address-book
 /// and Babylon's deployment, not from `config/mainnet.json`.
 contract AaveV4BabylonMainnetForkTest is Test {
-  uint256 internal constant FORK_BLOCK = 26_405_000;
+  uint256 internal constant FORK_BLOCK = 26_407_250;
   uint256 internal constant SPOKE_DEPLOY_BLOCK = 26_394_302;
   string internal constant MAINNET_CONFIG = 'scripts/markets/babylon/config/mainnet.json';
 
@@ -431,19 +431,19 @@ contract AaveV4BabylonMainnetForkTest is Test {
       assetId: 1,
       underlying: USDT,
       liquidityFee: 10_00,
-      irData: _irData(92_00, 0, 4_50, 20_00)
+      irData: _irData(90_00, 0, 4_50, 20_00)
     });
     _assertBabylonHubAsset({
       assetId: 2,
       underlying: USDC,
       liquidityFee: 10_00,
-      irData: _irData(92_00, 0, 4_50, 20_00)
+      irData: _irData(90_00, 0, 4_50, 20_00)
     });
     _assertBabylonHubAsset({
       assetId: 3,
       underlying: GHO,
       liquidityFee: 10_00,
-      irData: _irData(92_00, 0, 4_50, 20_00)
+      irData: _irData(90_00, 0, 4_50, 20_00)
     });
     _assertBabylonHubAsset({
       assetId: 4,

@@ -52,7 +52,7 @@
       "priceSource": "0x260326c220E469358846b187eE53328303Efe19C",
       "liquidityFee": 1000,
       "irData": {
-        "optimalUsageRatio": 9200,
+        "optimalUsageRatio": 9000,
         "baseDrawnRate": 0,
         "rateGrowthBeforeOptimal": 450,
         "rateGrowthAfterOptimal": 2000
@@ -76,7 +76,7 @@
       "priceSource": "0x3f73F03aa83B2A48ed27E964eD0fDb590332095B",
       "liquidityFee": 1000,
       "irData": {
-        "optimalUsageRatio": 9200,
+        "optimalUsageRatio": 9000,
         "baseDrawnRate": 0,
         "rateGrowthBeforeOptimal": 450,
         "rateGrowthAfterOptimal": 2000
@@ -100,7 +100,7 @@
       "priceSource": "0xD110cac5d8682A3b045D5524a9903E031d70FCCd",
       "liquidityFee": 1000,
       "irData": {
-        "optimalUsageRatio": 9200,
+        "optimalUsageRatio": 9000,
         "baseDrawnRate": 0,
         "rateGrowthBeforeOptimal": 450,
         "rateGrowthAfterOptimal": 2000

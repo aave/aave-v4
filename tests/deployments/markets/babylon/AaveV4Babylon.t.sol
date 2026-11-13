@@ -2038,7 +2038,7 @@ contract AaveV4BabylonTest is Create2TestHelper {
 
     IAssetInterestRateStrategy.InterestRateData memory stables = IAssetInterestRateStrategy
       .InterestRateData({
-        optimalUsageRatio: 92_00,
+        optimalUsageRatio: 90_00,
         baseDrawnRate: 0,
         rateGrowthBeforeOptimal: 4_50,
         rateGrowthAfterOptimal: 20_00
