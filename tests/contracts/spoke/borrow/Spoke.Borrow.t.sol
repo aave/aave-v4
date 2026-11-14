@@ -4,6 +4,13 @@ pragma solidity ^0.8.0;
 import 'tests/setup/Base.t.sol';
 
 contract SpokeBorrowTest is Base {
+  function test_borrow_revertsWith_ReentrancyGuardReentrantCall_guardEntered() public {
+    _assertRevertsWhenReentrancyGuardEntered(
+      address(spoke1),
+      abi.encodeCall(ISpoke.borrow, (_daiReserveId(spoke1), 1e18, bob))
+    );
+  }
+
   function test_borrow_revertsWith_ReentrancyGuardReentrantCall_hubDraw() public {
     uint256 amount = 100e18;
     SpokeActions.supplyCollateral({
@@ -16,7 +23,8 @@ contract SpokeBorrowTest is Base {
 
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(spoke1),
-      ISpoke.borrow.selector
+      ISpoke.borrow.selector,
+      REENTRANCY_GUARD_SLOT
     );
 
     vm.mockFunction(
@@ -41,7 +49,8 @@ contract SpokeBorrowTest is Base {
 
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(spoke1),
-      ISpoke.borrow.selector
+      ISpoke.borrow.selector,
+      REENTRANCY_GUARD_SLOT
     );
 
     vm.mockFunction(

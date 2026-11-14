@@ -102,6 +102,13 @@ contract SpokeRepayTest is Base {
     vm.stopPrank();
   }
 
+  function test_repay_revertsWith_ReentrancyGuardReentrantCall_guardEntered() public {
+    _assertRevertsWhenReentrancyGuardEntered(
+      address(spoke1),
+      abi.encodeCall(ISpoke.repay, (_daiReserveId(spoke1), 1e18, bob))
+    );
+  }
+
   function test_repay_revertsWith_ReentrancyGuardReentrantCall() public {
     uint256 amount = 100e18;
 
@@ -123,7 +130,8 @@ contract SpokeRepayTest is Base {
 
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(spoke1),
-      ISpoke.repay.selector
+      ISpoke.repay.selector,
+      REENTRANCY_GUARD_SLOT
     );
     vm.mockFunction(
       address(_hub(spoke1, _daiReserveId(spoke1))),

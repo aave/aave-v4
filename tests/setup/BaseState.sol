@@ -90,6 +90,11 @@ abstract contract BaseState is HubHelpers, SpokeHelpers {
   uint256 internal constant MAX_DRAWN_INDEX = 100 * WadRayMath.RAY;
   uint128 internal constant MAX_TARGET_HEALTH_FACTOR = 2e18;
   uint256 internal constant MAX_ASSET_PRICE = 1e8 * 1e8;
+  /// @dev ERC-7201 slot of OpenZeppelin's ReentrancyGuard, derived here rather than read from src.
+  bytes32 internal constant REENTRANCY_GUARD_SLOT =
+    keccak256(abi.encode(uint256(keccak256('openzeppelin.storage.ReentrancyGuard')) - 1)) &
+      ~bytes32(uint256(0xff));
+  bytes32 internal constant REENTRANCY_GUARD_ENTERED = bytes32(uint256(1));
   IHubBase.PremiumDelta internal ZERO_PREMIUM_DELTA;
 
   IHub[] internal _hubs;
