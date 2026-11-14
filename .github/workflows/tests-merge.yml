@@ -30,5 +30,7 @@ jobs:
       - name: Run Forge tests
         id: test
         uses: aave-dao/github-workflows/.github/actions/foundry-test@main
+        env:
+          RPC_MAINNET: ${{ secrets.RPC_MAINNET }}
         with:
           FOUNDRY_PROFILE: ci

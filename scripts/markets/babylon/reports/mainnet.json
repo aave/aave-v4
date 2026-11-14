@@ -1,0 +1,39 @@
+{
+  "accessManager": "0x39abDA92f1C220aA5f57F8971Ac8711E91496aeA",
+  "babylonSpoke": {
+    "babylon": "0x093d0d3bD44054155bae8C445C6832c762063278"
+  },
+  "babylonSpokeImplementation": {
+    "babylon": "0x2c2167aA1F1eEb2e65c92D9BF9130185d3f188C4"
+  },
+  "hub": {
+    "babylon": "0xAd0fd800cbaF41a4Ced1BEa3a4f90aA18CfBC49d"
+  },
+  "hubConfigurator": "0x2207F01E4eAe1AdE3339B96B11F01aa3C196d3A2",
+  "hubImplementation": {
+    "babylon": "0x294871258134336FB340761F86c9970474A6A4d7"
+  },
+  "irStrategy": {
+    "babylon": "0xe94Fb20280100aff45E49C7242c91e91E6652676"
+  },
+  "oracle": {
+    "babylon": "0x1E3Acad6B31CF5A4E9Ca3B66BC448876EE53e3dF"
+  },
+  "salt": "0x33a846d4b87a3624efb401b95093037d9e2200be5c427a6dbda2aabdfdc13afb",
+  "spoke": "",
+  "spokeConfigurator": "0x18cBeC03D6cB32cfbC3F1e7791b4fDE3fD205000",
+  "spokeImplementation": "",
+  "tokenizationSpoke": {
+    "waBabylonGHO": "0x23dBcde82Aac61Ebb36D36687F48BD57dA6D2F8b",
+    "waBabylonUSDC": "0xaD9433F9256849AD67E0D4C09F722bF63b72BEbd",
+    "waBabylonUSDT": "0x6fE08B5AC181bbd67FE39039320B3eFCE786ec01",
+    "waBabylonWBTC": "0xb9C2d84578bD1a6548781d7793342E390E9B6eE7"
+  },
+  "tokenizationSpokeImplementation": {
+    "waBabylonGHO": "0xDfb01f5857892f879D70587F1Ee1b5Fb61660965",
+    "waBabylonUSDC": "0x0dcbEB24cFc3d062A45a032fafa30d964248e17b",
+    "waBabylonUSDT": "0xBF30207f98509CF334dd8048d8818BF986716be3",
+    "waBabylonWBTC": "0x69B752d23B256e1827EfBDB30F227188Fece4D2b"
+  },
+  "treasurySpoke": "0xB30CAC4D98A3691b7cf8B3fDBc61E416bA412Eb9"
+}
