@@ -7,6 +7,26 @@ contract LiquidationLogicLiquidationBonusTest is LiquidationLogicBaseTest {
   using PercentageMath for uint256;
   using SafeCast for uint256;
 
+  function test_calculateLiquidationBonus_ThresholdBoundary_ReturnsMinBonus() public view {
+    uint256 liquidationBonus = liquidationLogicWrapper.calculateLiquidationBonus({
+      healthFactorForMaxBonus: 0.8e18,
+      liquidationBonusFactor: 50_00,
+      healthFactor: 1e18,
+      maxLiquidationBonus: 110_00
+    });
+    assertEq(liquidationBonus, 100_00 + 5_00);
+  }
+
+  function test_calculateLiquidationBonus_HealthyPosition_ReturnsMinBonus() public view {
+    uint256 liquidationBonus = liquidationLogicWrapper.calculateLiquidationBonus({
+      healthFactorForMaxBonus: 0.8e18,
+      liquidationBonusFactor: 50_00,
+      healthFactor: 1.5e18,
+      maxLiquidationBonus: 110_00
+    });
+    assertEq(liquidationBonus, 100_00 + 5_00);
+  }
+
   function test_calculateLiquidationBonus_MinBonusDueToRounding() public view {
     uint256 liquidationBonus = liquidationLogicWrapper.calculateLiquidationBonus({
       healthFactorForMaxBonus: 0.8e18,
