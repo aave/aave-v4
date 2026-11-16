@@ -1,0 +1,184 @@
+// SPDX-License-Identifier: LicenseRef-BUSL
+pragma solidity ^0.8.0;
+
+import {Script} from 'forge-std/Script.sol';
+
+import {AaveV4BabylonConfig} from 'scripts/markets/babylon/AaveV4BabylonConfig.sol';
+import {AaveV4BabylonVerification} from 'scripts/markets/babylon/AaveV4BabylonVerification.sol';
+import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
+import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
+import {AaveV4HubRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
+import {AaveV4HubConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubConfiguratorRolesProcedure.sol';
+import {AaveV4SpokeRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol';
+import {AaveV4SpokeConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeConfiguratorRolesProcedure.sol';
+import {IHub} from 'src/hub/interfaces/IHub.sol';
+import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
+import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
+import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
+
+/// @title AaveV4BabylonConfigure
+/// @author Aave Labs
+/// @notice Lists the configured assets on the Babylon Hubs and adds them as BabylonSpoke reserves,
+/// connecting the BabylonSpoke on the assets whose config sets `spokeConfig`.
+/// @dev Run by the deployer before `AaveV4BabylonHandover`. Grants the deployer the configurator
+/// domain admin roles and the configurators their Hub and Spoke roles. The handover revokes the
+/// deployer roles. Every asset's fee receiver is the config's fee receiver. External reserves are
+/// added after the reserves, then external spokes are connected.
+contract AaveV4BabylonConfigure is Script {
+  function run() external {
+    AaveV4BabylonConfig.Config memory config = _config();
+    AaveV4BabylonConfig.Deployment memory deployment = AaveV4BabylonConfig.readDeployment(config);
+    AaveV4BabylonConfig.MarketConfig memory marketConfig = _marketConfig(config, deployment);
+    address feeReceiver = AaveV4BabylonConfig.feeReceiver(config, deployment);
+    AaveV4BabylonVerification.verifyDeployment({
+      config: config,
+      deployment: deployment,
+      authority: deployment.accessManager
+    });
+    _requireNoDelays(deployment.accessManager);
+    if (config.production) {
+      _requireNoConnections(marketConfig);
+    }
+
+    vm.startBroadcast();
+    (, address deployer, ) = vm.readCallers();
+    AaveV4BabylonConfig.requireDeployer(config, deployer);
+    _grantRoles(deployment, deployer);
+    _configure({deployment: deployment, marketConfig: marketConfig, feeReceiver: feeReceiver});
+    vm.stopBroadcast();
+
+    AaveV4BabylonVerification.verifyMarketConfig({
+      deployment: deployment,
+      marketConfig: marketConfig,
+      feeReceiver: feeReceiver
+    });
+  }
+
+  function _config() internal view virtual returns (AaveV4BabylonConfig.Config memory) {
+    return AaveV4BabylonConfig.read();
+  }
+
+  function _marketConfig(
+    AaveV4BabylonConfig.Config memory config,
+    AaveV4BabylonConfig.Deployment memory deployment
+  ) internal view virtual returns (AaveV4BabylonConfig.MarketConfig memory) {
+    return AaveV4BabylonConfig.readMarketConfig(config, deployment);
+  }
+
+  /// @dev On the production market governance connects every spoke, so the deployer connects none.
+  function _requireNoConnections(
+    AaveV4BabylonConfig.MarketConfig memory marketConfig
+  ) internal pure {
+    require(marketConfig.externalSpokes.length == 0, 'production connects spokes');
+    for (uint256 i; i < marketConfig.reserves.length; ++i) {
+      require(!marketConfig.reserves[i].connected, 'production connects spokes');
+    }
+  }
+
+  /// @dev A role grant delay or AccessManager admin delay would defer the role grants below, so every
+  /// configuration call afterwards would revert.
+  function _requireNoDelays(address accessManager) internal view {
+    IAccessManager manager = IAccessManager(accessManager);
+    require(manager.getTargetAdminDelay(accessManager) == 0, 'unexpected admin delay');
+    require(
+      manager.getRoleGrantDelay(Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE) == 0 &&
+        manager.getRoleGrantDelay(Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE) == 0 &&
+        manager.getRoleGrantDelay(Roles.HUB_CONFIGURATOR_ROLE) == 0 &&
+        manager.getRoleGrantDelay(Roles.SPOKE_CONFIGURATOR_ROLE) == 0,
+      'unexpected grant delay'
+    );
+  }
+
+  function _grantRoles(
+    AaveV4BabylonConfig.Deployment memory deployment,
+    address deployer
+  ) internal {
+    address accessManager = deployment.accessManager;
+    AaveV4HubConfiguratorRolesProcedure.grantHubConfiguratorAllRoles({
+      accessManager: accessManager,
+      admin: deployer
+    });
+    AaveV4SpokeConfiguratorRolesProcedure.grantSpokeConfiguratorAllRoles({
+      accessManager: accessManager,
+      admin: deployer
+    });
+    AaveV4HubRolesProcedure.grantHubRole({
+      accessManager: accessManager,
+      role: Roles.HUB_CONFIGURATOR_ROLE,
+      admin: deployment.hubConfigurator
+    });
+    AaveV4SpokeRolesProcedure.grantSpokeRole({
+      accessManager: accessManager,
+      role: Roles.SPOKE_CONFIGURATOR_ROLE,
+      admin: deployment.spokeConfigurator
+    });
+  }
+
+  function _configure(
+    AaveV4BabylonConfig.Deployment memory deployment,
+    AaveV4BabylonConfig.MarketConfig memory marketConfig,
+    address feeReceiver
+  ) internal {
+    require(ISpoke(deployment.babylonSpoke).getReserveCount() == 0, 'babylon spoke has reserves');
+    IHubConfigurator hubConfigurator = IHubConfigurator(deployment.hubConfigurator);
+    ISpokeConfigurator spokeConfigurator = ISpokeConfigurator(deployment.spokeConfigurator);
+
+    for (uint256 i; i < marketConfig.reserves.length; ++i) {
+      AaveV4BabylonConfig.ReserveListing memory listing = marketConfig.reserves[i];
+      uint256 assetId = hubConfigurator.addAsset({
+        hub: listing.hub,
+        underlying: listing.underlying,
+        feeReceiver: feeReceiver,
+        liquidityFee: listing.liquidityFee,
+        irStrategy: listing.irStrategy,
+        irData: abi.encode(listing.irData)
+      });
+      if (listing.connected) {
+        hubConfigurator.addSpoke({
+          hub: listing.hub,
+          spoke: deployment.babylonSpoke,
+          assetId: assetId,
+          config: listing.spokeConfig
+        });
+      }
+      uint256 reserveId = spokeConfigurator.addReserve({
+        spoke: deployment.babylonSpoke,
+        hub: listing.hub,
+        assetId: assetId,
+        priceSource: listing.priceSource,
+        config: listing.reserveConfig,
+        dynamicConfig: listing.dynamicConfig
+      });
+      require(reserveId == i, 'unexpected reserve id');
+    }
+
+    for (uint256 i; i < marketConfig.externalReserves.length; ++i) {
+      AaveV4BabylonConfig.ExternalReserve memory externalReserve = marketConfig.externalReserves[i];
+      uint256 assetId = IHub(externalReserve.hub).getAssetId(externalReserve.underlying);
+      uint256 reserveId = spokeConfigurator.addReserve({
+        spoke: deployment.babylonSpoke,
+        hub: externalReserve.hub,
+        assetId: assetId,
+        priceSource: externalReserve.priceSource,
+        config: externalReserve.reserveConfig,
+        dynamicConfig: externalReserve.dynamicConfig
+      });
+      require(reserveId == marketConfig.reserves.length + i, 'unexpected reserve id');
+    }
+
+    for (uint256 i; i < marketConfig.externalSpokes.length; ++i) {
+      AaveV4BabylonConfig.ExternalSpoke memory externalSpoke = marketConfig.externalSpokes[i];
+      hubConfigurator.addSpoke({
+        hub: externalSpoke.hub,
+        spoke: externalSpoke.spoke,
+        assetId: IHub(externalSpoke.hub).getAssetId(externalSpoke.underlying),
+        config: externalSpoke.spokeConfig
+      });
+    }
+
+    spokeConfigurator.updateLiquidationConfig(
+      deployment.babylonSpoke,
+      marketConfig.liquidationConfig
+    );
+  }
+}
