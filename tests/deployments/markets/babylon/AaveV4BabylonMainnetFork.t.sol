@@ -275,8 +275,8 @@ contract AaveV4BabylonMainnetForkTest is Test {
   uint256 internal constant CORE_USDC_RESERVE_ID = 6;
   uint256 internal constant RESERVE_COUNT = 10;
 
-  uint64 internal constant BTC_VAULT_SWAP_FEE_ROLE = 2001;
-  uint64 internal constant BTC_VAULT_SWAP_GUARDIAN_ROLE = 2002;
+  uint64 internal constant BABYLON_BTC_VAULT_SWAP_FEE_ROLE = 2001;
+  uint64 internal constant BABYLON_BTC_VAULT_SWAP_GUARDIAN_ROLE = 2002;
   uint32 internal constant BTC_VAULT_SWAP_FEE_DELAY = 5 days;
   uint40 internal constant BTC_VAULT_SWAP_DRAW_CAP = 20;
 
@@ -350,8 +350,8 @@ contract AaveV4BabylonMainnetForkTest is Test {
         'guardian selector'
       );
     }
-    assertFalse(accessManager.isRole(BTC_VAULT_SWAP_FEE_ROLE), 'fee role');
-    assertFalse(accessManager.isRole(BTC_VAULT_SWAP_GUARDIAN_ROLE), 'guardian role');
+    assertFalse(accessManager.isRole(BABYLON_BTC_VAULT_SWAP_FEE_ROLE), 'fee role');
+    assertFalse(accessManager.isRole(BABYLON_BTC_VAULT_SWAP_GUARDIAN_ROLE), 'guardian role');
     assertFalse(IHub(CORE_HUB).isSpokeListed(CORE_WBTC_ASSET_ID, BTC_VAULT_SWAP), 'credit line');
   }
 
@@ -898,58 +898,75 @@ contract AaveV4BabylonMainnetForkTest is Test {
     assertEq(IBTCVaultSwap.setSwapFeeBps.selector, bytes4(0x1891b442), 'fee selector');
     assertEq(
       accessManager.getTargetFunctionRole(BTC_VAULT_SWAP, IBTCVaultSwap.setSwapFeeBps.selector),
-      BTC_VAULT_SWAP_FEE_ROLE,
+      BABYLON_BTC_VAULT_SWAP_FEE_ROLE,
       'fee selector role'
     );
     bytes4[] memory selectors = _btcVaultSwapGuardianSelectors();
     for (uint256 i; i < selectors.length; ++i) {
       assertEq(
         accessManager.getTargetFunctionRole(BTC_VAULT_SWAP, selectors[i]),
-        BTC_VAULT_SWAP_GUARDIAN_ROLE,
+        BABYLON_BTC_VAULT_SWAP_GUARDIAN_ROLE,
         'guardian selector role'
       );
     }
-    assertEq(accessManager.getRoleTargetSelectorCount(BTC_VAULT_SWAP_FEE_ROLE, BTC_VAULT_SWAP), 1);
     assertEq(
-      accessManager.getRoleTargetSelectorCount(BTC_VAULT_SWAP_GUARDIAN_ROLE, BTC_VAULT_SWAP),
+      accessManager.getRoleTargetSelectorCount(BABYLON_BTC_VAULT_SWAP_FEE_ROLE, BTC_VAULT_SWAP),
+      1
+    );
+    assertEq(
+      accessManager.getRoleTargetSelectorCount(
+        BABYLON_BTC_VAULT_SWAP_GUARDIAN_ROLE,
+        BTC_VAULT_SWAP
+      ),
       4
     );
-    assertEq(accessManager.getRoleTargetCount(BTC_VAULT_SWAP_FEE_ROLE), 1, 'fee role targets');
     assertEq(
-      accessManager.getRoleTargetCount(BTC_VAULT_SWAP_GUARDIAN_ROLE),
+      accessManager.getRoleTargetCount(BABYLON_BTC_VAULT_SWAP_FEE_ROLE),
+      1,
+      'fee role targets'
+    );
+    assertEq(
+      accessManager.getRoleTargetCount(BABYLON_BTC_VAULT_SWAP_GUARDIAN_ROLE),
       1,
       'guardian role targets'
     );
 
     assertEq(
-      accessManager.getLabelOfRole(BTC_VAULT_SWAP_FEE_ROLE),
-      'BTC_VAULT_SWAP_FEE_ROLE',
+      accessManager.getLabelOfRole(BABYLON_BTC_VAULT_SWAP_FEE_ROLE),
+      'BABYLON_BTC_VAULT_SWAP_FEE_ROLE',
       'fee role label'
     );
     assertEq(
-      accessManager.getLabelOfRole(BTC_VAULT_SWAP_GUARDIAN_ROLE),
-      'BTC_VAULT_SWAP_GUARDIAN_ROLE',
+      accessManager.getLabelOfRole(BABYLON_BTC_VAULT_SWAP_GUARDIAN_ROLE),
+      'BABYLON_BTC_VAULT_SWAP_GUARDIAN_ROLE',
       'guardian role label'
     );
     assertEq(
-      accessManager.getRoleGuardian(BTC_VAULT_SWAP_FEE_ROLE),
-      BTC_VAULT_SWAP_GUARDIAN_ROLE,
+      accessManager.getRoleGuardian(BABYLON_BTC_VAULT_SWAP_FEE_ROLE),
+      BABYLON_BTC_VAULT_SWAP_GUARDIAN_ROLE,
       'fee role guardian'
     );
     assertEq(
-      accessManager.getRoleGuardian(BTC_VAULT_SWAP_GUARDIAN_ROLE),
+      accessManager.getRoleGuardian(BABYLON_BTC_VAULT_SWAP_GUARDIAN_ROLE),
       0,
       'guardian role guardian'
     );
-    uint64[2] memory roles = [BTC_VAULT_SWAP_FEE_ROLE, BTC_VAULT_SWAP_GUARDIAN_ROLE];
+    uint64[2] memory roles = [
+      BABYLON_BTC_VAULT_SWAP_FEE_ROLE,
+      BABYLON_BTC_VAULT_SWAP_GUARDIAN_ROLE
+    ];
     for (uint256 i; i < roles.length; ++i) {
       assertEq(accessManager.getRoleAdmin(roles[i]), Roles.ACCESS_MANAGER_ADMIN_ROLE, 'role admin');
       assertEq(accessManager.getRoleGrantDelay(roles[i]), 0, 'grant delay');
     }
 
-    assertEq(accessManager.getRoleMemberCount(BTC_VAULT_SWAP_FEE_ROLE), 1, 'fee role members');
+    assertEq(
+      accessManager.getRoleMemberCount(BABYLON_BTC_VAULT_SWAP_FEE_ROLE),
+      1,
+      'fee role members'
+    );
     (bool isMember, uint32 executionDelay) = accessManager.hasRole(
-      BTC_VAULT_SWAP_FEE_ROLE,
+      BABYLON_BTC_VAULT_SWAP_FEE_ROLE,
       BTC_VAULT_SWAP_MULTISIG
     );
     assertTrue(isMember, 'multisig fee role');
@@ -958,13 +975,13 @@ contract AaveV4BabylonMainnetForkTest is Test {
 
     address[4] memory guardians = _btcVaultSwapGuardians();
     assertEq(
-      accessManager.getRoleMemberCount(BTC_VAULT_SWAP_GUARDIAN_ROLE),
+      accessManager.getRoleMemberCount(BABYLON_BTC_VAULT_SWAP_GUARDIAN_ROLE),
       guardians.length,
       'guardian role members'
     );
     for (uint256 i; i < guardians.length; ++i) {
       (isMember, executionDelay) = accessManager.hasRole(
-        BTC_VAULT_SWAP_GUARDIAN_ROLE,
+        BABYLON_BTC_VAULT_SWAP_GUARDIAN_ROLE,
         guardians[i]
       );
       assertTrue(isMember, 'guardian role');
@@ -1333,23 +1350,33 @@ contract AaveV4BabylonMainnetForkTest is Test {
 
     bytes4[] memory feeSelectors = new bytes4[](1);
     feeSelectors[0] = IBTCVaultSwap.setSwapFeeBps.selector;
-    accessManager.setTargetFunctionRole(BTC_VAULT_SWAP, feeSelectors, BTC_VAULT_SWAP_FEE_ROLE);
+    accessManager.setTargetFunctionRole(
+      BTC_VAULT_SWAP,
+      feeSelectors,
+      BABYLON_BTC_VAULT_SWAP_FEE_ROLE
+    );
     accessManager.setTargetFunctionRole(
       BTC_VAULT_SWAP,
       _btcVaultSwapGuardianSelectors(),
-      BTC_VAULT_SWAP_GUARDIAN_ROLE
+      BABYLON_BTC_VAULT_SWAP_GUARDIAN_ROLE
     );
-    accessManager.labelRole(BTC_VAULT_SWAP_FEE_ROLE, 'BTC_VAULT_SWAP_FEE_ROLE');
-    accessManager.labelRole(BTC_VAULT_SWAP_GUARDIAN_ROLE, 'BTC_VAULT_SWAP_GUARDIAN_ROLE');
-    accessManager.setRoleGuardian(BTC_VAULT_SWAP_FEE_ROLE, BTC_VAULT_SWAP_GUARDIAN_ROLE);
+    accessManager.labelRole(BABYLON_BTC_VAULT_SWAP_FEE_ROLE, 'BABYLON_BTC_VAULT_SWAP_FEE_ROLE');
+    accessManager.labelRole(
+      BABYLON_BTC_VAULT_SWAP_GUARDIAN_ROLE,
+      'BABYLON_BTC_VAULT_SWAP_GUARDIAN_ROLE'
+    );
+    accessManager.setRoleGuardian(
+      BABYLON_BTC_VAULT_SWAP_FEE_ROLE,
+      BABYLON_BTC_VAULT_SWAP_GUARDIAN_ROLE
+    );
     accessManager.grantRole(
-      BTC_VAULT_SWAP_FEE_ROLE,
+      BABYLON_BTC_VAULT_SWAP_FEE_ROLE,
       BTC_VAULT_SWAP_MULTISIG,
       BTC_VAULT_SWAP_FEE_DELAY
     );
     address[4] memory guardians = _btcVaultSwapGuardians();
     for (uint256 i; i < guardians.length; ++i) {
-      accessManager.grantRole(BTC_VAULT_SWAP_GUARDIAN_ROLE, guardians[i], 0);
+      accessManager.grantRole(BABYLON_BTC_VAULT_SWAP_GUARDIAN_ROLE, guardians[i], 0);
     }
     IHubConfigurator(HUB_CONFIGURATOR).addSpoke({
       hub: CORE_HUB,
