@@ -15,6 +15,11 @@ import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
 abstract contract HubConfigurator is AccessManagedUpgradeable, IHubConfigurator {
   using SafeCast for uint256;
 
+  /// @dev Map of Hub addresses, asset identifiers and Spoke addresses to whether `haltAsset` halted the Spoke
+  /// for the asset; `unhaltAsset` only unhalts recorded Spokes.
+  mapping(address hub => mapping(uint256 assetId => mapping(address spoke => bool)))
+    internal _haltedByHaltAsset;
+
   /// @dev To be overridden by the inheriting HubConfigurator instance contract.
   function initialize(address authority) external virtual;
 
@@ -179,13 +184,29 @@ abstract contract HubConfigurator is AccessManagedUpgradeable, IHubConfigurator 
   /// @inheritdoc IHubConfigurator
   function haltAsset(address hub, address underlying) external restricted {
     IHub targetHub = IHub(hub);
-    _updateAssetHalted(targetHub, underlying, targetHub.getAssetId(underlying), true);
+    uint256 assetId = targetHub.getAssetId(underlying);
+    uint256 spokesCount = targetHub.getSpokeCount(assetId);
+    for (uint256 i = 0; i < spokesCount; ++i) {
+      address spoke = targetHub.getSpokeAddress(assetId, i);
+      if (!targetHub.getSpokeConfig(assetId, spoke).halted) {
+        _updateSpokeHalted(targetHub, underlying, assetId, spoke, true);
+        _haltedByHaltAsset[hub][assetId][spoke] = true;
+      }
+    }
   }
 
   /// @inheritdoc IHubConfigurator
   function unhaltAsset(address hub, address underlying) external restricted {
     IHub targetHub = IHub(hub);
-    _updateAssetHalted(targetHub, underlying, targetHub.getAssetId(underlying), false);
+    uint256 assetId = targetHub.getAssetId(underlying);
+    uint256 spokesCount = targetHub.getSpokeCount(assetId);
+    for (uint256 i = 0; i < spokesCount; ++i) {
+      address spoke = targetHub.getSpokeAddress(assetId, i);
+      if (_haltedByHaltAsset[hub][assetId][spoke]) {
+        delete _haltedByHaltAsset[hub][assetId][spoke];
+        _updateSpokeHalted(targetHub, underlying, assetId, spoke, false);
+      }
+    }
   }
 
   /// @inheritdoc IHubConfigurator
@@ -231,7 +252,9 @@ abstract contract HubConfigurator is AccessManagedUpgradeable, IHubConfigurator 
     bool halted
   ) external restricted {
     IHub targetHub = IHub(hub);
-    _updateSpokeHalted(targetHub, underlying, targetHub.getAssetId(underlying), spoke, halted);
+    uint256 assetId = targetHub.getAssetId(underlying);
+    delete _haltedByHaltAsset[hub][assetId][spoke];
+    _updateSpokeHalted(targetHub, underlying, assetId, spoke, halted);
   }
 
   /// @inheritdoc IHubConfigurator
@@ -325,6 +348,7 @@ abstract contract HubConfigurator is AccessManagedUpgradeable, IHubConfigurator 
     uint256 assetCount = targetHub.getAssetCount();
     for (uint256 assetId = 0; assetId < assetCount; ++assetId) {
       if (targetHub.isSpokeListed(assetId, spoke)) {
+        delete _haltedByHaltAsset[hub][assetId][spoke];
         _updateSpokeHalted(targetHub, _getUnderlying(targetHub, assetId), assetId, spoke, true);
       }
     }
@@ -362,6 +386,15 @@ abstract contract HubConfigurator is AccessManagedUpgradeable, IHubConfigurator 
       oldIrData,
       _getInterestRateData(irStrategy, assetId)
     );
+  }
+
+  /// @inheritdoc IHubConfigurator
+  function isHaltedByHaltAsset(
+    address hub,
+    address underlying,
+    address spoke
+  ) external view returns (bool) {
+    return _haltedByHaltAsset[hub][IHub(hub).getAssetId(underlying)][spoke];
   }
 
   function _addAsset(
@@ -466,14 +499,6 @@ abstract contract HubConfigurator is AccessManagedUpgradeable, IHubConfigurator 
     config.halted = halted;
     hub.updateSpokeConfig(assetId, spoke, config);
     emit SpokeHaltedUpdated(address(hub), underlying, assetId, spoke, oldHalted, halted);
-  }
-
-  /// @dev Sets the halted flag of every Spoke registered for the asset.
-  function _updateAssetHalted(IHub hub, address underlying, uint256 assetId, bool halted) internal {
-    uint256 spokesCount = hub.getSpokeCount(assetId);
-    for (uint256 i = 0; i < spokesCount; ++i) {
-      _updateSpokeHalted(hub, underlying, assetId, hub.getSpokeAddress(assetId, i), halted);
-    }
   }
 
   function _getUnderlying(IHub hub, uint256 assetId) internal view returns (address underlying) {

@@ -835,6 +835,28 @@ contract HubConfiguratorTest is Base {
     for (uint256 i; i < spokeAddresses.length; i++) {
       IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(_assetId, spokeAddresses[i]);
       assertEq(spokeConfig.halted, true);
+      assertTrue(_isHaltedByHaltAsset(spokeAddresses[i]), 'recorded');
+    }
+  }
+
+  function test_haltAsset_skipsSpokesAlreadyHalted() public {
+    address haltedSpoke = spokeAddresses[0];
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.updateSpokeHalted(address(hub1), _assetUnderlying, haltedSpoke, true);
+
+    IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(_assetId, haltedSpoke);
+    vm.expectCall(
+      address(hub1),
+      abi.encodeCall(IHub.updateSpokeConfig, (_assetId, haltedSpoke, spokeConfig)),
+      0
+    );
+
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.haltAsset(address(hub1), _assetUnderlying);
+
+    for (uint256 i; i < spokeAddresses.length; i++) {
+      assertTrue(hub1.getSpokeConfig(_assetId, spokeAddresses[i]).halted);
+      assertEq(_isHaltedByHaltAsset(spokeAddresses[i]), spokeAddresses[i] != haltedSpoke);
     }
   }
 
@@ -869,21 +891,100 @@ contract HubConfiguratorTest is Base {
     for (uint256 i; i < spokeAddresses.length; i++) {
       IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(_assetId, spokeAddresses[i]);
       assertEq(spokeConfig.halted, false);
+      assertFalse(_isHaltedByHaltAsset(spokeAddresses[i]), 'record cleared');
     }
   }
 
-  function test_unhaltAsset_leavesOtherAssetsHalted() public {
-    vm.prank(HUB_CONFIGURATOR_ADMIN);
-    hubConfigurator.haltSpoke(address(hub1), address(spoke1));
+  function test_unhaltAsset_afterRepeatedHaltAsset() public {
+    vm.startPrank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.haltAsset(address(hub1), _assetUnderlying);
+    hubConfigurator.haltAsset(address(hub1), _assetUnderlying);
+    hubConfigurator.unhaltAsset(address(hub1), _assetUnderlying);
+    vm.stopPrank();
 
+    for (uint256 i; i < spokeAddresses.length; i++) {
+      assertFalse(hub1.getSpokeConfig(_assetId, spokeAddresses[i]).halted);
+    }
+  }
+
+  function test_unhaltAsset_keepsSpokesHaltedBeforeHaltAsset() public {
+    address haltedSpoke = spokeAddresses[0];
+    vm.startPrank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.updateSpokeHalted(address(hub1), _assetUnderlying, haltedSpoke, true);
+    hubConfigurator.haltAsset(address(hub1), _assetUnderlying);
+    hubConfigurator.unhaltAsset(address(hub1), _assetUnderlying);
+    vm.stopPrank();
+
+    for (uint256 i; i < spokeAddresses.length; i++) {
+      assertEq(
+        hub1.getSpokeConfig(_assetId, spokeAddresses[i]).halted,
+        spokeAddresses[i] == haltedSpoke
+      );
+    }
+  }
+
+  function test_unhaltAsset_keepsSpokesHaltedThroughUpdateSpokeHalted() public {
+    address haltedSpoke = spokeAddresses[1];
+    vm.startPrank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.haltAsset(address(hub1), _assetUnderlying);
+    hubConfigurator.updateSpokeHalted(address(hub1), _assetUnderlying, haltedSpoke, true);
+    assertFalse(_isHaltedByHaltAsset(haltedSpoke), 'record cleared');
+    hubConfigurator.unhaltAsset(address(hub1), _assetUnderlying);
+    vm.stopPrank();
+
+    for (uint256 i; i < spokeAddresses.length; i++) {
+      assertEq(
+        hub1.getSpokeConfig(_assetId, spokeAddresses[i]).halted,
+        spokeAddresses[i] == haltedSpoke
+      );
+    }
+  }
+
+  function test_unhaltAsset_keepsSpokesHaltedThroughHaltSpoke() public {
+    vm.startPrank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.haltAsset(address(hub1), _assetUnderlying);
+    hubConfigurator.haltSpoke(address(hub1), address(spoke1));
+    assertFalse(_isHaltedByHaltAsset(address(spoke1)), 'record cleared');
+    hubConfigurator.unhaltAsset(address(hub1), _assetUnderlying);
+    vm.stopPrank();
+
+    for (uint256 i; i < spokeAddresses.length; i++) {
+      assertEq(
+        hub1.getSpokeConfig(_assetId, spokeAddresses[i]).halted,
+        spokeAddresses[i] == address(spoke1)
+      );
+    }
+  }
+
+  function test_unhaltAsset_skipsSpokesNotHaltedByHaltAsset() public {
+    address haltedSpoke = spokeAddresses[0];
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.updateSpokeHalted(address(hub1), _assetUnderlying, haltedSpoke, true);
+
+    vm.expectCall(address(hub1), abi.encodeWithSelector(IHub.updateSpokeConfig.selector), 0);
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.unhaltAsset(address(hub1), _assetUnderlying);
 
-    for (uint256 assetId; assetId < hub1.getAssetCount(); ++assetId) {
-      if (hub1.isSpokeListed(assetId, address(spoke1))) {
-        assertEq(hub1.getSpokeConfig(assetId, address(spoke1)).halted, assetId != _assetId);
-      }
+    assertTrue(hub1.getSpokeConfig(_assetId, haltedSpoke).halted);
+  }
+
+  function test_unhaltAsset_leavesOtherAssetsHalted() public {
+    vm.startPrank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.haltAsset(address(hub1), _assetUnderlying);
+    hubConfigurator.haltAsset(address(hub1), address(tokenList.weth));
+    hubConfigurator.unhaltAsset(address(hub1), _assetUnderlying);
+    vm.stopPrank();
+
+    for (uint256 i; i < hub1.getSpokeCount(wethAssetId); ++i) {
+      assertTrue(hub1.getSpokeConfig(wethAssetId, hub1.getSpokeAddress(wethAssetId, i)).halted);
     }
+    for (uint256 i; i < spokeAddresses.length; i++) {
+      assertFalse(hub1.getSpokeConfig(_assetId, spokeAddresses[i]).halted);
+    }
+  }
+
+  function _isHaltedByHaltAsset(address spokeAddress) internal view returns (bool) {
+    return hubConfigurator.isHaltedByHaltAsset(address(hub1), _assetUnderlying, spokeAddress);
   }
 
   function test_addSpoke_revertsWith_AccessManagedUnauthorized() public {
