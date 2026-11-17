@@ -508,6 +508,16 @@ interface ISpokeConfigurator {
   /// @param spoke The address of the Spoke.
   function unfreezeSpoke(address spoke) external;
 
+  /// @notice Freezes the reserve of an asset and zeroes its collateral factor on every Spoke registered for that
+  /// asset on a specified Hub.
+  /// @dev Applies `freezeReserve` to the asset's reserve on each Spoke, skipping reserves already frozen with a
+  /// zero collateral factor and Spokes without a reserve for the asset, such as the TreasurySpoke and
+  /// TokenizationSpoke.
+  /// @dev Reverts if any Spoke with a reserve for the asset has not granted this configurator permission.
+  /// @param hub The address of the Hub.
+  /// @param underlying The address of the underlying asset.
+  function freezeAsset(address hub, address underlying) external;
+
   /// @notice Unfreezes the reserve of an asset on every Spoke registered for that asset on a specified Hub.
   /// @dev Applies `unfreezeReserve` to the asset's reserve on each Spoke, skipping reserves that are not frozen
   /// and Spokes without a reserve for the asset, such as the TreasurySpoke and TokenizationSpoke.

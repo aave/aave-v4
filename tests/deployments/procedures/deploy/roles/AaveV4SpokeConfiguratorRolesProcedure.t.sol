@@ -98,7 +98,7 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
 
   function test_getSpokeConfiguratorDomainAdminRoleSelectors() public view {
     bytes4[] memory selectors = wrapper.getSpokeConfiguratorDomainAdminRoleSelectors();
-    assertEq(selectors.length, 28);
+    assertEq(selectors.length, 29);
     assertEq(selectors[0], ISpokeConfigurator.updateReservePriceSource.selector);
     assertEq(selectors[1], ISpokeConfigurator.updateLiquidationTargetHealthFactor.selector);
     assertEq(selectors[2], ISpokeConfigurator.updateHealthFactorForMaxBonus.selector);
@@ -126,7 +126,8 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
     assertEq(selectors[24], ISpokeConfigurator.zeroCollateralFactor.selector);
     assertEq(selectors[25], ISpokeConfigurator.restoreCollateralFactor.selector);
     assertEq(selectors[26], ISpokeConfigurator.updatePositionManager.selector);
-    assertEq(selectors[27], ISpokeConfigurator.unfreezeAsset.selector);
+    assertEq(selectors[27], ISpokeConfigurator.freezeAsset.selector);
+    assertEq(selectors[28], ISpokeConfigurator.unfreezeAsset.selector);
   }
 
   function test_canCall_spokeConfiguratorAllRoles() public {

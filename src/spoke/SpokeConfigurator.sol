@@ -418,6 +418,22 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
   }
 
   /// @inheritdoc ISpokeConfigurator
+  function freezeAsset(address hub, address underlying) external restricted {
+    IHub targetHub = IHub(hub);
+    uint256 assetId = targetHub.getAssetId(underlying);
+    uint256 spokeCount = targetHub.getSpokeCount(assetId);
+    for (uint256 i = 0; i < spokeCount; ++i) {
+      ISpoke targetSpoke = ISpoke(targetHub.getSpokeAddress(assetId, i));
+      (bool listed, uint256 reserveId) = _tryGetReserveId(targetSpoke, hub, assetId);
+      if (listed) {
+        _freezeReserve(
+          ReserveKey({spoke: targetSpoke, hub: hub, underlying: underlying, reserveId: reserveId})
+        );
+      }
+    }
+  }
+
+  /// @inheritdoc ISpokeConfigurator
   function unfreezeAsset(address hub, address underlying) external restricted {
     IHub targetHub = IHub(hub);
     uint256 assetId = targetHub.getAssetId(underlying);
