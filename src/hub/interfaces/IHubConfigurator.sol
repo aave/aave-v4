@@ -277,13 +277,6 @@ interface IHubConfigurator {
   /// @param underlying The address of the underlying asset.
   function unhaltAsset(address hub, address underlying) external;
 
-  /// @notice Unhalts every asset of every Spoke on a specified Hub by setting the halted flag to false.
-  /// @dev Clears the flag on every Spoke of every asset, including flags set before or outside an incident;
-  /// the pre-halt state is not tracked. Spoke and asset pairs that should stay halted must be re-halted in
-  /// the same batch.
-  /// @param hub The address of the Hub.
-  function unhaltHub(address hub) external;
-
   /// @notice Registers the Spoke for the specified asset on a specified Hub.
   /// @param hub The address of the Hub.
   /// @param spoke The address of the Spoke.
@@ -382,13 +375,6 @@ interface IHubConfigurator {
   /// @param hub The address of the Hub.
   /// @param spoke The address of the Spoke.
   function haltSpoke(address hub, address spoke) external;
-
-  /// @notice Unhalts all assets of a Spoke on a specified Hub by setting the halted flag to false.
-  /// @dev Clears the flag on every asset the Spoke is listed on, including assets halted by other means
-  /// such as `haltAsset`.
-  /// @param hub The address of the Hub.
-  /// @param spoke The address of the Spoke.
-  function unhaltSpoke(address hub, address spoke) external;
 
   /// @notice Resets draw cap and add cap to zero for a Spoke on a specified Hub.
   /// @param hub The address of the Hub.

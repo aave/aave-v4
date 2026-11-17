@@ -39,8 +39,8 @@ contract HubConfiguratorGranularAccessControlTest is Base {
     manager.grantRole(ASSET_MANAGER_ROLE, ASSET_MANAGER, 0);
     manager.grantRole(SPOKE_MANAGER_ROLE, SPOKE_MANAGER, 0);
 
-    // Set up ASSET_MANAGER_ROLE permissions (13 functions)
-    bytes4[] memory assetSelectors = new bytes4[](13);
+    // Set up ASSET_MANAGER_ROLE permissions (12 functions)
+    bytes4[] memory assetSelectors = new bytes4[](12);
     assetSelectors[0] = IHubConfigurator.addAsset.selector;
     assetSelectors[1] = IHubConfigurator.addAssetWithDecimals.selector;
     assetSelectors[2] = IHubConfigurator.updateLiquidityFee.selector;
@@ -53,11 +53,10 @@ contract HubConfiguratorGranularAccessControlTest is Base {
     assetSelectors[9] = IHubConfigurator.deactivateAsset.selector;
     assetSelectors[10] = IHubConfigurator.haltAsset.selector;
     assetSelectors[11] = IHubConfigurator.unhaltAsset.selector;
-    assetSelectors[12] = IHubConfigurator.unhaltHub.selector;
     manager.setTargetFunctionRole(address(hubConfigurator), assetSelectors, ASSET_MANAGER_ROLE);
 
-    // Set up SPOKE_MANAGER_ROLE permissions (12 functions)
-    bytes4[] memory spokeSelectors = new bytes4[](12);
+    // Set up SPOKE_MANAGER_ROLE permissions (11 functions)
+    bytes4[] memory spokeSelectors = new bytes4[](11);
     spokeSelectors[0] = IHubConfigurator.addSpoke.selector;
     spokeSelectors[1] = IHubConfigurator.addSpokeToAssets.selector;
     spokeSelectors[2] = IHubConfigurator.updateSpokeActive.selector;
@@ -69,7 +68,6 @@ contract HubConfiguratorGranularAccessControlTest is Base {
     spokeSelectors[8] = IHubConfigurator.deactivateSpoke.selector;
     spokeSelectors[9] = IHubConfigurator.haltSpoke.selector;
     spokeSelectors[10] = IHubConfigurator.resetSpokeCaps.selector;
-    spokeSelectors[11] = IHubConfigurator.unhaltSpoke.selector;
     manager.setTargetFunctionRole(address(hubConfigurator), spokeSelectors, SPOKE_MANAGER_ROLE);
 
     vm.stopPrank();
@@ -143,7 +141,6 @@ contract HubConfiguratorGranularAccessControlTest is Base {
     assetManagerCalldata.push(
       abi.encodeCall(IHubConfigurator.unhaltAsset, (address(hub1), underlying))
     );
-    assetManagerCalldata.push(abi.encodeCall(IHubConfigurator.unhaltHub, (address(hub1))));
   }
 
   function _buildSpokeManagerCalldata() internal {
@@ -211,9 +208,6 @@ contract HubConfiguratorGranularAccessControlTest is Base {
     );
     spokeManagerCalldata.push(
       abi.encodeCall(IHubConfigurator.haltSpoke, (address(hub1), spokeAddr))
-    );
-    spokeManagerCalldata.push(
-      abi.encodeCall(IHubConfigurator.unhaltSpoke, (address(hub1), spokeAddr))
     );
     spokeManagerCalldata.push(
       abi.encodeCall(IHubConfigurator.resetSpokeCaps, (address(hub1), spokeAddr))
@@ -316,19 +310,6 @@ contract HubConfiguratorGranularAccessControlTest is Base {
 
     for (uint256 i = 0; i < hub1.getSpokeCount(assetId); ++i) {
       assertFalse(hub1.getSpokeConfig(assetId, hub1.getSpokeAddress(assetId, i)).halted);
-    }
-  }
-
-  function test_assetManager_canCall_unhaltHub() public {
-    vm.startPrank(ASSET_MANAGER);
-    hubConfigurator.haltAsset(address(hub1), underlying);
-    hubConfigurator.unhaltHub(address(hub1));
-    vm.stopPrank();
-
-    for (uint256 i = 0; i < hub1.getAssetCount(); ++i) {
-      for (uint256 j = 0; j < hub1.getSpokeCount(i); ++j) {
-        assertFalse(hub1.getSpokeConfig(i, hub1.getSpokeAddress(i, j)).halted);
-      }
     }
   }
 

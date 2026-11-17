@@ -91,7 +91,7 @@ library Roles {
 
   /// @notice Returns the function selectors associated with the HubConfigurator Domain Admin role.
   function getHubConfiguratorDomainAdminRoleSelectors() internal pure returns (bytes4[] memory) {
-    bytes4[] memory selectors = new bytes4[](25);
+    bytes4[] memory selectors = new bytes4[](23);
     selectors[0] = IHubConfigurator.addAsset.selector;
     selectors[1] = IHubConfigurator.addAssetWithDecimals.selector;
     selectors[2] = IHubConfigurator.updateLiquidityFee.selector;
@@ -114,9 +114,7 @@ library Roles {
     selectors[19] = IHubConfigurator.haltSpoke.selector;
     selectors[20] = IHubConfigurator.resetSpokeCaps.selector;
     selectors[21] = IHubConfigurator.updateInterestRateData.selector;
-    selectors[22] = IHubConfigurator.unhaltSpoke.selector;
-    selectors[23] = IHubConfigurator.unhaltAsset.selector;
-    selectors[24] = IHubConfigurator.unhaltHub.selector;
+    selectors[22] = IHubConfigurator.unhaltAsset.selector;
     return selectors;
   }
 
@@ -147,7 +145,7 @@ library Roles {
 
   /// @notice Returns the function selectors associated with the SpokeConfigurator Domain Admin role.
   function getSpokeConfiguratorDomainAdminRoleSelectors() internal pure returns (bytes4[] memory) {
-    bytes4[] memory selectors = new bytes4[](29);
+    bytes4[] memory selectors = new bytes4[](28);
     selectors[0] = ISpokeConfigurator.updateReservePriceSource.selector;
     selectors[1] = ISpokeConfigurator.updateLiquidationTargetHealthFactor.selector;
     selectors[2] = ISpokeConfigurator.updateHealthFactorForMaxBonus.selector;
@@ -167,16 +165,15 @@ library Roles {
     selectors[16] = ISpokeConfigurator.addDynamicReserveConfig.selector;
     selectors[17] = ISpokeConfigurator.updateDynamicReserveConfig.selector;
     selectors[18] = ISpokeConfigurator.pauseAllReserves.selector;
-    selectors[19] = ISpokeConfigurator.unpauseAllReserves.selector;
-    selectors[20] = ISpokeConfigurator.pauseReserve.selector;
-    selectors[21] = ISpokeConfigurator.freezeReserve.selector;
-    selectors[22] = ISpokeConfigurator.unfreezeReserve.selector;
-    selectors[23] = ISpokeConfigurator.freezeSpoke.selector;
-    selectors[24] = ISpokeConfigurator.unfreezeSpoke.selector;
-    selectors[25] = ISpokeConfigurator.zeroCollateralFactor.selector;
-    selectors[26] = ISpokeConfigurator.restoreCollateralFactor.selector;
-    selectors[27] = ISpokeConfigurator.updatePositionManager.selector;
-    selectors[28] = ISpokeConfigurator.unfreezeAsset.selector;
+    selectors[19] = ISpokeConfigurator.pauseReserve.selector;
+    selectors[20] = ISpokeConfigurator.freezeReserve.selector;
+    selectors[21] = ISpokeConfigurator.unfreezeReserve.selector;
+    selectors[22] = ISpokeConfigurator.freezeSpoke.selector;
+    selectors[23] = ISpokeConfigurator.unfreezeSpoke.selector;
+    selectors[24] = ISpokeConfigurator.zeroCollateralFactor.selector;
+    selectors[25] = ISpokeConfigurator.restoreCollateralFactor.selector;
+    selectors[26] = ISpokeConfigurator.updatePositionManager.selector;
+    selectors[27] = ISpokeConfigurator.unfreezeAsset.selector;
     return selectors;
   }
 }
