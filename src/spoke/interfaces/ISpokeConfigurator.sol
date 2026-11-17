@@ -484,6 +484,7 @@ interface ISpokeConfigurator {
   /// @dev Existing positions keep their dynamic config key until refreshed; on refresh (borrow, withdraw,
   /// disabling collateral or `updateUserDynamicConfig`) the zero collateral factor applies and the health
   /// factor is re-validated.
+  /// @dev Clears the `freezeAsset` record for the reserve, so `unfreezeAsset` leaves it frozen.
   /// @dev Reverts if the reserve is already frozen and its latest collateral factor is zero.
   /// @param spoke The address of the Spoke.
   /// @param hub The address of the Hub.
@@ -492,6 +493,7 @@ interface ISpokeConfigurator {
 
   /// @notice Unfreezes a reserve.
   /// @dev Only clears the frozen flag; the collateral factor is restored separately via `restoreCollateralFactor`.
+  /// @dev Clears the `freezeAsset` record for the reserve.
   /// @dev Reverts if the reserve is not frozen.
   /// @param spoke The address of the Spoke.
   /// @param hub The address of the Hub.
@@ -500,11 +502,13 @@ interface ISpokeConfigurator {
 
   /// @notice Freezes all reserves of a spoke and zeroes their collateral factors.
   /// @dev Applies `freezeReserve` to each reserve, skipping reserves already frozen with a zero collateral factor.
+  /// @dev Clears the `freezeAsset` record for each reserve of the spoke, so `unfreezeAsset` leaves them frozen.
   /// @param spoke The address of the Spoke.
   function freezeSpoke(address spoke) external;
 
   /// @notice Unfreezes all reserves of a spoke.
   /// @dev Applies `unfreezeReserve` to each reserve, skipping reserves that are not frozen.
+  /// @dev Clears the `freezeAsset` record for each reserve of the spoke.
   /// @param spoke The address of the Spoke.
   function unfreezeSpoke(address spoke) external;
 
@@ -513,17 +517,19 @@ interface ISpokeConfigurator {
   /// @dev Applies `freezeReserve` to the asset's reserve on each Spoke, skipping reserves already frozen with a
   /// zero collateral factor and Spokes without a reserve for the asset, such as the TreasurySpoke and
   /// TokenizationSpoke.
+  /// @dev Records the reserves it freezes so `unfreezeAsset` unfreezes only those; reserves that were already
+  /// frozen are not recorded.
   /// @dev Reverts if any Spoke with a reserve for the asset has not granted this configurator permission.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
   function freezeAsset(address hub, address underlying) external;
 
-  /// @notice Unfreezes the reserve of an asset on every Spoke registered for that asset on a specified Hub.
-  /// @dev Applies `unfreezeReserve` to the asset's reserve on each Spoke, skipping reserves that are not frozen
-  /// and Spokes without a reserve for the asset, such as the TreasurySpoke and TokenizationSpoke.
+  /// @notice Unfreezes the reserves that `freezeAsset` froze for an asset on a specified Hub.
+  /// @dev Reserves frozen before `freezeAsset`, or set later through `freezeReserve`, `unfreezeReserve`,
+  /// `freezeSpoke` or `unfreezeSpoke`, keep their frozen flag. Changes made directly on a Spoke, bypassing this
+  /// configurator, are not tracked.
   /// @dev Only clears the frozen flag; collateral factors are restored separately via `restoreCollateralFactor`.
-  /// @dev Unfreezes every frozen reserve of the asset, including reserves frozen before or outside an incident.
-  /// @dev Reverts if any Spoke with a reserve for the asset has not granted this configurator permission.
+  /// @dev Reverts if a Spoke whose reserve it unfreezes has not granted this configurator permission.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
   function unfreezeAsset(address hub, address underlying) external;
@@ -571,4 +577,15 @@ interface ISpokeConfigurator {
     address hub,
     address underlying
   ) external view returns (uint32);
+
+  /// @notice Returns whether `freezeAsset` froze a reserve, meaning `unfreezeAsset` will unfreeze it.
+  /// @param spoke The address of the Spoke.
+  /// @param hub The address of the Hub.
+  /// @param underlying The address of the underlying asset.
+  /// @return True if the reserve is recorded as frozen by `freezeAsset`.
+  function isFrozenByFreezeAsset(
+    address spoke,
+    address hub,
+    address underlying
+  ) external view returns (bool);
 }

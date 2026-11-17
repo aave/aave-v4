@@ -423,11 +423,12 @@ contract SpokeConfiguratorGranularAccessControlTest is Base {
     spokeConfigurator.freezeAsset(hubAddr, underlying);
 
     assertTrue(spoke.getReserveConfig(reserveId).frozen);
+    assertTrue(spokeConfigurator.isFrozenByFreezeAsset(spokeAddr, hubAddr, underlying));
   }
 
   function test_reserveManager_canCall_unfreezeAsset() public {
     vm.startPrank(RESERVE_MANAGER);
-    spokeConfigurator.freezeReserve(spokeAddr, hubAddr, underlying);
+    spokeConfigurator.freezeAsset(hubAddr, underlying);
     spokeConfigurator.unfreezeAsset(hubAddr, underlying);
     vm.stopPrank();
 

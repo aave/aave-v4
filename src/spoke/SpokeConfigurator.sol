@@ -28,6 +28,10 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
   mapping(address spoke => mapping(uint256 reserveId => uint32 dynamicConfigKey))
     internal _savedDynamicConfigKey;
 
+  /// @dev Map of Spoke addresses and reserve identifiers to whether `freezeAsset` froze the reserve;
+  /// `unfreezeAsset` only unfreezes recorded reserves.
+  mapping(address spoke => mapping(uint256 reserveId => bool)) internal _frozenByFreezeAsset;
+
   /// @dev To be overridden by the inheriting SpokeConfigurator instance contract.
   function initialize(address authority) external virtual;
 
@@ -391,12 +395,16 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
 
   /// @inheritdoc ISpokeConfigurator
   function freezeReserve(address spoke, address hub, address underlying) external restricted {
-    require(_freezeReserve(_resolveReserveKey(spoke, hub, underlying)), ReserveAlreadyFrozen());
+    ReserveKey memory key = _resolveReserveKey(spoke, hub, underlying);
+    delete _frozenByFreezeAsset[spoke][key.reserveId];
+    require(_freezeReserve(key), ReserveAlreadyFrozen());
   }
 
   /// @inheritdoc ISpokeConfigurator
   function unfreezeReserve(address spoke, address hub, address underlying) external restricted {
-    require(_unfreezeReserve(_resolveReserveKey(spoke, hub, underlying)), ReserveNotFrozen());
+    ReserveKey memory key = _resolveReserveKey(spoke, hub, underlying);
+    delete _frozenByFreezeAsset[spoke][key.reserveId];
+    require(_unfreezeReserve(key), ReserveNotFrozen());
   }
 
   /// @inheritdoc ISpokeConfigurator
@@ -404,6 +412,7 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
     ISpoke targetSpoke = ISpoke(spoke);
     uint256 reserveCount = targetSpoke.getReserveCount();
     for (uint256 reserveId = 0; reserveId < reserveCount; ++reserveId) {
+      delete _frozenByFreezeAsset[spoke][reserveId];
       _freezeReserve(_getReserveKey(targetSpoke, reserveId));
     }
   }
@@ -413,6 +422,7 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
     ISpoke targetSpoke = ISpoke(spoke);
     uint256 reserveCount = targetSpoke.getReserveCount();
     for (uint256 reserveId = 0; reserveId < reserveCount; ++reserveId) {
+      delete _frozenByFreezeAsset[spoke][reserveId];
       _unfreezeReserve(_getReserveKey(targetSpoke, reserveId));
     }
   }
@@ -426,9 +436,13 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
       ISpoke targetSpoke = ISpoke(targetHub.getSpokeAddress(assetId, i));
       (bool listed, uint256 reserveId) = _tryGetReserveId(targetSpoke, hub, assetId);
       if (listed) {
+        bool wasFrozen = targetSpoke.getReserveConfig(reserveId).frozen;
         _freezeReserve(
           ReserveKey({spoke: targetSpoke, hub: hub, underlying: underlying, reserveId: reserveId})
         );
+        if (!wasFrozen) {
+          _frozenByFreezeAsset[address(targetSpoke)][reserveId] = true;
+        }
       }
     }
   }
@@ -441,7 +455,8 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
     for (uint256 i = 0; i < spokeCount; ++i) {
       ISpoke targetSpoke = ISpoke(targetHub.getSpokeAddress(assetId, i));
       (bool listed, uint256 reserveId) = _tryGetReserveId(targetSpoke, hub, assetId);
-      if (listed) {
+      if (listed && _frozenByFreezeAsset[address(targetSpoke)][reserveId]) {
+        delete _frozenByFreezeAsset[address(targetSpoke)][reserveId];
         _unfreezeReserve(
           ReserveKey({spoke: targetSpoke, hub: hub, underlying: underlying, reserveId: reserveId})
         );
@@ -501,6 +516,15 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
     address underlying
   ) external view returns (uint32) {
     return _savedDynamicConfigKey[spoke][_resolveReserveKey(spoke, hub, underlying).reserveId];
+  }
+
+  /// @inheritdoc ISpokeConfigurator
+  function isFrozenByFreezeAsset(
+    address spoke,
+    address hub,
+    address underlying
+  ) external view returns (bool) {
+    return _frozenByFreezeAsset[spoke][_resolveReserveKey(spoke, hub, underlying).reserveId];
   }
 
   /// @dev Sets the frozen flag and zeroes the collateral factor. Returns false if neither changed.

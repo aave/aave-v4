@@ -1411,6 +1411,20 @@ contract SpokeConfiguratorTest is SpokeConfiguratorBaseTest {
       uint256 id = daiSpokes[i].getReserveId(hubAddr, daiAssetId);
       assertTrue(daiSpokes[i].getReserveConfig(id).frozen);
       assertEq(_getLatestDynamicReserveConfig(daiSpokes[i], id).collateralFactor, 0);
+      assertTrue(_isFrozenByFreezeAsset(daiSpokes[i], dai), 'recorded');
+    }
+  }
+
+  function test_freezeAsset_doesNotRecordReservesAlreadyFrozen() public {
+    address dai = address(tokenList.dai);
+    ISpoke[] memory daiSpokes = _grantAssetSpokesRole(daiAssetId);
+    vm.startPrank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.freezeReserve(spokeAddr, hubAddr, dai);
+    spokeConfigurator.freezeAsset(hubAddr, dai);
+    vm.stopPrank();
+
+    for (uint256 i; i < daiSpokes.length; ++i) {
+      assertEq(_isFrozenByFreezeAsset(daiSpokes[i], dai), address(daiSpokes[i]) != spokeAddr);
     }
   }
 
@@ -1422,68 +1436,126 @@ contract SpokeConfiguratorTest is SpokeConfiguratorBaseTest {
     spokeConfigurator.unfreezeAsset(hubAddr, underlying);
   }
 
-  /// @dev DAI on hub1 is registered for several Spokes and for the TreasurySpoke, which has no reserves
-  /// and does not implement `getReserveId`, so it must be skipped.
   function test_unfreezeAsset() public {
     address dai = address(tokenList.dai);
-    uint256 spokeCount = hub1.getSpokeCount(daiAssetId);
-    assertTrue(hub1.isSpokeListed(daiAssetId, address(treasurySpoke)), 'treasury spoke listed');
-
-    for (uint256 i; i < spokeCount; ++i) {
-      address spokeAddress = hub1.getSpokeAddress(daiAssetId, i);
-      if (spokeAddress == address(treasurySpoke)) continue;
-      _grantSpokeConfiguratorRole(ISpoke(spokeAddress), address(spokeConfigurator));
-      vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-      spokeConfigurator.freezeReserve(spokeAddress, hubAddr, dai);
-    }
+    ISpoke[] memory daiSpokes = _grantAssetSpokesRole(daiAssetId);
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.freezeAsset(hubAddr, dai);
 
     vm.recordLogs();
-    uint256 frozenCount;
-    for (uint256 i; i < spokeCount; ++i) {
-      address spokeAddress = hub1.getSpokeAddress(daiAssetId, i);
-      if (spokeAddress == address(treasurySpoke)) continue;
-      ISpoke targetSpoke = ISpoke(spokeAddress);
-      uint256 id = targetSpoke.getReserveId(hubAddr, daiAssetId);
-      ISpoke.ReserveConfig memory reserveConfig = targetSpoke.getReserveConfig(id);
+    for (uint256 i; i < daiSpokes.length; ++i) {
+      uint256 id = daiSpokes[i].getReserveId(hubAddr, daiAssetId);
+      ISpoke.ReserveConfig memory reserveConfig = daiSpokes[i].getReserveConfig(id);
       reserveConfig.frozen = false;
-      vm.expectCall(spokeAddress, abi.encodeCall(ISpoke.updateReserveConfig, (id, reserveConfig)));
-      _expectReserveFrozenUpdated(targetSpoke, id, true, false);
-      ++frozenCount;
+      vm.expectCall(
+        address(daiSpokes[i]),
+        abi.encodeCall(ISpoke.updateReserveConfig, (id, reserveConfig))
+      );
+      _expectReserveFrozenUpdated(daiSpokes[i], id, true, false);
     }
-    assertGt(frozenCount, 1, 'dai reserve on several spokes');
 
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.unfreezeAsset(hubAddr, dai);
 
-    assertEq(_configuratorLogCount(), frozenCount);
-    for (uint256 i; i < spokeCount; ++i) {
-      address spokeAddress = hub1.getSpokeAddress(daiAssetId, i);
-      if (spokeAddress == address(treasurySpoke)) continue;
-      ISpoke targetSpoke = ISpoke(spokeAddress);
-      uint256 id = targetSpoke.getReserveId(hubAddr, daiAssetId);
-      assertFalse(targetSpoke.getReserveConfig(id).frozen);
+    assertEq(_configuratorLogCount(), daiSpokes.length);
+    for (uint256 i; i < daiSpokes.length; ++i) {
+      uint256 id = daiSpokes[i].getReserveId(hubAddr, daiAssetId);
+      assertFalse(daiSpokes[i].getReserveConfig(id).frozen);
       // only the flag is cleared; the collateral factor zeroed by the freeze stays zero
-      assertEq(_getLatestDynamicReserveConfig(targetSpoke, id).collateralFactor, 0);
+      assertEq(_getLatestDynamicReserveConfig(daiSpokes[i], id).collateralFactor, 0);
+      assertFalse(_isFrozenByFreezeAsset(daiSpokes[i], dai), 'record cleared');
     }
 
-    // a second call skips every reserve and does not revert
+    // a second call finds no recorded reserves and does not revert
     vm.recordLogs();
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.unfreezeAsset(hubAddr, dai);
     assertEq(_configuratorLogCount(), 0);
   }
 
-  function test_unfreezeAsset_leavesOtherAssetsFrozen() public {
-    uint256 daiId = _daiReserveId(spoke);
-    uint256 wethId = _wethReserveId(spoke);
+  function test_unfreezeAsset_afterRepeatedFreezeAsset() public {
+    address dai = address(tokenList.dai);
+    ISpoke[] memory daiSpokes = _grantAssetSpokesRole(daiAssetId);
     vm.startPrank(SPOKE_CONFIGURATOR_ADMIN);
-    spokeConfigurator.freezeReserve(spokeAddr, hubAddr, address(tokenList.dai));
-    spokeConfigurator.freezeReserve(spokeAddr, hubAddr, address(tokenList.weth));
+    spokeConfigurator.freezeAsset(hubAddr, dai);
+    spokeConfigurator.freezeAsset(hubAddr, dai);
+    spokeConfigurator.unfreezeAsset(hubAddr, dai);
+    vm.stopPrank();
+
+    for (uint256 i; i < daiSpokes.length; ++i) {
+      assertFalse(_isDaiFrozen(daiSpokes[i]));
+    }
+  }
+
+  function test_unfreezeAsset_keepsReservesFrozenBeforeFreezeAsset() public {
+    address dai = address(tokenList.dai);
+    ISpoke[] memory daiSpokes = _grantAssetSpokesRole(daiAssetId);
+    vm.startPrank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.freezeReserve(spokeAddr, hubAddr, dai);
+    spokeConfigurator.freezeAsset(hubAddr, dai);
+    spokeConfigurator.unfreezeAsset(hubAddr, dai);
+    vm.stopPrank();
+
+    for (uint256 i; i < daiSpokes.length; ++i) {
+      assertEq(_isDaiFrozen(daiSpokes[i]), address(daiSpokes[i]) == spokeAddr);
+    }
+  }
+
+  function test_unfreezeAsset_keepsReservesFrozenThroughFreezeReserve() public {
+    address dai = address(tokenList.dai);
+    ISpoke[] memory daiSpokes = _grantAssetSpokesRole(daiAssetId);
+    vm.startPrank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.freezeAsset(hubAddr, dai);
+    spokeConfigurator.unfreezeReserve(spokeAddr, hubAddr, dai);
+    spokeConfigurator.freezeReserve(spokeAddr, hubAddr, dai);
+    assertFalse(_isFrozenByFreezeAsset(spoke, dai), 'record cleared');
+    spokeConfigurator.unfreezeAsset(hubAddr, dai);
+    vm.stopPrank();
+
+    for (uint256 i; i < daiSpokes.length; ++i) {
+      assertEq(_isDaiFrozen(daiSpokes[i]), address(daiSpokes[i]) == spokeAddr);
+    }
+  }
+
+  function test_unfreezeAsset_keepsReservesFrozenThroughFreezeSpoke() public {
+    address dai = address(tokenList.dai);
+    ISpoke[] memory daiSpokes = _grantAssetSpokesRole(daiAssetId);
+    vm.startPrank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.freezeAsset(hubAddr, dai);
+    spokeConfigurator.freezeSpoke(spokeAddr);
+    assertFalse(_isFrozenByFreezeAsset(spoke, dai), 'record cleared');
+    spokeConfigurator.unfreezeAsset(hubAddr, dai);
+    vm.stopPrank();
+
+    for (uint256 i; i < daiSpokes.length; ++i) {
+      assertEq(_isDaiFrozen(daiSpokes[i]), address(daiSpokes[i]) == spokeAddr);
+    }
+  }
+
+  function test_unfreezeAsset_skipsReservesNotFrozenByFreezeAsset() public {
+    address dai = address(tokenList.dai);
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.freezeReserve(spokeAddr, hubAddr, dai);
+
+    vm.recordLogs();
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.unfreezeAsset(hubAddr, dai);
+
+    assertEq(_configuratorLogCount(), 0);
+    assertTrue(_isDaiFrozen(spoke));
+  }
+
+  function test_unfreezeAsset_leavesOtherAssetsFrozen() public {
+    _grantAssetSpokesRole(daiAssetId);
+    _grantAssetSpokesRole(wethAssetId);
+    vm.startPrank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.freezeAsset(hubAddr, address(tokenList.dai));
+    spokeConfigurator.freezeAsset(hubAddr, address(tokenList.weth));
     spokeConfigurator.unfreezeAsset(hubAddr, address(tokenList.dai));
     vm.stopPrank();
 
-    assertFalse(spoke.getReserveConfig(daiId).frozen);
-    assertTrue(spoke.getReserveConfig(wethId).frozen);
+    assertFalse(spoke.getReserveConfig(_daiReserveId(spoke)).frozen);
+    assertTrue(spoke.getReserveConfig(_wethReserveId(spoke)).frozen);
   }
 
   /// @dev Grants this configurator permission on every Spoke with a reserve for the asset on hub1 and
@@ -1502,6 +1574,14 @@ contract SpokeConfiguratorTest is SpokeConfiguratorBaseTest {
     assembly ('memory-safe') {
       mstore(spokes, count)
     }
+  }
+
+  function _isFrozenByFreezeAsset(ISpoke targetSpoke, address asset) internal view returns (bool) {
+    return spokeConfigurator.isFrozenByFreezeAsset(address(targetSpoke), hubAddr, asset);
+  }
+
+  function _isDaiFrozen(ISpoke targetSpoke) internal view returns (bool) {
+    return targetSpoke.getReserveConfig(targetSpoke.getReserveId(hubAddr, daiAssetId)).frozen;
   }
 
   function test_zeroCollateralFactor_revertsWith_AccessManagedUnauthorized() public {
