@@ -11,7 +11,7 @@ contract AaveV4DeployBaseWrapper {
     address owner,
     uint8 oracleDecimals,
     bytes32 salt
-  ) external returns (BatchReports.AaveOracleBatchReport memory) {
+  ) external returns (address, BatchReports.AaveOracleBatchReport memory) {
     return
       AaveV4DeployBase.deployAaveOracleBatch({
         owner: owner,

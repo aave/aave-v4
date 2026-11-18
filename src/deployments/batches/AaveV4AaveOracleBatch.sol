@@ -26,7 +26,6 @@ contract AaveV4AaveOracleBatch is AaveV4AaveOracleDeployProcedure {
     require(owner_ != address(0), 'invalid owner');
     OWNER = owner_;
     _report = BatchReports.AaveOracleBatchReport({
-      aaveOracleBatch: address(this),
       aaveOracle: _deployAaveOracle(oracleDecimals_, salt_)
     });
   }

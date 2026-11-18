@@ -264,12 +264,15 @@ library AaveV4DeployOrchestration {
     OrchestrationReports.SpokeDeploymentReport memory spokeReport;
 
     spokeReport.label = label;
-    BatchReports.AaveOracleBatchReport memory aaveOracleReport = _deployAaveOracleBatch({
-      logger: logger,
-      owner: deployer,
-      oracleDecimals: oracleDecimals,
-      salt: salt
-    });
+    (
+      address aaveOracleBatch,
+      BatchReports.AaveOracleBatchReport memory aaveOracleReport
+    ) = _deployAaveOracleBatch({
+        logger: logger,
+        owner: deployer,
+        oracleDecimals: oracleDecimals,
+        salt: salt
+      });
     address spokeImplementation = _deploySpokeImplementation({
       logger: logger,
       aaveOracle: aaveOracleReport.aaveOracle,
@@ -291,7 +294,7 @@ library AaveV4DeployOrchestration {
     });
     _setAaveOracleSpoke({
       logger: logger,
-      aaveOracleBatch: aaveOracleReport.aaveOracleBatch,
+      aaveOracleBatch: aaveOracleBatch,
       spoke: spokeReport.report.spokeProxy
     });
     _logSpokeReport({logger: logger, report: spokeReport.report, label: label});
@@ -375,7 +378,7 @@ library AaveV4DeployOrchestration {
     address owner,
     uint8 oracleDecimals,
     bytes32 salt
-  ) internal returns (BatchReports.AaveOracleBatchReport memory) {
+  ) internal returns (address, BatchReports.AaveOracleBatchReport memory) {
     logger.logHeader1('deploying AaveOracleBatch');
     return
       AaveV4DeployBase.deployAaveOracleBatch({

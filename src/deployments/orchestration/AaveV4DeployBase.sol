@@ -107,23 +107,24 @@ library AaveV4DeployBase {
   /// @param owner The account allowed to bind the AaveOracle to its Spoke.
   /// @param oracleDecimals The decimal precision for the AaveOracle.
   /// @param salt The CREATE2 salt for deterministic deployment.
-  /// @return The AaveOracle batch report.
+  /// @return aaveOracleBatch The AaveOracle batch, to pass to `setAaveOracleSpoke` once the Spoke proxy exists.
+  /// @return report The AaveOracle batch report.
   function deployAaveOracleBatch(
     address owner,
     uint8 oracleDecimals,
     bytes32 salt
-  ) internal returns (BatchReports.AaveOracleBatchReport memory) {
+  ) internal returns (address aaveOracleBatch, BatchReports.AaveOracleBatchReport memory report) {
     // the CREATE2 factory drops revert reasons, so repeat the batch's input checks here
     require(owner != address(0), 'invalid owner');
     require(oracleDecimals > 0, 'invalid oracle decimals');
-    address aaveOracleBatch = Create2Utils.create2Deploy({
+    aaveOracleBatch = Create2Utils.create2Deploy({
       salt: salt,
       bytecode: abi.encodePacked(
         type(AaveV4AaveOracleBatch).creationCode,
         abi.encode(owner, oracleDecimals, salt)
       )
     });
-    return AaveV4AaveOracleBatch(aaveOracleBatch).getReport();
+    report = AaveV4AaveOracleBatch(aaveOracleBatch).getReport();
   }
 
   /// @notice Binds a Spoke's AaveOracle to the Spoke through the batch that deployed it.

@@ -14,7 +14,6 @@ contract AaveV4AaveOracleBatchTest is BatchBaseTest {
   }
 
   function test_getReport() public view {
-    assertEq(report.aaveOracleBatch, address(oracleBatch));
     assertNotEq(report.aaveOracle, address(0));
   }
 
@@ -89,6 +88,15 @@ contract AaveV4AaveOracleBatchTest is BatchBaseTest {
   function test_revert_zeroOracleDecimals() public {
     vm.expectRevert('invalid oracle decimals');
     new AaveV4AaveOracleBatch({owner_: admin, oracleDecimals_: 0, salt_: keccak256('zeroSalt')});
+  }
+
+  function test_deployAaveOracleBatch() public {
+    AaveV4DeployBaseWrapper deployBase = new AaveV4DeployBaseWrapper();
+    (address aaveOracleBatch, BatchReports.AaveOracleBatchReport memory batchReport) = deployBase
+      .deployAaveOracleBatch({owner: admin, oracleDecimals: 8, salt: keccak256('deployBaseSalt')});
+    assertEq(AaveV4AaveOracleBatch(aaveOracleBatch).OWNER(), admin);
+    assertEq(AaveV4AaveOracleBatch(aaveOracleBatch).getReport().aaveOracle, batchReport.aaveOracle);
+    assertNotEq(batchReport.aaveOracle, address(0));
   }
 
   /// @dev AaveV4DeployBase repeats the batch's input checks because the CREATE2 factory drops revert

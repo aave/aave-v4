@@ -406,8 +406,10 @@ library AaveV4TestOrchestration {
     uint16 maxUserReservesLimit,
     bytes32 salt
   ) internal returns (BatchReports.SpokeProxyBatchReport memory report) {
-    BatchReports.AaveOracleBatchReport memory aaveOracleReport = AaveV4DeployBase
-      .deployAaveOracleBatch({
+    (
+      address aaveOracleBatch,
+      BatchReports.AaveOracleBatchReport memory aaveOracleReport
+    ) = AaveV4DeployBase.deployAaveOracleBatch({
         owner: address(this),
         oracleDecimals: DeployConstants.ORACLE_DECIMALS,
         salt: salt
@@ -429,7 +431,7 @@ library AaveV4TestOrchestration {
       salt: salt
     });
     AaveV4DeployBase.setAaveOracleSpoke({
-      aaveOracleBatch: aaveOracleReport.aaveOracleBatch,
+      aaveOracleBatch: aaveOracleBatch,
       spoke: report.spokeProxy
     });
   }
