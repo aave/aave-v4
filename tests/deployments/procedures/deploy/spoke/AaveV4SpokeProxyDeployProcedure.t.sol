@@ -11,12 +11,17 @@ contract AaveV4SpokeProxyDeployProcedureTest is ProceduresBase {
   function setUp() public override {
     super.setUp();
     aaveV4SpokeDeployProcedureWrapper = new AaveV4SpokeProxyDeployProcedureWrapper();
-    bytes memory spokeInitCode = abi.encodePacked(
+    spokeImplementation = AaveV4SpokeImplementationDeployProcedure.deploySpokeImplementation({
+      oracle: aaveOracle,
+      spokeBytecode: spokeBytecode,
+      maxUserReservesLimit: maxUserReservesLimit,
+      salt: salt
+    });
+    spokeInitCodeHash = AaveV4SpokeImplementationDeployProcedure.getSpokeInstanceInitCodeHash(
       spokeBytecode,
-      abi.encode(aaveOracle, maxUserReservesLimit)
+      aaveOracle,
+      maxUserReservesLimit
     );
-    spokeImplementation = Create2Utils.create2Deploy(salt, spokeInitCode);
-    spokeInitCodeHash = keccak256(spokeInitCode);
   }
 
   function test_deploySpokeProxy() public {

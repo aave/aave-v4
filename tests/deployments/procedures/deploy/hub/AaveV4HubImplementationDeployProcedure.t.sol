@@ -20,6 +20,13 @@ contract AaveV4HubImplementationDeployProcedureTest is ProceduresBase {
     assertGt(hubImplementation.code.length, 0);
   }
 
+  function test_getHubInstanceInitCodeHash() public view {
+    assertEq(
+      AaveV4HubImplementationDeployProcedure.getHubInstanceInitCodeHash(hubBytecode),
+      keccak256(hubBytecode)
+    );
+  }
+
   function test_deployHubImplementation_reverts_alreadyDeployed() public {
     wrapper.deployHubImplementation(hubBytecode, salt);
     vm.expectRevert(Create2Utils.ContractAlreadyDeployed.selector);

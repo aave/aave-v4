@@ -123,12 +123,10 @@ contract AaveV4SpokeProxyBatchTest is BatchBaseTest {
 
   function _spokeInitCodeHash(address oracle) internal view returns (bytes32) {
     return
-      keccak256(
-        AaveV4SpokeImplementationDeployProcedure.getSpokeInstanceInitCode(
-          spokeBytecode,
-          oracle,
-          128
-        )
+      AaveV4SpokeImplementationDeployProcedure.getSpokeInstanceInitCodeHash(
+        spokeBytecode,
+        oracle,
+        128
       );
   }
 

@@ -27,6 +27,7 @@ import {AaveV4SpokeConfiguratorRolesProcedureWrapper} from 'tests/helpers/mocks/
 import {AaveV4TokenizationSpokeDeployProcedureWrapper} from 'tests/helpers/mocks/deployments/procedures/AaveV4TokenizationSpokeDeployProcedureWrapper.sol';
 import {AaveV4HubRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
 import {AaveV4HubImplementationDeployProcedure} from 'src/deployments/procedures/deploy/hub/AaveV4HubImplementationDeployProcedure.sol';
+import {AaveV4SpokeImplementationDeployProcedure} from 'src/deployments/procedures/deploy/spoke/AaveV4SpokeImplementationDeployProcedure.sol';
 import {AaveV4DeployBase} from 'src/deployments/orchestration/AaveV4DeployBase.sol';
 import {AaveV4TreasurySpokeBatch} from 'src/deployments/batches/AaveV4TreasurySpokeBatch.sol';
 import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';

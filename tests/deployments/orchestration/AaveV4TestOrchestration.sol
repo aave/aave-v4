@@ -390,7 +390,9 @@ library AaveV4TestOrchestration {
           hubBytecode: hubBytecode,
           salt: salt
         }),
-        hubInitCodeHash: keccak256(hubBytecode),
+        hubInitCodeHash: AaveV4HubImplementationDeployProcedure.getHubInstanceInitCodeHash(
+          hubBytecode
+        ),
         salt: salt
       });
   }
@@ -419,12 +421,10 @@ library AaveV4TestOrchestration {
         maxUserReservesLimit: maxUserReservesLimit,
         salt: salt
       }),
-      spokeInitCodeHash: keccak256(
-        AaveV4SpokeImplementationDeployProcedure.getSpokeInstanceInitCode(
-          spokeBytecode,
-          aaveOracleReport.aaveOracle,
-          maxUserReservesLimit
-        )
+      spokeInitCodeHash: AaveV4SpokeImplementationDeployProcedure.getSpokeInstanceInitCodeHash(
+        spokeBytecode,
+        aaveOracleReport.aaveOracle,
+        maxUserReservesLimit
       ),
       salt: salt
     });

@@ -25,7 +25,9 @@ contract AaveV4TokenizationSpokeBatchTest is BatchBaseTest {
         hubBytecode,
         salt
       ),
-      hubInitCodeHash_: keccak256(hubBytecode),
+      hubInitCodeHash_: AaveV4HubImplementationDeployProcedure.getHubInstanceInitCodeHash(
+        hubBytecode
+      ),
       salt_: salt
     });
     BatchReports.HubProxyBatchReport memory hubReport = hubProxyBatch.getReport();

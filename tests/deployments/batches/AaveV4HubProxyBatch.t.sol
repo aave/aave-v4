@@ -18,7 +18,9 @@ contract AaveV4HubProxyBatchTest is BatchBaseTest {
       proxyAdminOwner_: admin,
       authority_: accessManager,
       hubImplementation_: hubImplementation,
-      hubInitCodeHash_: keccak256(hubBytecode),
+      hubInitCodeHash_: AaveV4HubImplementationDeployProcedure.getHubInstanceInitCodeHash(
+        hubBytecode
+      ),
       salt_: salt
     });
     report = hubProxyBatch.getReport();
@@ -53,7 +55,9 @@ contract AaveV4HubProxyBatchTest is BatchBaseTest {
       proxyAdminOwner_: admin,
       authority_: address(0),
       hubImplementation_: hubImplementation,
-      hubInitCodeHash_: keccak256(hubBytecode),
+      hubInitCodeHash_: AaveV4HubImplementationDeployProcedure.getHubInstanceInitCodeHash(
+        hubBytecode
+      ),
       salt_: salt
     });
   }
@@ -64,7 +68,9 @@ contract AaveV4HubProxyBatchTest is BatchBaseTest {
       proxyAdminOwner_: address(0),
       authority_: accessManager,
       hubImplementation_: hubImplementation,
-      hubInitCodeHash_: keccak256(hubBytecode),
+      hubInitCodeHash_: AaveV4HubImplementationDeployProcedure.getHubInstanceInitCodeHash(
+        hubBytecode
+      ),
       salt_: salt
     });
   }
@@ -75,7 +81,9 @@ contract AaveV4HubProxyBatchTest is BatchBaseTest {
       proxyAdminOwner_: admin,
       authority_: accessManager,
       hubImplementation_: makeAddr('noCode'),
-      hubInitCodeHash_: keccak256(hubBytecode),
+      hubInitCodeHash_: AaveV4HubImplementationDeployProcedure.getHubInstanceInitCodeHash(
+        hubBytecode
+      ),
       salt_: keccak256('differentSalt')
     });
   }
@@ -87,7 +95,9 @@ contract AaveV4HubProxyBatchTest is BatchBaseTest {
       proxyAdminOwner_: admin,
       authority_: accessManager,
       hubImplementation_: Create2Utils.computeCreate2Address(otherSalt, hubBytecode),
-      hubInitCodeHash_: keccak256(hubBytecode),
+      hubInitCodeHash_: AaveV4HubImplementationDeployProcedure.getHubInstanceInitCodeHash(
+        hubBytecode
+      ),
       salt_: otherSalt
     });
   }
@@ -112,7 +122,9 @@ contract AaveV4HubProxyBatchTest is BatchBaseTest {
         hubBytecode,
         otherSalt
       ),
-      hubInitCodeHash_: keccak256(hubBytecode),
+      hubInitCodeHash_: AaveV4HubImplementationDeployProcedure.getHubInstanceInitCodeHash(
+        hubBytecode
+      ),
       salt_: otherSalt
     });
     assertNotEq(report.hubProxy, newBatch.getReport().hubProxy);

@@ -21,7 +21,7 @@ contract AaveV4HubProxyDeployProcedureTest is ProceduresBase {
       admin,
       accessManager,
       hubImplementation,
-      keccak256(hubBytecode),
+      AaveV4HubImplementationDeployProcedure.getHubInstanceInitCodeHash(hubBytecode),
       salt
     );
     assertNotEq(hubProxy, address(0));
@@ -37,7 +37,9 @@ contract AaveV4HubProxyDeployProcedureTest is ProceduresBase {
       proxyAdminOwner: admin,
       authority: address(0),
       hubImplementation: hubImplementation,
-      hubInitCodeHash: keccak256(hubBytecode),
+      hubInitCodeHash: AaveV4HubImplementationDeployProcedure.getHubInstanceInitCodeHash(
+        hubBytecode
+      ),
       salt: salt
     });
   }
@@ -48,7 +50,9 @@ contract AaveV4HubProxyDeployProcedureTest is ProceduresBase {
       proxyAdminOwner: address(0),
       authority: accessManager,
       hubImplementation: hubImplementation,
-      hubInitCodeHash: keccak256(hubBytecode),
+      hubInitCodeHash: AaveV4HubImplementationDeployProcedure.getHubInstanceInitCodeHash(
+        hubBytecode
+      ),
       salt: salt
     });
   }
@@ -59,7 +63,9 @@ contract AaveV4HubProxyDeployProcedureTest is ProceduresBase {
       proxyAdminOwner: admin,
       authority: accessManager,
       hubImplementation: makeAddr('noCode'),
-      hubInitCodeHash: keccak256(hubBytecode),
+      hubInitCodeHash: AaveV4HubImplementationDeployProcedure.getHubInstanceInitCodeHash(
+        hubBytecode
+      ),
       salt: salt
     });
   }

@@ -22,7 +22,11 @@ contract AaveV4SpokeImplementationDeployProcedureTest is ProceduresBase {
       spokeImplementation,
       Create2Utils.computeCreate2Address({
         salt: salt,
-        bytecode: abi.encodePacked(spokeBytecode, abi.encode(aaveOracle, maxUserReservesLimit))
+        bytecode: AaveV4SpokeImplementationDeployProcedure.getSpokeInstanceInitCode(
+          spokeBytecode,
+          aaveOracle,
+          maxUserReservesLimit
+        )
       })
     );
     assertEq(ISpoke(spokeImplementation).ORACLE(), aaveOracle);
@@ -45,6 +49,17 @@ contract AaveV4SpokeImplementationDeployProcedureTest is ProceduresBase {
       maxUserReservesLimit: 0,
       salt: salt
     });
+  }
+
+  function test_getSpokeInstanceInitCodeHash() public view {
+    assertEq(
+      AaveV4SpokeImplementationDeployProcedure.getSpokeInstanceInitCodeHash(
+        spokeBytecode,
+        aaveOracle,
+        maxUserReservesLimit
+      ),
+      keccak256(abi.encodePacked(spokeBytecode, abi.encode(aaveOracle, maxUserReservesLimit)))
+    );
   }
 
   function test_deploySpokeImplementation_reverts_alreadyDeployed() public {

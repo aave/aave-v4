@@ -23,7 +23,9 @@ contract AaveV4TokenizationSpokeDeployProcedureTest is ProceduresBase {
         hubBytecode: hubBytecode,
         salt: salt
       }),
-      hubInitCodeHash: keccak256(hubBytecode),
+      hubInitCodeHash: AaveV4HubImplementationDeployProcedure.getHubInstanceInitCodeHash(
+        hubBytecode
+      ),
       salt: salt
     });
     deployedHub = hubReport.hubProxy;

@@ -43,4 +43,17 @@ library AaveV4SpokeImplementationDeployProcedure {
   ) internal pure returns (bytes memory) {
     return abi.encodePacked(spokeBytecode, abi.encode(oracle, maxUserReservesLimit));
   }
+
+  /// @notice Returns the hash of the full init code of a Spoke instance, constructor arguments included.
+  /// @param spokeBytecode The creation bytecode of the Spoke implementation.
+  /// @param oracle The oracle address encoded as a constructor argument.
+  /// @param maxUserReservesLimit The maximum number of user reserves encoded as a constructor argument.
+  /// @return The keccak256 hash of the init code.
+  function getSpokeInstanceInitCodeHash(
+    bytes memory spokeBytecode,
+    address oracle,
+    uint16 maxUserReservesLimit
+  ) internal pure returns (bytes32) {
+    return keccak256(getSpokeInstanceInitCode(spokeBytecode, oracle, maxUserReservesLimit));
+  }
 }

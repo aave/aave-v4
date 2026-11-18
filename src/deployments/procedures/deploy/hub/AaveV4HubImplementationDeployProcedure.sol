@@ -20,4 +20,12 @@ library AaveV4HubImplementationDeployProcedure {
   ) internal returns (address) {
     return Create2Utils.create2Deploy({salt: salt, bytecode: hubBytecode});
   }
+
+  /// @notice Returns the hash of the init code of a Hub instance.
+  /// @dev The Hub implementation takes no constructor arguments, so its init code is its creation bytecode.
+  /// @param hubBytecode The creation bytecode of the HubInstance contract.
+  /// @return The keccak256 hash of the init code.
+  function getHubInstanceInitCodeHash(bytes memory hubBytecode) internal pure returns (bytes32) {
+    return keccak256(hubBytecode);
+  }
 }
