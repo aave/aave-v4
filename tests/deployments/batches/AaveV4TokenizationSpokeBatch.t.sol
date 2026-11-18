@@ -21,7 +21,10 @@ contract AaveV4TokenizationSpokeBatchTest is BatchBaseTest {
     AaveV4HubProxyBatch hubProxyBatch = new AaveV4HubProxyBatch({
       proxyAdminOwner_: admin,
       authority_: accessManager,
-      hubImplementation_: Create2Utils.create2Deploy(salt, hubBytecode),
+      hubImplementation_: AaveV4HubImplementationDeployProcedure.deployHubImplementation(
+        hubBytecode,
+        salt
+      ),
       hubInitCodeHash_: keccak256(hubBytecode),
       salt_: salt
     });
