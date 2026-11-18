@@ -102,6 +102,18 @@ contract AaveV4SpokeProxyBatchTest is BatchBaseTest {
     });
   }
 
+  function test_differentSaltProducesDifferentAddress() public {
+    bytes32 otherSalt = keccak256('differentSalt');
+    AaveV4SpokeProxyBatch newBatch = new AaveV4SpokeProxyBatch({
+      proxyAdminOwner_: admin,
+      authority_: accessManager,
+      spokeImplementation_: _deploySpokeImplementation(aaveOracle, otherSalt),
+      spokeInitCodeHash_: _spokeInitCodeHash(aaveOracle),
+      salt_: otherSalt
+    });
+    assertNotEq(report.spokeProxy, newBatch.getReport().spokeProxy);
+  }
+
   function _deployOracle(bytes32 salt_) internal returns (address) {
     return
       new AaveV4AaveOracleBatch({owner_: admin, oracleDecimals_: 8, salt_: salt_})

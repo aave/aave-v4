@@ -46,4 +46,10 @@ contract AaveV4SpokeImplementationDeployProcedureTest is ProceduresBase {
       salt: salt
     });
   }
+
+  function test_deploySpokeImplementation_reverts_alreadyDeployed() public {
+    wrapper.deploySpokeImplementation(aaveOracle, spokeBytecode, maxUserReservesLimit, salt);
+    vm.expectRevert(Create2Utils.ContractAlreadyDeployed.selector);
+    wrapper.deploySpokeImplementation(aaveOracle, spokeBytecode, maxUserReservesLimit, salt);
+  }
 }
