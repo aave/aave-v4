@@ -299,5 +299,3 @@ AaveV4DeployBatchBase.s.sol                         (Foundry script entry point)
     _logDeploySummary(logger)                       write deployment summary to logger
     logger.save()                                   save logs to output/reports/deployments/
 ```
-
-// weave: run 'weave explain src/deployments/README.md' for per-hunk detail, 'weave check' to verify your resolution
