@@ -11,16 +11,24 @@ library BatchReports {
   }
 
   /// @dev hubConfigurator The deployed HubConfigurator contract address.
-  /// @dev spokeConfigurator The deployed SpokeConfigurator contract address.
-  struct ConfiguratorBatchReport {
+  struct HubConfiguratorBatchReport {
     address hubConfigurator;
+  }
+
+  /// @dev spokeConfigurator The deployed SpokeConfigurator contract address.
+  struct SpokeConfiguratorBatchReport {
     address spokeConfigurator;
+  }
+
+  /// @dev aaveOracle The deployed AaveOracle contract address.
+  struct AaveOracleBatchReport {
+    address aaveOracle;
   }
 
   /// @dev spokeProxy The deployed Spoke proxy contract address.
   /// @dev spokeImplementation The deployed Spoke implementation contract address.
-  /// @dev aaveOracle The deployed AaveOracle contract address.
-  struct SpokeInstanceBatchReport {
+  /// @dev aaveOracle The AaveOracle used by the Spoke, deployed beforehand by `AaveV4AaveOracleBatch`.
+  struct SpokeProxyBatchReport {
     address spokeProxy;
     address spokeImplementation;
     address aaveOracle;
@@ -29,7 +37,7 @@ library BatchReports {
   /// @dev hubProxy The deployed Hub proxy contract address.
   /// @dev hubImplementation The deployed Hub implementation contract address.
   /// @dev irStrategy The deployed InterestRateStrategy contract address.
-  struct HubInstanceBatchReport {
+  struct HubProxyBatchReport {
     address hubProxy;
     address hubImplementation;
     address irStrategy;
@@ -49,10 +57,13 @@ library BatchReports {
 
   /// @dev giverPositionManager The deployed GiverPositionManager contract address.
   /// @dev takerPositionManager The deployed TakerPositionManager contract address.
-  /// @dev configPositionManager The deployed ConfigPositionManager contract address.
-  struct PositionManagerBatchReport {
+  struct GiverTakerPositionManagerBatchReport {
     address giverPositionManager;
     address takerPositionManager;
+  }
+
+  /// @dev configPositionManager The deployed ConfigPositionManager contract address.
+  struct ConfigPositionManagerBatchReport {
     address configPositionManager;
   }
 

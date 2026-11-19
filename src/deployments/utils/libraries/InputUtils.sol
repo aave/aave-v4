@@ -19,7 +19,7 @@ library InputUtils {
   /// @dev nativeWrapper The address of the native wrapper (required when deployNativeTokenGateway is true).
   /// @dev deployNativeTokenGateway Whether to deploy the NativeTokenGateway.
   /// @dev deploySignatureGateway Whether to deploy the SignatureGateway.
-  /// @dev deployPositionManagers Whether to deploy the position manager batch (giver/taker/config).
+  /// @dev deployPositionManagers Whether to deploy the position manager batches.
   /// @dev grantRoles Whether to grant roles during deployment. When `false`, only deploy-time ownership
   ///      addresses (proxyAdminOwner, treasurySpokeOwner) are set, and both must be
   ///      the deployer. The deployer also retains the AccessManager ACCESS_MANAGER_ADMIN_ROLE.

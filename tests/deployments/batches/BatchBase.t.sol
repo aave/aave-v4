@@ -11,13 +11,20 @@ import {Create2TestHelper} from 'tests/utils/Create2TestHelper.sol';
 import {ProxyHelper} from 'tests/utils/ProxyHelper.sol';
 import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
+import {AaveV4AaveOracleBatch} from 'src/deployments/batches/AaveV4AaveOracleBatch.sol';
 import {AaveV4AuthorityBatch} from 'src/deployments/batches/AaveV4AuthorityBatch.sol';
-import {AaveV4SpokeInstanceBatch} from 'src/deployments/batches/AaveV4SpokeInstanceBatch.sol';
-import {AaveV4HubInstanceBatch} from 'src/deployments/batches/AaveV4HubInstanceBatch.sol';
-import {AaveV4ConfiguratorBatch} from 'src/deployments/batches/AaveV4ConfiguratorBatch.sol';
+import {AaveV4SpokeProxyBatch} from 'src/deployments/batches/AaveV4SpokeProxyBatch.sol';
+import {AaveV4HubProxyBatch} from 'src/deployments/batches/AaveV4HubProxyBatch.sol';
+import {AaveV4HubConfiguratorBatch} from 'src/deployments/batches/AaveV4HubConfiguratorBatch.sol';
+import {AaveV4SpokeConfiguratorBatch} from 'src/deployments/batches/AaveV4SpokeConfiguratorBatch.sol';
 import {AaveV4TokenizationSpokeBatch} from 'src/deployments/batches/AaveV4TokenizationSpokeBatch.sol';
 import {AaveV4GatewayBatch} from 'src/deployments/batches/AaveV4GatewayBatch.sol';
-import {AaveV4PositionManagerBatch} from 'src/deployments/batches/AaveV4PositionManagerBatch.sol';
+import {AaveV4GiverTakerPositionManagerBatch} from 'src/deployments/batches/AaveV4GiverTakerPositionManagerBatch.sol';
+import {AaveV4ConfigPositionManagerBatch} from 'src/deployments/batches/AaveV4ConfigPositionManagerBatch.sol';
+import {AaveV4HubImplementationDeployProcedure} from 'src/deployments/procedures/deploy/hub/AaveV4HubImplementationDeployProcedure.sol';
+import {AaveV4SpokeImplementationDeployProcedure} from 'src/deployments/procedures/deploy/spoke/AaveV4SpokeImplementationDeployProcedure.sol';
+import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
+import {AaveOracle} from 'src/spoke/AaveOracle.sol';
 import {AaveV4TreasurySpokeBatch} from 'src/deployments/batches/AaveV4TreasurySpokeBatch.sol';
 import {AaveV4HubRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
 import {NativeTokenGateway} from 'src/position-manager/NativeTokenGateway.sol';
@@ -31,6 +38,8 @@ import {IAccessManagerEnumerable} from 'src/access/interfaces/IAccessManagerEnum
 import {TreasurySpoke} from 'src/spoke/TreasurySpoke.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IPriceOracle} from 'src/spoke/interfaces/IPriceOracle.sol';
+import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
+import {AaveV4DeployBaseWrapper} from 'tests/helpers/mocks/deployments/AaveV4DeployBaseWrapper.sol';
 
 contract BatchBaseTest is Create2TestHelper {
   address public admin = makeAddr('admin');

@@ -1,0 +1,86 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import 'tests/deployments/procedures/ProceduresBase.t.sol';
+
+contract AaveV4SpokeProxyDeployProcedureTest is ProceduresBase {
+  AaveV4SpokeProxyDeployProcedureWrapper public wrapper;
+  address public spokeImplementation;
+  bytes32 public spokeInitCodeHash;
+
+  function setUp() public override {
+    super.setUp();
+    wrapper = new AaveV4SpokeProxyDeployProcedureWrapper();
+    spokeImplementation = AaveV4SpokeImplementationDeployProcedure.deploySpokeImplementation({
+      oracle: aaveOracle,
+      spokeBytecode: spokeBytecode,
+      maxUserReservesLimit: maxUserReservesLimit,
+      salt: salt
+    });
+    spokeInitCodeHash = AaveV4SpokeImplementationDeployProcedure.getSpokeInstanceInitCodeHash(
+      spokeBytecode,
+      aaveOracle,
+      maxUserReservesLimit
+    );
+  }
+
+  function test_deploySpokeProxy() public {
+    address spokeProxy = wrapper.deploySpokeProxy(
+      owner,
+      accessManager,
+      spokeImplementation,
+      spokeInitCodeHash,
+      salt
+    );
+    assertNotEq(spokeProxy, address(0));
+    assertNotEq(spokeProxy, spokeImplementation);
+    assertEq(Ownable(ProxyHelper.getProxyAdmin(spokeProxy)).owner(), owner);
+    assertEq(ProxyHelper.getImplementation(spokeProxy), spokeImplementation);
+    assertEq(ISpoke(spokeProxy).ORACLE(), aaveOracle);
+    assertEq(IAccessManaged(spokeProxy).authority(), accessManager);
+  }
+
+  function test_deploySpokeProxy_reverts_invalidAuthority() public {
+    vm.expectRevert('invalid authority');
+    wrapper.deploySpokeProxy({
+      proxyAdminOwner: owner,
+      authority: address(0),
+      spokeImplementation: spokeImplementation,
+      spokeInitCodeHash: spokeInitCodeHash,
+      salt: salt
+    });
+  }
+
+  function test_deploySpokeProxy_reverts_invalidProxyAdminOwner() public {
+    vm.expectRevert('invalid proxy admin owner');
+    wrapper.deploySpokeProxy({
+      proxyAdminOwner: address(0),
+      authority: accessManager,
+      spokeImplementation: spokeImplementation,
+      spokeInitCodeHash: spokeInitCodeHash,
+      salt: salt
+    });
+  }
+
+  function test_deploySpokeProxy_reverts_invalidSpokeImplementation() public {
+    vm.expectRevert('invalid spoke implementation');
+    wrapper.deploySpokeProxy({
+      proxyAdminOwner: owner,
+      authority: accessManager,
+      spokeImplementation: makeAddr('noCode'),
+      spokeInitCodeHash: spokeInitCodeHash,
+      salt: salt
+    });
+  }
+
+  function test_deploySpokeProxy_reverts_spokeImplementationCodeMismatch() public {
+    vm.expectRevert('invalid spoke implementation');
+    wrapper.deploySpokeProxy({
+      proxyAdminOwner: owner,
+      authority: accessManager,
+      spokeImplementation: spokeImplementation,
+      spokeInitCodeHash: keccak256('otherBytecode'),
+      salt: salt
+    });
+  }
+}
