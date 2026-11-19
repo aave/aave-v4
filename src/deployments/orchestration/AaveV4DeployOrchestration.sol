@@ -80,7 +80,7 @@ library AaveV4DeployOrchestration {
     InputUtils.validateUniqueLabels(deployInputs.hubLabels, 'hub');
     InputUtils.validateUniqueLabels(deployInputs.spokeLabels, 'spoke');
 
-    // Deploy Hub Batches
+    // Deploy Hubs: implementation, then HubProxyBatch, per label
     report.hubInstanceBatchReports = _deployHubs({
       logger: logger,
       proxyAdminOwner: deployInputs.proxyAdminOwner,
@@ -90,7 +90,7 @@ library AaveV4DeployOrchestration {
       salt: salt
     });
 
-    // Deploy Spoke Batches
+    // Deploy Spokes: AaveOracleBatch, implementation, SpokeProxyBatch, then setSpoke, per label
     report.spokeInstanceBatchReports = _deploySpokes({
       logger: logger,
       deployer: deployer,
@@ -324,7 +324,7 @@ library AaveV4DeployOrchestration {
     bytes32 hubInitCodeHash,
     bytes32 salt
   ) internal returns (BatchReports.HubProxyBatchReport memory report) {
-    logger.logHeader1('deploying HubBatch');
+    logger.logHeader1('deploying HubProxyBatch');
     report = AaveV4DeployBase.deployHubProxyBatch({
       proxyAdminOwner: proxyAdminOwner,
       authority: authority,
@@ -378,14 +378,17 @@ library AaveV4DeployOrchestration {
     address owner,
     uint8 oracleDecimals,
     bytes32 salt
-  ) internal returns (address, BatchReports.AaveOracleBatchReport memory) {
+  ) internal returns (address aaveOracleBatch, BatchReports.AaveOracleBatchReport memory report) {
     logger.logHeader1('deploying AaveOracleBatch');
-    return
-      AaveV4DeployBase.deployAaveOracleBatch({
-        owner: owner,
-        oracleDecimals: oracleDecimals,
-        salt: salt
-      });
+    (aaveOracleBatch, report) = AaveV4DeployBase.deployAaveOracleBatch({
+      owner: owner,
+      oracleDecimals: oracleDecimals,
+      salt: salt
+    });
+    logger.log('AaveOracleBatch', aaveOracleBatch);
+    logger.log('AaveOracle', report.aaveOracle);
+    logger.logNewLine();
+    return (aaveOracleBatch, report);
   }
 
   function _setAaveOracleSpoke(Logger logger, address aaveOracleBatch, address spoke) internal {
@@ -418,7 +421,7 @@ library AaveV4DeployOrchestration {
     bytes32 spokeInitCodeHash,
     bytes32 salt
   ) internal returns (BatchReports.SpokeProxyBatchReport memory report) {
-    logger.logHeader1('deploying AaveV4SpokeProxyBatch');
+    logger.logHeader1('deploying SpokeProxyBatch');
     report = AaveV4DeployBase.deploySpokeProxyBatch({
       proxyAdminOwner: proxyAdminOwner,
       authority: authority,
