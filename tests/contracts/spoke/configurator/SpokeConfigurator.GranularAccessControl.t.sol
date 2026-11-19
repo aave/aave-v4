@@ -66,10 +66,10 @@ contract SpokeConfiguratorGranularAccessControlTest is Base {
     reserveSelectors[17] = ISpokeConfigurator.unfreezeReserve.selector;
     reserveSelectors[18] = ISpokeConfigurator.freezeSpoke.selector;
     reserveSelectors[19] = ISpokeConfigurator.unfreezeSpoke.selector;
-    reserveSelectors[20] = ISpokeConfigurator.zeroCollateralFactor.selector;
-    reserveSelectors[21] = ISpokeConfigurator.restoreCollateralFactor.selector;
-    reserveSelectors[22] = ISpokeConfigurator.unfreezeAsset.selector;
-    reserveSelectors[23] = ISpokeConfigurator.freezeAsset.selector;
+    reserveSelectors[20] = ISpokeConfigurator.freezeAsset.selector;
+    reserveSelectors[21] = ISpokeConfigurator.unfreezeAsset.selector;
+    reserveSelectors[22] = ISpokeConfigurator.zeroCollateralFactor.selector;
+    reserveSelectors[23] = ISpokeConfigurator.restoreCollateralFactor.selector;
     manager.setTargetFunctionRole(
       address(spokeConfigurator),
       reserveSelectors,

@@ -17,7 +17,7 @@ abstract contract HubConfigurator is AccessManagedUpgradeable, IHubConfigurator 
 
   /// @dev Map of Hub addresses, asset identifiers and Spoke addresses to whether `haltAsset` halted the Spoke
   /// for the asset; `unhaltAsset` only unhalts recorded Spokes.
-  mapping(address hub => mapping(uint256 assetId => mapping(address spoke => bool)))
+  mapping(address hub => mapping(uint256 assetId => mapping(address spoke => bool halted)))
     internal _haltedByHaltAsset;
 
   /// @dev To be overridden by the inheriting HubConfigurator instance contract.

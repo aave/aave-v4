@@ -30,7 +30,7 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
 
   /// @dev Map of Spoke addresses and reserve identifiers to whether `freezeAsset` froze the reserve;
   /// `unfreezeAsset` only unfreezes recorded reserves.
-  mapping(address spoke => mapping(uint256 reserveId => bool)) internal _frozenByFreezeAsset;
+  mapping(address spoke => mapping(uint256 reserveId => bool frozen)) internal _frozenByFreezeAsset;
 
   /// @dev To be overridden by the inheriting SpokeConfigurator instance contract.
   function initialize(address authority) external virtual;
