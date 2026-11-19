@@ -92,6 +92,8 @@ function restrictionOnlyPremiumDelta() returns IHubBase.PremiumDelta {
     return result;
 }
 
+// These invariants cover a fixed managed reserve ID. An upgrade that changes the ID
+// requires a separate check of existing collateral positions and outstanding debt.
 // Assume at most four reserves and Babylon's constructor-set user reserve limit.
 function setup() {
     require spoke._reserveCount <= MAX_RESERVES(), "Proof scope: at most four reserves.";
