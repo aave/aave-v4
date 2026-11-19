@@ -742,9 +742,11 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
       });
   }
 
-  /// @dev Returns false when the Spoke has no reserve for the Hub asset. This covers Spokes registered on the
-  /// Hub without reserves, such as the TreasurySpoke and TokenizationSpoke, which do not implement
-  /// `getReserveId`. Only the lookup is guarded; reverts from the subsequent configuration calls propagate.
+  /// @dev Returns false when the Spoke has no reserve for the Hub asset: either the lookup reverts with
+  /// `ReserveNotListed`, or it reverts without data because the Spoke does not implement `getReserveId`, as with
+  /// the TreasurySpoke and TokenizationSpoke. Any other revert is bubbled up, so an unexpected Spoke failure
+  /// stops the call instead of silently skipping the Spoke. Reverts from the subsequent configuration calls
+  /// also propagate.
   function _tryGetReserveId(
     ISpoke spoke,
     address hub,
@@ -752,8 +754,16 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
   ) internal view returns (bool, uint256) {
     try spoke.getReserveId(hub, assetId) returns (uint256 reserveId) {
       return (true, reserveId);
-    } catch {
-      return (false, 0);
+    } catch (bytes memory reason) {
+      if (
+        reason.length == 0 ||
+        (reason.length == 4 && bytes4(reason) == ISpoke.ReserveNotListed.selector)
+      ) {
+        return (false, 0);
+      }
+      assembly ('memory-safe') {
+        revert(add(reason, 32), mload(reason))
+      }
     }
   }
 

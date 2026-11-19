@@ -520,6 +520,8 @@ interface ISpokeConfigurator {
   /// @dev Records the reserves it freezes so `unfreezeAsset` unfreezes only those; reserves that were already
   /// frozen are not recorded.
   /// @dev Reverts if any Spoke with a reserve for the asset has not granted this configurator permission.
+  /// @dev Reverts with the Spoke's error if its reserve lookup fails for a reason other than `ReserveNotListed` or
+  /// a missing `getReserveId`.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
   function freezeAsset(address hub, address underlying) external;
@@ -530,6 +532,8 @@ interface ISpokeConfigurator {
   /// configurator, are not tracked.
   /// @dev Only clears the frozen flag; collateral factors are restored separately via `restoreCollateralFactor`.
   /// @dev Reverts if a Spoke whose reserve it unfreezes has not granted this configurator permission.
+  /// @dev Reverts with the Spoke's error if its reserve lookup fails for a reason other than `ReserveNotListed` or
+  /// a missing `getReserveId`.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
   function unfreezeAsset(address hub, address underlying) external;

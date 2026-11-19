@@ -1428,6 +1428,39 @@ contract SpokeConfiguratorTest is SpokeConfiguratorBaseTest {
     }
   }
 
+  function test_freezeAsset_skipsSpokeWithReserveNotListed() public {
+    address dai = address(tokenList.dai);
+    ISpoke[] memory daiSpokes = _grantAssetSpokesRole(daiAssetId);
+    ISpoke unlistedSpoke = daiSpokes[0];
+    vm.mockCallRevert(
+      address(unlistedSpoke),
+      abi.encodeCall(ISpoke.getReserveId, (hubAddr, daiAssetId)),
+      abi.encodeWithSelector(ISpoke.ReserveNotListed.selector)
+    );
+
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.freezeAsset(hubAddr, dai);
+    vm.clearMockedCalls();
+
+    for (uint256 i; i < daiSpokes.length; ++i) {
+      assertEq(_isDaiFrozen(daiSpokes[i]), daiSpokes[i] != unlistedSpoke);
+    }
+  }
+
+  function test_freezeAsset_revertsWith_unexpectedReserveLookupError() public {
+    ISpoke[] memory daiSpokes = _grantAssetSpokesRole(daiAssetId);
+    bytes memory unexpectedError = abi.encodeWithSelector(bytes4(keccak256('UnexpectedError()')));
+    vm.mockCallRevert(
+      address(daiSpokes[1]),
+      abi.encodeCall(ISpoke.getReserveId, (hubAddr, daiAssetId)),
+      unexpectedError
+    );
+
+    vm.expectRevert(unexpectedError);
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.freezeAsset(hubAddr, address(tokenList.dai));
+  }
+
   function test_unfreezeAsset_revertsWith_AccessManagedUnauthorized() public {
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
@@ -1543,6 +1576,24 @@ contract SpokeConfiguratorTest is SpokeConfiguratorBaseTest {
 
     assertEq(_configuratorLogCount(), 0);
     assertTrue(_isDaiFrozen(spoke));
+  }
+
+  function test_unfreezeAsset_revertsWith_unexpectedReserveLookupError() public {
+    address dai = address(tokenList.dai);
+    ISpoke[] memory daiSpokes = _grantAssetSpokesRole(daiAssetId);
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.freezeAsset(hubAddr, dai);
+
+    bytes memory unexpectedError = abi.encodeWithSignature('Error(string)', 'unexpected');
+    vm.mockCallRevert(
+      address(daiSpokes[1]),
+      abi.encodeCall(ISpoke.getReserveId, (hubAddr, daiAssetId)),
+      unexpectedError
+    );
+
+    vm.expectRevert(unexpectedError);
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.unfreezeAsset(hubAddr, dai);
   }
 
   function test_unfreezeAsset_leavesOtherAssetsFrozen() public {
