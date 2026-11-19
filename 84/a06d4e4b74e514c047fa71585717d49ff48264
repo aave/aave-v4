@@ -1,0 +1,29 @@
+tests/deployments/batches/AaveV4SpokeProxyBatch.t.sol
+  s_b5a8ba063f759a::t_c9a0e26de04675 7,16,23,30,35-38
+tests/deployments/orchestration/AaveV4TestOrchestration.sol
+  s_b5a8ba063f759a::t_a8aa06da3c3793 84,96
+tests/deployments/procedures/deploy/hub/AaveV4HubProxyDeployProcedure.t.sol
+  s_b5a8ba063f759a::t_7fb646f7414ad8 7,12,20,36,49,62,75
+tests/deployments/procedures/deploy/spoke/AaveV4SpokeImplementationDeployProcedure.t.sol
+  s_b5a8ba063f759a::t_3826d32f13d178 36,44,46
+tests/deployments/procedures/deploy/spoke/AaveV4SpokeProxyDeployProcedure.t.sol
+  s_b5a8ba063f759a::t_fcae0ab117f935 7,13,28,36,43-47,52,54-58,63,65,67,74,76,78
+tests/utils/BatchTestProcedures.sol
+  s_b5a8ba063f759a::t_642051e362f9d1 263
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "84a06d4e4b74e514c047fa71585717d49ff48264",
+  "prompts": {},
+  "sessions": {
+    "s_b5a8ba063f759a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e21f9af4-2976-4fc6-9fca-5c29e8c8d9fc",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}

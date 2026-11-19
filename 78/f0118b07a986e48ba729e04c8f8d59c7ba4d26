@@ -1,0 +1,25 @@
+src/deployments/README.md
+  s_b5a8ba063f759a::t_7daf33b1eac729 42,46,48,81-90,233,239-240,250-252,256,279
+src/deployments/procedures/deploy/hub/AaveV4HubProxyDeployProcedure.sol
+  s_b5a8ba063f759a::t_2c59dbaa85b220 10-12
+src/deployments/procedures/deploy/spoke/AaveV4SpokeImplementationDeployProcedure.sol
+  s_b5a8ba063f759a::t_8b5c7ad2526d5a 35,48
+src/deployments/procedures/deploy/spoke/AaveV4SpokeProxyDeployProcedure.sol
+  s_b5a8ba063f759a::t_514ff69b762f4f 10-12
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "78f0118b07a986e48ba729e04c8f8d59c7ba4d26",
+  "prompts": {},
+  "sessions": {
+    "s_b5a8ba063f759a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e21f9af4-2976-4fc6-9fca-5c29e8c8d9fc",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}
