@@ -67,40 +67,40 @@ abstract contract PostDeploymentVerificationBase is BatchTestProcedures {
     }
 
     uint256 hubCount = _inputs.hubLabels.length;
-    report.hubInstanceBatchReports = new OrchestrationReports.HubDeploymentReport[](hubCount);
+    report.hubDeploymentReports = new OrchestrationReports.HubDeploymentReport[](hubCount);
     for (uint256 i; i < hubCount; i++) {
       string memory label = _inputs.hubLabels[i];
-      report.hubInstanceBatchReports[i].label = label;
+      report.hubDeploymentReports[i].label = label;
 
-      report.hubInstanceBatchReports[i].report.hubProxy = vm.parseJsonAddress(
+      report.hubDeploymentReports[i].report.hubProxy = vm.parseJsonAddress(
         json,
         string.concat('$.hub.', label)
       );
-      report.hubInstanceBatchReports[i].report.hubImplementation = vm.parseJsonAddress(
+      report.hubDeploymentReports[i].report.hubImplementation = vm.parseJsonAddress(
         json,
         string.concat('$.hubImplementation.', label)
       );
-      report.hubInstanceBatchReports[i].report.irStrategy = vm.parseJsonAddress(
+      report.hubDeploymentReports[i].report.irStrategy = vm.parseJsonAddress(
         json,
         string.concat('$.irStrategy.', label)
       );
     }
 
     uint256 spokeCount = _inputs.spokeLabels.length;
-    report.spokeInstanceBatchReports = new OrchestrationReports.SpokeDeploymentReport[](spokeCount);
+    report.spokeDeploymentReports = new OrchestrationReports.SpokeDeploymentReport[](spokeCount);
     for (uint256 i; i < spokeCount; i++) {
       string memory label = _inputs.spokeLabels[i];
-      report.spokeInstanceBatchReports[i].label = label;
+      report.spokeDeploymentReports[i].label = label;
 
-      report.spokeInstanceBatchReports[i].report.spokeProxy = vm.parseJsonAddress(
+      report.spokeDeploymentReports[i].report.spokeProxy = vm.parseJsonAddress(
         json,
         string.concat('$.spoke.', label)
       );
-      report.spokeInstanceBatchReports[i].report.spokeImplementation = vm.parseJsonAddress(
+      report.spokeDeploymentReports[i].report.spokeImplementation = vm.parseJsonAddress(
         json,
         string.concat('$.spokeImplementation.', label)
       );
-      report.spokeInstanceBatchReports[i].report.aaveOracle = vm.parseJsonAddress(
+      report.spokeDeploymentReports[i].report.aaveOracle = vm.parseJsonAddress(
         json,
         string.concat('$.oracle.', label)
       );

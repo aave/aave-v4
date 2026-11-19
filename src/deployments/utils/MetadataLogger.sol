@@ -22,22 +22,22 @@ contract MetadataLogger is Logger {
     _write('treasurySpoke', report.treasurySpokeBatchReport.treasurySpoke);
 
     // Group hubs by property type
-    uint256 hubLen = report.hubInstanceBatchReports.length;
+    uint256 hubLen = report.hubDeploymentReports.length;
     Logger.AddressEntry[] memory hubEntries = new Logger.AddressEntry[](hubLen);
     Logger.AddressEntry[] memory hubImplEntries = new Logger.AddressEntry[](hubLen);
     Logger.AddressEntry[] memory irEntries = new Logger.AddressEntry[](hubLen);
     for (uint256 i; i < hubLen; i++) {
       hubEntries[i] = Logger.AddressEntry({
-        label: report.hubInstanceBatchReports[i].label,
-        value: report.hubInstanceBatchReports[i].report.hubProxy
+        label: report.hubDeploymentReports[i].label,
+        value: report.hubDeploymentReports[i].report.hubProxy
       });
       hubImplEntries[i] = Logger.AddressEntry({
-        label: report.hubInstanceBatchReports[i].label,
-        value: report.hubInstanceBatchReports[i].report.hubImplementation
+        label: report.hubDeploymentReports[i].label,
+        value: report.hubDeploymentReports[i].report.hubImplementation
       });
       irEntries[i] = Logger.AddressEntry({
-        label: report.hubInstanceBatchReports[i].label,
-        value: report.hubInstanceBatchReports[i].report.irStrategy
+        label: report.hubDeploymentReports[i].label,
+        value: report.hubDeploymentReports[i].report.irStrategy
       });
     }
     _writeGroup('hub', hubEntries);
@@ -45,22 +45,22 @@ contract MetadataLogger is Logger {
     _writeGroup('irStrategy', irEntries);
 
     // Group spokes by property type
-    uint256 spokeLen = report.spokeInstanceBatchReports.length;
+    uint256 spokeLen = report.spokeDeploymentReports.length;
     Logger.AddressEntry[] memory spokeEntries = new Logger.AddressEntry[](spokeLen);
     Logger.AddressEntry[] memory spokeImplEntries = new Logger.AddressEntry[](spokeLen);
     Logger.AddressEntry[] memory oracleEntries = new Logger.AddressEntry[](spokeLen);
     for (uint256 i; i < spokeLen; i++) {
       spokeEntries[i] = Logger.AddressEntry({
-        label: report.spokeInstanceBatchReports[i].label,
-        value: report.spokeInstanceBatchReports[i].report.spokeProxy
+        label: report.spokeDeploymentReports[i].label,
+        value: report.spokeDeploymentReports[i].report.spokeProxy
       });
       spokeImplEntries[i] = Logger.AddressEntry({
-        label: report.spokeInstanceBatchReports[i].label,
-        value: report.spokeInstanceBatchReports[i].report.spokeImplementation
+        label: report.spokeDeploymentReports[i].label,
+        value: report.spokeDeploymentReports[i].report.spokeImplementation
       });
       oracleEntries[i] = Logger.AddressEntry({
-        label: report.spokeInstanceBatchReports[i].label,
-        value: report.spokeInstanceBatchReports[i].report.aaveOracle
+        label: report.spokeDeploymentReports[i].label,
+        value: report.spokeDeploymentReports[i].report.aaveOracle
       });
     }
     _writeGroup('spoke', spokeEntries);

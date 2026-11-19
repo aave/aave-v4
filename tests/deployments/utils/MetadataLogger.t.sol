@@ -19,25 +19,25 @@ contract MetadataLoggerTest is Test {
     report.spokeConfiguratorBatchReport.spokeConfigurator = makeAddr('spokeConfigurator');
     report.treasurySpokeBatchReport.treasurySpoke = makeAddr('treasurySpoke');
 
-    report.hubInstanceBatchReports = new OrchestrationReports.HubDeploymentReport[](2);
-    report.hubInstanceBatchReports[0].label = 'core';
-    report.hubInstanceBatchReports[0].report.hubProxy = makeAddr('hub-core');
-    report.hubInstanceBatchReports[0].report.hubImplementation = makeAddr('hubImpl-core');
-    report.hubInstanceBatchReports[0].report.irStrategy = makeAddr('ir-core');
-    report.hubInstanceBatchReports[1].label = 'prime';
-    report.hubInstanceBatchReports[1].report.hubProxy = makeAddr('hub-prime');
-    report.hubInstanceBatchReports[1].report.hubImplementation = makeAddr('hubImpl-prime');
-    report.hubInstanceBatchReports[1].report.irStrategy = makeAddr('ir-prime');
+    report.hubDeploymentReports = new OrchestrationReports.HubDeploymentReport[](2);
+    report.hubDeploymentReports[0].label = 'core';
+    report.hubDeploymentReports[0].report.hubProxy = makeAddr('hub-core');
+    report.hubDeploymentReports[0].report.hubImplementation = makeAddr('hubImpl-core');
+    report.hubDeploymentReports[0].report.irStrategy = makeAddr('ir-core');
+    report.hubDeploymentReports[1].label = 'prime';
+    report.hubDeploymentReports[1].report.hubProxy = makeAddr('hub-prime');
+    report.hubDeploymentReports[1].report.hubImplementation = makeAddr('hubImpl-prime');
+    report.hubDeploymentReports[1].report.irStrategy = makeAddr('ir-prime');
 
-    report.spokeInstanceBatchReports = new OrchestrationReports.SpokeDeploymentReport[](2);
-    report.spokeInstanceBatchReports[0].label = 'mainnet';
-    report.spokeInstanceBatchReports[0].report.spokeProxy = makeAddr('spoke-mainnet');
-    report.spokeInstanceBatchReports[0].report.spokeImplementation = makeAddr('spokeImpl-mainnet');
-    report.spokeInstanceBatchReports[0].report.aaveOracle = makeAddr('oracle-mainnet');
-    report.spokeInstanceBatchReports[1].label = 'lrt';
-    report.spokeInstanceBatchReports[1].report.spokeProxy = makeAddr('spoke-lrt');
-    report.spokeInstanceBatchReports[1].report.spokeImplementation = makeAddr('spokeImpl-lrt');
-    report.spokeInstanceBatchReports[1].report.aaveOracle = makeAddr('oracle-lrt');
+    report.spokeDeploymentReports = new OrchestrationReports.SpokeDeploymentReport[](2);
+    report.spokeDeploymentReports[0].label = 'mainnet';
+    report.spokeDeploymentReports[0].report.spokeProxy = makeAddr('spoke-mainnet');
+    report.spokeDeploymentReports[0].report.spokeImplementation = makeAddr('spokeImpl-mainnet');
+    report.spokeDeploymentReports[0].report.aaveOracle = makeAddr('oracle-mainnet');
+    report.spokeDeploymentReports[1].label = 'lrt';
+    report.spokeDeploymentReports[1].report.spokeProxy = makeAddr('spoke-lrt');
+    report.spokeDeploymentReports[1].report.spokeImplementation = makeAddr('spokeImpl-lrt');
+    report.spokeDeploymentReports[1].report.aaveOracle = makeAddr('oracle-lrt');
 
     report.gatewaysBatchReport.nativeGateway = makeAddr('nativeGateway');
     report.gatewaysBatchReport.signatureGateway = makeAddr('signatureGateway');
@@ -76,37 +76,37 @@ contract MetadataLoggerTest is Test {
     // Hubs
     assertEq(
       vm.parseJsonAddress(json, '$.hub.core'),
-      report.hubInstanceBatchReports[0].report.hubProxy
+      report.hubDeploymentReports[0].report.hubProxy
     );
     assertEq(
       vm.parseJsonAddress(json, '$.hubImplementation.core'),
-      report.hubInstanceBatchReports[0].report.hubImplementation
+      report.hubDeploymentReports[0].report.hubImplementation
     );
     assertEq(
       vm.parseJsonAddress(json, '$.irStrategy.core'),
-      report.hubInstanceBatchReports[0].report.irStrategy
+      report.hubDeploymentReports[0].report.irStrategy
     );
     assertEq(
       vm.parseJsonAddress(json, '$.hub.prime'),
-      report.hubInstanceBatchReports[1].report.hubProxy
+      report.hubDeploymentReports[1].report.hubProxy
     );
 
     // Spokes
     assertEq(
       vm.parseJsonAddress(json, '$.spoke.mainnet'),
-      report.spokeInstanceBatchReports[0].report.spokeProxy
+      report.spokeDeploymentReports[0].report.spokeProxy
     );
     assertEq(
       vm.parseJsonAddress(json, '$.spokeImplementation.mainnet'),
-      report.spokeInstanceBatchReports[0].report.spokeImplementation
+      report.spokeDeploymentReports[0].report.spokeImplementation
     );
     assertEq(
       vm.parseJsonAddress(json, '$.oracle.mainnet'),
-      report.spokeInstanceBatchReports[0].report.aaveOracle
+      report.spokeDeploymentReports[0].report.aaveOracle
     );
     assertEq(
       vm.parseJsonAddress(json, '$.spoke.lrt'),
-      report.spokeInstanceBatchReports[1].report.spokeProxy
+      report.spokeDeploymentReports[1].report.spokeProxy
     );
 
     // Gateways
@@ -205,17 +205,17 @@ contract MetadataLoggerTest is Test {
     report.spokeConfiguratorBatchReport.spokeConfigurator = makeAddr('sc');
     report.treasurySpokeBatchReport.treasurySpoke = makeAddr('ts');
 
-    report.hubInstanceBatchReports = new OrchestrationReports.HubDeploymentReport[](1);
-    report.hubInstanceBatchReports[0].label = 'only';
-    report.hubInstanceBatchReports[0].report.hubProxy = makeAddr('hub-only');
-    report.hubInstanceBatchReports[0].report.hubImplementation = makeAddr('hubImpl-only');
-    report.hubInstanceBatchReports[0].report.irStrategy = makeAddr('ir-only');
+    report.hubDeploymentReports = new OrchestrationReports.HubDeploymentReport[](1);
+    report.hubDeploymentReports[0].label = 'only';
+    report.hubDeploymentReports[0].report.hubProxy = makeAddr('hub-only');
+    report.hubDeploymentReports[0].report.hubImplementation = makeAddr('hubImpl-only');
+    report.hubDeploymentReports[0].report.irStrategy = makeAddr('ir-only');
 
-    report.spokeInstanceBatchReports = new OrchestrationReports.SpokeDeploymentReport[](1);
-    report.spokeInstanceBatchReports[0].label = 'solo';
-    report.spokeInstanceBatchReports[0].report.spokeProxy = makeAddr('spoke-solo');
-    report.spokeInstanceBatchReports[0].report.spokeImplementation = makeAddr('spokeImpl-solo');
-    report.spokeInstanceBatchReports[0].report.aaveOracle = makeAddr('oracle-solo');
+    report.spokeDeploymentReports = new OrchestrationReports.SpokeDeploymentReport[](1);
+    report.spokeDeploymentReports[0].label = 'solo';
+    report.spokeDeploymentReports[0].report.spokeProxy = makeAddr('spoke-solo');
+    report.spokeDeploymentReports[0].report.spokeImplementation = makeAddr('spokeImpl-solo');
+    report.spokeDeploymentReports[0].report.aaveOracle = makeAddr('oracle-solo');
 
     logger.writeJsonReportMarket(report);
     string memory json = logger.getJson();
@@ -234,8 +234,8 @@ contract MetadataLoggerTest is Test {
     report.hubConfiguratorBatchReport.hubConfigurator = makeAddr('hc');
     report.spokeConfiguratorBatchReport.spokeConfigurator = makeAddr('sc');
     report.treasurySpokeBatchReport.treasurySpoke = makeAddr('ts');
-    report.hubInstanceBatchReports = new OrchestrationReports.HubDeploymentReport[](0);
-    report.spokeInstanceBatchReports = new OrchestrationReports.SpokeDeploymentReport[](0);
+    report.hubDeploymentReports = new OrchestrationReports.HubDeploymentReport[](0);
+    report.spokeDeploymentReports = new OrchestrationReports.SpokeDeploymentReport[](0);
 
     logger.writeJsonReportMarket(report);
     string memory json = logger.getJson();

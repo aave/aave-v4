@@ -81,7 +81,7 @@ library AaveV4DeployOrchestration {
     InputUtils.validateUniqueLabels(deployInputs.spokeLabels, 'spoke');
 
     // Deploy Hubs: implementation, then HubProxyBatch, per label
-    report.hubInstanceBatchReports = _deployHubs({
+    report.hubDeploymentReports = _deployHubs({
       logger: logger,
       proxyAdminOwner: deployInputs.proxyAdminOwner,
       authority: accessManager,
@@ -91,7 +91,7 @@ library AaveV4DeployOrchestration {
     });
 
     // Deploy Spokes: AaveOracleBatch, implementation, SpokeProxyBatch, then setSpoke, per label
-    report.spokeInstanceBatchReports = _deploySpokes({
+    report.spokeDeploymentReports = _deploySpokes({
       logger: logger,
       deployer: deployer,
       authority: accessManager,
@@ -168,12 +168,12 @@ library AaveV4DeployOrchestration {
     string[] memory hubLabels,
     bytes memory hubBytecode,
     bytes32 salt
-  ) internal returns (OrchestrationReports.HubDeploymentReport[] memory hubInstanceBatchReports) {
+  ) internal returns (OrchestrationReports.HubDeploymentReport[] memory hubDeploymentReports) {
     uint256 hubCount = hubLabels.length;
-    hubInstanceBatchReports = new OrchestrationReports.HubDeploymentReport[](hubCount);
+    hubDeploymentReports = new OrchestrationReports.HubDeploymentReport[](hubCount);
     for (uint256 i; i < hubCount; ++i) {
       bytes32 childSalt = _deriveChildSalt(salt, 'hub', hubLabels[i]);
-      hubInstanceBatchReports[i] = _deployHub({
+      hubDeploymentReports[i] = _deployHub({
         logger: logger,
         proxyAdminOwner: proxyAdminOwner,
         authority: authority,
@@ -183,7 +183,7 @@ library AaveV4DeployOrchestration {
       });
     }
     logger.logNewLine();
-    return hubInstanceBatchReports;
+    return hubDeploymentReports;
   }
 
   function _deployHub(

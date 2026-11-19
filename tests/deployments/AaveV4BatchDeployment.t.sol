@@ -50,10 +50,10 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     vm.setNonce(address(this), vm.getNonce(address(this)) + callerNonceBump);
     OrchestrationReports.FullDeploymentReport memory second = _deployV4();
 
-    assertGt(first.spokeInstanceBatchReports.length, 0);
-    for (uint256 i; i < first.spokeInstanceBatchReports.length; ++i) {
-      BatchReports.SpokeProxyBatchReport memory a = first.spokeInstanceBatchReports[i].report;
-      BatchReports.SpokeProxyBatchReport memory b = second.spokeInstanceBatchReports[i].report;
+    assertGt(first.spokeDeploymentReports.length, 0);
+    for (uint256 i; i < first.spokeDeploymentReports.length; ++i) {
+      BatchReports.SpokeProxyBatchReport memory a = first.spokeDeploymentReports[i].report;
+      BatchReports.SpokeProxyBatchReport memory b = second.spokeDeploymentReports[i].report;
       assertEq(a.aaveOracle, b.aaveOracle, 'aave oracle');
       assertEq(a.spokeImplementation, b.spokeImplementation, 'spoke implementation');
       assertEq(a.spokeProxy, b.spokeProxy, 'spoke proxy');

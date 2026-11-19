@@ -25,8 +25,8 @@ library OrchestrationReports {
   /// @dev hubConfiguratorBatchReport HubConfigurator deployment report.
   /// @dev spokeConfiguratorBatchReport SpokeConfigurator deployment report.
   /// @dev treasurySpokeBatchReport TreasurySpoke deployment report.
-  /// @dev spokeInstanceBatchReports Per-spoke deployment reports.
-  /// @dev hubInstanceBatchReports Per-hub deployment reports.
+  /// @dev spokeDeploymentReports Per-spoke deployment reports.
+  /// @dev hubDeploymentReports Per-hub deployment reports.
   /// @dev gatewaysBatchReport Gateway deployment report.
   /// @dev giverTakerPositionManagerBatchReport GiverPositionManager and TakerPositionManager deployment report.
   /// @dev configPositionManagerBatchReport ConfigPositionManager deployment report.
@@ -36,8 +36,8 @@ library OrchestrationReports {
     BatchReports.HubConfiguratorBatchReport hubConfiguratorBatchReport;
     BatchReports.SpokeConfiguratorBatchReport spokeConfiguratorBatchReport;
     BatchReports.TreasurySpokeBatchReport treasurySpokeBatchReport;
-    SpokeDeploymentReport[] spokeInstanceBatchReports;
-    HubDeploymentReport[] hubInstanceBatchReports;
+    SpokeDeploymentReport[] spokeDeploymentReports;
+    HubDeploymentReport[] hubDeploymentReports;
     BatchReports.GatewaysBatchReport gatewaysBatchReport;
     BatchReports.GiverTakerPositionManagerBatchReport giverTakerPositionManagerBatchReport;
     BatchReports.ConfigPositionManagerBatchReport configPositionManagerBatchReport;
