@@ -4,12 +4,12 @@ pragma solidity ^0.8.0;
 import 'tests/deployments/procedures/ProceduresBase.t.sol';
 
 contract AaveV4HubProxyDeployProcedureTest is ProceduresBase {
-  AaveV4HubProxyDeployProcedureWrapper public aaveV4HubDeployProcedureWrapper;
+  AaveV4HubProxyDeployProcedureWrapper public wrapper;
   address public hubImplementation;
 
   function setUp() public override {
     super.setUp();
-    aaveV4HubDeployProcedureWrapper = new AaveV4HubProxyDeployProcedureWrapper();
+    wrapper = new AaveV4HubProxyDeployProcedureWrapper();
     hubImplementation = AaveV4HubImplementationDeployProcedure.deployHubImplementation({
       hubBytecode: hubBytecode,
       salt: salt
@@ -17,7 +17,7 @@ contract AaveV4HubProxyDeployProcedureTest is ProceduresBase {
   }
 
   function test_deployHubProxy() public {
-    address hubProxy = aaveV4HubDeployProcedureWrapper.deployHubProxy(
+    address hubProxy = wrapper.deployHubProxy(
       admin,
       accessManager,
       hubImplementation,
@@ -33,7 +33,7 @@ contract AaveV4HubProxyDeployProcedureTest is ProceduresBase {
 
   function test_deployHubProxy_reverts_invalidAuthority() public {
     vm.expectRevert('invalid authority');
-    aaveV4HubDeployProcedureWrapper.deployHubProxy({
+    wrapper.deployHubProxy({
       proxyAdminOwner: admin,
       authority: address(0),
       hubImplementation: hubImplementation,
@@ -46,7 +46,7 @@ contract AaveV4HubProxyDeployProcedureTest is ProceduresBase {
 
   function test_deployHubProxy_reverts_invalidProxyAdminOwner() public {
     vm.expectRevert('invalid proxy admin owner');
-    aaveV4HubDeployProcedureWrapper.deployHubProxy({
+    wrapper.deployHubProxy({
       proxyAdminOwner: address(0),
       authority: accessManager,
       hubImplementation: hubImplementation,
@@ -59,7 +59,7 @@ contract AaveV4HubProxyDeployProcedureTest is ProceduresBase {
 
   function test_deployHubProxy_reverts_invalidHubImplementation() public {
     vm.expectRevert('invalid hub implementation');
-    aaveV4HubDeployProcedureWrapper.deployHubProxy({
+    wrapper.deployHubProxy({
       proxyAdminOwner: admin,
       authority: accessManager,
       hubImplementation: makeAddr('noCode'),
@@ -72,7 +72,7 @@ contract AaveV4HubProxyDeployProcedureTest is ProceduresBase {
 
   function test_deployHubProxy_reverts_hubImplementationCodeMismatch() public {
     vm.expectRevert('invalid hub implementation');
-    aaveV4HubDeployProcedureWrapper.deployHubProxy({
+    wrapper.deployHubProxy({
       proxyAdminOwner: admin,
       authority: accessManager,
       hubImplementation: hubImplementation,

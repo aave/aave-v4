@@ -17,8 +17,6 @@ import {AaveV4HubConfiguratorRolesProcedure} from 'src/deployments/procedures/ro
 import {AaveV4SpokeConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeConfiguratorRolesProcedure.sol';
 import {AaveV4TreasurySpokeBatch} from 'src/deployments/batches/AaveV4TreasurySpokeBatch.sol';
 import {AaveV4AuthorityBatch} from 'src/deployments/batches/AaveV4AuthorityBatch.sol';
-import {AaveV4HubProxyBatch} from 'src/deployments/batches/AaveV4HubProxyBatch.sol';
-import {AaveV4SpokeProxyBatch} from 'src/deployments/batches/AaveV4SpokeProxyBatch.sol';
 import {TestTokensBatch} from 'tests/deployments/batches/TestTokensBatch.sol';
 import {AaveV4DeployBase} from 'src/deployments/orchestration/AaveV4DeployBase.sol';
 import {AaveV4HubImplementationDeployProcedure} from 'src/deployments/procedures/deploy/hub/AaveV4HubImplementationDeployProcedure.sol';
@@ -83,7 +81,7 @@ library AaveV4TestOrchestration {
       })
       .treasurySpoke;
 
-    // Deploy Hub Batches
+    // Deploy Hubs: implementation, then HubProxyBatch
     for (uint256 i; i < hubCount; ++i) {
       BatchReports.HubProxyBatchReport memory hubReport = _deployHub({
         proxyAdminOwner: admin,
@@ -95,7 +93,7 @@ library AaveV4TestOrchestration {
       report.hubReports[i].irStrategy = hubReport.irStrategy;
     }
 
-    // Deploy Spoke Batches
+    // Deploy Spokes: AaveOracleBatch, implementation, SpokeProxyBatch, then setSpoke
     for (uint256 i; i < spokeCount; ++i) {
       BatchReports.SpokeProxyBatchReport memory spokeReport = _deploySpoke({
         proxyAdminOwner: admin,

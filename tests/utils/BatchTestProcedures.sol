@@ -260,7 +260,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     assertEq(
       report.hubInstanceBatchReports.length,
       inputs.hubLabels.length,
-      'HubBatchReportsLength'
+      'HubInstanceBatchReportsLength'
     );
     assertEq(
       report.spokeInstanceBatchReports.length,

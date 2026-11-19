@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import 'tests/deployments/batches/BatchBase.t.sol';
 
 contract AaveV4SpokeProxyBatchTest is BatchBaseTest {
-  AaveV4SpokeProxyBatch public spokeBatch;
+  AaveV4SpokeProxyBatch public spokeProxyBatch;
   BatchReports.SpokeProxyBatchReport public report;
   address public aaveOracle;
   address public spokeImplementation;
@@ -13,24 +13,29 @@ contract AaveV4SpokeProxyBatchTest is BatchBaseTest {
     super.setUp();
     aaveOracle = _deployOracle(salt);
     spokeImplementation = _deploySpokeImplementation(aaveOracle, salt);
-    spokeBatch = new AaveV4SpokeProxyBatch({
+    spokeProxyBatch = new AaveV4SpokeProxyBatch({
       proxyAdminOwner_: admin,
       authority_: accessManager,
       spokeImplementation_: spokeImplementation,
       spokeInitCodeHash_: _spokeInitCodeHash(aaveOracle),
       salt_: salt
     });
-    report = spokeBatch.getReport();
+    report = spokeProxyBatch.getReport();
   }
 
   function test_getReport() public view {
     assertNotEq(report.spokeProxy, address(0));
     assertEq(report.spokeImplementation, spokeImplementation);
     assertEq(report.aaveOracle, aaveOracle);
+    assertNotEq(report.spokeProxy, report.spokeImplementation);
   }
 
   function test_spokeImplementation() public view {
     assertEq(ProxyHelper.getImplementation(report.spokeProxy), spokeImplementation);
+    assertEq(
+      spokeImplementation,
+      Create2Utils.computeCreate2Address(salt, _spokeInitCodeHash(aaveOracle))
+    );
   }
 
   function test_spokeAuthority() public view {

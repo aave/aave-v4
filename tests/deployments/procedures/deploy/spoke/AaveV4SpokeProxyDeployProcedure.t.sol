@@ -4,13 +4,13 @@ pragma solidity ^0.8.0;
 import 'tests/deployments/procedures/ProceduresBase.t.sol';
 
 contract AaveV4SpokeProxyDeployProcedureTest is ProceduresBase {
-  AaveV4SpokeProxyDeployProcedureWrapper public aaveV4SpokeDeployProcedureWrapper;
+  AaveV4SpokeProxyDeployProcedureWrapper public wrapper;
   address public spokeImplementation;
   bytes32 public spokeInitCodeHash;
 
   function setUp() public override {
     super.setUp();
-    aaveV4SpokeDeployProcedureWrapper = new AaveV4SpokeProxyDeployProcedureWrapper();
+    wrapper = new AaveV4SpokeProxyDeployProcedureWrapper();
     spokeImplementation = AaveV4SpokeImplementationDeployProcedure.deploySpokeImplementation({
       oracle: aaveOracle,
       spokeBytecode: spokeBytecode,
@@ -25,7 +25,7 @@ contract AaveV4SpokeProxyDeployProcedureTest is ProceduresBase {
   }
 
   function test_deploySpokeProxy() public {
-    address spokeProxy = aaveV4SpokeDeployProcedureWrapper.deploySpokeProxy(
+    address spokeProxy = wrapper.deploySpokeProxy(
       owner,
       accessManager,
       spokeImplementation,
@@ -33,42 +33,49 @@ contract AaveV4SpokeProxyDeployProcedureTest is ProceduresBase {
       salt
     );
     assertNotEq(spokeProxy, address(0));
+    assertNotEq(spokeProxy, spokeImplementation);
     assertEq(Ownable(ProxyHelper.getProxyAdmin(spokeProxy)).owner(), owner);
     assertEq(ProxyHelper.getImplementation(spokeProxy), spokeImplementation);
     assertEq(ISpoke(spokeProxy).ORACLE(), aaveOracle);
     assertEq(IAccessManaged(spokeProxy).authority(), accessManager);
   }
 
-  function test_deploySpokeProxy_reverts() public {
-    vm.expectRevert('invalid proxy admin owner');
-    aaveV4SpokeDeployProcedureWrapper.deploySpokeProxy({
-      proxyAdminOwner: address(0),
-      authority: accessManager,
-      spokeImplementation: spokeImplementation,
-      spokeInitCodeHash: spokeInitCodeHash,
-      salt: salt
-    });
-
+  function test_deploySpokeProxy_reverts_invalidAuthority() public {
     vm.expectRevert('invalid authority');
-    aaveV4SpokeDeployProcedureWrapper.deploySpokeProxy({
+    wrapper.deploySpokeProxy({
       proxyAdminOwner: owner,
       authority: address(0),
       spokeImplementation: spokeImplementation,
       spokeInitCodeHash: spokeInitCodeHash,
       salt: salt
     });
+  }
 
+  function test_deploySpokeProxy_reverts_invalidProxyAdminOwner() public {
+    vm.expectRevert('invalid proxy admin owner');
+    wrapper.deploySpokeProxy({
+      proxyAdminOwner: address(0),
+      authority: accessManager,
+      spokeImplementation: spokeImplementation,
+      spokeInitCodeHash: spokeInitCodeHash,
+      salt: salt
+    });
+  }
+
+  function test_deploySpokeProxy_reverts_invalidSpokeImplementation() public {
     vm.expectRevert('invalid spoke implementation');
-    aaveV4SpokeDeployProcedureWrapper.deploySpokeProxy({
+    wrapper.deploySpokeProxy({
       proxyAdminOwner: owner,
       authority: accessManager,
       spokeImplementation: makeAddr('noCode'),
       spokeInitCodeHash: spokeInitCodeHash,
       salt: salt
     });
+  }
 
+  function test_deploySpokeProxy_reverts_spokeImplementationCodeMismatch() public {
     vm.expectRevert('invalid spoke implementation');
-    aaveV4SpokeDeployProcedureWrapper.deploySpokeProxy({
+    wrapper.deploySpokeProxy({
       proxyAdminOwner: owner,
       authority: accessManager,
       spokeImplementation: spokeImplementation,

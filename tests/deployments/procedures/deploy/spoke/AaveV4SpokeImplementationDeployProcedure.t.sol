@@ -33,7 +33,7 @@ contract AaveV4SpokeImplementationDeployProcedureTest is ProceduresBase {
     assertEq(ISpoke(spokeImplementation).MAX_USER_RESERVES_LIMIT(), maxUserReservesLimit);
   }
 
-  function test_deploySpokeImplementation_reverts() public {
+  function test_deploySpokeImplementation_reverts_invalidOracle() public {
     vm.expectRevert('invalid oracle');
     wrapper.deploySpokeImplementation({
       oracle: address(0),
@@ -41,7 +41,9 @@ contract AaveV4SpokeImplementationDeployProcedureTest is ProceduresBase {
       maxUserReservesLimit: maxUserReservesLimit,
       salt: salt
     });
+  }
 
+  function test_deploySpokeImplementation_reverts_invalidMaxUserReservesLimit() public {
     vm.expectRevert('invalid max user reserves limit');
     wrapper.deploySpokeImplementation({
       oracle: aaveOracle,
