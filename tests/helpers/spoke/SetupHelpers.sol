@@ -475,22 +475,22 @@ abstract contract SetupHelpers is CheckedActions, ConfigHelpers, MockHelpers {
   //                                  RANDOM UTILITIES                                        //
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
-  function _randomReserveId(ISpoke spoke) internal returns (uint256) {
+  function _randomReserveId(ISpoke spoke) internal view returns (uint256) {
     return vm.randomUint(0, spoke.getReserveCount() - 1);
   }
 
-  function _randomInvalidReserveId(ISpoke spoke) internal returns (uint256) {
+  function _randomInvalidReserveId(ISpoke spoke) internal view returns (uint256) {
     return vm.randomUint(spoke.getReserveCount(), UINT256_MAX);
   }
 
-  function _randomConfigKey() internal returns (uint16) {
+  function _randomConfigKey() internal view returns (uint16) {
     return vm.randomUint(0, type(uint16).max).toUint16();
   }
 
   function _randomUninitializedConfigKey(
     ISpoke spoke,
     uint256 reserveId
-  ) internal returns (uint32) {
+  ) internal view returns (uint32) {
     uint32 dynamicConfigKey = _nextDynamicConfigKey(spoke, reserveId);
     if (spoke.getDynamicReserveConfig(reserveId, dynamicConfigKey).maxLiquidationBonus != 0) {
       revert('no uninitialized config keys');
@@ -498,7 +498,10 @@ abstract contract SetupHelpers is CheckedActions, ConfigHelpers, MockHelpers {
     return vm.randomUint(dynamicConfigKey, type(uint32).max).toUint32();
   }
 
-  function _randomInitializedConfigKey(ISpoke spoke, uint256 reserveId) internal returns (uint32) {
+  function _randomInitializedConfigKey(
+    ISpoke spoke,
+    uint256 reserveId
+  ) internal view returns (uint32) {
     uint32 dynamicConfigKey = _nextDynamicConfigKey(spoke, reserveId);
     if (spoke.getDynamicReserveConfig(reserveId, dynamicConfigKey).maxLiquidationBonus != 0) {
       // all config keys are initialized
@@ -507,14 +510,17 @@ abstract contract SetupHelpers is CheckedActions, ConfigHelpers, MockHelpers {
     return vm.randomUint(0, spoke.getReserve(reserveId).dynamicConfigKey).toUint32();
   }
 
-  function _randomMaxLiquidationBonus(ISpoke spoke, uint256 reserveId) internal returns (uint32) {
+  function _randomMaxLiquidationBonus(
+    ISpoke spoke,
+    uint256 reserveId
+  ) internal view returns (uint32) {
     return
       vm
         .randomUint(MIN_LIQUIDATION_BONUS, _maxLiquidationBonusUpperBound(spoke, reserveId))
         .toUint32();
   }
 
-  function _randomCollateralFactor(ISpoke spoke, uint256 reserveId) internal returns (uint16) {
+  function _randomCollateralFactor(ISpoke spoke, uint256 reserveId) internal view returns (uint16) {
     return vm.randomUint(10_00, _collateralFactorUpperBound(spoke, reserveId)).toUint16();
   }
 }

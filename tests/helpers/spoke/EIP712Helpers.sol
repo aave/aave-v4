@@ -93,7 +93,7 @@ abstract contract EIP712Helpers is Test {
     INoncesKeyed verifier,
     address user,
     uint192 key
-  ) internal returns (uint256) {
+  ) internal view returns (uint256) {
     (uint192 currentKey, uint64 currentNonce) = _unpackNonce(verifier.nonces(user, key));
     assertEq(currentKey, key);
     uint64 nonce = _randomNonce();
@@ -101,16 +101,16 @@ abstract contract EIP712Helpers is Test {
     return _packNonce(key, nonce);
   }
 
-  function _getRandomNonceAtKey(uint192 key) internal returns (uint256) {
+  function _getRandomNonceAtKey(uint192 key) internal view returns (uint256) {
     uint64 nonce = _randomNonce();
     return _packNonce(key, nonce);
   }
 
-  function _randomNonceKey() internal returns (uint192) {
+  function _randomNonceKey() internal view returns (uint192) {
     return uint192(vm.randomUint());
   }
 
-  function _randomNonce() internal returns (uint64) {
+  function _randomNonce() internal view returns (uint64) {
     return uint64(vm.randomUint());
   }
 
