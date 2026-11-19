@@ -32,7 +32,7 @@ library AaveV4SpokeImplementationDeployProcedure {
   }
 
   /// @notice Constructs the full init code for a Spoke instance by appending constructor arguments.
-  /// @param spokeBytecode The creation bytecode of the Spoke implementation.
+  /// @param spokeBytecode The creation bytecode of the SpokeInstance contract.
   /// @param oracle The oracle address to encode as a constructor argument.
   /// @param maxUserReservesLimit The maximum number of user reserves to encode as a constructor argument.
   /// @return The complete init code with encoded constructor arguments.
@@ -45,7 +45,7 @@ library AaveV4SpokeImplementationDeployProcedure {
   }
 
   /// @notice Returns the hash of the full init code of a Spoke instance, constructor arguments included.
-  /// @param spokeBytecode The creation bytecode of the Spoke implementation.
+  /// @param spokeBytecode The creation bytecode of the SpokeInstance contract.
   /// @param oracle The oracle address encoded as a constructor argument.
   /// @param maxUserReservesLimit The maximum number of user reserves encoded as a constructor argument.
   /// @return The keccak256 hash of the init code.

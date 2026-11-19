@@ -7,8 +7,9 @@ import {IHubInstance} from 'src/deployments/utils/interfaces/IHubInstance.sol';
 /// @title AaveV4HubProxyDeployProcedure
 /// @author Aave Labs
 /// @notice Deploys the transparent proxy of a Hub instance.
-/// @dev The implementation is deployed in its own transaction (see `AaveV4HubImplementationDeployProcedure.deployHubImplementation`)
-///      so that each step fits on chains with a per-transaction gas cap. The implementation must be the CREATE2
+/// @dev The implementation is deployed in its own transaction (see
+///      `AaveV4HubImplementationDeployProcedure.deployHubImplementation`), so that each step fits under Tempo's
+///      per-transaction gas cap and, after Glamsterdam, the block gas limit. The implementation must be the CREATE2
 ///      deployment of `hubInitCodeHash` under `salt`, which pins its exact code.
 contract AaveV4HubProxyDeployProcedure {
   /// @notice Deploys a transparent proxy for an already deployed Hub implementation via CREATE2.

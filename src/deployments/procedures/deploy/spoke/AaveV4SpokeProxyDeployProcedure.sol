@@ -7,8 +7,9 @@ import {ISpokeInstance} from 'src/deployments/utils/interfaces/ISpokeInstance.so
 /// @title AaveV4SpokeProxyDeployProcedure
 /// @author Aave Labs
 /// @notice Deploys the transparent proxy of a Spoke instance.
-/// @dev The implementation is deployed in its own transaction (see `AaveV4SpokeImplementationDeployProcedure.deploySpokeImplementation`)
-///      so that each step fits on chains with a per-transaction gas cap. The implementation must be the CREATE2
+/// @dev The implementation is deployed in its own transaction (see
+///      `AaveV4SpokeImplementationDeployProcedure.deploySpokeImplementation`), so that each step fits under Tempo's
+///      per-transaction gas cap and, after Glamsterdam, the block gas limit. The implementation must be the CREATE2
 ///      deployment of `spokeInitCodeHash` under `salt`, which pins its exact code.
 contract AaveV4SpokeProxyDeployProcedure {
   /// @notice Deploys a transparent proxy for an already deployed Spoke implementation via CREATE2.
