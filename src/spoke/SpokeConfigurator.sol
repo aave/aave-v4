@@ -527,12 +527,11 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
     return _frozenByFreezeAsset[spoke][_resolveReserveKey(spoke, hub, underlying).reserveId];
   }
 
-  /// @dev Sets the frozen flag and zeroes the collateral factor. Returns whether each one changed.
-  function _freezeReserve(
-    ReserveKey memory key
-  ) internal returns (bool frozenUpdated, bool collateralFactorZeroed) {
+  /// @dev Sets the frozen flag and zeroes the collateral factor. Returns whether the frozen flag changed
+  /// and whether the collateral factor was zeroed.
+  function _freezeReserve(ReserveKey memory key) internal returns (bool, bool) {
     ISpoke.ReserveConfig memory reserveConfig = key.spoke.getReserveConfig(key.reserveId);
-    frozenUpdated = !reserveConfig.frozen;
+    bool frozenUpdated = !reserveConfig.frozen;
     if (frozenUpdated) {
       reserveConfig.frozen = true;
       key.spoke.updateReserveConfig(key.reserveId, reserveConfig);
@@ -545,7 +544,7 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
         true
       );
     }
-    collateralFactorZeroed = _zeroCollateralFactor(key);
+    return (frozenUpdated, _zeroCollateralFactor(key));
   }
 
   /// @dev Clears the frozen flag. Returns false if the reserve is not frozen.
