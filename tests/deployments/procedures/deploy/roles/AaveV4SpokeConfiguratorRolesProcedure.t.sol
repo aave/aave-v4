@@ -123,11 +123,11 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
     assertEq(selectors[21], ISpokeConfigurator.unfreezeReserve.selector);
     assertEq(selectors[22], ISpokeConfigurator.freezeSpoke.selector);
     assertEq(selectors[23], ISpokeConfigurator.unfreezeSpoke.selector);
-    assertEq(selectors[24], ISpokeConfigurator.zeroCollateralFactor.selector);
-    assertEq(selectors[25], ISpokeConfigurator.restoreCollateralFactor.selector);
-    assertEq(selectors[26], ISpokeConfigurator.updatePositionManager.selector);
-    assertEq(selectors[27], ISpokeConfigurator.freezeAsset.selector);
-    assertEq(selectors[28], ISpokeConfigurator.unfreezeAsset.selector);
+    assertEq(selectors[24], ISpokeConfigurator.freezeAsset.selector);
+    assertEq(selectors[25], ISpokeConfigurator.unfreezeAsset.selector);
+    assertEq(selectors[26], ISpokeConfigurator.zeroCollateralFactor.selector);
+    assertEq(selectors[27], ISpokeConfigurator.restoreCollateralFactor.selector);
+    assertEq(selectors[28], ISpokeConfigurator.updatePositionManager.selector);
   }
 
   function test_canCall_spokeConfiguratorAllRoles() public {

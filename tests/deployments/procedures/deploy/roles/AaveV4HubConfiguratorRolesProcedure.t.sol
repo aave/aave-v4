@@ -109,19 +109,19 @@ contract AaveV4HubConfiguratorRolesProcedureTest is ProceduresBase {
     assertEq(selectors[7], IHubConfigurator.resetAssetCaps.selector);
     assertEq(selectors[8], IHubConfigurator.deactivateAsset.selector);
     assertEq(selectors[9], IHubConfigurator.haltAsset.selector);
-    assertEq(selectors[10], IHubConfigurator.addSpoke.selector);
-    assertEq(selectors[11], IHubConfigurator.addSpokeToAssets.selector);
-    assertEq(selectors[12], IHubConfigurator.updateSpokeActive.selector);
-    assertEq(selectors[13], IHubConfigurator.updateSpokeHalted.selector);
-    assertEq(selectors[14], IHubConfigurator.updateSpokeAddCap.selector);
-    assertEq(selectors[15], IHubConfigurator.updateSpokeDrawCap.selector);
-    assertEq(selectors[16], IHubConfigurator.updateSpokeRiskPremiumThreshold.selector);
-    assertEq(selectors[17], IHubConfigurator.updateSpokeCaps.selector);
-    assertEq(selectors[18], IHubConfigurator.deactivateSpoke.selector);
-    assertEq(selectors[19], IHubConfigurator.haltSpoke.selector);
-    assertEq(selectors[20], IHubConfigurator.resetSpokeCaps.selector);
-    assertEq(selectors[21], IHubConfigurator.updateInterestRateData.selector);
-    assertEq(selectors[22], IHubConfigurator.unhaltAsset.selector);
+    assertEq(selectors[10], IHubConfigurator.unhaltAsset.selector);
+    assertEq(selectors[11], IHubConfigurator.addSpoke.selector);
+    assertEq(selectors[12], IHubConfigurator.addSpokeToAssets.selector);
+    assertEq(selectors[13], IHubConfigurator.updateSpokeActive.selector);
+    assertEq(selectors[14], IHubConfigurator.updateSpokeHalted.selector);
+    assertEq(selectors[15], IHubConfigurator.updateSpokeAddCap.selector);
+    assertEq(selectors[16], IHubConfigurator.updateSpokeDrawCap.selector);
+    assertEq(selectors[17], IHubConfigurator.updateSpokeRiskPremiumThreshold.selector);
+    assertEq(selectors[18], IHubConfigurator.updateSpokeCaps.selector);
+    assertEq(selectors[19], IHubConfigurator.deactivateSpoke.selector);
+    assertEq(selectors[20], IHubConfigurator.haltSpoke.selector);
+    assertEq(selectors[21], IHubConfigurator.resetSpokeCaps.selector);
+    assertEq(selectors[22], IHubConfigurator.updateInterestRateData.selector);
   }
 
   function test_canCall_hubConfiguratorAllRoles() public {
