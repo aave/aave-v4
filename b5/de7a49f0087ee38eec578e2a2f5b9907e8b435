@@ -1,0 +1,21 @@
+src/deployments/README.md
+  s_8735c0799a11e7::t_6bf3d2962b256b 39
+src/spoke/interfaces/IBabylonSpoke.sol
+  s_8735c0799a11e7::t_36dcd6e9417082 11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "b5de7a49f0087ee38eec578e2a2f5b9907e8b435",
+  "prompts": {},
+  "sessions": {
+    "s_8735c0799a11e7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3b79ae1e-863b-4fc1-bc48-ba957ce7e0b8",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}

@@ -1,0 +1,19 @@
+src/deployments/utils/libraries/Create2Utils.sol
+  s_27fab5745547ad::t_5a64d222db749b 48-53
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "643d57d46005345f2c7d0538394b4ffc0624b064",
+  "prompts": {},
+  "sessions": {
+    "s_27fab5745547ad": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "22f58971-b6d2-43ce-8b14-439bca4ad409",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}

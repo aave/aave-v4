@@ -1,0 +1,19 @@
+foundry.lock
+  s_ead1d3e903e939::t_b445eca585f782 9-12
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "374a4212107a8d02c83301b7dc3da77b797b96d7",
+  "prompts": {},
+  "sessions": {
+    "s_ead1d3e903e939": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a044ab-f5ff-7ae0-9f39-fb277c8bc29b",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "DhairyaSethi <55102840+DhairyaSethi@users.noreply.github.com>"
+    }
+  }
+}

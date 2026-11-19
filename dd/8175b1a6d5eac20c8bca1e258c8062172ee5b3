@@ -1,0 +1,22 @@
+foundry.toml
+  s_4234357a097dc9::t_a3ef504fe138e5 31
+  s_4234357a097dc9::t_04ac2ac0bbcc96 25
+snapshots/BabylonSpoke.Operations.json
+  s_4234357a097dc9::t_fe0ed6fee35c38 2-28
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "dd8175b1a6d5eac20c8bca1e258c8062172ee5b3",
+  "prompts": {},
+  "sessions": {
+    "s_4234357a097dc9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e46603eb-682a-4e30-8a94-e7285f89e305",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}

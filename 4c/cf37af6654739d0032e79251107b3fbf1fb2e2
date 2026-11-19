@@ -1,0 +1,62 @@
+src/spoke/instances/SpokeInstance.sol
+  s_c9afbd6b4e2490::t_3b9ad8e2968dc6 32-33
+snapshots/Spoke.Operations.ZeroRiskPremium.json
+  s_c9afbd6b4e2490::t_5b3734d48e7879 2-8,11,16,20-32
+snapshots/ConfigPositionManager.Operations.json
+  s_c9afbd6b4e2490::t_5b3734d48e7879 10-12
+snapshots/SignatureGateway.Operations.json
+  s_c9afbd6b4e2490::t_5b3734d48e7879 2-3,5-9
+tests/gas/Spoke.ManyCollaterals.gas.t.sol
+  s_c9afbd6b4e2490::t_b64f78d085a934 1-23,70-139
+  s_c9afbd6b4e2490::t_50d2e669a6f810 24-69
+src/spoke/libraries/RiskTierList.sol
+  s_c9afbd6b4e2490::t_4d2ef7f5eb1d48 48,50,52
+  s_c9afbd6b4e2490::t_3dbc542e384dbc 1-11,14-19,21-22,24-25,27-29,40,42,54,59-68,70,75-78
+  s_c9afbd6b4e2490::t_96141bae3185b5 12-13,20,23,26,30-39,41,43-47,49,51,53,55-58,69,71-74
+snapshots/GiverPositionManager.Operations.json
+  s_c9afbd6b4e2490::t_5b3734d48e7879 2-3
+snapshots/Spoke.ManyCollaterals.json
+  s_c9afbd6b4e2490::t_50d2e669a6f810 1,29
+  s_c9afbd6b4e2490::t_7a9b544a504894 2-28
+snapshots/Spoke.Getters.json
+  s_c9afbd6b4e2490::t_5b3734d48e7879 2-6
+tests/contracts/spoke/libraries/RiskTierList.t.sol
+  s_c9afbd6b4e2490::t_df60893dcff981 58-59,61-88
+  s_c9afbd6b4e2490::t_f9443378db6bc9 60
+  s_c9afbd6b4e2490::t_1b1d4bd20d80ff 110
+  s_c9afbd6b4e2490::t_bf8dd0353f18b2 47-50,53,120-126
+  s_c9afbd6b4e2490::t_69200a4089924f 1-46,51-52,54-57,89-109,111-119,127-143
+snapshots/Spoke.Operations.json
+  s_c9afbd6b4e2490::t_5b3734d48e7879 2-8,11,16,20-32
+tests/contracts/spoke/configuration/Spoke.CollateralRiskTier.t.sol
+  s_c9afbd6b4e2490::t_1eb72089df5de1 1-57,60,63-65,67-70,81-83,87-124
+  s_c9afbd6b4e2490::t_af66a0a37212ad 58-59,61-62,66,71-80,84-86
+src/spoke/interfaces/ISpoke.sol
+  s_c9afbd6b4e2490::t_10f05ab25953c2 44,54,386-387
+  s_c9afbd6b4e2490::t_f44d1133613ffc 388
+src/spoke/Spoke.sol
+  s_c9afbd6b4e2490::t_3b9ad8e2968dc6 18,50,156-157,160,176-179,718,747,791,795-798,813-860
+  s_c9afbd6b4e2490::t_00fdf9719fcf96 861
+tests/contracts/spoke/libraries/SpokeUtils.t.sol
+  s_c9afbd6b4e2490::t_ce5164d15b075e 25-26,36-37,47-48
+snapshots/TakerPositionManager.Operations.json
+  s_c9afbd6b4e2490::t_5b3734d48e7879 5-6,9-10
+snapshots/NativeTokenGateway.Operations.json
+  s_c9afbd6b4e2490::t_5b3734d48e7879 2-7
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "4ccf37af6654739d0032e79251107b3fbf1fb2e2",
+  "prompts": {},
+  "sessions": {
+    "s_c9afbd6b4e2490": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ab026bbd-b3fa-4c42-9d10-646044ff8f22",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "DhairyaSethi <55102840+DhairyaSethi@users.noreply.github.com>"
+    }
+  }
+}

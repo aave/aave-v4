@@ -1,0 +1,38 @@
+src/config-engine/libraries/TokenizationSpokeDeployer.sol
+  5cbfca345ded2e91 6
+scripts/deploy/AaveV4DeployBatchBase.s.sol
+  7b925b73115efc5c 32
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.22",
+  "base_commit_sha": "5a7d845965e61a7579f289dc67ce4e4e07043681",
+  "prompts": {
+    "5cbfca345ded2e91": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "377efc66-accf-43de-9c46-02021b98e86c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "YBM <31329384+yan-man@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 6,
+      "total_deletions": 37,
+      "accepted_lines": 5,
+      "overriden_lines": 0
+    },
+    "7b925b73115efc5c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9a6fd40f-1619-440a-9ae6-15d11edae335",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "YBM <31329384+yan-man@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 1,
+      "total_deletions": 0,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    }
+  }
+}

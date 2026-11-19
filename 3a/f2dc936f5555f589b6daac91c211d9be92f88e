@@ -1,0 +1,23 @@
+snapshots/BabylonSpoke.Operations.json
+  s_4234357a097dc9::t_6402a32def1905 4-8
+src/spoke/libraries/BabylonLiquidationLogic.sol
+  s_4234357a097dc9::t_9476b383767071 29,523,531-535
+src/spoke/libraries/PositionStatusMap.sol
+  s_4234357a097dc9::t_09da57bf520495 194-207
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "3af2dc936f5555f589b6daac91c211d9be92f88e",
+  "prompts": {},
+  "sessions": {
+    "s_4234357a097dc9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e46603eb-682a-4e30-8a94-e7285f89e305",
+        "model": "unknown"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}

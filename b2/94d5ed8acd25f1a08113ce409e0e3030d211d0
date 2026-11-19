@@ -1,0 +1,94 @@
+src/deployments/procedures/roles/AaveV4AccessManagerRolesProcedure.sol
+  s_4234357a097dc9::t_b974e41a88558a 30
+src/deployments/utils/libraries/InputUtils.sol
+  s_4234357a097dc9::t_b974e41a88558a 30-31,51-52
+src/config-engine/interfaces/IAaveV4ConfigEngine.sol
+  s_4234357a097dc9::t_8ec854db8fff3b 221-232,407-410
+  s_4234357a097dc9::t_66bcab953db64e 411-412
+src/deployments/libraries/OrchestrationReports.sol
+  s_4234357a097dc9::t_b974e41a88558a 37
+src/spoke/SpokeConfigurator.sol
+  s_4234357a097dc9::t_8ec854db8fff3b 8,73-82
+  s_4234357a097dc9::t_521a900eaf3453 83-84
+scripts/deploy/AaveV4DeployBatchBase.s.sol
+  s_4234357a097dc9::t_d35bb1391381ce 55-56
+snapshots/Hub.Operations.json
+  s_4234357a097dc9::t_c4a2c0ed58f8ac 14
+src/deployments/utils/libraries/Roles.sol
+  s_4234357a097dc9::t_b974e41a88558a 5,60,145-148
+  s_4234357a097dc9::t_8ec854db8fff3b 156,181
+  s_4234357a097dc9::t_0569a6f49f77a2 149-151
+src/deployments/utils/interfaces/IBabylonSpokeInstance.sol
+  s_4234357a097dc9::t_dbf185d1dfd409 1-16
+tests/config-engine/AaveV4Payload.EmptyReturns.t.sol
+  s_4234357a097dc9::t_1351c9cbff0339 91-94
+src/deployments/utils/MetadataLogger.sol
+  s_4234357a097dc9::t_23f6d6567e3323 70-94
+tests/deployments/procedures/deploy/roles/AaveV4SpokeConfiguratorRolesProcedure.t.sol
+  s_4234357a097dc9::t_1351c9cbff0339 101,126
+src/deployments/utils/libraries/BytecodeHelper.sol
+  s_4234357a097dc9::t_b974e41a88558a 23-28
+tests/deployments/fork/PostDeploymentVerificationTest.t.sol
+  s_4234357a097dc9::t_d35bb1391381ce 220-221,274-275
+scripts/deploy/examples/AaveV4DeployAnvil.s.sol
+  s_4234357a097dc9::t_d35bb1391381ce 60-61
+tests/deployments/AaveV4BatchDeployment.t.sol
+  s_4234357a097dc9::t_8c2607b8d662c1 5,300,332-358,360-367,373,423-424,460-461
+  s_4234357a097dc9::t_d35bb1391381ce 30-31,304,377
+  s_4234357a097dc9::t_130854b26c70dd 6
+  s_4234357a097dc9::t_72632cb5e9ec3b 359
+tests/utils/BatchTestProcedures.sol
+  s_4234357a097dc9::t_d35bb1391381ce 74
+  s_4234357a097dc9::t_7e83e0390db0c2 70,171-172,444
+tests/deployments/batches/BatchBase.t.sol
+  s_4234357a097dc9::t_9b82f20dfc5f56 16
+  s_4234357a097dc9::t_8aab97a3c6742c 44,52-54
+tests/deployments/fork/PostDeploymentVerificationBase.t.sol
+  s_4234357a097dc9::t_d35bb1391381ce 120-121,152-153,182-183
+tests/scripts/AaveV4DeployBatchBaseScript.t.sol
+  s_4234357a097dc9::t_d35bb1391381ce 71-72
+tests/deployments/batches/AaveV4BabylonSpokeInstanceBatch.t.sol
+  s_4234357a097dc9::t_149a78d879bb5d 1-105
+scripts/utils/SpokeDeployUtils.sol
+  s_4234357a097dc9::t_23f6d6567e3323 25-35,37-40,45-47,56,58
+src/spoke/interfaces/ISpokeConfigurator.sol
+  s_4234357a097dc9::t_8ec854db8fff3b 43-51
+  s_4234357a097dc9::t_e28a416ef42bf5 42
+src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol
+  s_4234357a097dc9::t_b974e41a88558a 19-26,55-64,66
+  s_4234357a097dc9::t_44eb1336a9513c 65,67
+src/deployments/batches/AaveV4BabylonSpokeInstanceBatch.sol
+  s_4234357a097dc9::t_dbf185d1dfd409 1-61
+src/config-engine/AaveV4ConfigEngine.sol
+  s_4234357a097dc9::t_ee572b1bc85cf8 77-83
+src/config-engine/AaveV4Payload.sol
+  s_4234357a097dc9::t_b9acc239f58f4f 154-164,362-372
+src/config-engine/libraries/SpokeEngine.sol
+  s_4234357a097dc9::t_b7aaadbd1832d7 139-153
+src/deployments/orchestration/AaveV4DeployBase.sol
+  s_4234357a097dc9::t_74e42fa77f6599 12,113-139
+src/deployments/orchestration/AaveV4DeployOrchestration.sol
+  s_4234357a097dc9::t_4ab4246da03cf1 29,36-37,78,99-107,139,147-153,250-310,491-502,568-592
+tests/config-engine/BaseConfigEngine.t.sol
+  s_4234357a097dc9::t_8869eeed26c514 5,213-227
+tests/config-engine/SpokeEngine.t.sol
+  s_4234357a097dc9::t_c24712140b586b 5,611-665
+tests/deployments/procedures/deploy/roles/AaveV4AccessManagerRolesProcedure.t.sol
+  s_4234357a097dc9::t_17f69d869adf5a 187-199,215
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "b294d5ed8acd25f1a08113ce409e0e3030d211d0",
+  "prompts": {},
+  "sessions": {
+    "s_4234357a097dc9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e46603eb-682a-4e30-8a94-e7285f89e305",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}

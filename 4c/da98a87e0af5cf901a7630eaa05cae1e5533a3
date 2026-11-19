@@ -1,0 +1,19 @@
+tests/scripts/AaveV4DeployUSDGCorrelatedSpoke.t.sol
+  s_066c5b122888dc::t_7a21f16422f692 13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "4cda98a87e0af5cf901a7630eaa05cae1e5533a3",
+  "prompts": {},
+  "sessions": {
+    "s_066c5b122888dc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8f06fd84-89aa-44fd-a3b5-0cd3ad9f6d2e",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}

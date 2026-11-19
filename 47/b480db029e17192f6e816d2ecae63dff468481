@@ -1,0 +1,30 @@
+src/spoke/interfaces/ISpoke.sol
+  s_287a736c2d679d::t_274eb573b4a28d 369-371
+tests/helpers/mocks/MockPermissionedBorrowSpokeInstance.sol
+  s_287a736c2d679d::t_274eb573b4a28d 1-29
+src/spoke/Spoke.sol
+  s_287a736c2d679d::t_b11377b6ff7c4e 284
+  s_287a736c2d679d::t_5ecdbdb2b2c993 885-888
+  s_287a736c2d679d::t_274eb573b4a28d 283,285-286,882-884,889-890
+  s_287a736c2d679d::t_3e7d8ad0711779 891-892
+tests/contracts/spoke/borrow/Spoke.BorrowAccess.t.sol
+  s_287a736c2d679d::t_274eb573b4a28d 1-29,34-56,61-62,64,66,74,76,82,84-86,88-91,93,111-112
+  s_287a736c2d679d::t_5f58790978d2ca 30-33
+  s_287a736c2d679d::t_16785e26c67550 57-60,63,65,67-73,75,77-81,83,87,92,94-110
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "47b480db029e17192f6e816d2ecae63dff468481",
+  "prompts": {},
+  "sessions": {
+    "s_287a736c2d679d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fdb6a-e215-7ad2-9571-9460e7cc38d9",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}

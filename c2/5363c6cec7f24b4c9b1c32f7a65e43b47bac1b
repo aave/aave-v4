@@ -1,0 +1,53 @@
+tests/deployments/fork/PostDeploymentVerificationBase.t.sol
+  7b925b73115efc5c 83-84,103-104
+  a3fee25850ae2403 7-9,114-144,146-166
+tests/deployments/fork/PostDeploymentVerificationTest.t.sol
+  a3fee25850ae2403 10,17-38,42-53,55-58,60-68,73,77-84,86-118,121-129
+  0c60325957cf70a6 54,69-70,72
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.22",
+  "base_commit_sha": "c25363c6cec7f24b4c9b1c32f7a65e43b47bac1b",
+  "prompts": {
+    "0c60325957cf70a6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "768e740e-f293-4da7-8f48-2694a6f0ba96",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "YBM <31329384+yan-man@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 4,
+      "total_deletions": 2,
+      "accepted_lines": 4,
+      "overriden_lines": 0
+    },
+    "7b925b73115efc5c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9a6fd40f-1619-440a-9ae6-15d11edae335",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "YBM <31329384+yan-man@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 88,
+      "total_deletions": 5,
+      "accepted_lines": 84,
+      "overriden_lines": 0
+    },
+    "a3fee25850ae2403": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e6145b83-2bb3-4185-9373-6ed6cef841e5",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "YBM <31329384+yan-man@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 460,
+      "total_deletions": 347,
+      "accepted_lines": 160,
+      "overriden_lines": 4
+    }
+  }
+}

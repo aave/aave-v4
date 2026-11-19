@@ -1,0 +1,217 @@
+gas-snapshots/COMPILER_FEEDBACK_DIARY.md
+  s_8e72de22930d7b::t_3c98dc46591d81 1,3,5,9-236
+gas-snapshots/README.md
+  s_8e72de22930d7b::t_4dbec7486a3a95 3-11,37,59,80-82,95-107,109
+gas-snapshots/comparison-parity-fixes/README.md
+  s_8e72de22930d7b::t_3287a6f2fb3d2b 1-92
+gas-snapshots/comparison-parity-fixes/comparison.json
+  s_8e72de22930d7b::t_513e7947b668bc 1-1211
+gas-snapshots/solidity-parity-fixes/ConfigPositionManager.Operations.json
+  s_8e72de22930d7b::t_309cff520bc055 1-13
+gas-snapshots/solidity-parity-fixes/GiverPositionManager.Operations.json
+  s_8e72de22930d7b::t_dd773daafcb1a5 1-4
+gas-snapshots/solidity-parity-fixes/Hub.Operations.json
+  s_8e72de22930d7b::t_e2e73f820ee6a9 1-18
+gas-snapshots/solidity-parity-fixes/NativeTokenGateway.Operations.json
+  s_8e72de22930d7b::t_0a27455310f240 1-8
+gas-snapshots/solidity-parity-fixes/PositionManagerBase.Operations.json
+  s_8e72de22930d7b::t_32ec73c92ed7db 1-3
+gas-snapshots/solidity-parity-fixes/SignatureGateway.Operations.json
+  s_8e72de22930d7b::t_35367745ee5517 1-10
+gas-snapshots/solidity-parity-fixes/Spoke.Getters.json
+  s_8e72de22930d7b::t_ed687029c40bcf 1-7
+gas-snapshots/solidity-parity-fixes/Spoke.Operations.ZeroRiskPremium.json
+  s_8e72de22930d7b::t_2fb620aa9bcaa3 1-34
+gas-snapshots/solidity-parity-fixes/Spoke.Operations.json
+  s_8e72de22930d7b::t_e11976e6b3413a 1-34
+gas-snapshots/solidity-parity-fixes/TakerPositionManager.Operations.json
+  s_8e72de22930d7b::t_4bfb429797fa3d 1-11
+gas-snapshots/solidity-parity-fixes/TokenizationSpoke.Operations.json
+  s_8e72de22930d7b::t_4e95b1e5ed967c 1-17
+gas-snapshots/vyper-parity-fixes-build.json
+  s_8e72de22930d7b::t_0e4c4e4cdc50a0 1-1182
+scripts/build_vyper.py
+  s_8e72de22930d7b::t_cfe85e1142f570 6,10,12,18-19,21,28,33,44,66-69,97-114,123,133-138,148-150,168,171-183,186,191
+scripts/check_vyper_build.py
+  s_8e72de22930d7b::t_ed2aa6b1e6b81a 1-74
+scripts/check_vyper_capabilities.py
+  s_8e72de22930d7b::t_e232606a323703 1-55
+scripts/check_vyper_memory_allocation.py
+  s_8e72de22930d7b::t_b1e21ba3f80d15 1-79
+scripts/compare_vyper_gas.py
+  s_8e72de22930d7b::t_2a74ec0585dcaa 78,134,138,213-215,231,248,254
+scripts/measure_vyper_helper_size.py
+  s_8e72de22930d7b::t_9e87ead9a9be64 1-126
+scripts/vyper_abi.py
+  s_8e72de22930d7b::t_73ae5ef656a665 1-50
+tests/contracts/access/AccessManaged.Parity.t.sol
+  s_8e72de22930d7b::t_a84c4fd0c5f442 1-58
+tests/contracts/libraries/math/MathUtils.t.sol
+  s_8e72de22930d7b::t_a094a5a30a745f 262-266
+tests/contracts/position-manager/ConfigPositionManager/ConfigPositionManager.Permit.t.sol
+  s_8e72de22930d7b::t_e954824423375e 509-528
+tests/contracts/position-manager/SignatureGateway/SignatureGateway.t.sol
+  s_8e72de22930d7b::t_da5932c94ee468 469-484
+tests/contracts/position-manager/TakerPositionManager/TakerPositionManager.Permit.t.sol
+  s_8e72de22930d7b::t_3963fccf67ea93 245-262
+tests/contracts/spoke/configuration/Spoke.DynamicConfig.t.sol
+  s_8e72de22930d7b::t_6184717f9710c5 16-25
+tests/contracts/spoke/misc/Spoke.ReserveUniverse.t.sol
+  s_8e72de22930d7b::t_cdab82bec850a3 1-55
+tests/contracts/spoke/misc/Spoke.UserAccountData.t.sol
+  s_8e72de22930d7b::t_08a1f56183af10 264-265,270-273,275
+tests/contracts/tokenization-spoke/TokenizationSpoke.WithSig.t.sol
+  s_8e72de22930d7b::t_da79dd71a088e8 148-166
+tests/helpers/hub/MockHelpers.sol
+  s_8e72de22930d7b::t_d32d1cb952dc57 8,115-118,123-124
+tests/helpers/spoke/SetupHelpers.sol
+  s_8e72de22930d7b::t_cdc3664bec1515 242-247
+vyper/README.md
+  s_8e72de22930d7b::t_f49f6697a495fd 7-10,24-27,40,45-46,65-66
+vyper/compiler-feedback/access-manager-proposed.patch
+  s_8e72de22930d7b::t_6480813bb920ad 1-257
+vyper/compiler-feedback/build-verification.json
+  s_8e72de22930d7b::t_e3d4e4884818e6 1-78
+vyper/compiler-feedback/capabilities.json
+  s_8e72de22930d7b::t_242982d6cdb0b1 1-32
+vyper/compiler-feedback/cases/nested_bytes_array.vy
+  s_8e72de22930d7b::t_8a9c177f612c1e 1-5
+vyper/compiler-feedback/cases/nested_struct_array.vy
+  s_8e72de22930d7b::t_3e902dbaaac56c 1-8
+vyper/compiler-feedback/cases/runtime_return_data.vy
+  s_8e72de22930d7b::t_0f40854768e1d1 1-4
+vyper/compiler-feedback/determinism/README.md
+  s_8e72de22930d7b::t_c4598203ace097 1-38
+vyper/compiler-feedback/determinism/compile.py
+  s_8e72de22930d7b::t_663aafc1c1b10c 1-12
+vyper/compiler-feedback/determinism/ir-diff.txt
+  s_8e72de22930d7b::t_15ba72db5b6a2c 1-176
+vyper/compiler-feedback/determinism/results.json
+  s_8e72de22930d7b::t_de569defc02f4c 1-38
+vyper/compiler-feedback/helper-removal-sizes.json
+  s_8e72de22930d7b::t_1e32846ec7dcf1 1-79
+vyper/compiler-feedback/memory-allocation/results.txt
+  s_8e72de22930d7b::t_72c1ee4964ad9e 1-24
+vyper/production-abi.json
+  s_8e72de22930d7b::t_574325378aff83 1-622
+vyper/src/access/AccessManagerEnumerable.vy
+  s_8e72de22930d7b::t_1e2c71cea07d61 11-13,107,504,509,539,561,585,602-605,791-792,797-801,803-805
+vyper/src/access/interfaces/IAccessManagerEnumerable.vyi
+  s_8e72de22930d7b::t_acd3087e45dd7e 69,251,256,262,267,272
+vyper/src/harness/LiquidationLogicWrapper.vy
+  s_8e72de22930d7b::t_f681242459bf44 3,206
+vyper/src/harness/MockHubInstance.vy
+  s_8e72de22930d7b::t_43f5bf7db4b89f 1-17
+vyper/src/harness/MockSpokeInstance.vy
+  s_8e72de22930d7b::t_0136c027781065 1-57
+vyper/src/hub/HubConfigurator.vy
+  s_8e72de22930d7b::t_b01368b605fcec 2,9-10,29,66
+vyper/src/hub/interfaces/IHub.vyi
+  s_8e72de22930d7b::t_36cd3caefa69ae 248,579
+vyper/src/hub/interfaces/IHubConfigurator.vyi
+  s_8e72de22930d7b::t_d0e3c70b9a846a 32
+vyper/src/libraries/math/MathUtils.vy
+  s_8e72de22930d7b::t_d923fb21466c02 49-51
+vyper/src/position_manager/ConfigPositionManager.vy
+  s_8e72de22930d7b::t_fe23152ba867b1 3,50,53
+vyper/src/position_manager/GiverPositionManager.vy
+  s_8e72de22930d7b::t_a301225ad82e81 3,27,32
+vyper/src/position_manager/NativeTokenGateway.vy
+  s_8e72de22930d7b::t_09336f3f009b07 3,63
+vyper/src/position_manager/PositionManagerBase.vy
+  s_8e72de22930d7b::t_eb2a919424ad57 2,6-8,50,173-174,177,180-182
+vyper/src/position_manager/PositionManagerBaseWrapper.vy
+  s_8e72de22930d7b::t_95f7130286d101 24-30
+vyper/src/position_manager/SignatureGateway.vy
+  s_8e72de22930d7b::t_0fa1dcf2a3189a 3-4,50,53,66,71,76
+vyper/src/position_manager/TakerPositionManager.vy
+  s_8e72de22930d7b::t_30d760ccf46f7d 3-4,48,51,70
+vyper/src/spoke/SpokeConfigurator.vy
+  s_8e72de22930d7b::t_2b29d7d0d99828 2,8-10,28,81
+vyper/src/spoke/SpokeInstance.vy
+  s_8e72de22930d7b::t_0d0b7cef8ba498 3-5,21-23,35-39,245,251,271,299,329,522,544,566,589,610,623,627-629,644,646,663-665,680-681,683,687,690-692,700,703-704,719,953,1176,1359-1360,1372,1375,1378-1379,1381-1385,1388-1390
+vyper/src/spoke/TokenizationSpokeInstance.vy
+  s_8e72de22930d7b::t_a7909efe75d6ad 2-3,87,89,94,97,158
+vyper/src/spoke/TreasurySpokeInstance.vy
+  s_8e72de22930d7b::t_fc1376dfd0698f 2,26,31
+vyper/src/spoke/interfaces/ISpoke.vyi
+  s_8e72de22930d7b::t_37889320c90ddb 295,374,557-558
+vyper/src/spoke/interfaces/ISpokeConfigurator.vyi
+  s_8e72de22930d7b::t_0c447c1f9a16c0 29
+vyper/src/utils/Rescuable.vy
+  s_8e72de22930d7b::t_e8457626ccda82 3,23
+vyper/src/utils/SafeERC20.vy
+  s_8e72de22930d7b::t_80433d03c8644c 1-36
+vyper/src/utils/SignatureChecker.vy
+  s_8e72de22930d7b::t_4f588c3a204d02 1-44
+vyper/storage-layouts/MockHubInstance.json
+  s_8e72de22930d7b::t_a956c57ca48837 1-44
+gas-snapshots/vyper-parity-fixes/ConfigPositionManager.Operations.json
+  s_a0719d07ae2159::t_0b40afb1b09e2c 1-13
+gas-snapshots/vyper-parity-fixes/GiverPositionManager.Operations.json
+  s_a0719d07ae2159::t_e131092a3098e6 1-4
+gas-snapshots/vyper-parity-fixes/Hub.Operations.json
+  s_a0719d07ae2159::t_adce0f865bf2f7 1-18
+gas-snapshots/vyper-parity-fixes/NativeTokenGateway.Operations.json
+  s_a0719d07ae2159::t_ef17769f1fabb6 1-8
+gas-snapshots/vyper-parity-fixes/PositionManagerBase.Operations.json
+  s_a0719d07ae2159::t_cd9193f11f4f14 1-3
+gas-snapshots/vyper-parity-fixes/SignatureGateway.Operations.json
+  s_a0719d07ae2159::t_5d6f0ea1381909 1-10
+gas-snapshots/vyper-parity-fixes/Spoke.Getters.json
+  s_a0719d07ae2159::t_abf00f3a5326ab 1-7
+gas-snapshots/vyper-parity-fixes/Spoke.Operations.ZeroRiskPremium.json
+  s_a0719d07ae2159::t_8b251128f8676c 1-34
+gas-snapshots/vyper-parity-fixes/Spoke.Operations.json
+  s_a0719d07ae2159::t_7dc43784537851 1-34
+gas-snapshots/vyper-parity-fixes/TakerPositionManager.Operations.json
+  s_a0719d07ae2159::t_1aeade5c03be62 1-11
+gas-snapshots/vyper-parity-fixes/TokenizationSpoke.Operations.json
+  s_a0719d07ae2159::t_ec8d12eaef5c26 1-17
+tests/contracts/spoke/position-manager/Spoke.PositionManager.t.sol
+  s_a0719d07ae2159::t_7b9f3b692cbd31 38-39
+tests/contracts/utils/SafeERC20.Parity.t.sol
+  s_a0719d07ae2159::t_13d31bcf96aaef 1-62
+tests/helpers/spoke/MathHelpers.sol
+  s_a0719d07ae2159::t_c2b4546f3ab84e 147-152
+vyper/compiler-feedback/cases/unbounded_storage.vy
+  s_a0719d07ae2159::t_22bada446a92bd 1-5
+vyper/compiler-feedback/cases/unbounded_storage_string.vy
+  s_a0719d07ae2159::t_91c87441f00fda 1-5
+vyper/compiler-feedback/memory-allocation/Large.vy
+  s_8e72de22930d7b::t_1dddd4a4b3f382 1-11
+vyper/compiler-feedback/memory-allocation/Small.vy
+  s_a0719d07ae2159::t_ef11c68877c684 1-11
+vyper/src/config_engine/AaveV4Payload.vy
+  s_a0719d07ae2159::t_7f9847f9c9bf70 160-161
+vyper/src/harness/SafeERC20Harness.vy
+  s_a0719d07ae2159::t_2d8800357e1d62 1-10
+vyper/src/hub/HubInstance.vy
+  s_a0719d07ae2159::t_ca5f8173d90880 3-4,16-18,182,233,313-314,322,384
+vyper/src/utils/AccessManaged.vy
+  s_a0719d07ae2159::t_3a0212c2fdd4d0 1-53
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "1f7129042fe57e24bfc4c934be5088514cb93503",
+  "prompts": {},
+  "sessions": {
+    "s_8e72de22930d7b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a06e6c-e5b8-75b2-86b4-d296540b599c",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    },
+    "s_a0719d07ae2159": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a06e86-07ad-7a83-930b-1b6c2ab87fc9",
+        "model": "unknown"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}

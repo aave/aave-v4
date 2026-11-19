@@ -1,0 +1,145 @@
+src/deployments/orchestration/AaveV4DeployBase.sol
+  s_0c27e2f42acfcb::t_ed7cf733923b30 13
+  s_0c27e2f42acfcb::t_69cdc9a16a5a6f 152-168,176,184
+tests/deployments/batches/AaveV4TokenizationSpokeBatch.t.sol
+  s_0c27e2f42acfcb::t_903e9f80f928a4 7,9,14,61-65,68,78-86,89-92,107-109,112-113,115,118-127,129,132,139,151,163,174
+src/config-engine/libraries/TokenizationSpokeDeployer.sol
+  s_0c27e2f42acfcb::t_47bf97c632b414 4,6,10-11,13-15,22,28-31,34-35,40-41,48,52,54-57,60-61,63,67,73
+tests/contracts/tokenization-spoke/TokenizationSpoke.Config.t.sol
+  s_0c27e2f42acfcb::t_d7783f18d123a4 5-6,9-11,16-22,25-31,34,37-43,68-69,74
+tests/gas/TokenizationSpoke.Operations.gas.t.sol
+  s_0c27e2f42acfcb::t_aa9577ae175caa 23
+src/spoke/instances/TokenizationSpokeInstance.sol
+  s_0c27e2f42acfcb::t_dae5936f84cf42 9-10,15,20-21,25-26,30,32
+tests/helpers/tokenization-spoke/SetupHelpers.sol
+  h_739c25e72c37fb 35,48
+  s_0c27e2f42acfcb::t_98f1f06364e11a 22-28,36-45,47,49-54,56
+  s_0c27e2f42acfcb::t_79c0dd4c96d2fe 34,55
+  s_0c27e2f42acfcb::t_2dc41c8ed900ed 11
+tests/contracts/tokenization-spoke/TokenizationSpoke.Upgradeable.t.sol
+  s_0c27e2f42acfcb::t_0b228756e5ac99 128-131,154-171,173-174
+  s_0c27e2f42acfcb::t_872ab637dd2c6e 98,104,113
+  s_0c27e2f42acfcb::t_d487b889289560 76
+  s_0c27e2f42acfcb::t_84ed0dadf10520 41
+  s_0c27e2f42acfcb::t_1bb8e2f5ad7075 6-7,11,25,32,34,36,42,46-47,57,59,62,67-69,78-80,85,88,91,97,99,102,106,109-111,116,118-125,177-180,182,188
+  s_0c27e2f42acfcb::t_332fbd3ae93be1 8
+  s_0c27e2f42acfcb::t_c2e3e967a8d064 58
+  h_739c25e72c37fb 132,134-139,143-152,172,181
+  s_0c27e2f42acfcb::t_a5d51fee632ae0 126-127
+src/config-engine/README.md
+  s_0c27e2f42acfcb::t_f2b03659a52960 27
+  s_0c27e2f42acfcb::t_fafe0102c6d0dd 25-26
+  s_0c27e2f42acfcb::t_2f4e984b5e8a23 28-30
+  s_0c27e2f42acfcb::t_b019bed95f8124 31-35
+src/deployments/utils/interfaces/ITokenizationSpokeInstance.sol
+  s_0c27e2f42acfcb::t_d9e36627e7ac33 10-12,15-20
+src/deployments/procedures/deploy/spoke/AaveV4TokenizationSpokeBeaconDeployProcedure.sol
+  s_0c27e2f42acfcb::t_d7239fda2a90ef 1-41
+tests/config-engine/HubEngine.t.sol
+  s_0c27e2f42acfcb::t_4115095a2e522c 840,844
+  s_0c27e2f42acfcb::t_1e360a73b1115e 774,778,807,811
+  s_0c27e2f42acfcb::t_1fb453021adc76 900-902
+  s_0c27e2f42acfcb::t_b99f7e610e50d3 761,800,825,854,1095
+  s_0c27e2f42acfcb::t_39c98b4b42b521 869,873
+src/deployments/libraries/BatchReports.sol
+  s_0c27e2f42acfcb::t_18199c89dbdc34 59-66
+src/dependencies/openzeppelin/BeaconProxy.sol
+  h_739c25e72c37fb 1-57
+src/spoke/TokenizationSpokeStorage.sol
+  s_0c27e2f42acfcb::t_804e63591e1b16 1-14,16-25
+  h_739c25e72c37fb 15
+src/deployments/utils/libraries/Create2Utils.sol
+  s_0c27e2f42acfcb::t_0c1085689d135b 58-72
+  s_0c27e2f42acfcb::t_05e7425f517d4c 5
+  s_0c27e2f42acfcb::t_770084f38673f2 56-57
+snapshots/TokenizationSpoke.Operations.json
+  s_0c27e2f42acfcb::t_19b903d2eec50f 2-16
+tests/helpers/mocks/MockTokenizationSpokeInstance.sol
+  s_0c27e2f42acfcb::t_8652d97a4c08a4 16,23-24,28-30
+tests/deployments/procedures/deploy/spoke/AaveV4TokenizationSpokeDeployProcedure.t.sol
+  s_0c27e2f42acfcb::t_338e0ccd264f8e 5,10,20-25,64-71,73-74,80-84,91-94,98,102-103,112-113,122,124-125
+src/spoke/TokenizationSpoke.sol
+  h_739c25e72c37fb 11,62-64,269-270,274,277,322,426-428,444-445,449
+  s_0c27e2f42acfcb::t_462a6d6490f385 42-48,50-51,54-55,57-58
+  s_0c27e2f42acfcb::t_d39b666e95db09 239,244,249,254,317,434
+  s_0c27e2f42acfcb::t_1f3c116aa45e58 184
+  s_0c27e2f42acfcb::t_5f58adf84da1c7 312,320-321,327,332
+  s_0c27e2f42acfcb::t_c3b9225ff7c797 19-24
+  s_0c27e2f42acfcb::t_0f977ec581eb5b 318-319
+src/config-engine/interfaces/IAaveV4ConfigEngine.sol
+  s_0c27e2f42acfcb::t_661cc87ee668ad 18,23
+tests/helpers/mocks/deployments/procedures/AaveV4TokenizationSpokeDeployProcedureWrapper.sol
+  s_0c27e2f42acfcb::t_e0e9adf21c6da4 9-10,16
+  s_0c27e2f42acfcb::t_1cc6f55cf8d313 17
+src/deployments/batches/AaveV4TokenizationSpokeBeaconBatch.sol
+  s_0c27e2f42acfcb::t_7ef0a010d92abc 1-36
+tests/config-engine/BaseConfigEngine.t.sol
+  s_0c27e2f42acfcb::t_cfdb73c9ac28f1 104-105
+  s_0c27e2f42acfcb::t_cdb8e084f3cdc0 37-38
+  s_0c27e2f42acfcb::t_26eabeff8fb008 344-349
+  s_0c27e2f42acfcb::t_038a2fc9542e36 162-166
+src/config-engine/libraries/HubEngine.sol
+  s_0c27e2f42acfcb::t_0edaa19340e217 230
+tests/deployments/batches/BatchBase.t.sol
+  s_0c27e2f42acfcb::t_f2c7b62371caee 19
+src/deployments/README.md
+  s_0c27e2f42acfcb::t_25e8141d570bfe 39-41
+tests/deployments/orchestration/AaveV4TestOrchestration.sol
+  s_0c27e2f42acfcb::t_573f72be22cabd 182,187-192,195
+  s_0c27e2f42acfcb::t_2b1478980229fd 32
+  s_0c27e2f42acfcb::t_fba2c5296addb1 473-476
+src/deployments/procedures/deploy/spoke/AaveV4TokenizationSpokeDeployProcedure.sol
+  s_0c27e2f42acfcb::t_21cef72cacc48d 11,13-14,20-22,28-29,34,36-40,52
+src/dependencies/openzeppelin/UpgradeableBeacon.sol
+  h_739c25e72c37fb 1-70
+src/deployments/batches/AaveV4TokenizationSpokeBatch.sol
+  s_0c27e2f42acfcb::t_febfdb9ec72ded 10,15,22,29-36
+tests/utils/ProxyHelper.sol
+  s_0c27e2f42acfcb::t_5e30ac36152bc3 13-14,23-27
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.5",
+  "base_commit_sha": "712750f8e6f21772ae82f15db7dc0af34027ae4f",
+  "prompts": {
+    "7b1f2be43cbd8010": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "831aeb1f-9152-4fe7-8e98-5c2fc9793073",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "DhairyaSethi <55102840+DhairyaSethi@users.noreply.github.com>",
+      "total_additions": 5,
+      "total_deletions": 6,
+      "accepted_lines": 5,
+      "overriden_lines": 0
+    },
+    "8f72948567f85a1f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8fd3719e-3f11-4efb-a94b-813c0337aa79",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "DhairyaSethi <55102840+DhairyaSethi@users.noreply.github.com>",
+      "total_additions": 115,
+      "total_deletions": 0,
+      "accepted_lines": 115,
+      "overriden_lines": 0
+    }
+  },
+  "humans": {
+    "h_739c25e72c37fb": {
+      "author": "DhairyaSethi <55102840+DhairyaSethi@users.noreply.github.com>"
+    }
+  },
+  "sessions": {
+    "s_0c27e2f42acfcb": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1e26ae01-c33f-4e7d-b573-ff86419355eb",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "DhairyaSethi <55102840+DhairyaSethi@users.noreply.github.com>"
+    }
+  }
+}

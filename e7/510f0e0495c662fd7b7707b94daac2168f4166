@@ -1,0 +1,27 @@
+tests/deployments/markets/babylon/AaveV4BabylonMainnetFork.t.sol
+  h_71908bb6884da4 100-103,123,125,445-449,451-452,660-690
+  h_71908bb6884da4 79,450,453-454,691-692
+tests/deployments/markets/babylon/AaveV4Babylon.t.sol
+  s_641b3721ccdc64::t_53163ceef08e16 1972-1974
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e7510f0e0495c662fd7b7707b94daac2168f4166",
+  "prompts": {},
+  "humans": {
+    "h_71908bb6884da4": {
+      "author": "YBM <31329384+yan-man@users.noreply.github.com>"
+    }
+  },
+  "sessions": {
+    "s_641b3721ccdc64": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f77c5c22-c934-4458-b7eb-4eb5ec8f7cbd",
+        "model": "unknown"
+      },
+      "human_author": "YBM <31329384+yan-man@users.noreply.github.com>"
+    }
+  }
+}

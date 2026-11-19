@@ -1,0 +1,52 @@
+tests/config-engine/GovernanceTopology.t.sol
+  s_066c5b122888dc::t_e9166518076f00 106-109
+  s_066c5b122888dc::t_de22049b118feb 1-16,18-24,27-32,34-57,59-71,73-86,89-105,110-118,121,137-138
+  s_066c5b122888dc::t_68ad34651e20c9 119-120,122-136
+  s_066c5b122888dc::t_8baa951edef646 58
+  s_066c5b122888dc::t_6654015e42aa8f 17,25-26,33
+  s_066c5b122888dc::t_8cdd0301e0a85f 72,87-88
+src/config-engine/libraries/TokenizationSpokeDeployer.sol
+  s_066c5b122888dc::t_0d4092d802e84f 72
+  s_066c5b122888dc::t_172dc047ab56ef 13-15,18-20,25,31-32,34-35
+  s_066c5b122888dc::t_fc89cd60925fce 47
+src/config-engine/README.md
+  s_066c5b122888dc::t_07ecf63d15847c 11
+  s_066c5b122888dc::t_7caa854e180b9f 147-156
+  s_066c5b122888dc::t_6937b816a8a12a 25-26,28-35
+  s_066c5b122888dc::t_1869b07e62e2ec 27
+src/config-engine/interfaces/IAaveV4ConfigEngine.sol
+  s_066c5b122888dc::t_4343edc0a47db7 18-21,26
+src/config-engine/libraries/HubEngine.sol
+  s_066c5b122888dc::t_7c651ac68a677c 223-224,228-234,237,239-245
+  s_066c5b122888dc::t_cca991a3805e27 254
+  s_066c5b122888dc::t_6790006478f627 22-25,27
+tests/helpers/mocks/config-engine/MockGovernanceExecutor.sol
+  s_066c5b122888dc::t_7eb187dbcfdcc8 1-23
+tests/config-engine/HubEngine.t.sol
+  s_066c5b122888dc::t_b7669d5bb4b60d 958-968
+  s_066c5b122888dc::t_d8fcaef5312523 765,781,787-792
+  s_066c5b122888dc::t_85b89682419be6 830,835,840,842,844-852,854-855,858,863,865-878,882-884,886-896,898,900-911,917-918,920-924
+  s_066c5b122888dc::t_bdf53a85e451b7 6,9-10
+  s_066c5b122888dc::t_f86de01ec1e3e1 810,820
+  s_066c5b122888dc::t_4cec89aed8c257 1154
+tests/config-engine/BaseConfigEngine.t.sol
+  s_066c5b122888dc::t_2277b9f51ae268 335-340
+resources/config-engine.svg
+  s_066c5b122888dc::t_7f8d1d8d998d44 1,19,22,25,27,32,34-35,37,42,44-56,64-65,68,71,74-75,78,82-83,86-87,90-91,94-95,101-102,104-105,107-108,110-111,114,118-119,122-123,126-127,130-131,136,139-140,142-143,145-149,151
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "a2054895e24f280aef3d3bacf717cc59b95b0ec6",
+  "prompts": {},
+  "sessions": {
+    "s_066c5b122888dc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8f06fd84-89aa-44fd-a3b5-0cd3ad9f6d2e",
+        "model": "unknown"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}

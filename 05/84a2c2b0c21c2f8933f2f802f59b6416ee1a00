@@ -1,0 +1,19 @@
+tests/misc/z3/babylon_max_collateral_cap_conversion.py
+  s_602c0abcbd103d::t_8841de72a672dc 1-59
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "0584a2c2b0c21c2f8933f2f802f59b6416ee1a00",
+  "prompts": {},
+  "sessions": {
+    "s_602c0abcbd103d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1ea1deba-813b-43d3-807f-1e851ba7b60a",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}

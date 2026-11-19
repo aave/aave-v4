@@ -1,0 +1,14 @@
+scripts/markets/babylon/sepolia.json
+  h_0f977de3f043fc 7
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d5d382bae6c9d1e34295af11c382a5f30fa83f38",
+  "prompts": {},
+  "humans": {
+    "h_0f977de3f043fc": {
+      "author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}

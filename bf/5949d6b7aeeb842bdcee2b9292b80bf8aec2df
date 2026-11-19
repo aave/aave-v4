@@ -1,0 +1,25 @@
+snapshots/SignatureGateway.Operations.json
+  s_8b1557a4f69971::t_deba153805df29 5,7
+snapshots/Spoke.Operations.ZeroRiskPremium.json
+  s_8b1557a4f69971::t_6ac9a1980e538b 9,15
+snapshots/Spoke.Operations.json
+  s_8b1557a4f69971::t_46008d41c842c7 9,15
+snapshots/TokenizationSpoke.Operations.json
+  s_8b1557a4f69971::t_85d763037d358f 5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "bf5949d6b7aeeb842bdcee2b9292b80bf8aec2df",
+  "prompts": {},
+  "sessions": {
+    "s_8b1557a4f69971": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c4dba2c6-a42c-43e8-aa5e-79271ff4465b",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}

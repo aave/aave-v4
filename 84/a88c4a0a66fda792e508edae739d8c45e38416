@@ -1,0 +1,26 @@
+tests/gas/PermissionedSpoke.Operations.gas.t.sol
+  s_18846865398641::t_088324178959c6 6-7,39-77
+  s_18846865398641::t_53260e594342c3 78-79
+src/horizon/HorizonSpokeGate.sol
+  s_18846865398641::t_d7151047bc2801 16-23,54-56
+snapshots/PermissionedSpoke.Operations.json
+  s_18846865398641::t_1ce41263732cba 19
+  s_18846865398641::t_43fc50d5f77f0a 21
+  s_18846865398641::t_818c44869d7772 7,11,15
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "84a88c4a0a66fda792e508edae739d8c45e38416",
+  "prompts": {},
+  "sessions": {
+    "s_18846865398641": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a04295-0b37-7bd3-8128-e23c80cddf62",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}

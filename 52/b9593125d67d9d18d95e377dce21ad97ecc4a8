@@ -1,0 +1,55 @@
+src/spoke/Spoke.sol
+  s_fef46d571ae928::t_7b3e4cc4384d97 223,242,272,303,389
+src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol
+  s_fef46d571ae928::t_b1015802741ffd 116
+  s_fef46d571ae928::t_e57fb151ea2cbd 119
+src/access/PermissionedBorrowAccessManager.sol
+  s_fef46d571ae928::t_b1015802741ffd 40-41,44-48,50
+  s_fef46d571ae928::t_6a4d389dc20c56 49
+  s_fef46d571ae928::t_e57fb151ea2cbd 4,13,28,36,43
+  s_fef46d571ae928::t_8683bd2b8621ff 1-3,5-12,14-27,29-34,37-39,42,51-52
+  s_fef46d571ae928::t_e109e27ab43528 35
+tests/helpers/mocks/MockSpoke.sol
+  s_fef46d571ae928::t_7b3e4cc4384d97 40
+src/dependencies/openzeppelin/IAccessManager.sol
+  s_fef46d571ae928::t_b1015802741ffd 128-137
+  s_fef46d571ae928::t_c9436627f7f767 127
+src/dependencies/openzeppelin/AccessManager.sol
+  s_fef46d571ae928::t_57a6fd6af31fa3 14,166-171,173-212
+  s_fef46d571ae928::t_b1015802741ffd 160-165,172,213-214
+  s_fef46d571ae928::t_ebaffdf12f151c 159
+tests/contracts/spoke/position-manager/Spoke.PositionManager.t.sol
+  s_fef46d571ae928::t_22e0657886d02d 56,88,109,147,168,207,235,296,312,341,404-407
+  s_64d892cc989527::t_aac33e94f30d27 408-409
+tests/contracts/access/PermissionedBorrowAccessManager.t.sol
+  s_fef46d571ae928::t_5007b65a9067a3 84,102
+  s_fef46d571ae928::t_1eeec9485673db 144-155
+  s_fef46d571ae928::t_a73463c45ab489 121-126
+  s_fef46d571ae928::t_4322c645ef39f8 1-83,85-101,103-120,127-143,156-178
+src/access/interfaces/IBorrowerEligibility.sol
+  s_fef46d571ae928::t_8683bd2b8621ff 1-10
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "52b9593125d67d9d18d95e377dce21ad97ecc4a8",
+  "prompts": {},
+  "sessions": {
+    "s_64d892cc989527": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ff668-35f0-7293-8c99-781704d92586",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    },
+    "s_fef46d571ae928": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ff615-9d86-7333-99d0-afdf41eeb642",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}

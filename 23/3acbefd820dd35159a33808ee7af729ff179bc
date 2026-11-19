@@ -1,0 +1,31 @@
+src/spoke/libraries/DiscreteLiquidationLogic.sol
+  s_8c8a76dc05e2bc::t_7d268acdc3a023 32-33,45-46,55-58,60-63,67-71,99-101,104-105,108,112-149,153,155-158,164-181,184-207,211-224,240,268-270,274,276-281,286-288,290-291,294-295,300,307-308,311-312,314
+  s_8c8a76dc05e2bc::t_a7ab9ba31e2111 182-183
+  s_8c8a76dc05e2bc::t_f4c0c1b4c725ab 208-210,225-239,241-267
+tests/unit/Spoke/Liquidations/Spoke.DiscreteLiquidationCall.t.sol
+  s_8c8a76dc05e2bc::t_ac6e675b1a2e54 46-56,74-80,97-107,129-137,162-168,186-220,228-234,242-248,257-263,282-289,302-303,351-356,358-362,370-371,376-384,386-388,390,415-416,442-443,469-504,506-511,513-592,602,615-616,644-645,677-678
+  s_8c8a76dc05e2bc::t_446dc701994205 505,512
+src/spoke/interfaces/IDiscreteLiquidationSpoke.sol
+  s_8c8a76dc05e2bc::t_89581df86a52db 15-16,21-32,39,48-50,58-65,72-73,75,78-79
+  s_8c8a76dc05e2bc::t_003f2b90552207 66-68
+foundry.toml
+  s_8c8a76dc05e2bc::t_a1a899683e15d1 27
+src/spoke/DiscreteLiquidationSpoke.sol
+  s_8c8a76dc05e2bc::t_7379b2e29ac863 26-27,37-38
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "233acbefd820dd35159a33808ee7af729ff179bc",
+  "prompts": {},
+  "sessions": {
+    "s_8c8a76dc05e2bc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2ba790ed-65ff-4843-8257-9fecbd7871d7",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}

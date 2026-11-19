@@ -1,0 +1,15 @@
+tests/deployments/markets/babylon/AaveV4BabylonMainnetFork.t.sol
+  h_71908bb6884da4 86-87,197,266-272,348
+  h_71908bb6884da4 88,90,198,273,281
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e6678f4d8198dba920d8becce53b15c1cda4c7a5",
+  "prompts": {},
+  "humans": {
+    "h_71908bb6884da4": {
+      "author": "YBM <31329384+yan-man@users.noreply.github.com>"
+    }
+  }
+}

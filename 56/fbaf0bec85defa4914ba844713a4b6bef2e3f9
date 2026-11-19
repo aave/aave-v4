@@ -1,0 +1,25 @@
+src/utils/FeeSharesMinterBase.sol
+  7528276591afa681 35,43,56-57,66
+tests/contracts/utils/FeeSharesMinterBase.t.sol
+  7528276591afa681 224
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.6",
+  "base_commit_sha": "56fbaf0bec85defa4914ba844713a4b6bef2e3f9",
+  "prompts": {
+    "7528276591afa681": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "59b70029-49db-4da1-8f3e-25ee230e30ad",
+        "model": "claude-4.6-opus-high-thinking"
+      },
+      "human_author": "CheyenneAtapour",
+      "messages": [],
+      "total_additions": 6,
+      "total_deletions": 168,
+      "accepted_lines": 6,
+      "overriden_lines": 0
+    }
+  }
+}

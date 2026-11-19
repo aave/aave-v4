@@ -1,0 +1,27 @@
+snapshots/SignatureGateway.Operations.json
+  s_4f5261c6e21dbb::t_ae90635290f83a 3,5
+snapshots/Spoke.Operations.ZeroRiskPremium.json
+  s_4f5261c6e21dbb::t_c6827f99e41929 9,11,15
+snapshots/Spoke.Operations.json
+  s_4f5261c6e21dbb::t_87faa77728b2ec 9,11,15
+snapshots/TakerPositionManager.Operations.json
+  s_4f5261c6e21dbb::t_b9f6154a3217e7 5
+snapshots/TokenizationSpoke.Operations.json
+  s_4f5261c6e21dbb::t_7641d82372c76d 5,11,16
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "cc2d5b41a3a7d36d98fb2cebee06d32635b11fbb",
+  "prompts": {},
+  "sessions": {
+    "s_4f5261c6e21dbb": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "af35560e-00c7-4b1d-9586-dde333921e50",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "DhairyaSethi <55102840+DhairyaSethi@users.noreply.github.com>"
+    }
+  }
+}

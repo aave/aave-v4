@@ -1,0 +1,33 @@
+snapshots/ConfigPositionManager.Operations.json
+  s_477c0d90c4846f::t_bbc4b7ef05af33 2-10
+snapshots/TakerPositionManager.Operations.json
+  s_477c0d90c4846f::t_6f0b7e44bd13c4 2-8
+src/position-manager/ConfigPositionManager.sol
+  s_477c0d90c4846f::t_f64f5c318bd35d 273-277
+src/position-manager/TakerPositionManager.sol
+  s_477c0d90c4846f::t_5c746e3e088c73 193-194,321,332
+src/position-manager/interfaces/ITakerPositionManager.sol
+  s_477c0d90c4846f::t_21315ddb20fe16 9-11,49,53,58-59,63,67,72-73,115,128,138,151
+tests/contracts/position-manager/ConfigPositionManager/ConfigPositionManager.t.sol
+  s_477c0d90c4846f::t_d52c547d84e2ec 492-524
+tests/contracts/position-manager/TakerPositionManager/TakerPositionManager.Permit.t.sol
+  s_477c0d90c4846f::t_bb6d63afffaaa0 88,179
+tests/contracts/position-manager/TakerPositionManager/TakerPositionManager.t.sol
+  s_477c0d90c4846f::t_e404eda134ec05 13,34,104,188,448,469,812-813,815-816,837-838,840-841
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "16f02e38f7eba9ae1fdfd86b1fa0bbe6c45b16ef",
+  "prompts": {},
+  "sessions": {
+    "s_477c0d90c4846f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9de15bb6-ef2d-4870-b4ab-7a2a27701508",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}

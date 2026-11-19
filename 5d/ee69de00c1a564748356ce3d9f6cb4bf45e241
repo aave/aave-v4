@@ -1,0 +1,23 @@
+src/deployments/procedures/roles/AaveV4AccessManagerRolesProcedure.sol
+  s_0cab52a9e9f0d6::t_8f2b79dbfb36b5 15-18
+src/deployments/utils/libraries/Roles.sol
+  s_0cab52a9e9f0d6::t_5e87d026a5544c 63-90
+tests/deployments/utils/libraries/Roles.t.sol
+  s_0cab52a9e9f0d6::t_f21f874c1902d6 66-83
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "5dee69de00c1a564748356ce3d9f6cb4bf45e241",
+  "prompts": {},
+  "sessions": {
+    "s_0cab52a9e9f0d6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7bdfb8e7-33ad-4431-ab02-d6a823d15b89",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}

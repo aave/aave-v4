@@ -1,0 +1,23 @@
+src/deployments/utils/libraries/InputUtils.sol
+  5cbfca345ded2e91 8-11,13,15-16,18,20,24,26
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.3",
+  "base_commit_sha": "1c06316927cda4fa1bb60bb3209992487f473eba",
+  "prompts": {
+    "5cbfca345ded2e91": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "377efc66-accf-43de-9c46-02021b98e86c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "YBM",
+      "messages": [],
+      "total_additions": 40,
+      "total_deletions": 30,
+      "accepted_lines": 14,
+      "overriden_lines": 5
+    }
+  }
+}

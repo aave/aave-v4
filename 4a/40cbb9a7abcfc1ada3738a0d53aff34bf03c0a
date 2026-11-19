@@ -1,0 +1,29 @@
+scripts/deploy/AaveV4DeployCorrelatedSpoke.s.sol
+  s_be99d186a7a60d::t_f2720ff47e291b 13-18,20-85,90-129
+  s_be99d186a7a60d::t_854fd60efa6c56 19
+  s_be99d186a7a60d::t_fb883c76d28d74 86-89
+scripts/deploy/AaveV4DeployIsolatedHub.s.sol
+  s_be99d186a7a60d::t_cadd081f4eb80e 1-76,81-120
+  s_be99d186a7a60d::t_bf92cc6a30fc94 77-80
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "4a40cbb9a7abcfc1ada3738a0d53aff34bf03c0a",
+  "prompts": {},
+  "humans": {
+    "h_0f977de3f043fc": {
+      "author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  },
+  "sessions": {
+    "s_be99d186a7a60d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "74d0db02-2ba2-43b2-b80f-4ee82f075fd1",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}

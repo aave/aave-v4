@@ -1,0 +1,21 @@
+foundry.lock
+  s_13d08828548eba::t_68bb9eaae993f8 10-11
+lib/forge-std
+  s_13d08828548eba::t_d9101260b173c7 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e679a44360e387105c23f0e62c5965f5aec54e04",
+  "prompts": {},
+  "sessions": {
+    "s_13d08828548eba": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e1c4d0f4-ec86-460c-8f74-44b0d0d80705",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "DhairyaSethi <55102840+DhairyaSethi@users.noreply.github.com>"
+    }
+  }
+}

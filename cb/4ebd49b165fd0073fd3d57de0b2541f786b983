@@ -1,0 +1,48 @@
+tests/contracts/treasury-spoke/TreasurySpoke.Upgradeable.t.sol
+  s_5d2e786f3f09be::t_5bd0fb6e8b9b8c 160-192
+src/hub/interfaces/IHubBase.sol
+  s_5d2e786f3f09be::t_dafc9425c55c50 283,290
+src/spoke/instances/TreasurySpokeInstance.sol
+  s_5d2e786f3f09be::t_8363aec67cb8d4 10
+tests/contracts/treasury/RevenueSplitter.t.sol
+  s_5d2e786f3f09be::t_91eb56dafb5388 209-213,293,325,331-335,342,359,436-440
+  s_5d2e786f3f09be::t_70e1bf4ea3f706 1-208,214-255,261-263,269-292,294-306,311-315,319-324,326-330,336-341,343-358,360-435,441-498
+  s_5d2e786f3f09be::t_b22c21baabe344 256-260,264-268,307-310,316-318
+src/spoke/interfaces/ITreasurySpoke.sol
+  s_5d2e786f3f09be::t_dafc9425c55c50 68-70,78
+  s_5d2e786f3f09be::t_8363aec67cb8d4 8-16,43-44,64-66
+  s_5d2e786f3f09be::t_cf1eea1d8d96c2 45,76
+  s_5d2e786f3f09be::t_dcd3422f55bcd8 67
+src/spoke/TreasurySpoke.sol
+  s_5d2e786f3f09be::t_8363aec67cb8d4 14,16,20-29,33-38,62-66,84-87,143-150
+  s_5d2e786f3f09be::t_dafc9425c55c50 7-8,91,93-103,108,110-111,132,134-142
+  s_5d2e786f3f09be::t_cf1eea1d8d96c2 133
+  s_5d2e786f3f09be::t_b5ad769becd670 88
+tests/contracts/treasury-spoke/TreasurySpoke.t.sol
+  s_5d2e786f3f09be::t_5bd0fb6e8b9b8c 75-209
+  s_5d2e786f3f09be::t_54b0ae7cc53648 611-715
+src/treasury/interfaces/IRevenueSplitter.sol
+  s_5d2e786f3f09be::t_dafc9425c55c50 30-31
+  s_5d2e786f3f09be::t_2b326c8fb835e2 1-29,32-45
+src/treasury/RevenueSplitter.sol
+  s_5d2e786f3f09be::t_2b326c8fb835e2 1-105
+tests/setup/Base.t.sol
+  s_5d2e786f3f09be::t_3f6e0d82be6103 77-78
+  s_5d2e786f3f09be::t_9dcb5330ce5658 79
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "cb4ebd49b165fd0073fd3d57de0b2541f786b983",
+  "prompts": {},
+  "sessions": {
+    "s_5d2e786f3f09be": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a71e9eb1-7dca-425f-b9e2-5f34e15e0931",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "DhairyaSethi <55102840+DhairyaSethi@users.noreply.github.com>"
+    }
+  }
+}

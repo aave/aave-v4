@@ -1,0 +1,39 @@
+src/deployments/batches/AaveV4TreasurySpokeBatch.sol
+  5cbfca345ded2e91 12
+src/deployments/README.md
+  5cbfca345ded2e91 158-159
+  7b925b73115efc5c 135-136,151,156,190-191,227,232,238,245-246
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.22",
+  "base_commit_sha": "9358929f734ecf36a47c1fb5e07e98c973eceedd",
+  "prompts": {
+    "5cbfca345ded2e91": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "377efc66-accf-43de-9c46-02021b98e86c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "YBM <31329384+yan-man@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 119,
+      "total_deletions": 70,
+      "accepted_lines": 118,
+      "overriden_lines": 0
+    },
+    "7b925b73115efc5c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9a6fd40f-1619-440a-9ae6-15d11edae335",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "YBM <31329384+yan-man@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 28,
+      "total_deletions": 10,
+      "accepted_lines": 11,
+      "overriden_lines": 2
+    }
+  }
+}

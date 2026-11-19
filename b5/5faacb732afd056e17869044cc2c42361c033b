@@ -1,0 +1,56 @@
+tests/config-engine/EngineUtils.t.sol
+  s_d64107cc8c0dc6::t_16fcdaaf62ddc7 1-83
+tests/config-engine/AddressesProviderRegistration.t.sol
+  s_d64107cc8c0dc6::t_564a29ce0fd829 82-99
+  s_d64107cc8c0dc6::t_5facd2a4482ea1 240-265
+  s_d64107cc8c0dc6::t_f44f20910243f3 157-167
+src/addresses-provider/V4AddressesProvider.sol
+  s_d64107cc8c0dc6::t_79892e77c420d3 170-173
+  s_d64107cc8c0dc6::t_7dea5b7085b466 218-221
+  s_d64107cc8c0dc6::t_3e666c8c068afa 185-188
+  s_d64107cc8c0dc6::t_61e2b67f232197 200-206
+  s_d64107cc8c0dc6::t_1834279817868a 169
+  s_d64107cc8c0dc6::t_bc14b1c92c12ae 184
+  s_d64107cc8c0dc6::t_669510491f7c45 199
+  s_d64107cc8c0dc6::t_b7cf10f5a1e3d2 217
+src/config-engine/libraries/SpokeEngine.sol
+  s_d64107cc8c0dc6::t_14c924c7f5567d 246
+  s_d64107cc8c0dc6::t_0b5edd99e61148 18-19
+  s_d64107cc8c0dc6::t_be00642df61d49 6
+  s_d64107cc8c0dc6::t_dd0c8c4ba22d40 252
+  s_d64107cc8c0dc6::t_59c8203c123fb2 249-251
+src/addresses-provider/interfaces/IV4AddressesProvider.sol
+  s_d64107cc8c0dc6::t_23f70b860b42b3 251-256
+  s_d64107cc8c0dc6::t_4764808aac8861 233-241
+  s_d64107cc8c0dc6::t_186b866c314729 203-208
+  s_d64107cc8c0dc6::t_30681114895c6f 218-223
+src/config-engine/libraries/EngineUtils.sol
+  s_d64107cc8c0dc6::t_116c762506194b 1-22
+tests/contracts/addresses-provider/V4AddressesProvider.t.sol
+  s_d64107cc8c0dc6::t_b4e125999fb704 743-789
+src/config-engine/libraries/HubEngine.sol
+  s_d64107cc8c0dc6::t_c3f434634545f7 6
+  s_d64107cc8c0dc6::t_ff44b90ec3cdc9 235
+  s_d64107cc8c0dc6::t_79293b5ae24518 241
+  s_d64107cc8c0dc6::t_02140ae4f29d75 254-257
+  s_d64107cc8c0dc6::t_46a6a3583204dc 25-26
+  s_d64107cc8c0dc6::t_cda994077f5e4a 238-240
+src/config-engine/interfaces/IAaveV4ConfigEngine.sol
+  s_d64107cc8c0dc6::t_b8ad68cecd85ea 30
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.15",
+  "base_commit_sha": "b55faacb732afd056e17869044cc2c42361c033b",
+  "prompts": {},
+  "sessions": {
+    "s_d64107cc8c0dc6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f9b92db4-7622-46e5-86f5-651c151f5b88",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}

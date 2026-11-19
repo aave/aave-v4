@@ -1,0 +1,29 @@
+tests/config-engine/HubEngine.t.sol
+  2f609938e742422e 178-212
+scripts/deploy/AaveV4DeployBatchBase.s.sol
+  2f609938e742422e 18-19,182
+tests/scripts/AaveV4DeployBatchBaseScript.t.sol
+  2f609938e742422e 290,294-298,301-304,306
+src/config-engine/libraries/HubEngine.sol
+  2f609938e742422e 18-19,21
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "90118d93ae413de4a0d48ca7fb7220898f72ac1d",
+  "prompts": {
+    "2f609938e742422e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bd0411b9-fef1-4b67-a2dd-ebe4c9eee576",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "YBM",
+      "messages": [],
+      "total_additions": 67,
+      "total_deletions": 9,
+      "accepted_lines": 52,
+      "overriden_lines": 4
+    }
+  }
+}

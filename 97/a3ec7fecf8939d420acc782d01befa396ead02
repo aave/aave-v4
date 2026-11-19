@@ -1,0 +1,48 @@
+.github/workflows/tests-pr.yml
+  s_4234357a097dc9::t_16e4ef476fc86c 9,20,25,28,31,37
+.github/workflows/comment.yml
+  s_4234357a097dc9::t_16e4ef476fc86c 19
+tests/gas/Gateways.Operations.gas.t.sol
+  s_4234357a097dc9::t_16e4ef476fc86c 40,59,81,85,117,161,212,242,271,314,336,352,368,395
+tests/gas/Spoke.Operations.gas.t.sol
+  s_4234357a097dc9::t_16e4ef476fc86c 22,25,31,41,48,51,57,60,70,75,82,86,90,110,115,129,132,147,162,178,194,210,227,233,243,249,264,282,302,322,350,358
+tests/gas/Hub.Operations.gas.t.sol
+  s_4234357a097dc9::t_16e4ef476fc86c 15,29,32,49,89,110,213,231,253,259,292,296,302
+snapshots/Spoke.Operations.json
+  s_4234357a097dc9::t_3d6598fef0111d 15
+  s_4234357a097dc9::t_16e4ef476fc86c 4-8,11
+snapshots/Spoke.Operations.ZeroRiskPremium.json
+  s_4234357a097dc9::t_3d6598fef0111d 15
+  s_4234357a097dc9::t_16e4ef476fc86c 4-8,11
+tests/gas/Spoke.Getters.gas.t.sol
+  s_4234357a097dc9::t_16e4ef476fc86c 10,19,32,50,71
+tests/gas/PositionManagers.Operations.gas.t.sol
+  s_4234357a097dc9::t_16e4ef476fc86c 51,87,127,174,180,208,216,242,253,261,287,298,331,337,343,349,358,367,376,385,399,423,432
+tests/gas/TokenizationSpoke.Operations.gas.t.sol
+  s_4234357a097dc9::t_16e4ef476fc86c 43,50,57,61,69,73,82,86,95,99,115,130,147,164,181
+snapshots/TakerPositionManager.Operations.json
+  s_4234357a097dc9::t_16e4ef476fc86c 5
+snapshots/SignatureGateway.Operations.json
+  s_4234357a097dc9::t_3d6598fef0111d 8
+  s_4234357a097dc9::t_16e4ef476fc86c 2,5-6
+.github/workflows/tests-merge.yml
+  s_4234357a097dc9::t_16e4ef476fc86c 12,23,28,32
+foundry.lock
+  s_4234357a097dc9::t_17e018ab29df4e 9-12
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "97a3ec7fecf8939d420acc782d01befa396ead02",
+  "prompts": {},
+  "sessions": {
+    "s_4234357a097dc9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e46603eb-682a-4e30-8a94-e7285f89e305",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}

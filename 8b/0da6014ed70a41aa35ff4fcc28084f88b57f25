@@ -1,0 +1,29 @@
+src/config-engine/README.md
+  s_066c5b122888dc::t_caeb7aedf38893 103-106
+  s_066c5b122888dc::t_e07b1806366190 135
+  s_066c5b122888dc::t_27f4895a59c497 107
+src/config-engine/libraries/AccessManagerEngine.sol
+  s_066c5b122888dc::t_812a9dc2d89999 36-37,53-55
+  s_066c5b122888dc::t_a3106c7ab6e2f0 6
+src/config-engine/interfaces/IAaveV4ConfigEngine.sol
+  s_066c5b122888dc::t_a4241dba849a65 311-312
+tests/config-engine/AccessManagerEngine.t.sol
+  s_066c5b122888dc::t_8a79bd728d74ae 6-7
+  s_066c5b122888dc::t_adaf6c6c7ce019 326-360
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "8b0da6014ed70a41aa35ff4fcc28084f88b57f25",
+  "prompts": {},
+  "sessions": {
+    "s_066c5b122888dc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8f06fd84-89aa-44fd-a3b5-0cd3ad9f6d2e",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}
