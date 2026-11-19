@@ -1,0 +1,27 @@
+snapshots/Hub.Operations.json
+  s_b5a8ba063f759a::t_62a29a9980f9fa 17
+snapshots/PositionManagerBase.Operations.json
+  s_b5a8ba063f759a::t_1e49d68f4df5ee 2
+snapshots/SignatureGateway.Operations.json
+  s_b5a8ba063f759a::t_067c3f796fb66c 2,4-5
+snapshots/Spoke.Operations.ZeroRiskPremium.json
+  s_b5a8ba063f759a::t_7de454028879fa 14-15
+snapshots/Spoke.Operations.json
+  s_b5a8ba063f759a::t_ef2452a00990dc 14-15
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "246e1013623da86ee04a3ba2541d4192d0457fbd",
+  "prompts": {},
+  "sessions": {
+    "s_b5a8ba063f759a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e21f9af4-2976-4fc6-9fca-5c29e8c8d9fc",
+        "model": "claude-fable-5-2"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}
