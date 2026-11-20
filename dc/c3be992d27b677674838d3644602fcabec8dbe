@@ -1,0 +1,21 @@
+tests/helpers/mocks/deployments/procedures/AaveV4HubDeployProcedureWrapper.sol
+  s_baa2e306a9ce7e::t_095bc23e37ce04 15-21
+tests/helpers/mocks/deployments/procedures/AaveV4NativeTokenGatewayDeployProcedureWrapper.sol
+  s_baa2e306a9ce7e::t_4b6a83131fe210 14-15
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "dcc3be992d27b677674838d3644602fcabec8dbe",
+  "prompts": {},
+  "sessions": {
+    "s_baa2e306a9ce7e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5fe9b53d-b377-4c11-b688-c311ccd286f9",
+        "model": "claude-fable-5-2"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}
