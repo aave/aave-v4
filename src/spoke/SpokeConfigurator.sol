@@ -263,7 +263,7 @@ contract SpokeConfigurator is AccessManaged, ISpokeConfigurator {
     }
   }
 
-  // @inheritdoc ISpokeConfigurator
+  /// @inheritdoc ISpokeConfigurator
   function pauseReserve(address spoke, uint256 reserveId) external restricted {
     ISpoke targetSpoke = ISpoke(spoke);
     ISpoke.ReserveConfig memory reserveConfig = targetSpoke.getReserveConfig(reserveId);
@@ -271,7 +271,7 @@ contract SpokeConfigurator is AccessManaged, ISpokeConfigurator {
     targetSpoke.updateReserveConfig(reserveId, reserveConfig);
   }
 
-  // @inheritdoc ISpokeConfigurator
+  /// @inheritdoc ISpokeConfigurator
   function freezeReserve(address spoke, uint256 reserveId) external restricted {
     ISpoke targetSpoke = ISpoke(spoke);
     ISpoke.ReserveConfig memory reserveConfig = targetSpoke.getReserveConfig(reserveId);

@@ -46,7 +46,6 @@ interface IPositionManagerBase is IRescuable, IMulticall {
 
   /// @notice Facilitates consuming a permit for the given reserve's underlying asset on the specified registered Spoke.
   /// @dev The given data is passed to the underlying asset for the signature to be verified.
-  /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @dev Spender is this position manager contract.
   /// @param spoke The address of the Spoke.
   /// @param reserveId The identifier of the reserve.

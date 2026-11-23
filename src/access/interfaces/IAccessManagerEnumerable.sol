@@ -143,11 +143,11 @@ interface IAccessManagerEnumerable is IAccessManager {
     uint256 end
   ) external view returns (address[] memory);
 
-  /// @notice Returns the function selector assigned to a given role at the specified index.
+  /// @notice Returns the function selector assigned to a given role on the given target at the specified index.
   /// @dev Target selectors assigned to `ADMIN_ROLE` are not accessible.
   /// @param roleId The identifier of the role.
   /// @param target The address of the target contract.
-  /// @param index The index in the role member list.
+  /// @param index The index in the selector list of the role for the target.
   /// @return The selector at the index.
   function getRoleTargetSelector(
     uint64 roleId,
@@ -155,7 +155,7 @@ interface IAccessManagerEnumerable is IAccessManager {
     uint256 index
   ) external view returns (bytes4);
 
-  /// @notice Returns the number of function selectors assigned to the given role.
+  /// @notice Returns the number of function selectors assigned to the given role on the given target.
   /// @dev Target selectors assigned to `ADMIN_ROLE` are not accessible.
   /// @param roleId The identifier of the role.
   /// @param target The address of the target contract.
@@ -165,7 +165,7 @@ interface IAccessManagerEnumerable is IAccessManager {
     address target
   ) external view returns (uint256);
 
-  /// @notice Returns the list of function selectors assigned to the given role between the specified indexes.
+  /// @notice Returns the list of function selectors assigned to the given role on the given target between the specified indexes.
   /// @dev Target selectors assigned to `ADMIN_ROLE` are not accessible.
   /// @param roleId The identifier of the role.
   /// @param target The address of the target contract.

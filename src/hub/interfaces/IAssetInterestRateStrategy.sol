@@ -63,13 +63,13 @@ interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
   function getBaseDrawnRate(uint256 assetId) external view returns (uint256);
 
   /// @notice Returns the rate growth before the optimal usage ratio.
-  /// @dev Applicable when usage ratio > 0 and <= OPTIMAL_USAGE_RATIO.
+  /// @dev Applicable when usage ratio > 0 and <= `optimalUsageRatio`.
   /// @param assetId The identifier of the asset for which to get the rate growth before the optimal usage ratio.
   /// @return The rate growth, in BPS.
   function getRateGrowthBeforeOptimal(uint256 assetId) external view returns (uint256);
 
   /// @notice Returns the rate growth after the optimal usage ratio.
-  /// @dev Applicable when usage ratio > OPTIMAL_USAGE_RATIO.
+  /// @dev Applicable when usage ratio > `optimalUsageRatio`.
   /// @param assetId The identifier of the asset for which to get the rate growth after the optimal usage ratio.
   /// @return The rate growth, in BPS.
   function getRateGrowthAfterOptimal(uint256 assetId) external view returns (uint256);

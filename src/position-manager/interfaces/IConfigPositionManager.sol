@@ -83,7 +83,7 @@ interface IConfigPositionManager is IPositionManagerIntentBase {
     uint256 deadline;
   }
 
-  /// @notice Emitted when a global config permission is updated.
+  /// @notice Emitted when the config permissions of a delegatee are updated.
   /// @param spoke The address of the Spoke.
   /// @param delegator The address of the delegator.
   /// @param delegatee The address of the delegatee.
@@ -206,7 +206,7 @@ interface IConfigPositionManager is IPositionManagerIntentBase {
     bytes calldata signature
   ) external;
 
-  /// @notice Renounces the global permission given by the delegator.
+  /// @notice Renounces all config permissions given by the delegator.
   /// @param spoke The address of the Spoke.
   /// @param delegator The address of the delegator.
   function renounceGlobalPermission(address spoke, address delegator) external;

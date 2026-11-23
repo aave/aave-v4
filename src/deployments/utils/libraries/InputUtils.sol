@@ -20,13 +20,13 @@ library InputUtils {
   /// @dev deployNativeTokenGateway Whether to deploy the NativeTokenGateway.
   /// @dev deploySignatureGateway Whether to deploy the SignatureGateway.
   /// @dev deployPositionManagers Whether to deploy the position manager batch (giver/taker/config).
-  /// @dev grantRoles Whether to grant roles during deployment. When `false`, only deploy-time ownership
-  ///      addresses (proxyAdminOwner, treasurySpokeOwner) are set, and both must be
-  ///      the deployer. The deployer also retains the AccessManager ACCESS_MANAGER_ADMIN_ROLE.
+  /// @dev grantRoles Whether to grant roles during deployment. When `false`, proxyAdminOwner and
+  ///      treasurySpokeOwner must be the deployer, while gatewayOwner and positionManagerOwner are
+  ///      still set at deploy time. The deployer also retains the AccessManager ACCESS_MANAGER_ADMIN_ROLE.
   ///      All role grants and admin transfers are deferred to a later action.
   /// @dev hubLabels An array of hub labels; the number of hub labels defines the number of hubs to deploy.
   /// @dev spokeLabels An array of spoke labels; the number of spoke labels defines the number of spokes to deploy.
-  /// @dev spokeMaxReservesLimits Per-spoke max user reserves limit (parallel to spokeLabels).
+  /// @dev spokeMaxReservesLimits Per-spoke max user reserves limit (parallel to spokeLabels, or empty to use MAX_ALLOWED_USER_RESERVES_LIMIT for all).
   /// @dev salt Root salt for deterministic CREATE2 deployment; orchestration derives per-batch salts.
   struct FullDeployInputs {
     address accessManagerAdmin;

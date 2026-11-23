@@ -15,7 +15,7 @@ interface IHubConfigurator {
 
   /// @notice Adds a new asset to a specified Hub.
   /// @dev Retrieves the decimals of the underlying asset from its ERC20 contract.
-  /// @dev The fee receiver is automatically added as a Spoke with maximum caps.
+  /// @dev The fee receiver is automatically added as a Spoke with maximum add cap and zero draw cap.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
   /// @param feeReceiver The address of the fee receiver Spoke.
@@ -33,7 +33,7 @@ interface IHubConfigurator {
   ) external returns (uint256);
 
   /// @notice Adds a new asset to a specified Hub with explicit decimals.
-  /// @dev The fee receiver is automatically added as a Spoke with maximum caps.
+  /// @dev The fee receiver is automatically added as a Spoke with maximum add cap and zero draw cap.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
   /// @param decimals The number of decimals of the asset.

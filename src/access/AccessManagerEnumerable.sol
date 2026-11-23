@@ -7,7 +7,7 @@ import {IAccessManagerEnumerable} from 'src/access/interfaces/IAccessManagerEnum
 
 /// @title AccessManagerEnumerable
 /// @author Aave Labs
-/// @notice Extension of AccessManager that tracks role members and their function selectors using EnumerableSet.
+/// @notice Extension of AccessManager that tracks roles, admin roles, role members, role target selectors and role labels using EnumerableSet.
 /// @dev Roles, target contracts, and function selectors assigned to `ADMIN_ROLE` are excluded from tracking.
 /// @dev `ADMIN_ROLE` and `PUBLIC_ROLE` cannot be labeled.
 contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {

@@ -178,7 +178,7 @@ interface IHub is IHubBase, IAccessManaged {
   error AssetNotListed();
 
   /// @notice Thrown when the add cap is exceeded.
-  /// @param addCap The current `addCap` of the asset, expressed in whole assets (not scaled by decimals).
+  /// @param addCap The current `addCap` of the spoke, expressed in whole assets (not scaled by decimals).
   error AddCapExceeded(uint256 addCap);
 
   /// @notice Thrown when the available liquidity is insufficient.
@@ -190,7 +190,7 @@ interface IHub is IHubBase, IAccessManaged {
   error InsufficientTransferred(uint256 liquidityNeeded);
 
   /// @notice Thrown when the draw cap is exceeded.
-  /// @param drawCap The current `drawCap` of the asset, expressed in whole assets (not scaled by decimals).
+  /// @param drawCap The current `drawCap` of the spoke, expressed in whole assets (not scaled by decimals).
   error DrawCapExceeded(uint256 drawCap);
 
   /// @notice Thrown when a surplus amount of drawn is restored.
@@ -221,7 +221,7 @@ interface IHub is IHubBase, IAccessManaged {
   /// @notice Thrown when a new reinvestment controller is the zero address and the asset has existing swept liquidity.
   error InvalidReinvestmentController();
 
-  /// @notice Thrown when an invalid reinvestment controller attempts to perform a `sweep` action.
+  /// @notice Thrown when an invalid reinvestment controller attempts to perform a `sweep` or `reclaim` action.
   error OnlyReinvestmentController();
 
   /// @notice Thrown when a spoke being added is already listed.
@@ -242,7 +242,7 @@ interface IHub is IHubBase, IAccessManaged {
   /// @notice Thrown if the liquidity fee is invalid when updating an asset configuration.
   error InvalidLiquidityFee();
 
-  /// @notice Thrown when the asset decimals exceed the maximum allowed decimals.
+  /// @notice Thrown when the asset decimals are outside the allowed range.
   error InvalidAssetDecimals();
 
   /// @notice Thrown if the interest rate strategy or data are invalid when updating an asset configuration.
@@ -268,7 +268,7 @@ interface IHub is IHubBase, IAccessManaged {
 
   /// @notice Updates the configuration of an asset.
   /// @dev If the fee receiver is updated, adds it as a new spoke with maximum add cap and zero draw cap, and sets old fee receiver caps to zero.
-  /// @dev If the fee receiver is updated, accrued fees are minted as shares before the update if their value exceeds one share.
+  /// @dev If the fee receiver is updated, accrued fees are minted as shares before the update if they are worth at least one share.
   /// @dev If the interest rate strategy is updated, it is configured with `irData`. Otherwise, `irData` must be empty.
   /// @param assetId The identifier of the asset.
   /// @param config The new configuration for the asset.
@@ -292,7 +292,7 @@ interface IHub is IHubBase, IAccessManaged {
   /// @param config The new configuration for the Spoke.
   function updateSpokeConfig(uint256 assetId, address spoke, SpokeConfig calldata config) external;
 
-  /// @notice Updates the interest rate strategy for a specified asset.
+  /// @notice Updates the interest rate data of the current interest rate strategy for a specified asset.
   /// @param assetId The identifier of the asset.
   /// @param irData The interest rate data to apply to the given asset, encoded in bytes.
   function setInterestRateData(uint256 assetId, bytes calldata irData) external;
@@ -317,7 +317,7 @@ interface IHub is IHubBase, IAccessManaged {
   ) external returns (uint256, uint256);
 
   /// @notice Allows a spoke to transfer its added shares of an asset to another spoke.
-  /// @dev Only callable by spokes.
+  /// @dev Only callable by active and non-halted spokes. The receiver spoke must also be active, non-halted and within its add cap.
   /// @param assetId The identifier of the asset.
   /// @param shares The amount of shares to move.
   /// @param toSpoke The address of the recipient spoke.
@@ -346,7 +346,7 @@ interface IHub is IHubBase, IAccessManaged {
   function getAssetCount() external view returns (uint256);
 
   /// @notice Returns information regarding the specified asset.
-  /// @dev `drawnIndex`, `drawnRate` and `lastUpdateTimestamp` can be outdated due to passage of time.
+  /// @dev `drawnIndex`, `drawnRate`, `lastUpdateTimestamp` and `realizedFees` can be outdated due to passage of time.
   /// @param assetId The identifier of the asset.
   /// @return The asset struct.
   function getAsset(uint256 assetId) external view returns (Asset memory);
@@ -413,7 +413,7 @@ interface IHub is IHubBase, IAccessManaged {
 
   /// @notice Returns the maximum value for any spoke cap (add or draw).
   /// @dev The value is not inclusive; using the maximum value indicates no cap.
-  /// @return The maximum cap value, expressed in asset units.
+  /// @return The maximum cap value, expressed in whole assets (not scaled by decimals).
   function MAX_ALLOWED_SPOKE_CAP() external view returns (uint40);
 
   /// @notice Returns the maximum value for any spoke risk premium threshold.
