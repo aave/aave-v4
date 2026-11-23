@@ -13,7 +13,7 @@ abstract contract SetupHelpers is SpokeHelpers {
     ISpoke spoke,
     address user,
     uint256 deadline
-  ) internal returns (ISignatureGateway.Supply memory) {
+  ) internal view returns (ISignatureGateway.Supply memory) {
     return
       ISignatureGateway.Supply({
         spoke: address(spoke),
@@ -30,7 +30,7 @@ abstract contract SetupHelpers is SpokeHelpers {
     ISpoke spoke,
     address user,
     uint256 deadline
-  ) internal returns (ISignatureGateway.Withdraw memory) {
+  ) internal view returns (ISignatureGateway.Withdraw memory) {
     return
       ISignatureGateway.Withdraw({
         spoke: address(spoke),
@@ -47,7 +47,7 @@ abstract contract SetupHelpers is SpokeHelpers {
     ISpoke spoke,
     address user,
     uint256 deadline
-  ) internal returns (ISignatureGateway.Borrow memory) {
+  ) internal view returns (ISignatureGateway.Borrow memory) {
     return
       ISignatureGateway.Borrow({
         spoke: address(spoke),
@@ -64,7 +64,7 @@ abstract contract SetupHelpers is SpokeHelpers {
     ISpoke spoke,
     address user,
     uint256 deadline
-  ) internal returns (ISignatureGateway.Repay memory) {
+  ) internal view returns (ISignatureGateway.Repay memory) {
     return
       ISignatureGateway.Repay({
         spoke: address(spoke),
@@ -81,7 +81,7 @@ abstract contract SetupHelpers is SpokeHelpers {
     ISpoke spoke,
     address user,
     uint256 deadline
-  ) internal returns (ISignatureGateway.SetUsingAsCollateral memory) {
+  ) internal view returns (ISignatureGateway.SetUsingAsCollateral memory) {
     return
       ISignatureGateway.SetUsingAsCollateral({
         spoke: address(spoke),
@@ -98,7 +98,7 @@ abstract contract SetupHelpers is SpokeHelpers {
     ISpoke spoke,
     address user,
     uint256 deadline
-  ) internal returns (ISignatureGateway.UpdateUserRiskPremium memory) {
+  ) internal view returns (ISignatureGateway.UpdateUserRiskPremium memory) {
     return
       ISignatureGateway.UpdateUserRiskPremium({
         spoke: address(spoke),
@@ -113,7 +113,7 @@ abstract contract SetupHelpers is SpokeHelpers {
     ISpoke spoke,
     address user,
     uint256 deadline
-  ) internal returns (ISignatureGateway.UpdateUserDynamicConfig memory) {
+  ) internal view returns (ISignatureGateway.UpdateUserDynamicConfig memory) {
     return
       ISignatureGateway.UpdateUserDynamicConfig({
         spoke: address(spoke),

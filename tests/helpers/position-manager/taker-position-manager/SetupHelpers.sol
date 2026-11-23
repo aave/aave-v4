@@ -14,7 +14,7 @@ abstract contract SetupHelpers is SpokeHelpers {
     address spender,
     address onBehalfOf,
     uint256 deadline
-  ) internal returns (ITakerPositionManager.WithdrawPermit memory) {
+  ) internal view returns (ITakerPositionManager.WithdrawPermit memory) {
     return
       ITakerPositionManager.WithdrawPermit({
         spoke: address(spoke),
@@ -33,7 +33,7 @@ abstract contract SetupHelpers is SpokeHelpers {
     address spender,
     address onBehalfOf,
     uint256 deadline
-  ) internal returns (ITakerPositionManager.BorrowPermit memory) {
+  ) internal view returns (ITakerPositionManager.BorrowPermit memory) {
     return
       ITakerPositionManager.BorrowPermit({
         spoke: address(spoke),
