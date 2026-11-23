@@ -6,7 +6,7 @@ pragma solidity ^0.8.0;
 /// @notice Deployment input struct and validation helpers.
 library InputUtils {
   /// @dev accessManagerAdmin The default admin of the access manager. Only used when grantRoles is true.
-  /// @dev proxyAdminOwner The owner of the Hub and Spoke ProxyAdmin contracts. Required at deploy time (constructor arg).
+  /// @dev proxyAdminOwner The owner of the HubSpokeFactory, Hub and Spoke ProxyAdmin contracts. Required at deploy time (constructor arg).
   ///      When grantRoles is `false`, must be address(0) (defaults to the deployer) or the deployer.
   /// @dev hubAdmin The admin of the hub. Only used when grantRoles is true.
   /// @dev hubConfiguratorAdmin The admin granted all hub configurator roles. Only used when grantRoles is true.
@@ -14,6 +14,7 @@ library InputUtils {
   ///      When grantRoles is `false`, must be address(0) (defaults to the deployer) or the deployer.
   /// @dev spokeAdmin The spoke admin. Only used when grantRoles is true.
   /// @dev spokeConfiguratorAdmin The admin granted all spoke configurator roles. Only used when grantRoles is true.
+  /// @dev hubSpokeFactoryAdmin The admin granted all HubSpokeFactory roles. Only used when grantRoles is true.
   /// @dev gatewayOwner The owner of the native token and signature gateways.
   /// @dev positionManagerOwner The owner of the position manager contracts (giver/taker/config).
   /// @dev nativeWrapper The address of the native wrapper (required when deployNativeTokenGateway is true).
@@ -26,7 +27,6 @@ library InputUtils {
   ///      All role grants and admin transfers are deferred to a later action.
   /// @dev hubLabels An array of hub labels; the number of hub labels defines the number of hubs to deploy.
   /// @dev spokeLabels An array of spoke labels; the number of spoke labels defines the number of spokes to deploy.
-  /// @dev spokeMaxReservesLimits Per-spoke max user reserves limit (parallel to spokeLabels).
   /// @dev salt Root salt for deterministic CREATE2 deployment; orchestration derives per-batch salts.
   struct FullDeployInputs {
     address accessManagerAdmin;
@@ -36,6 +36,7 @@ library InputUtils {
     address treasurySpokeOwner;
     address spokeAdmin;
     address spokeConfiguratorAdmin;
+    address hubSpokeFactoryAdmin;
     address gatewayOwner;
     address positionManagerOwner;
     address nativeWrapper;
@@ -45,7 +46,6 @@ library InputUtils {
     bool grantRoles;
     string[] hubLabels;
     string[] spokeLabels;
-    uint16[] spokeMaxReservesLimits;
     bytes32 salt;
   }
 

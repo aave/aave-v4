@@ -17,27 +17,23 @@ library BatchReports {
     address spokeConfigurator;
   }
 
-  /// @dev spokeProxy The deployed Spoke proxy contract address.
-  /// @dev spokeImplementation The deployed Spoke implementation contract address.
-  /// @dev aaveOracle The deployed AaveOracle contract address.
-  struct SpokeInstanceBatchReport {
-    address spokeProxy;
-    address spokeImplementation;
-    address aaveOracle;
-  }
-
-  /// @dev hubProxy The deployed Hub proxy contract address.
-  /// @dev hubImplementation The deployed Hub implementation contract address.
-  /// @dev irStrategy The deployed InterestRateStrategy contract address.
-  struct HubInstanceBatchReport {
-    address hubProxy;
+  /// @dev hubImplementation The deployed canonical Hub implementation contract address.
+  struct HubImplementationBatchReport {
     address hubImplementation;
-    address irStrategy;
   }
 
-  /// @dev treasurySpoke The deployed TreasurySpoke contract address.
-  struct TreasurySpokeBatchReport {
-    address treasurySpoke;
+  /// @dev spokeImplementation The deployed canonical Spoke implementation contract address.
+  struct SpokeImplementationBatchReport {
+    address spokeImplementation;
+  }
+
+  /// @dev hubSpokeFactory The deployed HubSpokeFactory proxy contract address.
+  /// @dev hubSpokeFactoryImplementation The deployed HubSpokeFactory implementation contract address.
+  /// @dev treasurySpokeImplementation The deployed canonical TreasurySpoke implementation contract address.
+  struct HubSpokeFactoryBatchReport {
+    address hubSpokeFactory;
+    address hubSpokeFactoryImplementation;
+    address treasurySpokeImplementation;
   }
 
   /// @dev signatureGateway The deployed SignatureGateway contract address.
@@ -58,13 +54,6 @@ library BatchReports {
 
   /// @dev tokenizationSpokeImplementation The deployed canonical TokenizationSpoke implementation contract address.
   struct TokenizationSpokeImplementationBatchReport {
-    address tokenizationSpokeImplementation;
-  }
-
-  /// @dev tokenizationSpokeProxy The deployed TokenizationSpoke proxy contract address.
-  /// @dev tokenizationSpokeImplementation The TokenizationSpoke implementation the proxy points to.
-  struct TokenizationSpokeBatchReport {
-    address tokenizationSpokeProxy;
     address tokenizationSpokeImplementation;
   }
 }

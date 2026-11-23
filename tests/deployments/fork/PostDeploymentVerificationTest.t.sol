@@ -22,6 +22,7 @@ contract PostDeploymentVerificationTest is PostDeploymentVerificationBase, AaveV
     address treasurySpokeOwner;
     address spokeAdmin;
     address spokeConfiguratorAdmin;
+    address hubSpokeFactoryAdmin;
     address gatewayOwner;
     address positionManagerOwner;
     bool deployNativeTokenGateway;
@@ -66,7 +67,7 @@ contract PostDeploymentVerificationTest is PostDeploymentVerificationBase, AaveV
       report.tokenizationSpokeImplementationBatchReport.tokenizationSpokeImplementation,
       address(0)
     );
-    assertEq(report.treasurySpokeBatchReport.treasurySpoke, makeAddr('treasurySpoke'));
+    assertEq(report.treasurySpokeReport.treasurySpoke, makeAddr('treasurySpoke'));
   }
 
   /// deploy all gateways
@@ -232,6 +233,7 @@ contract PostDeploymentVerificationTest is PostDeploymentVerificationBase, AaveV
       treasurySpokeOwner: params.treasurySpokeOwner,
       spokeAdmin: params.spokeAdmin,
       spokeConfiguratorAdmin: params.spokeConfiguratorAdmin,
+      hubSpokeFactoryAdmin: params.hubSpokeFactoryAdmin,
       gatewayOwner: params.gatewayOwner,
       positionManagerOwner: params.positionManagerOwner,
       nativeWrapper: (params.deployNativeTokenGateway && params.useValidNativeWrapper)
@@ -243,7 +245,6 @@ contract PostDeploymentVerificationTest is PostDeploymentVerificationBase, AaveV
       grantRoles: params.grantRoles,
       hubLabels: hubLabels,
       spokeLabels: spokeLabels,
-      spokeMaxReservesLimits: new uint16[](0),
       salt: params.salt
     });
 
@@ -298,6 +299,7 @@ contract PostDeploymentVerificationTest is PostDeploymentVerificationBase, AaveV
       treasurySpokeOwner: makeAddr('treasurySpokeOwner'),
       spokeAdmin: makeAddr('spokeAdmin'),
       spokeConfiguratorAdmin: makeAddr('spokeConfiguratorAdmin'),
+      hubSpokeFactoryAdmin: makeAddr('hubSpokeFactoryAdmin'),
       gatewayOwner: makeAddr('gatewayOwner'),
       positionManagerOwner: makeAddr('positionManagerOwner'),
       nativeWrapper: weth,
@@ -307,7 +309,6 @@ contract PostDeploymentVerificationTest is PostDeploymentVerificationBase, AaveV
       grantRoles: true,
       hubLabels: hubLabels,
       spokeLabels: spokeLabels,
-      spokeMaxReservesLimits: new uint16[](0),
       salt: keccak256('test-salt')
     });
   }

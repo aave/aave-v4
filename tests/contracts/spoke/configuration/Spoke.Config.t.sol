@@ -12,8 +12,10 @@ contract SpokeConfigTest is Base {
     vm.expectCall(oracle, abi.encodeCall(IPriceOracle.decimals, ()), 1);
     vm.mockCall(oracle, abi.encodeCall(IPriceOracle.decimals, ()), abi.encode(8));
     ISpoke instance = ISpoke(
-      address(
-        AaveV4TestOrchestration.deploySpokeImplementation(oracle, MAX_ALLOWED_USER_RESERVES_LIMIT)
+      _deploySpokeProxy(
+        address(AaveV4TestOrchestration.deploySpokeImplementation()),
+        oracle,
+        MAX_ALLOWED_USER_RESERVES_LIMIT
       )
     );
     assertEq(instance.ORACLE(), oracle);
@@ -21,29 +23,36 @@ contract SpokeConfigTest is Base {
     assertNotEq(instance.getLiquidationLogic(), address(0));
   }
 
-  function test_spoke_deploy_reverts_on_InvalidConstructorInput() public {
-    AaveV4TestOrchestrationWrapper deployer = new AaveV4TestOrchestrationWrapper();
-
-    vm.expectRevert();
-    deployer.deploySpokeImplementation(address(0), MAX_ALLOWED_USER_RESERVES_LIMIT);
+  /// @dev Revision 2 keeps about 200 bytes of headroom under EIP-170.
+  function test_spokeInstance_runtimeSize() public view {
+    assertLe(
+      vm.getDeployedCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance').length,
+      24_576
+    );
   }
 
-  function test_spoke_deploy_reverts_on_InvalidOracleDecimals() public {
-    AaveV4TestOrchestrationWrapper deployer = new AaveV4TestOrchestrationWrapper();
+  function test_spoke_deploy_reverts_on_InvalidOracle() public {
+    address spokeImpl = address(AaveV4TestOrchestration.deploySpokeImplementation());
+    vm.expectRevert();
+    _deploySpokeProxy(spokeImpl, address(0), MAX_ALLOWED_USER_RESERVES_LIMIT);
+  }
+
+  function test_spoke_deploy_revertsWith_InvalidOracleDecimals() public {
     address oracle = makeAddr('AaveOracle');
 
     vm.mockCall(oracle, abi.encodeCall(IPriceOracle.decimals, ()), abi.encode(7));
-    vm.expectRevert();
-    deployer.deploySpokeImplementation(oracle, MAX_ALLOWED_USER_RESERVES_LIMIT);
+    address spokeImpl = address(AaveV4TestOrchestration.deploySpokeImplementation());
+    vm.expectRevert(ISpoke.InvalidOracleDecimals.selector);
+    _deploySpokeProxy(spokeImpl, oracle, MAX_ALLOWED_USER_RESERVES_LIMIT);
   }
 
-  function test_spoke_deploy_reverts_on_InvalidMaxUserReservesLimit() public {
-    AaveV4TestOrchestrationWrapper deployer = new AaveV4TestOrchestrationWrapper();
+  function test_spoke_deploy_revertsWith_InvalidMaxUserReservesLimit() public {
     address oracle = makeAddr('AaveOracle');
 
     vm.mockCall(oracle, abi.encodeCall(IPriceOracle.decimals, ()), abi.encode(8));
-    vm.expectRevert();
-    deployer.deploySpokeImplementation(oracle, 0);
+    address spokeImpl = address(AaveV4TestOrchestration.deploySpokeImplementation());
+    vm.expectRevert(ISpoke.InvalidMaxUserReservesLimit.selector);
+    _deploySpokeProxy(spokeImpl, oracle, 0);
   }
 
   function test_updateReservePriceSource_revertsWith_AccessManagedUnauthorized(
@@ -554,5 +563,23 @@ contract SpokeConfigTest is Base {
     vm.expectRevert(ISpoke.InvalidLiquidationConfig.selector, address(spoke1));
     vm.prank(SPOKE_ADMIN);
     spoke1.updateLiquidationConfig(liquidationConfig);
+  }
+
+  function _deploySpokeProxy(
+    address spokeImpl,
+    address oracle,
+    uint16 maxUserReservesLimit
+  ) internal returns (address) {
+    return
+      address(
+        new TransparentUpgradeableProxy(
+          spokeImpl,
+          ADMIN,
+          abi.encodeCall(
+            ISpokeInstance.initialize,
+            (address(accessManager), oracle, maxUserReservesLimit)
+          )
+        )
+      );
   }
 }

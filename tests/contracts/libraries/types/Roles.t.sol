@@ -16,5 +16,6 @@ contract RolesTest is Test {
     assertEq(Roles.SPOKE_CONFIGURATOR_ROLE, 301);
     assertEq(Roles.SPOKE_USER_POSITION_UPDATER_ROLE, 302);
     assertEq(Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE, 400);
+    assertEq(Roles.HUB_SPOKE_FACTORY_DOMAIN_ADMIN_ROLE, 500);
   }
 }

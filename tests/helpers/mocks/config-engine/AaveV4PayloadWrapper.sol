@@ -14,6 +14,11 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   uint256 public postExecuteOrder;
   uint256 private _callCounter;
 
+  // Deployment action storage
+  IAaveV4ConfigEngine.HubDeployment[] private _hubDeployments;
+  IAaveV4ConfigEngine.SpokeDeployment[] private _spokeDeployments;
+  IAaveV4ConfigEngine.TreasurySpokeDeployment[] private _treasurySpokeDeployments;
+
   // Hub action storage
   IAaveV4ConfigEngine.AssetListing[] private _hubAssetListings;
   IAaveV4ConfigEngine.AssetConfigUpdate[] private _hubAssetConfigUpdates;
@@ -54,6 +59,30 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   function _postExecute() internal override {
     postExecuteCalled = true;
     postExecuteOrder = ++_callCounter;
+  }
+
+  // Deployment setters
+  function setHubDeployments(IAaveV4ConfigEngine.HubDeployment[] memory items) external {
+    delete _hubDeployments;
+    for (uint256 i = 0; i < items.length; i++) {
+      _hubDeployments.push(items[i]);
+    }
+  }
+
+  function setSpokeDeployments(IAaveV4ConfigEngine.SpokeDeployment[] memory items) external {
+    delete _spokeDeployments;
+    for (uint256 i = 0; i < items.length; i++) {
+      _spokeDeployments.push(items[i]);
+    }
+  }
+
+  function setTreasurySpokeDeployments(
+    IAaveV4ConfigEngine.TreasurySpokeDeployment[] memory items
+  ) external {
+    delete _treasurySpokeDeployments;
+    for (uint256 i = 0; i < items.length; i++) {
+      _treasurySpokeDeployments.push(items[i]);
+    }
   }
 
   // Hub setters
@@ -221,6 +250,33 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
     for (uint256 i = 0; i < items.length; i++) {
       _accessManagerTargetAdminDelayUpdates.push(items[i]);
     }
+  }
+
+  function hubDeployments()
+    public
+    view
+    override
+    returns (IAaveV4ConfigEngine.HubDeployment[] memory)
+  {
+    return _hubDeployments;
+  }
+
+  function spokeDeployments()
+    public
+    view
+    override
+    returns (IAaveV4ConfigEngine.SpokeDeployment[] memory)
+  {
+    return _spokeDeployments;
+  }
+
+  function treasurySpokeDeployments()
+    public
+    view
+    override
+    returns (IAaveV4ConfigEngine.TreasurySpokeDeployment[] memory)
+  {
+    return _treasurySpokeDeployments;
   }
 
   function hubAssetListings()

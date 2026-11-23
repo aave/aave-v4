@@ -5,6 +5,7 @@ import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
 import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
+import {IHubSpokeFactory} from 'src/factory/interfaces/IHubSpokeFactory.sol';
 
 /// @title Roles library
 /// @author Aave Labs
@@ -16,6 +17,7 @@ import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 ///   - HubConfigurator:   200-299
 ///   - Spoke:             300-399
 ///   - SpokeConfigurator: 400-499
+///   - HubSpokeFactory:   500-599
 ///
 /// ## Role strategy
 ///
@@ -27,15 +29,16 @@ import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 /// HUB_FEE_MINTER_ROLE, HUB_DEFICIT_ELIMINATOR_ROLE each control a distinct set
 /// of selectors).
 ///
-/// HubConfigurator and SpokeConfigurator follow a different approach: initially,
+/// HubConfigurator, SpokeConfigurator and HubSpokeFactory follow a different approach: initially,
 /// a single Domain Admin role per domain (HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE = 200,
-/// SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE = 400) holds all target selectors.
+/// SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE = 400, HUB_SPOKE_FACTORY_DOMAIN_ADMIN_ROLE = 500)
+/// holds all target selectors.
 /// As more granular roles are introduced, they are added at the next available ID
-/// (201, 202, ... / 401, 402, ...) and the corresponding selectors are reassigned
+/// (201, 202, ... / 401, 402, ... / 501, 502, ...) and the corresponding selectors are reassigned
 /// from the Domain Admin role to the new granular role:
 ///   - Existing role IDs should never be overwritten or reused for a different purpose.
 ///   - New roles are always appended with an incremented ID.
-///   - The Domain Admin role (200/400) only ever has its selector set shrink over
+///   - The Domain Admin role (200/400/500) only ever has its selector set shrink over
 ///     time as selectors are divided into more granular roles.
 ///   - Addresses holding the Domain Admin role should be granted the new
 ///     granular role to retain their existing access.
@@ -59,6 +62,9 @@ library Roles {
 
   // SpokeConfigurator roles — granularize as needed with new roles appended
   uint64 public constant SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE = 400;
+
+  // HubSpokeFactory roles — granularize as needed with new roles appended
+  uint64 public constant HUB_SPOKE_FACTORY_DOMAIN_ADMIN_ROLE = 500;
 
   // ─── Hub selector getters ───
 
@@ -169,6 +175,15 @@ library Roles {
     selectors[21] = ISpokeConfigurator.pauseReserve.selector;
     selectors[22] = ISpokeConfigurator.freezeReserve.selector;
     selectors[23] = ISpokeConfigurator.updatePositionManager.selector;
+    return selectors;
+  }
+
+  // ─── HubSpokeFactory selector getters ───
+
+  /// @notice Returns the function selectors associated with the HubSpokeFactory Domain Admin role.
+  function getHubSpokeFactoryDomainAdminRoleSelectors() internal pure returns (bytes4[] memory) {
+    bytes4[] memory selectors = new bytes4[](1);
+    selectors[0] = IHubSpokeFactory.setImplementation.selector;
     return selectors;
   }
 }

@@ -35,6 +35,12 @@ abstract contract SpokeStorage {
   /// @dev Map of position manager addresses to their configuration data.
   mapping(address positionManager => ISpoke.PositionManagerConfig) internal _positionManager;
 
+  /// @dev Address of the AaveOracle contract.
+  address internal _oracle;
+
+  /// @dev Maximum number of collateral and borrow reserves a user can have (each counted separately).
+  uint16 internal _maxUserReservesLimit;
+
   /// @dev Reserved storage space to allow for future layout updates.
-  uint256[50] private __gap;
+  uint256[49] private __gap;
 }

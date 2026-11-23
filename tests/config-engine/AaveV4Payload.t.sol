@@ -186,6 +186,81 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     assertEq(address(payload.CONFIG_ENGINE()), address(engineImplementation));
   }
 
+  /// @dev The payload is called directly here, so it is the factory caller.
+  function test_execute_deployments() public {
+    IAaveV4ConfigEngine.HubDeployment[] memory hubDeploys = new IAaveV4ConfigEngine.HubDeployment[](
+      1
+    );
+    hubDeploys[0] = IAaveV4ConfigEngine.HubDeployment({
+      salt: 'hub',
+      authority: address(accessManager),
+      proxyAdminOwner: PROXY_ADMIN_OWNER
+    });
+    IAaveV4ConfigEngine.SpokeDeployment[]
+      memory spokeDeploys = new IAaveV4ConfigEngine.SpokeDeployment[](1);
+    spokeDeploys[0] = IAaveV4ConfigEngine.SpokeDeployment({
+      salt: 'spoke',
+      authority: address(accessManager),
+      maxUserReservesLimit: MAX_USER_RESERVES_LIMIT,
+      proxyAdminOwner: PROXY_ADMIN_OWNER
+    });
+    IAaveV4ConfigEngine.TreasurySpokeDeployment[]
+      memory treasuryDeploys = new IAaveV4ConfigEngine.TreasurySpokeDeployment[](1);
+    treasuryDeploys[0] = IAaveV4ConfigEngine.TreasurySpokeDeployment({
+      salt: 'treasury-spoke',
+      owner: ADMIN,
+      proxyAdminOwner: PROXY_ADMIN_OWNER
+    });
+    payload.setHubDeployments(hubDeploys);
+    payload.setSpokeDeployments(spokeDeploys);
+    payload.setTreasurySpokeDeployments(treasuryDeploys);
+
+    IHubSpokeFactory.HubDeployment memory hub = factory.predictHub(
+      address(payload),
+      'hub',
+      address(accessManager),
+      PROXY_ADMIN_OWNER
+    );
+    IHubSpokeFactory.SpokeDeployment memory spoke = factory.predictSpoke(
+      address(payload),
+      'spoke',
+      address(accessManager),
+      MAX_USER_RESERVES_LIMIT,
+      PROXY_ADMIN_OWNER
+    );
+    address treasurySpoke = factory.predictTreasurySpoke(
+      address(payload),
+      'treasury-spoke',
+      ADMIN,
+      PROXY_ADMIN_OWNER
+    );
+
+    vm.expectEmit(address(factory));
+    emit IHubSpokeFactory.HubDeployed(
+      address(payload),
+      hub.proxy,
+      hub.irStrategy,
+      address(accessManager),
+      PROXY_ADMIN_OWNER
+    );
+    vm.expectEmit(address(factory));
+    emit IHubSpokeFactory.SpokeDeployed(
+      address(payload),
+      spoke.proxy,
+      spoke.oracle,
+      address(accessManager),
+      PROXY_ADMIN_OWNER
+    );
+    vm.expectEmit(address(factory));
+    emit IHubSpokeFactory.TreasurySpokeDeployed(
+      address(payload),
+      treasurySpoke,
+      ADMIN,
+      PROXY_ADMIN_OWNER
+    );
+    payload.execute();
+  }
+
   function test_execute_hubAssetListings() public {
     IAaveV4ConfigEngine.AssetListing[] memory listings = new IAaveV4ConfigEngine.AssetListing[](1);
     listings[0] = _defaultAssetListing();

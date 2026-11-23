@@ -10,17 +10,17 @@ contract AaveV4TreasurySpokeDeployProcedureTest is ProceduresBase {
     aaveV4TreasurySpokeDeployProcedureWrapper = new AaveV4TreasurySpokeDeployProcedureWrapper();
   }
 
-  function test_deployTreasurySpoke() public {
-    address treasurySpoke = aaveV4TreasurySpokeDeployProcedureWrapper.deployTreasurySpoke(
-      owner,
-      salt
-    );
-    assertEq(Ownable(treasurySpoke).owner(), owner);
-    assertEq(Ownable(ProxyHelper.getProxyAdmin(treasurySpoke)).owner(), owner);
+  function test_deployTreasurySpokeImplementation() public {
+    address treasurySpokeImpl = aaveV4TreasurySpokeDeployProcedureWrapper
+      .deployTreasurySpokeImplementation(salt);
+    assertNotEq(treasurySpokeImpl.code.length, 0);
+    assertEq(ProxyHelper.getProxyInitializedVersion(treasurySpokeImpl), type(uint64).max);
+    assertEq(Ownable(treasurySpokeImpl).owner(), address(0));
   }
 
-  function test_deployTreasurySpoke_reverts() public {
-    vm.expectRevert('invalid owner');
-    aaveV4TreasurySpokeDeployProcedureWrapper.deployTreasurySpoke({owner: address(0), salt: salt});
+  function test_deployTreasurySpokeImplementation_reverts_alreadyDeployed() public {
+    aaveV4TreasurySpokeDeployProcedureWrapper.deployTreasurySpokeImplementation(salt);
+    vm.expectRevert(Create2Utils.ContractAlreadyDeployed.selector);
+    aaveV4TreasurySpokeDeployProcedureWrapper.deployTreasurySpokeImplementation(salt);
   }
 }

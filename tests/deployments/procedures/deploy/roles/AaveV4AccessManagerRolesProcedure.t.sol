@@ -198,8 +198,22 @@ contract AaveV4AccessManagerRolesProcedureTest is ProceduresBase {
       Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE
     );
 
+    // HubSpokeFactory roles
+    assertTrue(
+      accessManager.isRoleLabeled(Roles.HUB_SPOKE_FACTORY_DOMAIN_ADMIN_ROLE),
+      'HUB_SPOKE_FACTORY_DOMAIN_ADMIN labeled'
+    );
+    assertEq(
+      accessManager.getLabelOfRole(Roles.HUB_SPOKE_FACTORY_DOMAIN_ADMIN_ROLE),
+      'HUB_SPOKE_FACTORY_DOMAIN_ADMIN_ROLE'
+    );
+    assertEq(
+      accessManager.getRoleOfLabel('HUB_SPOKE_FACTORY_DOMAIN_ADMIN_ROLE'),
+      Roles.HUB_SPOKE_FACTORY_DOMAIN_ADMIN_ROLE
+    );
+
     // Total label count
-    assertEq(accessManager.getRoleLabelCount(), 9, 'total label count');
+    assertEq(accessManager.getRoleLabelCount(), 10, 'total label count');
   }
 
   function test_labelAllRoles_reverts_zeroAddress() public {

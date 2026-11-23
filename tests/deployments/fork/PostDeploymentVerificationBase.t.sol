@@ -34,7 +34,7 @@ abstract contract PostDeploymentVerificationBase is BatchTestProcedures {
       json,
       '$.spokeConfigurator'
     );
-    report.treasurySpokeBatchReport.treasurySpoke = vm.parseJsonAddress(json, '$.treasurySpoke');
+    report.treasurySpokeReport.treasurySpoke = vm.parseJsonAddress(json, '$.treasurySpoke');
     report.salt = vm.parseJsonBytes32(json, '$.salt');
 
     // Optional fields (conditionally written by MetadataLogger, or absent from older reports)
@@ -45,6 +45,29 @@ abstract contract PostDeploymentVerificationBase is BatchTestProcedures {
     if (!_skipTokenizationSpokeImplementationCheck) {
       report.tokenizationSpokeImplementationBatchReport.tokenizationSpokeImplementation = vm
         .parseJsonAddress(json, '$.tokenizationSpokeImplementation');
+    }
+    _skipHubSpokeFactoryCheck = !vm.keyExistsJson(json, '$.hubSpokeFactory');
+    if (!_skipHubSpokeFactoryCheck) {
+      report.hubSpokeFactoryBatchReport.hubSpokeFactory = vm.parseJsonAddress(
+        json,
+        '$.hubSpokeFactory'
+      );
+      report.hubSpokeFactoryBatchReport.hubSpokeFactoryImplementation = vm.parseJsonAddress(
+        json,
+        '$.hubSpokeFactoryImplementation'
+      );
+      report.hubSpokeFactoryBatchReport.treasurySpokeImplementation = vm.parseJsonAddress(
+        json,
+        '$.treasurySpokeImplementation'
+      );
+      report.hubImplementationBatchReport.hubImplementation = vm.parseJsonAddress(
+        json,
+        '$.hubImplementation'
+      );
+      report.spokeImplementationBatchReport.spokeImplementation = vm.parseJsonAddress(
+        json,
+        '$.spokeImplementation'
+      );
     }
     if (vm.keyExistsJson(json, '$.nativeTokenGateway')) {
       report.gatewaysBatchReport.nativeGateway = vm.parseJsonAddress(json, '$.nativeTokenGateway');
@@ -72,40 +95,39 @@ abstract contract PostDeploymentVerificationBase is BatchTestProcedures {
     }
 
     uint256 hubCount = _inputs.hubLabels.length;
-    report.hubInstanceBatchReports = new OrchestrationReports.HubDeploymentReport[](hubCount);
+    report.hubDeploymentReports = new OrchestrationReports.HubDeploymentReport[](hubCount);
     for (uint256 i; i < hubCount; i++) {
       string memory label = _inputs.hubLabels[i];
-      report.hubInstanceBatchReports[i].label = label;
+      report.hubDeploymentReports[i].label = label;
 
-      report.hubInstanceBatchReports[i].report.hubProxy = vm.parseJsonAddress(
+      report.hubDeploymentReports[i].report.hubProxy = vm.parseJsonAddress(
         json,
         string.concat('$.hub.', label)
       );
-      report.hubInstanceBatchReports[i].report.hubImplementation = vm.parseJsonAddress(
-        json,
-        string.concat('$.hubImplementation.', label)
-      );
-      report.hubInstanceBatchReports[i].report.irStrategy = vm.parseJsonAddress(
+      // every Hub deployed through the factory points to the canonical implementation, older reports list one per Hub
+      report.hubDeploymentReports[i].report.hubImplementation = _skipHubSpokeFactoryCheck
+        ? vm.parseJsonAddress(json, string.concat('$.hubImplementation.', label))
+        : report.hubImplementationBatchReport.hubImplementation;
+      report.hubDeploymentReports[i].report.irStrategy = vm.parseJsonAddress(
         json,
         string.concat('$.irStrategy.', label)
       );
     }
 
     uint256 spokeCount = _inputs.spokeLabels.length;
-    report.spokeInstanceBatchReports = new OrchestrationReports.SpokeDeploymentReport[](spokeCount);
+    report.spokeDeploymentReports = new OrchestrationReports.SpokeDeploymentReport[](spokeCount);
     for (uint256 i; i < spokeCount; i++) {
       string memory label = _inputs.spokeLabels[i];
-      report.spokeInstanceBatchReports[i].label = label;
+      report.spokeDeploymentReports[i].label = label;
 
-      report.spokeInstanceBatchReports[i].report.spokeProxy = vm.parseJsonAddress(
+      report.spokeDeploymentReports[i].report.spokeProxy = vm.parseJsonAddress(
         json,
         string.concat('$.spoke.', label)
       );
-      report.spokeInstanceBatchReports[i].report.spokeImplementation = vm.parseJsonAddress(
-        json,
-        string.concat('$.spokeImplementation.', label)
-      );
-      report.spokeInstanceBatchReports[i].report.aaveOracle = vm.parseJsonAddress(
+      report.spokeDeploymentReports[i].report.spokeImplementation = _skipHubSpokeFactoryCheck
+        ? vm.parseJsonAddress(json, string.concat('$.spokeImplementation.', label))
+        : report.spokeImplementationBatchReport.spokeImplementation;
+      report.spokeDeploymentReports[i].report.aaveOracle = vm.parseJsonAddress(
         json,
         string.concat('$.oracle.', label)
       );

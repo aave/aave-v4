@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 import {Test} from 'forge-std/Test.sol';
 import {AaveV4DeployBatchBaseScript} from 'scripts/deploy/AaveV4DeployBatchBase.s.sol';
 import {InputUtils} from 'src/deployments/utils/libraries/InputUtils.sol';
-import {DeployConstants} from 'src/deployments/utils/libraries/DeployConstants.sol';
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 
 contract AaveV4DeployBatchBaseScriptHarness is AaveV4DeployBatchBaseScript {
@@ -58,6 +57,7 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
       treasurySpokeOwner: makeAddr('treasurySpokeOwner'),
       spokeAdmin: makeAddr('spokeAdmin'),
       spokeConfiguratorAdmin: makeAddr('spokeConfiguratorAdmin'),
+      hubSpokeFactoryAdmin: makeAddr('hubSpokeFactoryAdmin'),
       gatewayOwner: makeAddr('gatewayOwner'),
       positionManagerOwner: makeAddr('positionManagerOwner'),
       nativeWrapper: address(new WETH9()),
@@ -67,7 +67,6 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
       grantRoles: true,
       hubLabels: _toArray('hub1', 'hub2', 'hub3'),
       spokeLabels: _toArray('spoke1', 'spoke2', 'spoke3'),
-      spokeMaxReservesLimits: _defaultSpokeMaxReservesLimits(3),
       salt: bytes32(0)
     });
 
@@ -176,6 +175,25 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     InputUtils.FullDeployInputs memory expected = _inputs;
     if (grantRoles) {
       expected.spokeConfiguratorAdmin = _deployer;
+    } else {
+      expected.treasurySpokeOwner = _deployer;
+      expected.proxyAdminOwner = _deployer;
+    }
+    assertEq(sanitized, expected);
+  }
+
+  function test_loadWarningsAndSanitizeInputs_withZeroHubSpokeFactoryAdmin_fuzz(
+    bool grantRoles
+  ) public {
+    _inputs.hubSpokeFactoryAdmin = address(0);
+    _setGrantRoles(grantRoles);
+    InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
+      _inputs,
+      _deployer
+    );
+    InputUtils.FullDeployInputs memory expected = _inputs;
+    if (grantRoles) {
+      expected.hubSpokeFactoryAdmin = _deployer;
     } else {
       expected.treasurySpokeOwner = _deployer;
       expected.proxyAdminOwner = _deployer;
@@ -326,7 +344,6 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
 
   function test_loadWarningsAndSanitizeInputs_revertsWith_duplicateSpokeLabel() public {
     _inputs.spokeLabels = ['spoke1', 'spoke1'];
-    _inputs.spokeMaxReservesLimits = _defaultSpokeMaxReservesLimits(2);
 
     vm.expectRevert('duplicate spoke label: spoke1');
     _harness.loadWarningsAndSanitizeInputs(_inputs, _deployer);
@@ -352,6 +369,7 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     assertEq(a.treasurySpokeOwner, b.treasurySpokeOwner, 'treasury spoke owner');
     assertEq(a.proxyAdminOwner, b.proxyAdminOwner, 'proxy admin owner');
     assertEq(a.spokeConfiguratorAdmin, b.spokeConfiguratorAdmin, 'spoke configurator admin');
+    assertEq(a.hubSpokeFactoryAdmin, b.hubSpokeFactoryAdmin, 'hub spoke factory admin');
     assertEq(a.spokeAdmin, b.spokeAdmin, 'spoke admin');
     assertEq(a.gatewayOwner, b.gatewayOwner, 'gateway owner');
     assertEq(a.positionManagerOwner, b.positionManagerOwner, 'position manager owner');
@@ -372,15 +390,6 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     if (!grantRoles) {
       _inputs.proxyAdminOwner = address(0);
       _inputs.treasurySpokeOwner = address(0);
-    }
-  }
-
-  function _defaultSpokeMaxReservesLimits(
-    uint256 count
-  ) internal pure returns (uint16[] memory limits) {
-    limits = new uint16[](count);
-    for (uint256 i; i < count; i++) {
-      limits[i] = DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT;
     }
   }
 
