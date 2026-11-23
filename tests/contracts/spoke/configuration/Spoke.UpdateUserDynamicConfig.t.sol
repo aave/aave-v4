@@ -4,6 +4,15 @@ pragma solidity ^0.8.0;
 import 'tests/setup/Base.t.sol';
 
 contract SpokeUpdateUserDynamicConfigTest is Base {
+  function test_updateUserDynamicConfig_revertsWith_ReentrancyGuardReentrantCall_guardEntered()
+    public
+  {
+    _assertRevertsWhenReentrancyGuardEntered(
+      address(spoke1),
+      abi.encodeCall(ISpoke.updateUserDynamicConfig, (bob))
+    );
+  }
+
   function test_updateUserDynamicConfig_revertsWith_ReentrancyGuardReentrantCall() public {
     SpokeActions.supplyCollateral({
       spoke: spoke1,
@@ -23,7 +32,8 @@ contract SpokeUpdateUserDynamicConfigTest is Base {
 
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(spoke1),
-      ISpoke.updateUserDynamicConfig.selector
+      ISpoke.updateUserDynamicConfig.selector,
+      REENTRANCY_GUARD_SLOT
     );
 
     // reentrant hub.refreshPremium call

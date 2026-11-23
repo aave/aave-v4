@@ -58,6 +58,16 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     }
   }
 
+  function test_liquidationCall_revertsWith_ReentrancyGuardReentrantCall_guardEntered() public {
+    _assertRevertsWhenReentrancyGuardEntered(
+      address(spoke),
+      abi.encodeCall(
+        ISpoke.liquidationCall,
+        (_wethReserveId(spoke), _daiReserveId(spoke), bob, 1e18, false)
+      )
+    );
+  }
+
   function test_liquidationCall_revertsWith_ReentrancyGuardReentrantCall_hubRemove() public {
     uint256 collateralReserveId = _daiReserveId(spoke);
     uint256 debtReserveId = _wethReserveId(spoke);
@@ -66,7 +76,8 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
 
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(spoke),
-      ISpoke.liquidationCall.selector
+      ISpoke.liquidationCall.selector,
+      REENTRANCY_GUARD_SLOT
     );
 
     vm.mockFunction(
@@ -93,7 +104,8 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
 
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(spoke),
-      ISpoke.liquidationCall.selector
+      ISpoke.liquidationCall.selector,
+      REENTRANCY_GUARD_SLOT
     );
 
     vm.mockFunction(
@@ -122,7 +134,8 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
 
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(spoke),
-      ISpoke.liquidationCall.selector
+      ISpoke.liquidationCall.selector,
+      REENTRANCY_GUARD_SLOT
     );
 
     vm.mockFunction(
@@ -149,7 +162,8 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
 
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(spoke),
-      ISpoke.liquidationCall.selector
+      ISpoke.liquidationCall.selector,
+      REENTRANCY_GUARD_SLOT
     );
 
     vm.mockFunction(

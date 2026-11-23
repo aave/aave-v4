@@ -55,6 +55,15 @@ contract SpokeSetUsingAsCollateralTest is Base {
     spoke1.setUsingAsCollateral(daiReserveId, true, alice);
   }
 
+  function test_setUsingAsCollateral_revertsWith_ReentrancyGuardReentrantCall_guardEntered()
+    public
+  {
+    _assertRevertsWhenReentrancyGuardEntered(
+      address(spoke1),
+      abi.encodeCall(ISpoke.setUsingAsCollateral, (_daiReserveId(spoke1), true, bob))
+    );
+  }
+
   function test_setUsingAsCollateral_revertsWith_ReentrancyGuardReentrantCall() public {
     SpokeActions.supplyCollateral({
       spoke: spoke1,
@@ -82,7 +91,8 @@ contract SpokeSetUsingAsCollateralTest is Base {
 
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(spoke1),
-      ISpoke.setUsingAsCollateral.selector
+      ISpoke.setUsingAsCollateral.selector,
+      REENTRANCY_GUARD_SLOT
     );
 
     // reentrant hub.refreshPremium call
