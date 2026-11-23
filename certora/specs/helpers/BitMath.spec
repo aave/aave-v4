@@ -1,4 +1,4 @@
-// Exact replacement for LibBit.fls, proved by BitMathEquivalence.conf.
+// Exact replacement for LibBit.fls, proved by BabylonBitMathEquivalence.conf.
 // No preconditions: zero maps to 256; other words map to their highest set bit.
 function exactFls(uint256 word) returns uint256 {
     mathint value0 = word;

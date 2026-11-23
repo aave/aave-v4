@@ -1,7 +1,7 @@
 import "./helpers/MulDiv.spec";
 
 // Property 2: successful liquidation requests at most debtToCover and the user's pre-call reserve debt.
-// The collateral value bound is in LiquidationCollateralBound.spec.
+// The collateral value bound is in BabylonLiquidationCollateralBound.spec.
 
 methods {
     function MANAGED_COLLATERAL_RESERVE_ID() external returns (uint256) envfree;

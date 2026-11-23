@@ -36,11 +36,14 @@ jobs:
         shell: bash
         run: |
           confs=(
-            certora/confs/CollateralRemovalBounds.conf
-            certora/confs/LiquidationCollateralBound.conf
-            certora/confs/LiquidationPaymentBounds.conf
-            certora/confs/SettlementAccounting.conf
-            certora/confs/CollateralRestrictions.conf
+            certora/confs/BabylonCollateralRemovalBounds.conf
+            certora/confs/BabylonLiquidationCollateralBound.conf
+            certora/confs/BabylonLiquidationPaymentBounds.conf
+            certora/confs/BabylonSettlementAccounting.conf
+            certora/confs/BabylonCollateralRestrictions.conf
+            certora/confs/BabylonBorrowingFlagConsistency.conf
+            certora/confs/BabylonDrawnSharesZero.conf
+            certora/confs/BabylonNoCollateralNoDebt.conf
           )
 
           # Keep the suite explicit and catch stale config/spec paths.
@@ -69,7 +72,7 @@ jobs:
     name: Verify ${{ matrix.conf }} (${{ matrix.cli }})
     needs: discover
     runs-on: ubuntu-latest
-    # Leave room for LiquidationPaymentBounds' 7200s timeout plus setup/build.
+    # Leave room for BabylonLiquidationPaymentBounds' 7200s timeout plus setup/build.
     timeout-minutes: 150
     strategy:
       fail-fast: false

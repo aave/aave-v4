@@ -53,7 +53,7 @@ methods {
     function _.extSload(bytes32) external => NONDET DELETE;
     function _.extSloads(bytes32[]) external => NONDET DELETE;
 
-    // Use the bit-search model checked by BitMathEquivalence.spec; keep other bitmap operations.
+    // Use the bit-search model checked by BabylonBitMathEquivalence.spec; keep other bitmap operations.
     function LibBit.fls(uint256 word) internal returns (uint256) => exactFls(word);
 
     // Leave restoredPremiumRay arbitrary and fix the unused signed delta fields to zero.
