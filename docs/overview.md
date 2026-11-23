@@ -51,7 +51,7 @@ The key aspects of the Hub include:
 - Maintaining a registry of authorized Spokes for each supported asset.
 - Spoke-specific configurations including:
   - Liquidity caps to limit Spoke drawing and adding
-  - Risk Premium Thresholds that limit the maximum ratio of premium shares to drawn shares that a Spoke can report
+  - [Risk Premium Thresholds](#risk-premium-threshold) that limit the maximum ratio of premium shares to drawn shares that a Spoke can report
   - Providing emergency controls over user-facing operations when needed, with granularity via two distinct states (`active` and `halted`).
 - Managing spoke-specific deficit accounting to keep protocol solvency.
 - Managing reinvestment controller per asset, authorizing sweep and reclaim of idle liquidity to and from external strategies.
@@ -79,6 +79,20 @@ Users interact with the Spokes, which then interact directly with the Hubs. The 
 - Employing reentrancy guards for extra protection against reentrancy attacks, even though the Hub, Interest Rate Strategy, and Price Feeds are trusted and Aave V4 does not support tokens with callbacks.
 - Enforcing position constraints through a configurable `MAX_USER_RESERVES_LIMIT` which limits the number of collateral Reserves and the number of borrow Reserves a user can have (each counted separately).
 - Configuring and enforcing per-reserve liquidation parameters at the Spoke level.
+
+## BabylonSpoke
+
+The BabylonSpoke is a Spoke variant that accepts native BTC as collateral through Babylon's Trustless Bitcoin Vaults. The collateral is a transfer-restricted token whose supply matches the BTC locked on Bitcoin, and positions are liquidated by Babylon's adapter rather than by any address.
+
+On top of the Spoke behaviour, the BabylonSpoke enforces the following:
+
+- A single managed collateral reserve, set at deployment (`MANAGED_COLLATERAL_RESERVE_ID`). It is the only reserve usable as collateral and can never be borrowable.
+- At most one collateral and one debt reserve per user.
+- No liquidation fee on any reserve, and liquidators always receive collateral in underlying assets.
+- Liquidations only through the liquidation manager set at deployment (`LIQUIDATION_MANAGER`), using a liquidation call bounded by a maximum amount of collateral to remove. The canonical `liquidationCall` reverts.
+- Bounded liquidations repay premium debt first, without target health factor sizing. If the removed collateral would exceed the cap, the repayment is resized to consume exactly the cap. The logic lives in the external `BabylonLiquidationLogic` library.
+
+The liquidation manager is the BabylonSpoke's only liquidator. It acts only as the liquidator and holds no position of its own.
 
 # Risk Premium
 
@@ -154,6 +168,22 @@ The refresh mechanism preserves the total premium debt while updating the premiu
 - Future premium accrual reflects the updated Risk Premium
 
 Actions that trigger a premium refresh include events that can change $RP_u$, such as `setUsingAsCollateral` when disabling collateral, `withdraw` when withdrawing collateral, `borrow` when increasing debt, `liquidationCall` (non-deficit path), and explicit `updateUserRiskPremium` updates (user-initiated or permissioned by the Governor). In these flows, `refreshPremium` updates premium shares and the offset so the total premium debt stays constant, while future accrual reflects the new Risk Premium.
+
+## Risk Premium Threshold
+
+The Risk Premium Threshold $RPT$ is a per-Spoke safety bound set by the Governor on the Hub. It limits the premium shares a Spoke can hold relative to its drawn shares. The Hub checks it on every premium change the Spoke reports:
+
+$premiumShares_{spoke} \le \lceil drawnShares_{spoke} \times RPT \rceil$
+
+Setting $RPT$ to `MAX_RISK_PREMIUM_THRESHOLD` disables the check. The bound guards the Hub against a faulty or compromised Spoke. It does not price risk, which stays with the Collateral Risk of each asset.
+
+$RPT$ is set above the maximum Collateral Risk on purpose. Each user's premium shares round up, so the Spoke's premium shares are a sum of ceilings, while the Hub compares them against the ceiling of a sum. With $N$ users at the maximum Collateral Risk, each holding 1 drawn share, the rounding adds up to $N$ extra premium shares. Setting $RPT$ to exactly the maximum Collateral Risk would make honest positions revert with `InvalidPremiumChange`. The smallest threshold that holds for any number of users is:
+
+$RPT = CR_{max} + 100\\%$
+
+where $CR_{max}$ is the highest Collateral Risk configured on the Spoke. For example, a Spoke whose maximum Collateral Risk is 1000% (1000_00 BPS) gets a threshold of 1100% (1100_00 BPS).
+
+[tests/misc/risk_premium_threshold_overshoot.py](../tests/misc/risk_premium_threshold_overshoot.py) derives this bound and uses Z3 to check that no counterexample exists when the maximum Collateral Risk is 1000% (`1000_00` BPS), for any number of users and any user Risk Premium up to that maximum.
 
 # Interest Accrual
 

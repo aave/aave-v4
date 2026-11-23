@@ -982,12 +982,23 @@ contract SpokeRiskPremiumScenarioTest is Base {
     }
 
     // Alice borrows more usdx and we check risk premiums
-    if (
-      aliceUsdxInfo.borrowAmount > 2 &&
+    uint256 additionalBorrow = aliceUsdxInfo.borrowAmount / 2;
+    bool aliceBorrowsMore = aliceUsdxInfo.borrowAmount > 2 &&
       spoke1.getUserSuppliedAssets(_usdxReserveId(spoke1), alice) >
-        spoke1.getUserTotalDebt(_usdxReserveId(spoke1), alice) * 3 &&
-      _getUserHealthFactor(spoke1, alice) > WadRayMath.WAD
+        spoke1.getUserTotalDebt(_usdxReserveId(spoke1), alice) * 3;
+    if (
+      aliceBorrowsMore &&
+      !_isHealthyAfterBorrow({
+        spoke: spoke1,
+        user: alice,
+        reserveId: _usdxReserveId(spoke1),
+        amount: additionalBorrow
+      })
     ) {
+      vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
+      vm.prank(alice);
+      spoke1.borrow(_usdxReserveId(spoke1), additionalBorrow, alice);
+    } else if (aliceBorrowsMore) {
       // Store Bob old premium drawn shares before Alice borrow
       bobPosition = spoke1.getUserPosition(_usdxReserveId(spoke1), bob);
       bobUsdxInfo.premiumShares = bobPosition.premiumShares;
@@ -995,7 +1006,6 @@ contract SpokeRiskPremiumScenarioTest is Base {
       bobDaiInfo.premiumShares = bobPosition.premiumShares;
 
       // Alice increases her USDX borrow by 50%
-      uint256 additionalBorrow = aliceUsdxInfo.borrowAmount / 2;
       SpokeActions.borrow({
         spoke: spoke1,
         reserveId: _usdxReserveId(spoke1),
@@ -1416,5 +1426,37 @@ contract SpokeRiskPremiumScenarioTest is Base {
       bobUsdxInfo.premiumShares + aliceUsdxInfo.premiumShares,
       string.concat('hub asset usdx premium debt ', label)
     );
+  }
+
+  /// @dev Whether `user` stays at or above the liquidation threshold after borrowing `amount` more
+  /// of `reserveId`, as the Spoke checks it: after the draw and before the premium update.
+  function _isHealthyAfterBorrow(
+    ISpoke spoke,
+    address user,
+    uint256 reserveId,
+    uint256 amount
+  ) internal view returns (bool) {
+    uint256 weightedCollateralValue;
+    uint256 debtValueRay;
+    for (uint256 id; id < spoke.getReserveCount(); ++id) {
+      uint256 drawnShares = spoke.getUserPosition(id, user).drawnShares;
+      if (id == reserveId) {
+        drawnShares += _hub(spoke, id).previewDrawByAssets(_reserveAssetId(spoke, id), amount);
+      }
+      debtValueRay += _convertAmountToValue(
+        spoke,
+        id,
+        drawnShares * _reserveDrawnIndex(spoke, id) + _calculatePremiumDebtRay(spoke, id, user)
+      );
+      if (_isUsingAsCollateral(spoke, id, user)) {
+        weightedCollateralValue +=
+          _convertAmountToValue(spoke, id, spoke.getUserSuppliedAssets(id, user)) *
+          _getLatestDynamicReserveConfig(spoke, id).collateralFactor;
+      }
+    }
+    return
+      debtValueRay == 0 ||
+      Math.mulDiv(weightedCollateralValue.bpsToWad(), WadRayMath.RAY, debtValueRay) >=
+        HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
   }
 }
