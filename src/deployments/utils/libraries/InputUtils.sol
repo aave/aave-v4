@@ -14,6 +14,7 @@ library InputUtils {
   ///      When grantRoles is `false`, must be address(0) (defaults to the deployer) or the deployer.
   /// @dev spokeAdmin The spoke admin. Only used when grantRoles is true.
   /// @dev spokeConfiguratorAdmin The admin granted all spoke configurator roles. Only used when grantRoles is true.
+  /// @dev hubSpokeFactoryAdmin The admin granted all HubSpokeFactory roles. Only used when grantRoles is true.
   /// @dev gatewayOwner The owner of the native token and signature gateways.
   /// @dev positionManagerOwner The owner of the position manager contracts (giver/taker/config).
   /// @dev nativeWrapper The address of the native wrapper (required when deployNativeTokenGateway is true).
@@ -35,6 +36,7 @@ library InputUtils {
     address treasurySpokeOwner;
     address spokeAdmin;
     address spokeConfiguratorAdmin;
+    address hubSpokeFactoryAdmin;
     address gatewayOwner;
     address positionManagerOwner;
     address nativeWrapper;

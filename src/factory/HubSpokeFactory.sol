@@ -63,6 +63,7 @@ contract HubSpokeFactory is IHubSpokeFactory, HubSpokeFactoryStorage, AccessMana
     address treasurySpokeImplementation,
     address tokenizationSpokeImplementation
   ) external initializer {
+    require(authority != address(0), InvalidAddress());
     __AccessManaged_init(authority);
     _setImplementation(InstanceType.Hub, hubImplementation);
     _setImplementation(InstanceType.Spoke, spokeImplementation);

@@ -97,6 +97,9 @@ interface IHubSpokeFactory {
   /// @param implementation The new canonical implementation.
   event ImplementationUpdated(InstanceType indexed instanceType, address indexed implementation);
 
+  /// @notice Thrown when an address parameter is the zero address.
+  error InvalidAddress();
+
   /// @notice Thrown when a canonical implementation is invalid.
   error InvalidImplementation();
 

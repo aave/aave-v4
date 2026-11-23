@@ -17,29 +17,6 @@ library BatchReports {
     address spokeConfigurator;
   }
 
-  /// @dev spokeProxy The Spoke proxy deployed through the HubSpokeFactory.
-  /// @dev spokeImplementation The canonical Spoke implementation the proxy points to.
-  /// @dev aaveOracle The AaveOracle bound to the Spoke proxy.
-  struct SpokeInstanceBatchReport {
-    address spokeProxy;
-    address spokeImplementation;
-    address aaveOracle;
-  }
-
-  /// @dev hubProxy The Hub proxy deployed through the HubSpokeFactory.
-  /// @dev hubImplementation The canonical Hub implementation the proxy points to.
-  /// @dev irStrategy The InterestRateStrategy bound to the Hub proxy.
-  struct HubInstanceBatchReport {
-    address hubProxy;
-    address hubImplementation;
-    address irStrategy;
-  }
-
-  /// @dev treasurySpoke The TreasurySpoke proxy deployed through the HubSpokeFactory.
-  struct TreasurySpokeBatchReport {
-    address treasurySpoke;
-  }
-
   /// @dev hubImplementation The deployed canonical Hub implementation contract address.
   struct HubImplementationBatchReport {
     address hubImplementation;

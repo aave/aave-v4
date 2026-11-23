@@ -10,6 +10,7 @@ import {AaveV4HubRolesProcedure} from 'src/deployments/procedures/roles/AaveV4Hu
 import {AaveV4SpokeRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol';
 import {AaveV4HubConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubConfiguratorRolesProcedure.sol';
 import {AaveV4SpokeConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeConfiguratorRolesProcedure.sol';
+import {AaveV4HubSpokeFactoryRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubSpokeFactoryRolesProcedure.sol';
 import {InputUtils} from 'src/deployments/utils/libraries/InputUtils.sol';
 import {DeployConstants} from 'src/deployments/utils/libraries/DeployConstants.sol';
 import {Logger} from 'src/deployments/utils/Logger.sol';
@@ -76,8 +77,15 @@ library AaveV4DeployOrchestration {
     });
     IHubSpokeFactory factory = IHubSpokeFactory(report.hubSpokeFactoryBatchReport.hubSpokeFactory);
 
+    // Setup HubSpokeFactory Roles
+    logger.logHeader1('setting HubSpokeFactory roles');
+    AaveV4HubSpokeFactoryRolesProcedure.setupHubSpokeFactoryAllRoles({
+      accessManager: accessManager,
+      hubSpokeFactory: address(factory)
+    });
+
     // Deploy TreasurySpoke (single instance for all hubs)
-    report.treasurySpokeBatchReport = _deployTreasurySpoke({
+    report.treasurySpokeReport = _deployTreasurySpoke({
       logger: logger,
       factory: factory,
       treasurySpokeOwner: deployInputs.treasurySpokeOwner,
@@ -89,7 +97,7 @@ library AaveV4DeployOrchestration {
     InputUtils.validateUniqueLabels(deployInputs.spokeLabels, 'spoke');
 
     // Deploy Hubs
-    report.hubInstanceBatchReports = _deployHubs({
+    report.hubDeploymentReports = _deployHubs({
       logger: logger,
       factory: factory,
       proxyAdminOwner: deployInputs.proxyAdminOwner,
@@ -99,7 +107,7 @@ library AaveV4DeployOrchestration {
     });
 
     // Deploy Spokes
-    report.spokeInstanceBatchReports = _deploySpokes({
+    report.spokeDeploymentReports = _deploySpokes({
       logger: logger,
       factory: factory,
       proxyAdminOwner: deployInputs.proxyAdminOwner,
@@ -147,6 +155,15 @@ library AaveV4DeployOrchestration {
           spokeConfiguratorAdmin: deployInputs.spokeConfiguratorAdmin
         });
       }
+
+      logger.logHeader1(
+        'granting HubSpokeFactory Admin roles to',
+        deployInputs.hubSpokeFactoryAdmin
+      );
+      AaveV4HubSpokeFactoryRolesProcedure.grantHubSpokeFactoryAllRoles({
+        accessManager: accessManager,
+        admin: deployInputs.hubSpokeFactoryAdmin
+      });
 
       if (deployInputs.accessManagerAdmin != initialAdmin) {
         logger.logHeader1(
@@ -223,7 +240,7 @@ library AaveV4DeployOrchestration {
     IHubSpokeFactory factory,
     address treasurySpokeOwner,
     bytes32 salt
-  ) internal returns (BatchReports.TreasurySpokeBatchReport memory report) {
+  ) internal returns (OrchestrationReports.TreasurySpokeReport memory report) {
     require(treasurySpokeOwner != address(0), 'invalid owner');
     logger.logHeader1('deploying TreasurySpoke');
     report.treasurySpoke = factory.deployTreasurySpoke({
@@ -254,7 +271,7 @@ library AaveV4DeployOrchestration {
         proxyAdminOwner: proxyAdminOwner
       });
       hubReports[i].label = hubLabels[i];
-      hubReports[i].report = BatchReports.HubInstanceBatchReport({
+      hubReports[i].report = OrchestrationReports.HubInstanceReport({
         hubProxy: deployment.proxy,
         hubImplementation: factory.getImplementation(IHubSpokeFactory.InstanceType.Hub),
         irStrategy: deployment.irStrategy
@@ -286,7 +303,7 @@ library AaveV4DeployOrchestration {
         proxyAdminOwner: proxyAdminOwner
       });
       spokeReports[i].label = spokeLabels[i];
-      spokeReports[i].report = BatchReports.SpokeInstanceBatchReport({
+      spokeReports[i].report = OrchestrationReports.SpokeInstanceReport({
         spokeProxy: deployment.proxy,
         spokeImplementation: factory.getImplementation(IHubSpokeFactory.InstanceType.Spoke),
         aaveOracle: deployment.oracle
@@ -390,7 +407,7 @@ library AaveV4DeployOrchestration {
 
   function _setupSpokeRoles(
     Logger logger,
-    BatchReports.SpokeInstanceBatchReport memory report,
+    OrchestrationReports.SpokeInstanceReport memory report,
     address accessManager
   ) internal {
     logger.logHeader1('setting Spoke roles');
@@ -402,7 +419,7 @@ library AaveV4DeployOrchestration {
 
   function _setupHubRoles(
     Logger logger,
-    BatchReports.HubInstanceBatchReport memory report,
+    OrchestrationReports.HubInstanceReport memory report,
     address accessManager
   ) internal {
     logger.logHeader1('setting Hub roles');
@@ -467,7 +484,7 @@ library AaveV4DeployOrchestration {
 
   function _logHubReport(
     Logger logger,
-    BatchReports.HubInstanceBatchReport memory report,
+    OrchestrationReports.HubInstanceReport memory report,
     string memory label
   ) internal pure {
     logger.log(label);
@@ -478,7 +495,7 @@ library AaveV4DeployOrchestration {
 
   function _logSpokeReport(
     Logger logger,
-    BatchReports.SpokeInstanceBatchReport memory report,
+    OrchestrationReports.SpokeInstanceReport memory report,
     string memory label
   ) internal pure {
     logger.log(label);

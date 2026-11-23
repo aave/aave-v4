@@ -32,7 +32,7 @@ This deploys `LiquidationLogic` via CREATE2 and writes `FOUNDRY_LIBRARIES` to `.
 make deploy-contracts
 ```
 
-This runs `AaveV4DeployOrchestration.deployAaveV4()`, which deploys in order: AccessManager → role labeling → Configurators → Configurator role setup → canonical Hub, Spoke and TokenizationSpoke implementations → HubSpokeFactory (with the canonical TreasurySpoke implementation) → TreasurySpoke → Hubs → Spokes → Gateways → PositionManagers → role grants → DEFAULT_ADMIN transfer. The TreasurySpoke, Hubs and Spokes are deployed through the `HubSpokeFactory`, so they all point to the same canonical implementations as instances deployed later by governance.
+This runs `AaveV4DeployOrchestration.deployAaveV4()`, which deploys in order: AccessManager → role labeling → Configurators → Configurator role setup → canonical Hub, Spoke and TokenizationSpoke implementations → HubSpokeFactory (with the canonical TreasurySpoke implementation) → HubSpokeFactory role setup → TreasurySpoke → Hubs → Spokes → Gateways → PositionManagers → role grants → DEFAULT_ADMIN transfer. The TreasurySpoke, Hubs and Spokes are deployed through the `HubSpokeFactory`, so they all point to the same canonical implementations as instances deployed later by governance.
 
 ### TokenizationSpoke
 
@@ -44,7 +44,7 @@ The orchestration deploys one canonical `TokenizationSpokeInstance` implementati
 
 `HubSpokeFactory` (`src/factory/`) is the single deployment path for Hub, Spoke, TreasurySpoke and TokenizationSpoke instances, both in the initial deployment and afterwards. It deploys every instance as a `TransparentUpgradeableProxy` pointing to the canonical implementation of its type, so every instance runs exactly the canonical code. A Hub comes with its `AssetInterestRateStrategy`, and a Spoke with its `AaveOracle`, bound atomically.
 
-The factory is itself upgradeable, behind a `TransparentUpgradeableProxy`, and access-managed. The canonical implementations live in storage and are updated with the restricted `setImplementation`, which checks each implementation's revision and type. Instances already deployed are not affected.
+The factory is itself upgradeable, behind a `TransparentUpgradeableProxy`, and access-managed. The canonical implementations live in storage and are updated with `setImplementation`, restricted to HUB_SPOKE_FACTORY_DOMAIN_ADMIN_ROLE (500), which checks each implementation's revision and type. Instances already deployed are not affected.
 
 The factory records every deployment, keyed by deployer: `getInstances(deployer, instanceType)` lists them in deployment order, `getInstanceInfo(instance)` returns the deployer and type of an instance, and `getTokenizationSpoke(deployer, hub, underlying)` returns the TokenizationSpoke of an asset, of which there is at most one per deployer.
 
@@ -98,7 +98,7 @@ src/deployments/
 
   libraries/
     BatchReports              Report structs for each batch
-    OrchestrationReports      Full deployment report aggregation
+    OrchestrationReports      Full deployment report and factory-deployed instance reports
     ConfigData                Parameter structs for config operations
 
   utils/
@@ -124,13 +124,13 @@ Hub and spoke labels (provided via `FullDeployInputs.hubLabels` / `spokeLabels`)
 
 ### Roles (`Roles.sol`)
 
-Roles are namespaced by contract domain: Hub (100-199), HubConfigurator (200-299), Spoke (300-399), SpokeConfigurator (400-499).
+Roles are namespaced by contract domain: Hub (100-199), HubConfigurator (200-299), Spoke (300-399), SpokeConfigurator (400-499), HubSpokeFactory (500-599).
 
-For configurators, initially a single Domain Admin role (HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE = 200, SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE = 400) holds all target selectors. As more granular roles are introduced, they should be added at the next available ID (201, 202, ... / 401, 402, ...) and the corresponding selectors reassigned from the Domain Admin role to the new granular role:
+For configurators and the HubSpokeFactory, initially a single Domain Admin role (HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE = 200, SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE = 400, HUB_SPOKE_FACTORY_DOMAIN_ADMIN_ROLE = 500) holds all target selectors. As more granular roles are introduced, they should be added at the next available ID (201, 202, ... / 401, 402, ... / 501, 502, ...) and the corresponding selectors reassigned from the Domain Admin role to the new granular role:
 
 - Existing role IDs should never be overwritten or reused for a different purpose.
 - New roles are always appended with an incremented ID.
-- The Domain Admin role (200/400) only ever has its selector set shrink over time as selectors are divided into more granular roles.
+- The Domain Admin role (200/400/500) only ever has its selector set shrink over time as selectors are divided into more granular roles.
 - Addresses holding the Domain Admin role should be granted the new granular role being added to retain their existing access.
 
 See `Roles.sol` NatSpec for the full role strategy and evolution guidelines. All roles are labeled on the `AccessManagerEnumerable` during deployment via `AaveV4AccessManagerRolesProcedure.labelAllRoles()`. Each role is labeled with its `Roles.sol` constant name (e.g., role 101 is labeled `"HUB_CONFIGURATOR_ROLE"`). Labels are queryable on-chain via `getLabelOfRole()` and `getRoleOfLabel()`.
@@ -173,6 +173,14 @@ Domain admin role holds all selectors initially. Granular roles (201+) are carve
 | 400 | SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE | spokeConfiguratorAdmin | All 24 SpokeConfigurator selectors (see Roles.sol) |
 
 Domain admin role holds all selectors initially. Granular roles (401+) are carved out as needed.
+
+#### `HubSpokeFactory` Roles (on HubSpokeFactory contract)
+
+| ID  | Name                                | Granted To           | Functions         |
+| --- | ----------------------------------- | -------------------- | ----------------- |
+| 500 | HUB_SPOKE_FACTORY_DOMAIN_ADMIN_ROLE | hubSpokeFactoryAdmin | setImplementation |
+
+Domain admin role holds all selectors initially. Granular roles (501+) are carved out as needed. Deployments are permissionless.
 
 ## Data Flow
 
@@ -227,6 +235,8 @@ AaveV4DeployBatchBase.s.sol                         (Foundry script entry point)
     |     |       new AaveV4HubSpokeFactoryBatch(hubImpl, spokeImpl, tokenizationSpokeImpl, salt)
     |     |         Create2Utils.create2Deploy() --> TreasurySpokeInstance (canonical impl)
     |     |         Create2Utils.create2Deploy() --> HubSpokeFactory
+    |     |     AaveV4HubSpokeFactoryRolesProcedure.setupHubSpokeFactoryAllRoles()
+    |     |       AccessManager.setTargetFunctionRole()  (selector -> role mappings for HubSpokeFactory)
     |     |
     |     +-- _deployTreasurySpoke()
     |     |     HubSpokeFactory.deployTreasurySpoke(salt, owner, owner)  --> TreasurySpoke proxy
@@ -270,6 +280,8 @@ AaveV4DeployBatchBase.s.sol                         (Foundry script entry point)
     |     |       AaveV4SpokeRolesProcedure.grantSpokeRole()         SpokeConfigurator gets role 301
     |     |       AaveV4SpokeConfiguratorRolesProcedure.grantSpokeConfiguratorAllRoles()
     |     |                                                          spokeConfiguratorAdmin gets role 400
+    |     |     AaveV4HubSpokeFactoryRolesProcedure.grantHubSpokeFactoryAllRoles()
+    |     |                                                          hubSpokeFactoryAdmin gets role 500
     |     |     AaveV4AccessManagerRolesProcedure.replaceDefaultAdminRole()
     |     |       (if accessManagerAdmin != deployer)
     |     |       grant role 0 to accessManagerAdmin, revoke from deployer

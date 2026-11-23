@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 import 'tests/utils/BatchTestProcedures.sol';
-import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 
 contract AaveV4BatchDeploymentTest is BatchTestProcedures {
   function setUp() public override {
@@ -16,6 +15,7 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
       treasurySpokeOwner: makeAddr('treasurySpokeOwner'),
       spokeAdmin: makeAddr('spokeAdmin'),
       spokeConfiguratorAdmin: makeAddr('spokeConfiguratorAdmin'),
+      hubSpokeFactoryAdmin: makeAddr('hubSpokeFactoryAdmin'),
       gatewayOwner: makeAddr('gatewayOwner'),
       positionManagerOwner: makeAddr('positionManagerOwner'),
       nativeWrapper: _weth9,
@@ -49,10 +49,10 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     vm.setNonce(address(this), vm.getNonce(address(this)) + callerNonceBump);
     OrchestrationReports.FullDeploymentReport memory second = _deployV4();
 
-    assertGt(first.spokeInstanceBatchReports.length, 0);
-    for (uint256 i; i < first.spokeInstanceBatchReports.length; ++i) {
-      BatchReports.SpokeInstanceBatchReport memory a = first.spokeInstanceBatchReports[i].report;
-      BatchReports.SpokeInstanceBatchReport memory b = second.spokeInstanceBatchReports[i].report;
+    assertGt(first.spokeDeploymentReports.length, 0);
+    for (uint256 i; i < first.spokeDeploymentReports.length; ++i) {
+      OrchestrationReports.SpokeInstanceReport memory a = first.spokeDeploymentReports[i].report;
+      OrchestrationReports.SpokeInstanceReport memory b = second.spokeDeploymentReports[i].report;
       assertEq(a.aaveOracle, b.aaveOracle, 'aave oracle');
       assertEq(a.spokeImplementation, b.spokeImplementation, 'spoke implementation');
       assertEq(a.spokeProxy, b.spokeProxy, 'spoke proxy');
@@ -172,6 +172,21 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     } else {
       checkedV4Deployment();
     }
+  }
+
+  function testAaveV4BatchDeployment_withZeroHubSpokeFactoryAdmin_withRoles_reverts() public {
+    _inputs.hubSpokeFactoryAdmin = address(0);
+    _inputs.grantRoles = true;
+
+    vm.expectRevert('invalid admin');
+    this.checkedV4Deployment();
+  }
+
+  function testAaveV4BatchDeployment_withZeroHubSpokeFactoryAdmin_withoutRoles() public {
+    _inputs.hubSpokeFactoryAdmin = address(0);
+    _inputs.grantRoles = false;
+
+    checkedV4Deployment();
   }
 
   function testAaveV4BatchDeployment_withZeroHubAdmin_withRoles_reverts() public {
@@ -441,6 +456,7 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     assertNotEq(deployInputs.treasurySpokeOwner, address(0));
     assertNotEq(deployInputs.proxyAdminOwner, address(0));
     assertNotEq(deployInputs.spokeConfiguratorAdmin, address(0));
+    assertNotEq(deployInputs.hubSpokeFactoryAdmin, address(0));
     assertNotEq(deployInputs.gatewayOwner, address(0));
     assertNotEq(deployInputs.positionManagerOwner, address(0));
     assertNotEq(deployInputs.hubAdmin, address(0));
@@ -472,7 +488,8 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
   ///      5. Spokes (proxyAdminOwner)
   ///      6. Gateways (gatewayOwner, nativeWrapper)
   ///      7. PositionManagers (positionManagerOwner)
-  ///      8. Roles (hubAdmin, hubConfiguratorAdmin, spokeAdmin, spokeConfiguratorAdmin, accessManagerAdmin)
+  ///      8. Roles (hubAdmin, hubConfiguratorAdmin, spokeAdmin, spokeConfiguratorAdmin, hubSpokeFactoryAdmin,
+  ///         accessManagerAdmin)
   function _getExpectedError()
     internal
     view
@@ -518,6 +535,9 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
         (hasSpokes &&
           (_inputs.spokeAdmin == address(0) || _inputs.spokeConfiguratorAdmin == address(0)))
       ) {
+        return (true, bytes('invalid admin'));
+      }
+      if (_inputs.hubSpokeFactoryAdmin == address(0)) {
         return (true, bytes('invalid admin'));
       }
       if (_inputs.accessManagerAdmin == address(0)) {

@@ -113,6 +113,10 @@ abstract contract AaveV4DeployBatchBaseScript is Script {
         _logWarning(string.concat('spoke configurator admin', message, outcome));
         sanitizedInputs.spokeConfiguratorAdmin = deployer;
       }
+      if (inputs.hubSpokeFactoryAdmin == address(0)) {
+        _logWarning(string.concat('hub spoke factory admin', message, outcome));
+        sanitizedInputs.hubSpokeFactoryAdmin = deployer;
+      }
       if (inputs.proxyAdminOwner == address(0)) {
         _logWarning(string.concat('proxy admin owner', message, outcome));
         sanitizedInputs.proxyAdminOwner = deployer;

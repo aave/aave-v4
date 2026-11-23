@@ -90,6 +90,18 @@ contract HubSpokeFactoryTest is Base {
     );
   }
 
+  function test_initialize_revertsWith_InvalidAddress() public {
+    vm.expectRevert(IHubSpokeFactory.InvalidAddress.selector);
+    new TransparentUpgradeableProxy(
+      factoryImpl,
+      proxyAdminOwner,
+      abi.encodeCall(
+        HubSpokeFactory.initialize,
+        (address(0), hubImpl, spokeImpl, treasurySpokeImpl, tokenizationSpokeImpl)
+      )
+    );
+  }
+
   function test_initialize_revertsWith_InvalidImplementation() public {
     vm.expectRevert(IHubSpokeFactory.InvalidImplementation.selector);
     new TransparentUpgradeableProxy(

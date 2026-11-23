@@ -20,6 +20,7 @@ import {AaveV4SpokeRolesProcedureWrapper} from 'tests/helpers/mocks/deployments/
 import {AaveV4HubRolesProcedureWrapper} from 'tests/helpers/mocks/deployments/procedures/AaveV4HubRolesProcedureWrapper.sol';
 import {AaveV4HubConfiguratorRolesProcedureWrapper} from 'tests/helpers/mocks/deployments/procedures/AaveV4HubConfiguratorRolesProcedureWrapper.sol';
 import {AaveV4SpokeConfiguratorRolesProcedureWrapper} from 'tests/helpers/mocks/deployments/procedures/AaveV4SpokeConfiguratorRolesProcedureWrapper.sol';
+import {AaveV4HubSpokeFactoryRolesProcedureWrapper} from 'tests/helpers/mocks/deployments/procedures/AaveV4HubSpokeFactoryRolesProcedureWrapper.sol';
 import {AaveV4TokenizationSpokeDeployProcedureWrapper} from 'tests/helpers/mocks/deployments/procedures/AaveV4TokenizationSpokeDeployProcedureWrapper.sol';
 import {AaveV4HubRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
 import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
