@@ -7,7 +7,10 @@ fs_permissions = [
   { access = "read", path = "tests/helpers/mocks/JsonBindings.sol" },
   { access = "read", path = "./config" },
   { access = "read", path = "./out" },
-  { access = "read-write", path = "./output" }
+  { access = "read-write", path = "./output" },
+  { access = "read", path = "./scripts/markets" },
+  { access = "read-write", path = "./scripts/markets/ethereum/config/tokenization-deploy.json" },
+  { access = "read-write", path = "./scripts/markets/avalanche/config/tokenization-deploy.json" }
 ]
 skip = ["tests/helpers/mocks/JsonBindings.sol"]
 solc_version = "0.8.28"
@@ -47,6 +50,9 @@ runs = 5000
 [profile.ci.fuzz]
 runs = 10000
 
+[profile.markets]
+test = 'scripts/markets'
+
 [profile.gas]
 gas_snapshot_check = true
 test = 'tests/gas'
@@ -74,6 +80,7 @@ zkevm = "${RPC_ZKEVM}"
 gnosis = "${RPC_GNOSIS}"
 bnb = "${RPC_BNB}"
 celo = "${RPC_CELO}"
+arc = "${RPC_ARC}"
 anvil = "http://127.0.0.1:8545"
 
 [etherscan]

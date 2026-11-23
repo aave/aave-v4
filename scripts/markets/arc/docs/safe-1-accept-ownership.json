@@ -1,0 +1,43 @@
+{
+  "version": "1.0",
+  "chainId": "5042",
+  "createdAt": 1788362599175,
+  "meta": {
+    "name": "Arc: accept ownership of position managers",
+    "description": "acceptOwnership() on the three position managers and the signature gateway, completing the Ownable2Step transfer from the deployer.",
+    "txBuilderVersion": "1.18.0",
+    "createdFromSafeAddress": "0x187AAE17d4931310B3fc75743e7F16Bdc9eD77e9",
+    "createdFromOwnerAddress": "",
+    "checksum": ""
+  },
+  "transactions": [
+    {
+      "to": "0x01Da80Eef3004ebbF90b7637B1De7fF30fBc7cf1",
+      "value": "0",
+      "data": "0x79ba5097",
+      "contractMethod": null,
+      "contractInputsValues": null
+    },
+    {
+      "to": "0xe9fae1C386c6f45B1fb3C3Ef01aDE424DAd4bCcF",
+      "value": "0",
+      "data": "0x79ba5097",
+      "contractMethod": null,
+      "contractInputsValues": null
+    },
+    {
+      "to": "0xa5Aa65Ae1c830d2ae10853CeEa42AE653adB3312",
+      "value": "0",
+      "data": "0x79ba5097",
+      "contractMethod": null,
+      "contractInputsValues": null
+    },
+    {
+      "to": "0x0d36A4a21119BBBDe559d59002254171D976289f",
+      "value": "0",
+      "data": "0x79ba5097",
+      "contractMethod": null,
+      "contractInputsValues": null
+    }
+  ]
+}
