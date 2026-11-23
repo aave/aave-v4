@@ -23,6 +23,9 @@ import {IHubSpokeFactory} from 'src/factory/interfaces/IHubSpokeFactory.sol';
 /// or front-run. Records are keyed by deployer and track provenance only: a ProxyAdmin can upgrade an instance
 /// afterwards.
 contract HubSpokeFactory is IHubSpokeFactory, HubSpokeFactoryStorage, AccessManagedUpgradeable {
+  /// @inheritdoc IHubSpokeFactory
+  uint8 public constant ORACLE_DECIMALS = DeployConstants.ORACLE_DECIMALS;
+
   bytes32 internal constant HUB_SALT_DOMAIN = keccak256('hub');
   bytes32 internal constant SPOKE_SALT_DOMAIN = keccak256('spoke');
   bytes32 internal constant TREASURY_SPOKE_SALT_DOMAIN = keccak256('treasury-spoke');
@@ -37,12 +40,9 @@ contract HubSpokeFactory is IHubSpokeFactory, HubSpokeFactoryStorage, AccessMana
   uint64 internal constant TREASURY_SPOKE_REVISION = 1;
   uint64 internal constant TOKENIZATION_SPOKE_REVISION = 2;
 
-  /// @dev EIP-712 domain names telling the Spoke and TokenizationSpoke apart, as both share `SPOKE_REVISION`.
+  /// @dev EIP-712 domain names differentiating the Spoke and TokenizationSpoke, as both share `SPOKE_REVISION`.
   bytes32 internal constant SPOKE_DOMAIN_NAME_HASH = keccak256('Spoke');
   bytes32 internal constant TOKENIZATION_SPOKE_DOMAIN_NAME_HASH = keccak256('Tokenization Spoke');
-
-  /// @inheritdoc IHubSpokeFactory
-  uint8 public constant ORACLE_DECIMALS = DeployConstants.ORACLE_DECIMALS;
 
   /// @dev Constructor.
   constructor() {
@@ -86,12 +86,12 @@ contract HubSpokeFactory is IHubSpokeFactory, HubSpokeFactoryStorage, AccessMana
   ) external returns (HubDeployment memory) {
     bytes32 childSalt = _deriveSalt(HUB_SALT_DOMAIN, msg.sender, salt);
     HubDeployment memory deployment;
-    deployment.proxy = _deployProxy(
-      childSalt,
-      InstanceType.Hub,
-      proxyAdminOwner,
-      _hubInitData(authority)
-    );
+    deployment.proxy = _deployProxy({
+      salt: childSalt,
+      instanceType: InstanceType.Hub,
+      proxyAdminOwner: proxyAdminOwner,
+      initData: _hubInitData(authority)
+    });
     deployment.irStrategy = _deployIrStrategy(childSalt, deployment.proxy);
     _register(InstanceType.Hub, deployment.proxy);
 
@@ -116,12 +116,12 @@ contract HubSpokeFactory is IHubSpokeFactory, HubSpokeFactoryStorage, AccessMana
     SpokeDeployment memory deployment;
     // the factory is the oracle deployer, so it is the only one able to bind it
     deployment.oracle = _deployOracle(childSalt);
-    deployment.proxy = _deployProxy(
-      childSalt,
-      InstanceType.Spoke,
-      proxyAdminOwner,
-      _spokeInitData(authority, deployment.oracle, maxUserReservesLimit)
-    );
+    deployment.proxy = _deployProxy({
+      salt: childSalt,
+      instanceType: InstanceType.Spoke,
+      proxyAdminOwner: proxyAdminOwner,
+      initData: _spokeInitData(authority, deployment.oracle, maxUserReservesLimit)
+    });
     IAaveOracle(deployment.oracle).setSpoke(deployment.proxy);
     _register(InstanceType.Spoke, deployment.proxy);
 
@@ -135,12 +135,13 @@ contract HubSpokeFactory is IHubSpokeFactory, HubSpokeFactoryStorage, AccessMana
     address owner,
     address proxyAdminOwner
   ) external returns (address) {
-    address proxy = _deployProxy(
-      _deriveSalt(TREASURY_SPOKE_SALT_DOMAIN, msg.sender, salt),
-      InstanceType.TreasurySpoke,
-      proxyAdminOwner,
-      _treasurySpokeInitData(owner)
-    );
+    bytes32 childSalt = _deriveSalt(TREASURY_SPOKE_SALT_DOMAIN, msg.sender, salt);
+    address proxy = _deployProxy({
+      salt: childSalt,
+      instanceType: InstanceType.TreasurySpoke,
+      proxyAdminOwner: proxyAdminOwner,
+      initData: _treasurySpokeInitData(owner)
+    });
     _register(InstanceType.TreasurySpoke, proxy);
 
     emit TreasurySpokeDeployed(msg.sender, proxy, owner, proxyAdminOwner);
@@ -160,12 +161,18 @@ contract HubSpokeFactory is IHubSpokeFactory, HubSpokeFactoryStorage, AccessMana
       _tokenizationSpokes[msg.sender][hub][underlying] == address(0),
       TokenizationSpokeAlreadyDeployed()
     );
-    address proxy = _deployProxy(
-      _deriveSalt(TOKENIZATION_SPOKE_SALT_DOMAIN, msg.sender, salt),
-      InstanceType.TokenizationSpoke,
-      proxyAdminOwner,
-      _tokenizationSpokeInitData(hub, underlying, name, symbol)
-    );
+    bytes32 childSalt = _deriveSalt(TOKENIZATION_SPOKE_SALT_DOMAIN, msg.sender, salt);
+    address proxy = _deployProxy({
+      salt: childSalt,
+      instanceType: InstanceType.TokenizationSpoke,
+      proxyAdminOwner: proxyAdminOwner,
+      initData: _tokenizationSpokeInitData({
+        hub: hub,
+        underlying: underlying,
+        name: name,
+        symbol: symbol
+      })
+    });
     _tokenizationSpokes[msg.sender][hub][underlying] = proxy;
     _register(InstanceType.TokenizationSpoke, proxy);
 
@@ -219,9 +226,10 @@ contract HubSpokeFactory is IHubSpokeFactory, HubSpokeFactoryStorage, AccessMana
     address owner,
     address proxyAdminOwner
   ) external view returns (address) {
+    bytes32 childSalt = _deriveSalt(TREASURY_SPOKE_SALT_DOMAIN, deployer, salt);
     return
       _computeAddress(
-        _deriveSalt(TREASURY_SPOKE_SALT_DOMAIN, deployer, salt),
+        childSalt,
         _proxyInitCode(
           _implementations[InstanceType.TreasurySpoke],
           proxyAdminOwner,
@@ -240,13 +248,14 @@ contract HubSpokeFactory is IHubSpokeFactory, HubSpokeFactoryStorage, AccessMana
     string calldata symbol,
     address proxyAdminOwner
   ) external view returns (address) {
+    bytes32 childSalt = _deriveSalt(TOKENIZATION_SPOKE_SALT_DOMAIN, deployer, salt);
     return
       _computeAddress(
-        _deriveSalt(TOKENIZATION_SPOKE_SALT_DOMAIN, deployer, salt),
+        childSalt,
         _proxyInitCode(
           _implementations[InstanceType.TokenizationSpoke],
           proxyAdminOwner,
-          _tokenizationSpokeInitData(hub, underlying, name, symbol)
+          _tokenizationSpokeInitData({hub: hub, underlying: underlying, name: name, symbol: symbol})
         )
       );
   }

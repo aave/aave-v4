@@ -7,7 +7,7 @@
   "liquidationCall: full": "330800",
   "liquidationCall: partial": "330263",
   "permitReserve + repay (multicall)": "169982",
-  "permitReserve + supply (multicall)": "151695",
+  "permitReserve + supply (multicall)": "151707",
   "permitReserve + supply + enable collateral (multicall)": "168274",
   "repay: full": "129298",
   "repay: partial": "134256",
