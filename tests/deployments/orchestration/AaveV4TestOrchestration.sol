@@ -175,6 +175,30 @@ library AaveV4TestOrchestration {
     return report;
   }
 
+  function deployTestBabylonSpoke(
+    address proxyAdminOwner,
+    address accessManager,
+    address liquidationManager,
+    uint256 managedCollateralReserveId,
+    bytes memory babylonSpokeBytecode,
+    bytes32 salt
+  ) external returns (TestTypes.TestSpokeReport memory) {
+    TestTypes.TestSpokeReport memory report;
+    BatchReports.SpokeInstanceBatchReport memory spokeReport = AaveV4DeployBase
+      .deployBabylonSpokeInstanceBatch({
+        proxyAdminOwner: proxyAdminOwner,
+        authority: accessManager,
+        liquidationManager: liquidationManager,
+        managedCollateralReserveId: managedCollateralReserveId,
+        babylonSpokeBytecode: babylonSpokeBytecode,
+        oracleDecimals: DeployConstants.ORACLE_DECIMALS,
+        salt: salt
+      });
+    report.spoke = spokeReport.spokeProxy;
+    report.aaveOracle = spokeReport.aaveOracle;
+    return report;
+  }
+
   function deployTestTokenizationSpoke(
     address hub,
     address underlying,

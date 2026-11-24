@@ -80,6 +80,20 @@ Users interact with the Spokes, which then interact directly with the Hubs. The 
 - Enforcing position constraints through a configurable `MAX_USER_RESERVES_LIMIT` which limits the number of collateral Reserves and the number of borrow Reserves a user can have (each counted separately).
 - Configuring and enforcing per-reserve liquidation parameters at the Spoke level.
 
+## BabylonSpoke
+
+The BabylonSpoke is a Spoke variant that accepts native BTC as collateral through Babylon's Trustless Bitcoin Vaults. The collateral is a transfer-restricted token whose supply matches the BTC locked on Bitcoin, and positions are liquidated by Babylon's adapter rather than by any address.
+
+On top of the Spoke behaviour, the BabylonSpoke enforces the following:
+
+- A single managed collateral reserve, set at deployment (`MANAGED_COLLATERAL_RESERVE_ID`). It is the only reserve usable as collateral and can never be borrowable.
+- At most one collateral and one debt reserve per user.
+- No liquidation fee on any reserve, and liquidators always receive collateral in underlying assets.
+- Liquidations only through the liquidation manager set at deployment (`LIQUIDATION_MANAGER`), using a liquidation call bounded by a maximum amount of collateral to remove. The canonical `liquidationCall` reverts.
+- Bounded liquidations repay premium debt first, without target health factor sizing. If the removed collateral would exceed the cap, the repayment is resized to consume exactly the cap. The logic lives in the external `BabylonLiquidationLogic` library.
+
+The liquidation manager is the BabylonSpoke's only liquidator. It acts only as the liquidator and holds no position of its own.
+
 # Risk Premium
 
 The debt interest of each user is directly impacted by the quality of the assets used as collateral. The risk level (quality) of the collateral assets of the user determines the additional charge for borrowing, on top of the asset's base drawn rate.

@@ -61,6 +61,10 @@ def fromRayUp(a):
 def toRay(a):
     return a * RAY
 
+
+def roundRayUp(a):
+    return toRay(fromRayUp(a))
+
 def min(a, b):
     return If(a <= b, a, b)
 
