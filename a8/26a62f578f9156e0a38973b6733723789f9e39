@@ -1,0 +1,18 @@
+.github/workflows/comment.yml
+  h_0f977de3f043fc 19
+.github/workflows/tests-merge.yml
+  h_0f977de3f043fc 12,23,28,32
+.github/workflows/tests-pr.yml
+  h_0f977de3f043fc 9,20,25,28,31,37
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "a826a62f578f9156e0a38973b6733723789f9e39",
+  "prompts": {},
+  "humans": {
+    "h_0f977de3f043fc": {
+      "author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}

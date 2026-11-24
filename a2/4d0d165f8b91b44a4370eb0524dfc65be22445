@@ -1,0 +1,128 @@
+vyper/src/harness/EngineFlagsHarness.vy
+  s_79e03752657a2e::t_646d93b59a83ad 11
+gas-snapshots/pr5271/base-unbounded.log
+  s_79e03752657a2e::t_b70aa6f52f31d0 4
+  s_79e03752657a2e::t_69fe9f2a46ecf6 1-3,5-8
+vyper/src/harness/LiquidationLogicWrapper.vy
+  s_79e03752657a2e::t_646d93b59a83ad 152,159,167
+vyper/compiler-feedback/pr5271/compile.py
+  s_79e03752657a2e::t_f90c707b335cb1 11
+  s_79e03752657a2e::t_d7652d18536365 1-10,12-24
+vyper/src/spoke/SpokeConfigurator.vy
+  s_79e03752657a2e::t_646d93b59a83ad 35,43,51,59,67,80
+vyper/src/hub/libraries/Premium.vy
+  s_79e03752657a2e::t_646d93b59a83ad 13,22,28
+gas-snapshots/pr5271/merge-compatibility.json
+  s_79e03752657a2e::t_f6d2db8264eb62 1-207
+vyper/src/spoke/libraries/SpokeUtils.vy
+  s_79e03752657a2e::t_646d93b59a83ad 10
+vyper/src/spoke/libraries/LiquidationLogic.vy
+  s_79e03752657a2e::t_646d93b59a83ad 57
+gas-snapshots/pr5271/feedback-draft.md
+  s_79e03752657a2e::t_9aa2c4fe249b43 1-38
+vyper/src/hub/HubConfigurator.vy
+  s_79e03752657a2e::t_646d93b59a83ad 36,44,52,65
+vyper/src/position_manager/TakerPositionManager.vy
+  s_79e03752657a2e::t_646d93b59a83ad 164,186
+vyper/src/hub/AssetInterestRateStrategy.vy
+  s_79e03752657a2e::t_646d93b59a83ad 109
+vyper/src/spoke/SpokeInstance.vy
+  s_79e03752657a2e::t_646d93b59a83ad 96,115,123,131,292,328,1379
+vyper/compiler-feedback/pr5271/Coupled.vy
+  s_79e03752657a2e::t_f90c707b335cb1 1-9
+vyper/README.md
+  s_79e03752657a2e::t_5351b9b1c99cbd 4,70-77
+gas-snapshots/pr5271/merge-raw-call-noinline.log
+  s_79e03752657a2e::t_ab2eae7b2119b3 1-39
+vyper/src/config_engine/AaveV4ConfigEngine.vy
+  s_79e03752657a2e::t_646d93b59a83ad 44,52,60,68,76,84
+vyper/src/harness/MockSpokeStorage.vy
+  s_79e03752657a2e::t_646d93b59a83ad 76,84
+vyper/src/spoke/TreasurySpokeInstance.vy
+  s_79e03752657a2e::t_646d93b59a83ad 21,56,88
+gas-snapshots/pr5271/compatibility.json
+  s_79e03752657a2e::t_97cc3653e7c5fb 1-776
+gas-snapshots/pr5271/head-build.log
+  s_79e03752657a2e::t_69fe9f2a46ecf6 1-41
+vyper/src/access/AccessManagerEnumerable.vy
+  s_79e03752657a2e::t_646d93b59a83ad 67,92,126,128,130,350,355,372,375,390,411,424,436,451,461,511,518,523,541,547,567,577,588,604,825,834
+gas-snapshots/pr5271/domain-noinline.log
+  s_79e03752657a2e::t_69fe9f2a46ecf6 1-39
+vyper/src/utils/AccessManaged.vy
+  s_79e03752657a2e::t_646d93b59a83ad 17,43
+vyper/compiler-feedback/pr5271/Unbounded.vy
+  s_79e03752657a2e::t_a9e085be24a511 1-4
+gas-snapshots/pr5271/merge-validation.md
+  s_79e03752657a2e::t_b4a2b512d5a39b 28-30
+  s_79e03752657a2e::t_e32ccc6e6226e5 1-27,31-58
+vyper/compiler-feedback/pr5271/foundry.toml
+  s_79e03752657a2e::t_9aa2c4fe249b43 1-9
+gas-snapshots/pr5271/merge-nested.log
+  s_79e03752657a2e::t_b70aa6f52f31d0 4
+  s_79e03752657a2e::t_345c3f643e2521 1-3,5-8
+vyper/src/spoke/AaveOracle.vy
+  s_79e03752657a2e::t_646d93b59a83ad 27,30,53
+vyper/src/utils/SignatureChecker.vy
+  s_79e03752657a2e::t_646d93b59a83ad 16
+vyper/src/spoke/TokenizationSpokeInstance.vy
+  s_79e03752657a2e::t_646d93b59a83ad 77,105,107,117,124,133,136,145,147,150
+vyper/compiler-feedback/pr5271/Forwarder.vy
+  s_79e03752657a2e::t_a9e085be24a511 1-42
+vyper/compiler-feedback/pr5271/PR5271.t.sol
+  s_79e03752657a2e::t_a9e085be24a511 1-28,38-58,65-108,110-113,116-122,137
+  s_79e03752657a2e::t_d7652d18536365 29-37,109,114-115
+  s_79e03752657a2e::t_953da32c104084 59-64
+  s_79e03752657a2e::t_f90c707b335cb1 123-136
+gas-snapshots/pr5271/domain-o2.log
+  s_79e03752657a2e::t_69fe9f2a46ecf6 1-39
+gas-snapshots/pr5271/head-nested.log
+  s_79e03752657a2e::t_69fe9f2a46ecf6 1-3,5-8
+  s_79e03752657a2e::t_b70aa6f52f31d0 4
+gas-snapshots/pr5271/merge-raw-call-o2.log
+  s_79e03752657a2e::t_ab2eae7b2119b3 1-39
+gas-snapshots/pr5271/domain-o3.log
+  s_79e03752657a2e::t_69fe9f2a46ecf6 1-41
+vyper/requirements.txt
+  s_79e03752657a2e::t_c673f4176da212 1
+vyper/src/harness/MockTreasurySpokeInstance.vy
+  s_79e03752657a2e::t_646d93b59a83ad 46
+vyper/src/position_manager/PositionManagerBase.vy
+  s_79e03752657a2e::t_646d93b59a83ad 29,38,75,181
+vyper/src/libraries/math/MathUtils.vy
+  s_79e03752657a2e::t_646d93b59a83ad 17,65,67
+vyper/src/utils/SafeERC20.vy
+  s_79e03752657a2e::t_646d93b59a83ad 18
+gas-snapshots/pr5271/merge-raw-call-o3.log
+  s_79e03752657a2e::t_ab2eae7b2119b3 1-39
+gas-snapshots/pr5271/legacy.log
+  s_79e03752657a2e::t_69fe9f2a46ecf6 1-3,5-8
+  s_79e03752657a2e::t_b70aa6f52f31d0 4
+vyper/src/hub/HubInstance.vy
+  s_79e03752657a2e::t_646d93b59a83ad 189,197,205,213,221,228,383,546,550,578,611,613,636,638,670,672,684,704,706,808,833,855
+vyper/src/utils/NoncesKeyed.vy
+  s_79e03752657a2e::t_646d93b59a83ad 26
+vyper/compiler-feedback/pr5271/Bounded.vy
+  s_79e03752657a2e::t_a9e085be24a511 1-4
+vyper/compiler-feedback/pr5271/Nested.vy
+  s_79e03752657a2e::t_a9e085be24a511 1-5
+gas-snapshots/pr5271/README.md
+  s_79e03752657a2e::t_9aa2c4fe249b43 1-9,14-51,53-123,125
+  s_79e03752657a2e::t_5351b9b1c99cbd 10-13,124
+  s_79e03752657a2e::t_ff8bf9971aafbc 52
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "a24d0d165f8b91b44a4370eb0524dfc65be22445",
+  "prompts": {},
+  "sessions": {
+    "s_79e03752657a2e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ffa71-5465-7fe0-8faf-43d0db8de960",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}

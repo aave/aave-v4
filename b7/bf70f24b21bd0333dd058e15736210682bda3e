@@ -1,0 +1,35 @@
+scripts/deploy/AaveV4DeployBatchBase.s.sol
+  s_8735c0799a11e7::t_b74633978ea2ec 89-94,99,185-207
+src/deployments/orchestration/AaveV4DeployOrchestration.sol
+  s_8735c0799a11e7::t_63cfe16a8df1e5 581
+src/deployments/utils/libraries/InputUtils.sol
+  s_8735c0799a11e7::t_f15a6a1f4ca788 60
+tests/deployments/AaveV4BatchDeployment.t.sol
+  s_8735c0799a11e7::t_1ba5378d9de198 28-32,333-338,340-348,350-354,356-361,363-370,378,435,454-462,480,499-507,564,588
+tests/deployments/fork/PostDeploymentVerificationBase.t.sol
+  s_8735c0799a11e7::t_bbb32ab1ff3fd4 105-126
+tests/deployments/fork/PostDeploymentVerificationTest.t.sol
+  s_8735c0799a11e7::t_00f811abd0925c 34,146-176,221,233-243,264-266,301-307,326-328
+tests/deployments/utils/MetadataLogger.t.sol
+  s_8735c0799a11e7::t_523fbfdcf2d671 42-49,120-133,261
+tests/scripts/AaveV4DeployBatchBaseScript.t.sol
+  s_8735c0799a11e7::t_ded7b31f784460 53-62,81-83,315-328,359-369
+tests/utils/BatchTestProcedures.sol
+  s_8735c0799a11e7::t_87d5d896945aa1 32,45,65,96,175-181,199-218,289-305,316-320,338,345-374,379,412,583,608-623,625-636,638-661,670,690-705,707-714,716-729,733-737,931,1024-1039
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "b7bf70f24b21bd0333dd058e15736210682bda3e",
+  "prompts": {},
+  "sessions": {
+    "s_8735c0799a11e7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3b79ae1e-863b-4fc1-bc48-ba957ce7e0b8",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}

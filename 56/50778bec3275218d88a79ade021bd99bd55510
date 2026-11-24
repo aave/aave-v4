@@ -1,0 +1,107 @@
+src/config-engine/libraries/SpokeEngine.sol
+  s_7ec280db1063f8::t_dc448ac4c9b27d 10,21,23-24,29
+  s_7ec280db1063f8::t_ca3cf5534be0ea 19
+  s_7ec280db1063f8::t_d8957c4ddf8d65 229,231-232,237
+  s_7ec280db1063f8::t_b3ae197b6ac9ae 156,158-159,164
+  s_7ec280db1063f8::t_49388793489134 44,46-47,52
+  s_7ec280db1063f8::t_6da96f2d30d4dd 109,111-112,117
+  s_7ec280db1063f8::t_15729bb60fe380 182,184-185,190
+  s_7ec280db1063f8::t_01c2dcf9b47061 28,51,116,163,189,236
+src/config-engine/AaveV4ConfigEngine.sol
+  s_7ec280db1063f8::t_bcfff3796452f7 8,10,16-17,19-37,40,45,50,55,60,65,70,75,80,85,90,97,104,111,116
+tests/contracts/addresses-provider/AddressesProvider.t.sol
+  s_7ec280db1063f8::t_520d6c9223f9d9 315-351
+src/config-engine/libraries/AddressesProviderEngine.sol
+  s_7ec280db1063f8::t_82b45f8e54790d 1-23
+tests/config-engine/AaveV4Payload.EmptyReturns.t.sol
+  s_7ec280db1063f8::t_19e2b0ddd766b5 43-46
+src/addresses-provider/interfaces/IAddressesProvider.sol
+  s_7ec280db1063f8::t_9a94aa82998eaf 187-192
+tests/config-engine/BaseConfigEngine.t.sol
+  s_7ec280db1063f8::t_3789395745278f 392-393
+  s_7ec280db1063f8::t_ab6c1ecae90b7f 164-165,169
+  s_7ec280db1063f8::t_7f3187289da56a 85
+  s_7ec280db1063f8::t_5ad215c3cf4282 572-578
+  s_7ec280db1063f8::t_15142113a3d0d8 232,234,237,239
+  s_7ec280db1063f8::t_3451f4bd9c051c 32-33
+  s_7ec280db1063f8::t_263b47a398091f 525
+  s_7ec280db1063f8::t_3972bffce62a13 204-231,233,235-236,238,240-245
+tests/config-engine/HubEngine.t.sol
+  s_7ec280db1063f8::t_47c23f71fcc1ac 766-767,826-827,852-853,867-868,882-883,897-898,912-913,927-928,1177-1178
+  s_7ec280db1063f8::t_83dfe1122b8466 603
+src/config-engine/interfaces/IAaveV4ConfigEngine.sol
+  s_7ec280db1063f8::t_8856c8fde0b947 464-466
+  s_7ec280db1063f8::t_3e5766c47d9e85 19-20,25,31,34-38,40-41,45
+  s_7ec280db1063f8::t_ab267e894a1f01 180
+  s_7ec280db1063f8::t_3f8e6eff627e81 360-367
+src/config-engine/AaveV4Payload.sol
+  s_7ec280db1063f8::t_1ffb4d1020fc05 31,38-48
+  s_7ec280db1063f8::t_8739c25e316eb7 49,277-278,281-287
+  s_7ec280db1063f8::t_444d426bb87c1a 279-280
+  s_7ec280db1063f8::t_c109998615526c 50
+src/config-engine/libraries/EngineUtils.sol
+  s_7ec280db1063f8::t_a117c83eb6e1a0 4,10-17,22-24,26-30,32-36,40,53
+  s_7ec280db1063f8::t_0216c9bc2106ab 18-21,31,41-52
+  s_7ec280db1063f8::t_127a3c666e337c 25,37-39
+tests/helpers/mocks/config-engine/MockTokenizationListingPayload.sol
+  s_7ec280db1063f8::t_512b55e5b0fba0 60-61
+tests/config-engine/GovernanceTopology.t.sol
+  s_7ec280db1063f8::t_82c7c96af9b2d2 33-38
+tests/helpers/mocks/config-engine/AaveV4PayloadWrapper.sol
+  s_7ec280db1063f8::t_9875c3fdec0a7a 62
+  s_7ec280db1063f8::t_170e5aa96ccaff 17-19,63-71,239-246
+  s_7ec280db1063f8::t_3a98ab9466e701 247
+src/addresses-provider/AddressesProvider.sol
+  s_7ec280db1063f8::t_8659c33e3f185f 160-170
+  s_7ec280db1063f8::t_25727fc76ac733 159
+tests/config-engine/AddressesProviderRegistration.t.sol
+  s_7ec280db1063f8::t_7ad0955a66592f 82-87,90-91
+  s_7ec280db1063f8::t_ff91053494436b 316-318,327-329,333,342-344,348-396,398-401,403-424,426-434,436
+  s_7ec280db1063f8::t_fb670e17e633a3 6-7,9-11,13-22,24-27,30-33,36-44,46,49-52,54,56-59,61-78,81,88,92,94-107,110,112-114,116,119-120,123,126-127,129-136,138,141-142,145-146,148-149,152-158,163-164,167-176,178-180,182-191,193-194,197-204,206,208-210,212-223,226,228,230-231,235,237,239-242,248,250,252-255,261,263,265-267,269,274,276,278-281,287,289,291-295,297,299-300,302-313,319-326,330-331,334-337,339-340,345,435,439-442,445-448,450-451,454-483,486,489-496,498-500,502-509
+  s_7ec280db1063f8::t_ec98e71392d83c 225,229,234,238,251,264,277,290
+  s_7ec280db1063f8::t_61d0ad0cb977fb 245,258-260,271-273,284-286
+  s_7ec280db1063f8::t_444d426bb87c1a 45,115,122,137,144,151,166,181,196,211
+  s_7ec280db1063f8::t_da723ed4268731 150,165,195,224
+src/config-engine/libraries/HubEngine.sol
+  s_7ec280db1063f8::t_a894cb3d5cadba 147,149-150,154,156
+  s_7ec280db1063f8::t_9774e0cdeda6a9 191-195,198-199
+  s_7ec280db1063f8::t_7125906a44100e 274-276,279-280,287-295,298-301,311
+  s_7ec280db1063f8::t_b3b57e3c61aaf5 240,242-243,247,249
+  s_7ec280db1063f8::t_f3420fc16a096f 260,262-263,267
+  s_7ec280db1063f8::t_947022e4a22d46 112,114,116-117,121-123
+  s_7ec280db1063f8::t_0f9e9f57f5b114 223,225-226,230-231
+  s_7ec280db1063f8::t_787f15ab2267f4 12
+  s_7ec280db1063f8::t_b31b4a70b89a1a 145,155
+  s_7ec280db1063f8::t_9af2fd0e194d23 238,248
+  s_7ec280db1063f8::t_8ee5d755099d01 64,66-67,71-72
+  s_7ec280db1063f8::t_2dd112c48cb212 258,268
+  s_7ec280db1063f8::t_d6fff27b16c9e6 25-26,30,32,34-38,41-42,53
+  s_7ec280db1063f8::t_474be2fafa0aa3 207,209-210,214-215
+  s_7ec280db1063f8::t_30de21ac5ece82 312
+  s_7ec280db1063f8::t_77ec2088a0f636 270
+tests/config-engine/EngineUtils.t.sol
+  s_7ec280db1063f8::t_924eaa32c329a6 23-28
+  s_7ec280db1063f8::t_5b24d9f1401651 103-132,134
+  s_7ec280db1063f8::t_a59d011304a03f 6-7,9,13-22,33-35,37,41-49,52-54,57-59,62-66,69-73,76-78,81-83,86-88,91-93,96-100
+tests/config-engine/SpokeEngine.t.sol
+  s_7ec280db1063f8::t_fc79eb9a08ee49 928,938
+tests/config-engine/AaveV4Payload.t.sol
+  s_7ec280db1063f8::t_83dfe1122b8466 388
+  s_7ec280db1063f8::t_87c69babbfdea1 646-679
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "5650778bec3275218d88a79ade021bd99bd55510",
+  "prompts": {},
+  "sessions": {
+    "s_7ec280db1063f8": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f6eca046-101a-4f2f-995c-14a34db2a81c",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}

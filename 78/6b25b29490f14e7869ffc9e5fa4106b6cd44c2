@@ -1,0 +1,23 @@
+docs/features/SiloedBorrowing.md
+  d53748eb67e3d480 21
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "786b25b29490f14e7869ffc9e5fa4106b6cd44c2",
+  "prompts": {
+    "d53748eb67e3d480": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dbd8d358-b02f-46d8-a782-9596102cfce3",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "CanonicalJP",
+      "messages": [],
+      "total_additions": 1,
+      "total_deletions": 1,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    }
+  }
+}

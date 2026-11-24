@@ -1,0 +1,23 @@
+src/deployments/README.md
+  s_6045398d7d3d38::t_424bb896ecc91f 199-200
+src/deployments/utils/libraries/InputUtils.sol
+  s_6045398d7d3d38::t_fd74a90dd4b532 22
+tests/deployments/AaveV4BatchDeployment.t.sol
+  s_6045398d7d3d38::t_c47e01cae276e6 492
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7156982f5707ccd0f22b3cbe5a3438a1ef568baf",
+  "prompts": {},
+  "sessions": {
+    "s_6045398d7d3d38": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "574bcd02-99a9-41af-a6fe-9d7565835090",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}

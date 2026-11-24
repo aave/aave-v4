@@ -1,0 +1,20 @@
+src/spoke/SpokeConfigurator.sol
+  s_b6ed679d663ba8::t_33408a01d81d21 547
+  s_b6ed679d663ba8::t_20895e86edf9b4 530-532,534
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "5b9cd4bae36b0ba6412ab9efda121241342bb746",
+  "prompts": {},
+  "sessions": {
+    "s_b6ed679d663ba8": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "40b65890-0023-40ef-92d3-13282155b8a7",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "AyushKaul <ayush@aave.com>"
+    }
+  }
+}

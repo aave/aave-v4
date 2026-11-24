@@ -1,0 +1,23 @@
+certora/spec/SpokeBase.spec
+  afb38c95ecb411cf 49,51
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "b040292c2332332ec5715f850af387c70e4372c4",
+  "prompts": {
+    "afb38c95ecb411cf": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ca113ec8-5b10-409f-bcde-9391394f9498",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "YBM",
+      "messages": [],
+      "total_additions": 2,
+      "total_deletions": 2,
+      "accepted_lines": 2,
+      "overriden_lines": 0
+    }
+  }
+}

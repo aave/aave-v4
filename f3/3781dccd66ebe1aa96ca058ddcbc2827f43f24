@@ -1,0 +1,20 @@
+tests/misc/z3/babylon_max_collateral_cap_conversion.py
+  s_8735c0799a11e7::t_2035bdf85c3f75 8-11,26,29,32,34-37,40-41,43-45,48-51,54-55
+  s_8735c0799a11e7::t_113ca608629733 31,33
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "f33781dccd66ebe1aa96ca058ddcbc2827f43f24",
+  "prompts": {},
+  "sessions": {
+    "s_8735c0799a11e7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3b79ae1e-863b-4fc1-bc48-ba957ce7e0b8",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}

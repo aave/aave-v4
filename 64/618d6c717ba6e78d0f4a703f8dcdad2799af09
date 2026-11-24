@@ -1,0 +1,55 @@
+.github/workflows/comment.yml
+  s_f9d3a438256120::t_ad06eeba0da343 19
+tests/gas/Gateways.Operations.gas.t.sol
+  s_f9d3a438256120::t_ad06eeba0da343 40,59,81,85,117,161,212,242,271,314,336,352,368,395
+tests/contracts/spoke/permissioned/PermissionedSpoke.Base.t.sol
+  s_f9d3a438256120::t_9dcd706a4e8f26 13-15,39-46,50
+tests/gas/TokenizationSpoke.Operations.gas.t.sol
+  s_f9d3a438256120::t_ad06eeba0da343 43,50,57,61,69,73,82,86,95,99,115,130,147,164,181
+tests/gas/PositionManagers.Operations.gas.t.sol
+  s_f9d3a438256120::t_ad06eeba0da343 51,87,127,174,180,208,216,242,253,261,287,298,331,337,343,349,358,367,376,385,399,423,432
+tests/gas/Spoke.Operations.gas.t.sol
+  s_f9d3a438256120::t_ad06eeba0da343 22,25,31,41,48,51,57,60,70,75,82,86,90,110,115,129,132,147,162,178,194,210,227,233,243,249,264,282,302,322,350,358
+.github/workflows/tests-pr.yml
+  s_f9d3a438256120::t_ad06eeba0da343 9,20,25,28,31,37
+snapshots/Spoke.Operations.ZeroRiskPremium.json
+  s_f9d3a438256120::t_c0c0751fb89b25 4-11,14-15
+snapshots/SignatureGateway.Operations.json
+  s_f9d3a438256120::t_b38e3f70206605 3
+snapshots/Spoke.Operations.json
+  s_f9d3a438256120::t_c0c0751fb89b25 4-11,14-15
+snapshots/TakerPositionManager.Operations.json
+  s_f9d3a438256120::t_ad06eeba0da343 5,11
+tests/gas/Spoke.Getters.gas.t.sol
+  s_f9d3a438256120::t_ad06eeba0da343 10,19,32,50,71
+tests/gas/PermissionedSpoke.Operations.gas.t.sol
+  s_f9d3a438256120::t_1fcd5103353725 19-43,48-72,77-92,95,110,113,116,121,124,128,154-158,160,166,170,172,207
+snapshots/PermissionedSpoke.Operations.json
+  s_f9d3a438256120::t_766363f99449a5 2-26
+.github/workflows/tests-merge.yml
+  s_f9d3a438256120::t_ad06eeba0da343 12,23,28,32
+tests/contracts/spoke/misc/PermissionedSpoke.t.sol
+  s_f9d3a438256120::t_9dcd706a4e8f26 6,19,22-29
+tests/gas/Hub.Operations.gas.t.sol
+  s_f9d3a438256120::t_ad06eeba0da343 15,29,32,49,89,110,213,231,253,259,292,296,302
+foundry.lock
+  s_f9d3a438256120::t_76491621bafff8 9-12
+lib/forge-std
+  s_f9d3a438256120::t_24ab5317f02c84 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "64618d6c717ba6e78d0f4a703f8dcdad2799af09",
+  "prompts": {},
+  "sessions": {
+    "s_f9d3a438256120": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a04e52-b690-7103-b402-945ae1523285",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}

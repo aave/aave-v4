@@ -1,0 +1,33 @@
+tests/helpers/mocks/MockMandatoryPositionManager.sol
+  s_31ad70093686af::t_b9815b2ebefd43 1-43
+src/spoke/interfaces/IMandatoryPositionManager.sol
+  s_31ad70093686af::t_5e9576ed2e9289 1-20
+src/spoke/interfaces/IPermissionedSpoke.sol
+  s_31ad70093686af::t_d86a2eab54e2e8 1-20
+foundry.toml
+  s_31ad70093686af::t_04a540fa478f57 30
+src/spoke/Spoke.sol
+  s_31ad70093686af::t_4bdaa35c31cb55 89,91
+  s_31ad70093686af::t_f10c1e13932f91 915-920
+tests/contracts/spoke/misc/PermissionedSpoke.t.sol
+  s_31ad70093686af::t_bd050bbe6c0049 1-256,258-339
+  s_31ad70093686af::t_1279b423579a1e 257
+src/spoke/instances/PermissionedSpokeInstance.sol
+  s_31ad70093686af::t_69244cf78d1c57 1-49
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "78049b9ec687f8b3163ec25c1353515ed2adffae",
+  "prompts": {},
+  "sessions": {
+    "s_31ad70093686af": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c52a16c8-3734-43bb-8a82-f6df83845e0e",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}

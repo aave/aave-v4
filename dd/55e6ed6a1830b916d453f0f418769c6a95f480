@@ -1,0 +1,21 @@
+tests/deployments/procedures/deploy/roles/AaveV4HubConfiguratorRolesProcedure.t.sol
+  s_b6ed679d663ba8::t_a9c2e0358e7d0a 112-124
+tests/deployments/procedures/deploy/roles/AaveV4SpokeConfiguratorRolesProcedure.t.sol
+  s_b6ed679d663ba8::t_a9c2e0358e7d0a 126-130
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "dd55e6ed6a1830b916d453f0f418769c6a95f480",
+  "prompts": {},
+  "sessions": {
+    "s_b6ed679d663ba8": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "40b65890-0023-40ef-92d3-13282155b8a7",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "AyushKaul <ayush@aave.com>"
+    }
+  }
+}

@@ -1,0 +1,23 @@
+tests/contracts/addresses-provider/AddressesProvider.t.sol
+  s_362baa90fa8fa5::t_058f3538a6f703 81
+src/addresses-provider/interfaces/IAddressesProvider.sol
+  s_362baa90fa8fa5::t_177aa804c36c82 22-23
+src/addresses-provider/AddressesProvider.sol
+  s_362baa90fa8fa5::t_ce2930966b391b 149
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "5788639c6b4ba35f183eda4cb3b39b6c6f61ad74",
+  "prompts": {},
+  "sessions": {
+    "s_362baa90fa8fa5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1cd8ae8d-6afb-4fd4-9c20-ca30d0300035",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}

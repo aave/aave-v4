@@ -1,0 +1,19 @@
+src/deployments/utils/AaveV4AaveOracleDeployer.sol
+  s_baa2e306a9ce7e::t_adf4b78cfb7781 10
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "38c28c8ac459f31864688ef43c90c0b3ec671577",
+  "prompts": {},
+  "sessions": {
+    "s_baa2e306a9ce7e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5fe9b53d-b377-4c11-b688-c311ccd286f9",
+        "model": "claude-fable-5-2"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}

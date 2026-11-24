@@ -1,0 +1,62 @@
+scripts/deploy/examples/AaveV4DeployAnvil.s.sol
+  h_89d2da8ff33004 7,22,27,56
+src/deployments/batches/AaveV4SpokeInstanceBatch.sol
+  h_89d2da8ff33004 20,28,38
+src/deployments/orchestration/AaveV4DeployBase.sol
+  h_89d2da8ff33004 89,98,107
+src/deployments/orchestration/AaveV4DeployOrchestration.sol
+  h_89d2da8ff33004 220,238,251,318,328
+src/deployments/procedures/deploy/spoke/AaveV4SpokeDeployProcedure.sol
+  h_89d2da8ff33004 16,26,34,38,53,58-59,61
+src/deployments/utils/libraries/InputUtils.sol
+  h_89d2da8ff33004 20,43
+src/spoke/Spoke.sol
+  h_89d2da8ff33004 230,250,281,313,358,401,921-923
+src/spoke/hooks/BaseSpokeHook.sol
+  h_89d2da8ff33004 1-62
+src/spoke/hooks/NoOpSpokeHook.sol
+  h_89d2da8ff33004 1-12
+src/spoke/instances/SpokeInstance.sol
+  h_89d2da8ff33004 5,13-15,20-27,44-49
+src/spoke/interfaces/ISpokeHook.sol
+  h_89d2da8ff33004 1-21
+tests/contracts/spoke/hooks/Spoke.Hooks.t.sol
+  h_89d2da8ff33004 1-122
+tests/deployments/AaveV4BatchDeployment.t.sol
+  h_89d2da8ff33004 5,22,371,407
+tests/deployments/batches/AaveV4SpokeInstanceBatch.t.sol
+  h_89d2da8ff33004 16,53,66,79,92,104
+tests/deployments/batches/BatchBase.t.sol
+  h_89d2da8ff33004 34,42,52
+tests/deployments/fork/PostDeploymentVerificationTest.t.sol
+  h_89d2da8ff33004 213,266
+tests/deployments/orchestration/AaveV4TestOrchestration.sol
+  h_89d2da8ff33004 29,68,106,167,173,440
+tests/deployments/procedures/deploy/spoke/AaveV4SpokeDeployProcedure.t.sol
+  h_89d2da8ff33004 5,9-10,14,23,41,52,63,74,79-89
+tests/helpers/mocks/MockSpokeHook.sol
+  h_89d2da8ff33004 1-53
+tests/helpers/mocks/deployments/procedures/AaveV4SpokeDeployProcedureWrapper.sol
+  h_89d2da8ff33004 13,23
+tests/scripts/AaveV4DeployBatchBaseScript.t.sol
+  h_89d2da8ff33004 9,65,328
+tests/utils/BatchTestProcedures.sol
+  h_89d2da8ff33004 171
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "cd43553591bec3c7bdc954d145e7eb4c22f1a0ed",
+  "prompts": {},
+  "humans": {
+    "h_0f977de3f043fc": {
+      "author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    },
+    "h_89d2da8ff33004": {
+      "author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    },
+    "h_e42aa0fb58e660": {
+      "author": "Alexandru Niculae"
+    }
+  }
+}

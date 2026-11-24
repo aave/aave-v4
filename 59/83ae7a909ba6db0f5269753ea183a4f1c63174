@@ -1,0 +1,31 @@
+src/deployments/libraries/OrchestrationReports.sol
+  s_b5a8ba063f759a::t_9098adc33c460c 28-29,39-40
+src/deployments/orchestration/AaveV4DeployOrchestration.sol
+  s_b5a8ba063f759a::t_77321930974e20 84,94,171,173,176,186
+src/deployments/utils/MetadataLogger.sol
+  s_b5a8ba063f759a::t_70b4824e0e54b1 25,31-32,35-36,39-40,48,54-55,58-59,62-63
+tests/deployments/AaveV4BatchDeployment.t.sol
+  s_b5a8ba063f759a::t_6947fc697e6302 53-56
+tests/deployments/fork/PostDeploymentVerificationBase.t.sol
+  s_b5a8ba063f759a::t_855747fe69507f 70,73,75,79,83,90,93,95,99,103
+tests/deployments/utils/MetadataLogger.t.sol
+  s_b5a8ba063f759a::t_59e5a403fa34bd 22-40,79,83,87,91,97,101,105,109,208-212,214-218,237-238
+tests/utils/BatchTestProcedures.sol
+  s_b5a8ba063f759a::t_4a4736aa2111d2 242-243,245,249,251-252,254,258,261,263,266,268,279-281,358,529,538,551,590,601,609,656,665,718,729,741,878-879,881,885,889,894-895,897,901,905
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "5983ae7a909ba6db0f5269753ea183a4f1c63174",
+  "prompts": {},
+  "sessions": {
+    "s_b5a8ba063f759a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e21f9af4-2976-4fc6-9fca-5c29e8c8d9fc",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}

@@ -1,0 +1,19 @@
+tests/misc/z3/babylon_liquidation_cap_resize.py
+  s_602c0abcbd103d::t_1eac4a5e5e7317 16,61,72-73,75,78,110,113-114,120,134
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "86020a85228a85780692e5fca3fa71334915d2b5",
+  "prompts": {},
+  "sessions": {
+    "s_602c0abcbd103d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1ea1deba-813b-43d3-807f-1e851ba7b60a",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}

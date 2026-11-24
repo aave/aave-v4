@@ -1,0 +1,59 @@
+tests/contracts/spoke/position-manager/Spoke.GlobalPositionManager.t.sol
+  s_f5100d81939aea::t_99337a9ad34ddd 1-103
+src/deployments/utils/libraries/Roles.sol
+  s_f5100d81939aea::t_d4165fc638e564 132,140,148,173
+src/spoke/interfaces/ISpoke.sol
+  s_f5100d81939aea::t_99337a9ad34ddd 791
+  s_f5100d81939aea::t_d4165fc638e564 108,112,193-197,486-491,782-788
+tests/deployments/procedures/deploy/roles/AaveV4SpokeRolesProcedure.t.sol
+  s_f5100d81939aea::t_99337a9ad34ddd 132,140
+tests/contracts/spoke/configurator/SpokeConfigurator.GranularAccessControl.t.sol
+  s_f5100d81939aea::t_99337a9ad34ddd 82-83,85,205-207,422-433
+  s_f5100d81939aea::t_930c2c4942d5ab 434
+tests/deployments/procedures/deploy/roles/AaveV4SpokeConfiguratorRolesProcedure.t.sol
+  s_f5100d81939aea::t_99337a9ad34ddd 101,126
+tests/contracts/spoke/position-manager/Spoke.PositionManager.t.sol
+  s_f5100d81939aea::t_e80cc295059530 27-29,44-45
+src/spoke/interfaces/ISpokeConfigurator.sol
+  s_f5100d81939aea::t_d4165fc638e564 211-220
+tests/contracts/spoke/position-manager/Spoke.SetUserPositionManagerWithSig.t.sol
+  s_f5100d81939aea::t_e80cc295059530 227-229
+src/spoke/SpokeConfigurator.sol
+  s_f5100d81939aea::t_d4165fc638e564 291-299
+src/spoke/Spoke.sol
+  s_f5100d81939aea::t_d4165fc638e564 224-229,667-671,919,923
+tests/contracts/spoke/configurator/SpokeConfigurator.t.sol
+  s_f5100d81939aea::t_99337a9ad34ddd 806-829
+snapshots/ConfigPositionManager.Operations.json
+  s_f5100d81939aea::t_200bc31c5a8591 10-12
+snapshots/GiverPositionManager.Operations.json
+  s_f5100d81939aea::t_a28f92ba07f23a 2-3
+snapshots/NativeTokenGateway.Operations.json
+  s_f5100d81939aea::t_eea6e90c580a21 2-7
+snapshots/SignatureGateway.Operations.json
+  s_f5100d81939aea::t_abf06e2ce26f49 2-3,5-9
+snapshots/Spoke.Getters.json
+  s_f5100d81939aea::t_3b56551352c756 2-6
+snapshots/Spoke.Operations.ZeroRiskPremium.json
+  s_f5100d81939aea::t_2c7a93f32c9c33 2-13,15-28
+snapshots/Spoke.Operations.json
+  s_f5100d81939aea::t_568b0342406b96 2-13,15-28
+snapshots/TakerPositionManager.Operations.json
+  s_f5100d81939aea::t_a7da47fbdec5f6 6,9-10
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "9d9ab87938a098ab24599578df3e933406f674ba",
+  "prompts": {},
+  "sessions": {
+    "s_f5100d81939aea": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fd698-a399-7f20-927d-100153f8cce8",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}

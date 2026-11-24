@@ -1,0 +1,23 @@
+docs/features/DynamicConfiguration.md
+  a3338f3454cd45c1 5,42
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "65537927db5975d8695b4236d162934baafaf8f4",
+  "prompts": {
+    "a3338f3454cd45c1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a8ebcc88-799c-477c-a1ca-1f0406acd6f2",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "CanonicalJP",
+      "messages": [],
+      "total_additions": 2,
+      "total_deletions": 2,
+      "accepted_lines": 2,
+      "overriden_lines": 0
+    }
+  }
+}

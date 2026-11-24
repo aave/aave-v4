@@ -1,0 +1,48 @@
+snapshots/SignatureGateway.Operations.json
+  h_89d2da8ff33004 2,7-8
+snapshots/TokenizationSpoke.Operations.json
+  h_89d2da8ff33004 16
+src/deployments/README.md
+  h_89d2da8ff33004 112,119-130,150-159,161,173-180,182,269,274
+src/deployments/procedures/roles/AaveV4AccessManagerRolesProcedure.sol
+  h_89d2da8ff33004 25-32,44-51
+src/deployments/procedures/roles/AaveV4HubConfiguratorRolesProcedure.sol
+  h_89d2da8ff33004 11,13,16-20,33,43-72
+src/deployments/procedures/roles/AaveV4SpokeConfiguratorRolesProcedure.sol
+  h_89d2da8ff33004 11,13,16-20,33,44-73
+src/deployments/utils/libraries/Roles.sol
+  h_89d2da8ff33004 30-32,42-74,87-91,100-104,137-164,167-189,220,222-278
+tests/config-engine/AaveV4Payload.t.sol
+  h_89d2da8ff33004 17,602-604,850
+tests/config-engine/BaseConfigEngine.t.sol
+  h_89d2da8ff33004 233-246
+tests/config-engine/GovernanceTopology.t.sol
+  h_89d2da8ff33004 31-33
+tests/contracts/libraries/types/Roles.t.sol
+  h_89d2da8ff33004 15-19,24-28
+tests/deployments/procedures/ProceduresBase.t.sol
+  h_89d2da8ff33004 95-101
+tests/deployments/procedures/deploy/roles/AaveV4AccessManagerRolesProcedure.t.sol
+  h_89d2da8ff33004 99,102-105,108-110,113-116,118-121,123-127,129-132,135-140,145-147,150-165,169-179
+tests/deployments/procedures/deploy/roles/AaveV4HubConfiguratorRolesProcedure.t.sol
+  h_89d2da8ff33004 71-75,85-93,104-128,131-171,182-234
+tests/deployments/procedures/deploy/roles/AaveV4SpokeConfiguratorRolesProcedure.t.sol
+  h_89d2da8ff33004 71-75,85-93,104,106-173,184-236
+tests/helpers/mocks/deployments/procedures/AaveV4HubConfiguratorRolesProcedureWrapper.sol
+  h_89d2da8ff33004 42-61
+tests/helpers/mocks/deployments/procedures/AaveV4SpokeConfiguratorRolesProcedureWrapper.sol
+  h_89d2da8ff33004 42-65
+tests/utils/BatchTestProcedures.sol
+  h_89d2da8ff33004 441,461-480,501-520,810-816,818-819,822-825,827-837,848-854,856-857,860-863,866-913,915
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "0c9f40ab204e84480feb371f4794eec43caa7ebe",
+  "prompts": {},
+  "humans": {
+    "h_89d2da8ff33004": {
+      "author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}

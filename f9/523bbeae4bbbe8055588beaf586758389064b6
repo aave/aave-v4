@@ -1,0 +1,19 @@
+tests/deployments/batches/AaveV4TokenizationSpokeBatch.t.sol
+  s_b5a8ba063f759a::t_07974069c3e285 24-27
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f9523bbeae4bbbe8055588beaf586758389064b6",
+  "prompts": {},
+  "sessions": {
+    "s_b5a8ba063f759a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e21f9af4-2976-4fc6-9fca-5c29e8c8d9fc",
+        "model": "claude-fable-5-2"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}

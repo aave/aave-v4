@@ -1,0 +1,25 @@
+snapshots/SignatureGateway.Operations.json
+  s_8edb99a82f115a::t_86130166050b8a 3,5
+snapshots/Spoke.Operations.ZeroRiskPremium.json
+  s_8edb99a82f115a::t_a9f8e49d22d714 4-8,11
+snapshots/Spoke.Operations.json
+  s_8edb99a82f115a::t_0289bd94e1f357 4-8,11
+snapshots/TakerPositionManager.Operations.json
+  s_8edb99a82f115a::t_d7a4688d74be00 5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "2acc600fdb2e53ec50038cc7ad586c2551fdb29b",
+  "prompts": {},
+  "sessions": {
+    "s_8edb99a82f115a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "eef1846f-483e-488d-9f7c-f625a7b2a5cd",
+        "model": "unknown"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}

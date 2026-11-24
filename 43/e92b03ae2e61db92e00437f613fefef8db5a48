@@ -1,0 +1,33 @@
+tests/contracts/spoke/configuration/BabylonSpoke.Config.t.sol
+  s_8735c0799a11e7::t_655b1b3de21a19 31-44,262-301
+tests/contracts/spoke/libraries/babylon-liquidation-logic/BabylonLiquidationLogic.LiquidationAmounts.t.sol
+  s_8735c0799a11e7::t_41d37da8b6e80d 165-182
+tests/contracts/spoke/liquidation/Spoke.BabylonLiquidationCall.Fuzz.t.sol
+  s_8735c0799a11e7::t_b1197f332c3241 42,135,158,200-201,207-208,216-217,236-237,271-272,301-302,324-325,364-365,387-388
+tests/contracts/spoke/liquidation/Spoke.BabylonLiquidationCall.Scenarios.t.sol
+  s_8735c0799a11e7::t_04645a8460a649 6-12,21-24,58-59,78-79,100-101,122-123,163,165,193,235,237,239,242,246,287,293,295,297,326,340,352
+tests/contracts/spoke/liquidation/Spoke.BabylonLiquidationCall.t.sol
+  s_8735c0799a11e7::t_a8f4e4ddd0a162 33-35,37-39
+tests/deployments/AaveV4BatchDeployment.t.sol
+  s_8735c0799a11e7::t_aaf282913f3759 6,380-388
+tests/gas/BabylonSpoke.Operations.gas.t.sol
+  s_8735c0799a11e7::t_da50f7b174445b 26
+tests/setup/BabylonBase.t.sol
+  s_8735c0799a11e7::t_a90c3eae6e0740 18-22,34,36
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "43e92b03ae2e61db92e00437f613fefef8db5a48",
+  "prompts": {},
+  "sessions": {
+    "s_8735c0799a11e7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3b79ae1e-863b-4fc1-bc48-ba957ce7e0b8",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}

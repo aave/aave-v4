@@ -1,0 +1,29 @@
+tests/gas/BabylonSpoke.Operations.gas.t.sol
+  s_602c0abcbd103d::t_87ed81e5de3239 1-140
+snapshots/BabylonSpoke.Operations.json
+  s_602c0abcbd103d::t_06c66c06faa0b3 1-34
+snapshots/SignatureGateway.Operations.json
+  s_602c0abcbd103d::t_337cb63e204afb 2-3,6,8
+snapshots/Spoke.Operations.ZeroRiskPremium.json
+  s_602c0abcbd103d::t_f70ab18f336fa5 2-8,15,18,20-23,25,27,29-33
+snapshots/Spoke.Operations.json
+  s_602c0abcbd103d::t_768a2963da8046 2-8,15,18,20-23,25,27,29-33
+tests/gas/Spoke.Operations.gas.t.sol
+  s_602c0abcbd103d::t_aa9d7b48b6ebc7 136,151,167,183,199
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "0e3acbab76e386cdf7242f28fb737796d2561871",
+  "prompts": {},
+  "sessions": {
+    "s_602c0abcbd103d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1ea1deba-813b-43d3-807f-1e851ba7b60a",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}

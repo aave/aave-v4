@@ -1,0 +1,20 @@
+tests/deployments/fork/PaxosTokenizationSpokesActivation.t.sol
+  s_066c5b122888dc::t_5374d8967426dc 41
+  s_066c5b122888dc::t_b827c1a7f0f3c4 1-40,42-208
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "38629c14189111fe5e842a10a77a2ec06afaa20e",
+  "prompts": {},
+  "sessions": {
+    "s_066c5b122888dc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8f06fd84-89aa-44fd-a3b5-0cd3ad9f6d2e",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}

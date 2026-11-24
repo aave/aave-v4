@@ -1,0 +1,23 @@
+docs/features/LiquidationEngine.md
+  d53748eb67e3d480 128-129
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "7268fb09a053a572bb9da834afcd0212f6157aeb",
+  "prompts": {
+    "d53748eb67e3d480": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dbd8d358-b02f-46d8-a782-9596102cfce3",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "CanonicalJP",
+      "messages": [],
+      "total_additions": 2,
+      "total_deletions": 0,
+      "accepted_lines": 2,
+      "overriden_lines": 0
+    }
+  }
+}

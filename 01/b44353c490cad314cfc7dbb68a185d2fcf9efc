@@ -1,0 +1,66 @@
+src/deployments/utils/libraries/InputUtils.sol
+  s_0c27e2f42acfcb::t_df8a86cc68e380 44,49
+  s_0c27e2f42acfcb::t_e406ccbad15c84 19-20,25
+src/deployments/libraries/OrchestrationReports.sol
+  s_0c27e2f42acfcb::t_cb5a645f360145 31,41
+src/deployments/orchestration/AaveV4DeployOrchestration.sol
+  s_0c27e2f42acfcb::t_72952fba1120e6 117-125
+  s_0c27e2f42acfcb::t_65e05f240db16b 390-404
+src/deployments/libraries/BatchReports.sol
+  h_739c25e72c37fb 67,70
+src/deployments/batches/AaveV4TokenizationSpokeBatch.sol
+  h_739c25e72c37fb 38-39
+src/deployments/README.md
+  s_0c27e2f42acfcb::t_3265f5025cf306 35,41
+  h_739c25e72c37fb 39
+  s_0c27e2f42acfcb::t_f4c3babd329451 242-247
+scripts/deploy/examples/AaveV4DeployAnvil.s.sol
+  s_0c27e2f42acfcb::t_0a1c89ffacd128 52,57
+tests/deployments/utils/MetadataLogger.t.sol
+  s_0c27e2f42acfcb::t_77f9a106c5882c 208-209,220-221
+  s_0c27e2f42acfcb::t_078e612e1106aa 48-54
+  s_0c27e2f42acfcb::t_290d73c121a825 142-164
+src/deployments/utils/MetadataLogger.sol
+  s_0c27e2f42acfcb::t_7a06ba34907007 85-94
+tests/deployments/fork/PostDeploymentVerificationTest.t.sol
+  s_0c27e2f42acfcb::t_2d1930763e873e 210,217
+  s_0c27e2f42acfcb::t_41ed946ca87120 266,271
+tests/deployments/AaveV4BatchDeployment.t.sol
+  s_0c27e2f42acfcb::t_ee8d73e8efa88a 20,25
+  s_0c27e2f42acfcb::t_65de6404614b7b 239-260
+  s_0c27e2f42acfcb::t_d1340a81596ec6 520-526
+  s_0c27e2f42acfcb::t_9ecb2c5f70f01f 480-481
+tests/deployments/batches/AaveV4TokenizationSpokeBatch.t.sol
+  s_0c27e2f42acfcb::t_8f5b317e0dc449 89,93
+scripts/deploy/AaveV4DeployBatchBase.s.sol
+  s_0c27e2f42acfcb::t_2556a63e18403b 207-214
+  s_0c27e2f42acfcb::t_37c7bcf85f1eff 148-151
+  s_0c27e2f42acfcb::t_5997ff77d806cd 95
+tests/utils/BatchTestProcedures.sol
+  s_0c27e2f42acfcb::t_aee0254d412206 165-167,177
+  s_0c27e2f42acfcb::t_69df3d1826719f 883-889
+  s_0c27e2f42acfcb::t_f79726060c5b99 239-262
+tests/scripts/AaveV4DeployBatchBaseScript.t.sol
+  s_0c27e2f42acfcb::t_7bf05e92211ed0 63,68
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.5",
+  "base_commit_sha": "01b44353c490cad314cfc7dbb68a185d2fcf9efc",
+  "prompts": {},
+  "humans": {
+    "h_739c25e72c37fb": {
+      "author": "DhairyaSethi <55102840+DhairyaSethi@users.noreply.github.com>"
+    }
+  },
+  "sessions": {
+    "s_0c27e2f42acfcb": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1e26ae01-c33f-4e7d-b573-ff86419355eb",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "DhairyaSethi <55102840+DhairyaSethi@users.noreply.github.com>"
+    }
+  }
+}

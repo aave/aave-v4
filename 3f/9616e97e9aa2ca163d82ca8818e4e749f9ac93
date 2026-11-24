@@ -1,0 +1,14 @@
+tests/contracts/spoke/liquidation/Spoke.BabylonLiquidationCall.t.sol
+  h_0f977de3f043fc 136-183
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "3f9616e97e9aa2ca163d82ca8818e4e749f9ac93",
+  "prompts": {},
+  "humans": {
+    "h_0f977de3f043fc": {
+      "author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}
