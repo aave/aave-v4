@@ -9,7 +9,7 @@ import {TreasurySpokeInstance} from 'src/spoke/instances/TreasurySpokeInstance.s
 /// @notice Deploys the TreasurySpoke contract behind a transparent proxy.
 contract AaveV4TreasurySpokeDeployProcedure {
   /// @notice Deploys a Treasury Spoke instance via CREATE2 and sets up a transparent proxy.
-  /// @param owner The owner of the ProxyAdmin and of the TreasurySpoke.
+  /// @param owner The owner of the ProxyAdmin and the TreasurySpoke.
   /// @param salt The CREATE2 salt for deterministic deployment.
   /// @return The address of the deployed transparent proxy contract.
   function _deployTreasurySpoke(address owner, bytes32 salt) internal returns (address) {

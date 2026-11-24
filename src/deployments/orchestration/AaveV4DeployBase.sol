@@ -92,7 +92,7 @@ library AaveV4DeployBase {
   /// @param authority The access-control authority for the Spoke.
   /// @param spokeBytecode The creation bytecode of the SpokeInstance contract.
   /// @param oracleDecimals The decimal precision for the AaveOracle.
-  /// @param maxUserReservesLimit The maximum number of collateral and borrow reserves a user can have.
+  /// @param maxUserReservesLimit The maximum number of collateral and borrow reserves a user can have (each counted separately).
   /// @param salt The CREATE2 salt for deterministic deployment.
   /// @return The Spoke instance batch report.
   function deploySpokeInstanceBatch(

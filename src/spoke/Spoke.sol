@@ -94,7 +94,7 @@ abstract contract Spoke is
 
   /// @dev Constructor.
   /// @param oracle_ The address of the AaveOracle contract.
-  /// @param maxUserReservesLimit_ The maximum number of collateral and borrow reserves a user can have.
+  /// @param maxUserReservesLimit_ The maximum number of collateral and borrow reserves a user can have (each counted separately).
   constructor(address oracle_, uint16 maxUserReservesLimit_) {
     require(IAaveOracle(oracle_).decimals() == ORACLE_DECIMALS, InvalidOracleDecimals());
     require(maxUserReservesLimit_ > 0, InvalidMaxUserReservesLimit());
@@ -848,7 +848,7 @@ abstract contract Spoke is
     emit UpdateUserRiskPremium(user, newRiskPremium);
   }
 
-  /// @dev CollateralFactor of historical config keys cannot be 0, which allows liquidations to proceed.
+  /// @dev CollateralFactor of existing config keys cannot be 0, which allows liquidations to proceed.
   function _validateUpdateDynamicReserveConfig(
     DynamicReserveConfig storage currentConfig,
     DynamicReserveConfig calldata newConfig
@@ -905,7 +905,7 @@ abstract contract Spoke is
     return _reserves[reserveId].assetId == assetId && address(_reserves[reserveId].hub) == hub;
   }
 
-  /// @notice Returns whether `manager` is active and approved positionManager for `user`.
+  /// @notice Returns whether `manager` is `user` itself, or an active position manager approved by `user`.
   function _isPositionManager(address user, address manager) internal view returns (bool) {
     if (user == manager) return true;
     PositionManagerConfig storage config = _positionManager[manager];

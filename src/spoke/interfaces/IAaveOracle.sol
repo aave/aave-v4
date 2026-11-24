@@ -16,28 +16,28 @@ interface IAaveOracle is IPriceOracle {
   /// @param spoke The address of the Spoke.
   event SetSpoke(address indexed spoke);
 
-  /// @dev Thrown when the caller is not the deployer.
+  /// @notice Thrown when the caller is not the deployer.
   error OnlyDeployer();
 
-  /// @dev Thrown when the Spoke is already set.
+  /// @notice Thrown when the Spoke is already set.
   error SpokeAlreadySet();
 
-  /// @dev Thrown when the price feed source uses a different number of decimals than the oracle.
+  /// @notice Thrown when the price feed source uses a different number of decimals than the oracle.
   /// @param reserveId The identifier of the reserve.
   error InvalidSourceDecimals(uint256 reserveId);
 
-  /// @dev Thrown when the price feed source is invalid (zero address).
+  /// @notice Thrown when the price feed source is invalid (zero address).
   /// @param reserveId The identifier of the reserve.
   error InvalidSource(uint256 reserveId);
 
-  /// @dev Thrown when the price feed source returns an invalid price (non-positive).
+  /// @notice Thrown when the price feed source returns an invalid price (non-positive).
   /// @param reserveId The identifier of the reserve.
   error InvalidPrice(uint256 reserveId);
 
-  /// @dev Thrown when the given address is invalid.
+  /// @notice Thrown when the given address is invalid.
   error InvalidAddress();
 
-  /// @dev Thrown when the Spoke's oracle does not match the current oracle.
+  /// @notice Thrown when the Spoke's oracle does not match the current oracle.
   error OracleMismatch();
 
   /// @notice Sets the address of the Spoke.

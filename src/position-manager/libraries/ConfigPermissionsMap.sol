@@ -93,14 +93,14 @@ library ConfigPermissionsMap {
 
   /// @notice Returns whether the `canUpdateUserRiskPremium` permission is enabled.
   /// @param self The current ConfigPermissions.
-  /// @return Whether the `canUpdateUserRiskPremium` permission is enabled
+  /// @return Whether the `canUpdateUserRiskPremium` permission is enabled.
   function canUpdateUserRiskPremium(ConfigPermissions self) internal pure returns (bool) {
     return _getStatus(self, CAN_UPDATE_USER_RISK_PREMIUM_MASK);
   }
 
   /// @notice Returns whether the `canUpdateUserDynamicConfig` permission is enabled.
   /// @param self The current ConfigPermissions.
-  /// @return Whether the `canUpdateUserDynamicConfig` permission is enabled
+  /// @return Whether the `canUpdateUserDynamicConfig` permission is enabled.
   function canUpdateUserDynamicConfig(ConfigPermissions self) internal pure returns (bool) {
     return _getStatus(self, CAN_UPDATE_USER_DYNAMIC_CONFIG_MASK);
   }

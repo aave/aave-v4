@@ -135,6 +135,7 @@ interface IConfigPositionManager is IPositionManagerIntentBase {
   error DelegateeNotAllowed();
 
   /// @notice Sets the global permission for a delegatee.
+  /// @dev Sets all config permissions to `status`; `false` also clears individually granted permissions.
   /// @param spoke The address of the Spoke.
   /// @param delegatee The address of the delegatee.
   /// @param status The new permission status.
@@ -171,6 +172,7 @@ interface IConfigPositionManager is IPositionManagerIntentBase {
   ) external;
 
   /// @notice Sets the global permission for a delegatee using an EIP712-typed intent.
+  /// @dev Sets all config permissions to `status`; `false` also clears individually granted permissions.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The structured SetGlobalPermissionPermit parameters.
   /// @param signature The EIP712-compliant signature bytes.

@@ -159,7 +159,7 @@ interface IAccessManagerEnumerable is IAccessManager {
   /// @dev Target selectors assigned to `ADMIN_ROLE` are not accessible.
   /// @param roleId The identifier of the role.
   /// @param target The address of the target contract.
-  /// @return The number of selectors assigned to the role.
+  /// @return The number of selectors assigned to the role on the target.
   function getRoleTargetSelectorCount(
     uint64 roleId,
     address target
@@ -171,7 +171,7 @@ interface IAccessManagerEnumerable is IAccessManager {
   /// @param target The address of the target contract.
   /// @param start The starting index for the selector list.
   /// @param end The ending index for the selector list.
-  /// @return The list of selectors assigned to the role.
+  /// @return The list of selectors assigned to the role on the target.
   function getRoleTargetSelectors(
     uint64 roleId,
     address target,

@@ -33,6 +33,7 @@ interface ITreasurySpoke {
 
   /// @notice Withdraws a specified amount of underlying asset from the specified Hub.
   /// @dev Providing an amount greater than the maximum withdrawable value signals a full withdrawal.
+  /// @dev If this spoke is the fee receiver, a full withdrawal excludes accrued fees that are not yet minted (see `IHub.getAssetAccruedFees`).
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
   /// @param amount The amount of asset to withdraw.
@@ -51,6 +52,7 @@ interface ITreasurySpoke {
   function transfer(address token, address to, uint256 amount) external;
 
   /// @notice Returns the amount of assets supplied by this spoke.
+  /// @dev If this spoke is the fee receiver, excludes accrued fees that are not yet minted (see `IHub.getAssetAccruedFees`).
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
   /// @return The amount of assets supplied.
@@ -58,6 +60,7 @@ interface ITreasurySpoke {
 
   /// @notice Returns the amount of shares supplied by this spoke.
   /// @dev Shares are denominated relative to the supply side.
+  /// @dev If this spoke is the fee receiver, excludes accrued fees that are not yet minted (see `IHub.getAssetAccruedFees`).
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
   /// @return The amount of shares supplied.

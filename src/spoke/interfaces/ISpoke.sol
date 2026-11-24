@@ -79,7 +79,7 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @notice Liquidation configuration data.
   /// @dev targetHealthFactor The ideal health factor to restore a user position during liquidation, expressed in WAD.
   /// @dev healthFactorForMaxBonus The health factor under which liquidation bonus is maximum, expressed in WAD.
-  /// @dev liquidationBonusFactor The value multiplied by the bonus part of `maxLiquidationBonus` (`maxLiquidationBonus - PercentageMath.PERCENTAGE_FACTOR`) to compute the minimum liquidation bonus, expressed in BPS.
+  /// @dev liquidationBonusFactor The value multiplied by the bonus part of `maxLiquidationBonus` (`maxLiquidationBonus - PercentageMath.PERCENTAGE_FACTOR`) to compute the bonus part of the minimum liquidation bonus, expressed in BPS.
   struct LiquidationConfig {
     uint128 targetHealthFactor;
     uint64 healthFactorForMaxBonus;
@@ -246,7 +246,7 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
     IHubBase.PremiumDelta premiumDelta
   );
 
-  /// @dev Emitted when a borrower is liquidated.
+  /// @notice Emitted when a borrower is liquidated.
   /// @param collateralReserveId The identifier of the reserve used as collateral, to receive as a result of the liquidation.
   /// @param debtReserveId The identifier of the reserve to be repaid with the liquidation.
   /// @param user The address of the borrower getting liquidated.
@@ -443,6 +443,7 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   function updateReserveConfig(uint256 reserveId, ReserveConfig calldata params) external;
 
   /// @notice Updates the price source of a reserve.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @param reserveId The identifier of the reserve.
   /// @param priceSource The address of the price source.
   function updateReservePriceSource(uint256 reserveId, address priceSource) external;
@@ -627,6 +628,7 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   function getReserveCount() external view returns (uint256);
 
   /// @notice Returns the total amount of supplied assets of a given reserve.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @param reserveId The identifier of the reserve.
   /// @return The amount of supplied assets.
   function getReserveSuppliedAssets(uint256 reserveId) external view returns (uint256);

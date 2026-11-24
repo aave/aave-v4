@@ -29,6 +29,7 @@ interface IPositionManagerBase is IRescuable, IMulticall {
   /// @dev The signature is consumed on the specified registered Spoke.
   /// @dev The given data is passed to the Spoke for the signature to be verified.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
+  /// @dev Does not revert if the approval call fails.
   /// @param spoke The address of the registered spoke.
   /// @param onBehalfOf The address of the user on whose behalf this position manager can act.
   /// @param approve True to approve the position manager, false to revoke approval.
@@ -47,11 +48,15 @@ interface IPositionManagerBase is IRescuable, IMulticall {
   /// @notice Facilitates consuming a permit for the given reserve's underlying asset on the specified registered Spoke.
   /// @dev The given data is passed to the underlying asset for the signature to be verified.
   /// @dev Spender is this position manager contract.
+  /// @dev Does not revert if the permit call fails.
   /// @param spoke The address of the Spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param onBehalfOf The address of the user on whose behalf the permit is being used.
   /// @param value The amount of the underlying asset to permit.
   /// @param deadline The deadline for the permit.
+  /// @param permitV The v parameter of the permit signature.
+  /// @param permitR The r parameter of the permit signature.
+  /// @param permitS The s parameter of the permit signature.
   function permitReserveUnderlying(
     address spoke,
     uint256 reserveId,

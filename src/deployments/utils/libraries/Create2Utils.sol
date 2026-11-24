@@ -10,9 +10,16 @@ library Create2Utils {
   // https://github.com/safe-global/safe-singleton-factory
   address public constant CREATE2_FACTORY = 0x914d7Fec6aaC8cd542e72Bca78B30650d45643d7;
 
+  /// @notice Thrown when the CREATE2 factory is not deployed.
   error MissingCreate2Factory();
+
+  /// @notice Thrown when the deployed address does not match the computed CREATE2 address.
   error Create2AddressDerivationFailure();
+
+  /// @notice Thrown when the call to the CREATE2 factory fails.
   error FailedCreate2FactoryCall();
+
+  /// @notice Thrown when a contract is already deployed at the computed CREATE2 address.
   error ContractAlreadyDeployed();
 
   /// @notice Deploys a contract via CREATE2 using the Safe Singleton Factory.
