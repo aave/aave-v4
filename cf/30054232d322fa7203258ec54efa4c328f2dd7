@@ -1,0 +1,46 @@
+foundry.toml
+  h_5f4a69ef285bfa 26,33
+snapshots/PermissionedSpoke.Operations.json
+  h_5f4a69ef285bfa 1-21
+src/spoke/PermissionedSpoke.sol
+  h_5f4a69ef285bfa 1-85
+src/spoke/Spoke.sol
+  h_5f4a69ef285bfa 90-91,358,920-922
+src/spoke/gates/EligibilityPolicyGate.sol
+  h_5f4a69ef285bfa 1-115
+src/spoke/gates/EligibilityRegistry.sol
+  h_5f4a69ef285bfa 1-70
+src/spoke/instances/PermissionedSpokeInstance.sol
+  h_5f4a69ef285bfa 1-39
+src/spoke/interfaces/IEligibilityPolicyGate.sol
+  h_5f4a69ef285bfa 1-42
+src/spoke/interfaces/IEligibilityRegistry.sol
+  h_5f4a69ef285bfa 1-96
+src/spoke/interfaces/IPermissionedSpoke.sol
+  h_5f4a69ef285bfa 1-16
+src/spoke/interfaces/IPolicyGate.sol
+  h_5f4a69ef285bfa 1-32
+src/spoke/libraries/AuthKind.sol
+  h_5f4a69ef285bfa 1-22
+tests/contracts/spoke/gates/EligibilityPolicyGate.t.sol
+  h_5f4a69ef285bfa 1-79
+tests/contracts/spoke/gates/EligibilityRegistry.t.sol
+  h_5f4a69ef285bfa 1-75
+tests/contracts/spoke/misc/PermissionedSpoke.t.sol
+  h_5f4a69ef285bfa 1-436
+tests/gas/PermissionedSpoke.Operations.gas.t.sol
+  h_5f4a69ef285bfa 1-106
+tests/setup/PermissionedSpokeBase.sol
+  h_5f4a69ef285bfa 1-175
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "cf30054232d322fa7203258ec54efa4c328f2dd7",
+  "prompts": {},
+  "humans": {
+    "h_5f4a69ef285bfa": {
+      "author": "Prince <sinhaprince013@gmail.com>"
+    }
+  }
+}
