@@ -48,6 +48,7 @@ library TestTypes {
   struct TestConfiguratorReport {
     address hubConfigurator;
     address spokeConfigurator;
+    address emergencySteward;
   }
 
   struct TestEnvReport {

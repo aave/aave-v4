@@ -17,6 +17,7 @@ import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {ITreasurySpoke} from 'src/spoke/TreasurySpoke.sol';
 import {ISpokeConfigurator} from 'src/spoke/SpokeConfigurator.sol';
+import {IEmergencySteward} from 'src/emergency/interfaces/IEmergencySteward.sol';
 import {CommonHelpers} from 'tests/helpers/commons/CommonHelpers.sol';
 import {HubHelpers} from 'tests/helpers/hub/HubHelpers.sol';
 import {SpokeHelpers} from 'tests/helpers/spoke/SpokeHelpers.sol';
@@ -109,6 +110,7 @@ abstract contract BaseState is HubHelpers, SpokeHelpers {
   IAccessManager internal accessManager;
   IHubConfigurator internal hubConfigurator;
   ISpokeConfigurator internal spokeConfigurator;
+  IEmergencySteward internal emergencySteward;
 
   string internal constant ALICE = 'alice';
   string internal constant BOB = 'bob';

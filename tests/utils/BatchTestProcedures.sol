@@ -476,7 +476,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
   }
 
   function _checkRoleLabels(IAccessManagerEnumerable accessManager) internal view {
-    assertEq(accessManager.getRoleLabelCount(), 9, 'role label count');
+    assertEq(accessManager.getRoleLabelCount(), 11, 'role label count');
 
     // Hub roles
     assertTrue(
@@ -515,6 +515,16 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     assertEq(
       accessManager.getLabelOfRole(Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE),
       'SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE'
+    );
+    assertEq(
+      accessManager.getLabelOfRole(Roles.SPOKE_CONFIGURATOR_EMERGENCY_STEWARD_ROLE),
+      'SPOKE_CONFIGURATOR_EMERGENCY_STEWARD_ROLE'
+    );
+
+    // EmergencySteward roles
+    assertEq(
+      accessManager.getLabelOfRole(Roles.EMERGENCY_STEWARD_DOMAIN_ADMIN_ROLE),
+      'EMERGENCY_STEWARD_DOMAIN_ADMIN_ROLE'
     );
   }
 

@@ -8,11 +8,32 @@ import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 /// @author Aave Labs
 /// @notice Procedures for granting and setting up SpokeConfigurator roles on the AccessManager.
 library AaveV4SpokeConfiguratorRolesProcedure {
-  /// @notice Grants the SpokeConfigurator domain admin role (400) to `admin`.
+  /// @notice Grants every SpokeConfigurator role to `admin`: the domain admin role (400) and the EmergencySteward
+  /// role (401), which holds the selectors split out of the domain admin role.
   /// @param accessManager The address of the AccessManager contract.
-  /// @param admin The address to receive the SpokeConfigurator domain admin role.
+  /// @param admin The address to receive the SpokeConfigurator roles.
   function grantSpokeConfiguratorAllRoles(address accessManager, address admin) internal {
     grantSpokeConfiguratorRole(accessManager, Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE, admin);
+    grantSpokeConfiguratorRole(
+      accessManager,
+      Roles.SPOKE_CONFIGURATOR_EMERGENCY_STEWARD_ROLE,
+      admin
+    );
+  }
+
+  /// @notice Grants the SpokeConfigurator EmergencySteward role (401) to the EmergencySteward contract, so its bulk
+  /// levers can call the SpokeConfigurator.
+  /// @param accessManager The address of the AccessManager contract.
+  /// @param emergencySteward The address of the EmergencySteward contract.
+  function grantSpokeConfiguratorEmergencyStewardRole(
+    address accessManager,
+    address emergencySteward
+  ) internal {
+    grantSpokeConfiguratorRole(
+      accessManager,
+      Roles.SPOKE_CONFIGURATOR_EMERGENCY_STEWARD_ROLE,
+      emergencySteward
+    );
   }
 
   /// @notice Grants a specific SpokeConfigurator role to the given address.
@@ -25,7 +46,8 @@ library AaveV4SpokeConfiguratorRolesProcedure {
     IAccessManager(accessManager).grantRole({roleId: role, account: admin, executionDelay: 0});
   }
 
-  /// @notice Sets up the SpokeConfigurator domain admin role with all target selectors.
+  /// @notice Sets up every SpokeConfigurator role with its target selectors: the domain admin role (400) and the
+  /// EmergencySteward role (401).
   function setupSpokeConfiguratorAllRoles(
     address accessManager,
     address spokeConfigurator
@@ -35,6 +57,12 @@ library AaveV4SpokeConfiguratorRolesProcedure {
       spokeConfigurator,
       Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE,
       Roles.getSpokeConfiguratorDomainAdminRoleSelectors()
+    );
+    setupSpokeConfiguratorRole(
+      accessManager,
+      spokeConfigurator,
+      Roles.SPOKE_CONFIGURATOR_EMERGENCY_STEWARD_ROLE,
+      Roles.getSpokeConfiguratorEmergencyStewardRoleSelectors()
     );
   }
 

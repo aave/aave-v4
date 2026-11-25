@@ -15,6 +15,7 @@ import {AaveV4HubRolesProcedure} from 'src/deployments/procedures/roles/AaveV4Hu
 import {AaveV4SpokeRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol';
 import {AaveV4HubConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubConfiguratorRolesProcedure.sol';
 import {AaveV4SpokeConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeConfiguratorRolesProcedure.sol';
+import {AaveV4EmergencyStewardRolesProcedure} from 'src/deployments/procedures/roles/AaveV4EmergencyStewardRolesProcedure.sol';
 import {AaveV4TreasurySpokeBatch} from 'src/deployments/batches/AaveV4TreasurySpokeBatch.sol';
 import {AaveV4AuthorityBatch} from 'src/deployments/batches/AaveV4AuthorityBatch.sol';
 import {AaveV4HubInstanceBatch} from 'src/deployments/batches/AaveV4HubInstanceBatch.sol';
@@ -119,6 +120,15 @@ library AaveV4TestOrchestration {
       });
     report.configuratorReport.hubConfigurator = configuratorReport.hubConfigurator;
     report.configuratorReport.spokeConfigurator = configuratorReport.spokeConfigurator;
+
+    // Deploy EmergencySteward Batch with AccessManager as authority
+    report.configuratorReport.emergencySteward = AaveV4DeployBase
+      .deployEmergencyStewardBatch({
+        authority: report.accessManager,
+        spokeConfigurator: configuratorReport.spokeConfigurator,
+        salt: keccak256(abi.encodePacked(salt, 'emergencySteward'))
+      })
+      .emergencySteward;
 
     // Deploy Gateways Batch
     BatchReports.GatewaysBatchReport memory gatewaysReport = AaveV4DeployBase.deployGatewaysBatch({
@@ -263,6 +273,10 @@ library AaveV4TestOrchestration {
       report.accessManager,
       report.configuratorReport.spokeConfigurator
     );
+    AaveV4EmergencyStewardRolesProcedure.setupEmergencyStewardAllRoles(
+      report.accessManager,
+      report.configuratorReport.emergencySteward
+    );
   }
 
   function setupHubRolesTestEnv(
@@ -328,6 +342,19 @@ library AaveV4TestOrchestration {
       admin
     );
     AaveV4SpokeConfiguratorRolesProcedure.grantSpokeConfiguratorAllRoles(
+      report.accessManager,
+      spokeAdmin
+    );
+
+    // grant SpokeConfigurator EmergencySteward role (allows EmergencySteward to call SpokeConfigurator functions)
+    AaveV4SpokeConfiguratorRolesProcedure.grantSpokeConfiguratorEmergencyStewardRole(
+      report.accessManager,
+      report.configuratorReport.emergencySteward
+    );
+
+    // grant EmergencySteward Admin roles (allows admin to call EmergencySteward functions)
+    AaveV4EmergencyStewardRolesProcedure.grantEmergencyStewardAllRoles(report.accessManager, admin);
+    AaveV4EmergencyStewardRolesProcedure.grantEmergencyStewardAllRoles(
       report.accessManager,
       spokeAdmin
     );

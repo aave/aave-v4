@@ -175,7 +175,7 @@ contract SpokeConfiguratorFreezeTest is SpokeConfiguratorBaseTest {
       }
     }
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-    spokeConfigurator.freezeSpoke(spokeAddr);
+    emergencySteward.freezeSpoke(spokeAddr);
 
     assertEq(expectedLogs, 15);
     assertEq(_configuratorLogCount(), expectedLogs);
@@ -206,7 +206,7 @@ contract SpokeConfiguratorFreezeTest is SpokeConfiguratorBaseTest {
     // a second call is a no-op on every reserve and does not revert
     vm.recordLogs();
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-    spokeConfigurator.freezeSpoke(spokeAddr);
+    emergencySteward.freezeSpoke(spokeAddr);
     assertEq(_configuratorLogCount(), 0);
   }
 
@@ -221,7 +221,7 @@ contract SpokeConfiguratorFreezeTest is SpokeConfiguratorBaseTest {
     _zeroCollateralFactor(wbtcId);
     // usdx, usdy: active collateral reserves before `freezeSpoke`
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-    spokeConfigurator.freezeSpoke(spokeAddr);
+    emergencySteward.freezeSpoke(spokeAddr);
     // dai: frozen by `freezeSpoke`, then given a non-zero collateral factor
     _addCollateralFactor(daiId, 60_00);
 
@@ -242,7 +242,7 @@ contract SpokeConfiguratorFreezeTest is SpokeConfiguratorBaseTest {
       }
     }
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-    spokeConfigurator.unfreezeSpoke(spokeAddr);
+    emergencySteward.unfreezeSpoke(spokeAddr);
 
     assertEq(_configuratorLogCount(), reserveCount - 1);
     for (uint256 id; id < reserveCount; ++id) {
@@ -258,7 +258,7 @@ contract SpokeConfiguratorFreezeTest is SpokeConfiguratorBaseTest {
     // a second call is a no-op on every reserve and does not revert
     vm.recordLogs();
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-    spokeConfigurator.unfreezeSpoke(spokeAddr);
+    emergencySteward.unfreezeSpoke(spokeAddr);
     assertEq(_configuratorLogCount(), 0);
   }
 

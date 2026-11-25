@@ -33,6 +33,13 @@ library AaveV4AccessManagerRolesProcedure {
       Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE,
       'SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE'
     );
+    am.labelRole(
+      Roles.SPOKE_CONFIGURATOR_EMERGENCY_STEWARD_ROLE,
+      'SPOKE_CONFIGURATOR_EMERGENCY_STEWARD_ROLE'
+    );
+
+    // EmergencySteward roles
+    am.labelRole(Roles.EMERGENCY_STEWARD_DOMAIN_ADMIN_ROLE, 'EMERGENCY_STEWARD_DOMAIN_ADMIN_ROLE');
   }
 
   /// @notice Replaces the default admin by granting the role to a new address and revoking it from the old one.

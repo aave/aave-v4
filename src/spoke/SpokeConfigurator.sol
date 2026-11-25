@@ -4,7 +4,6 @@ pragma solidity 0.8.28;
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {AccessManagedUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
 import {BulkLeversMap} from 'src/libraries/BulkLeversMap.sol';
-import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
@@ -30,13 +29,14 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
     internal _savedDynamicConfigKey;
 
   /// @dev Map of Spoke addresses and reserve identifiers to the bulk levers holding the frozen flag, as a
-  /// `BulkLeversMap` bitmap; `unfreezeAsset` and `unfreezeSpoke` only unfreeze reserves that no other bulk lever
-  /// holds.
+  /// `BulkLeversMap` bitmap; `releaseFrozen` only unfreezes reserves that no other bulk lever holds. The
+  /// EmergencySteward's bulk levers write it through `holdFrozen` and `releaseFrozen`.
   mapping(address spoke => mapping(uint256 reserveId => uint8 bulkLevers))
     internal _frozenByBulkLevers;
 
   /// @dev Map of Spoke addresses and reserve identifiers to the bulk levers holding the paused flag, as a
-  /// `BulkLeversMap` bitmap; `unpauseAllReserves` only unpauses recorded reserves.
+  /// `BulkLeversMap` bitmap; `releasePaused` only unpauses reserves that no other bulk lever holds. The
+  /// EmergencySteward's bulk levers write it through `holdPaused` and `releasePaused`.
   mapping(address spoke => mapping(uint256 reserveId => uint8 bulkLevers))
     internal _pausedByBulkLevers;
 
@@ -390,26 +390,6 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
   }
 
   /// @inheritdoc ISpokeConfigurator
-  function pauseAllReserves(address spoke) external restricted {
-    ISpoke targetSpoke = ISpoke(spoke);
-    uint256 reserveCount = targetSpoke.getReserveCount();
-    for (uint256 reserveId = 0; reserveId < reserveCount; ++reserveId) {
-      _bulkPause(_getReserveKey(targetSpoke, reserveId), BulkLeversMap.SPOKE_MASK);
-    }
-  }
-
-  /// @inheritdoc ISpokeConfigurator
-  function unpauseAllReserves(address spoke) external restricted {
-    ISpoke targetSpoke = ISpoke(spoke);
-    uint256 reserveCount = targetSpoke.getReserveCount();
-    for (uint256 reserveId = 0; reserveId < reserveCount; ++reserveId) {
-      if (_releasePaused(spoke, reserveId, BulkLeversMap.SPOKE_MASK)) {
-        _unpause(_getReserveKey(targetSpoke, reserveId));
-      }
-    }
-  }
-
-  /// @inheritdoc ISpokeConfigurator
   function pauseReserve(address spoke, address hub, address underlying) external restricted {
     ReserveKey memory key = _resolveReserveKey(spoke, hub, underlying);
     delete _pausedByBulkLevers[spoke][key.reserveId];
@@ -432,55 +412,52 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
   }
 
   /// @inheritdoc ISpokeConfigurator
-  function freezeSpoke(address spoke) external restricted {
-    ISpoke targetSpoke = ISpoke(spoke);
-    uint256 reserveCount = targetSpoke.getReserveCount();
-    for (uint256 reserveId = 0; reserveId < reserveCount; ++reserveId) {
-      _bulkFreeze(_getReserveKey(targetSpoke, reserveId), BulkLeversMap.SPOKE_MASK);
+  function holdPaused(
+    address spoke,
+    address hub,
+    address underlying,
+    uint8 mask
+  ) external restricted {
+    require(mask != 0, InvalidBulkLeverMask());
+    _holdPaused(_resolveReserveKey(spoke, hub, underlying), mask);
+  }
+
+  /// @inheritdoc ISpokeConfigurator
+  function releasePaused(
+    address spoke,
+    address hub,
+    address underlying,
+    uint8 mask
+  ) external restricted {
+    require(mask != 0, InvalidBulkLeverMask());
+    ReserveKey memory key = _resolveReserveKey(spoke, hub, underlying);
+    if (_releasePausedRecord(spoke, key.reserveId, mask)) {
+      _unpause(key);
     }
   }
 
   /// @inheritdoc ISpokeConfigurator
-  function unfreezeSpoke(address spoke) external restricted {
-    ISpoke targetSpoke = ISpoke(spoke);
-    uint256 reserveCount = targetSpoke.getReserveCount();
-    for (uint256 reserveId = 0; reserveId < reserveCount; ++reserveId) {
-      if (_releaseFrozen(spoke, reserveId, BulkLeversMap.SPOKE_MASK)) {
-        _unfreezeReserve(_getReserveKey(targetSpoke, reserveId));
-      }
-    }
+  function holdFrozen(
+    address spoke,
+    address hub,
+    address underlying,
+    uint8 mask
+  ) external restricted {
+    require(mask != 0, InvalidBulkLeverMask());
+    _holdFrozen(_resolveReserveKey(spoke, hub, underlying), mask);
   }
 
   /// @inheritdoc ISpokeConfigurator
-  function freezeAsset(address hub, address underlying) external restricted {
-    IHub targetHub = IHub(hub);
-    uint256 assetId = targetHub.getAssetId(underlying);
-    uint256 spokeCount = targetHub.getSpokeCount(assetId);
-    for (uint256 i = 0; i < spokeCount; ++i) {
-      ISpoke targetSpoke = ISpoke(targetHub.getSpokeAddress(assetId, i));
-      (bool listed, uint256 reserveId) = _tryGetReserveId(targetSpoke, hub, assetId);
-      if (listed) {
-        _bulkFreeze(
-          ReserveKey({spoke: targetSpoke, hub: hub, underlying: underlying, reserveId: reserveId}),
-          BulkLeversMap.ASSET_MASK
-        );
-      }
-    }
-  }
-
-  /// @inheritdoc ISpokeConfigurator
-  function unfreezeAsset(address hub, address underlying) external restricted {
-    IHub targetHub = IHub(hub);
-    uint256 assetId = targetHub.getAssetId(underlying);
-    uint256 spokeCount = targetHub.getSpokeCount(assetId);
-    for (uint256 i = 0; i < spokeCount; ++i) {
-      ISpoke targetSpoke = ISpoke(targetHub.getSpokeAddress(assetId, i));
-      (bool listed, uint256 reserveId) = _tryGetReserveId(targetSpoke, hub, assetId);
-      if (listed && _releaseFrozen(address(targetSpoke), reserveId, BulkLeversMap.ASSET_MASK)) {
-        _unfreezeReserve(
-          ReserveKey({spoke: targetSpoke, hub: hub, underlying: underlying, reserveId: reserveId})
-        );
-      }
+  function releaseFrozen(
+    address spoke,
+    address hub,
+    address underlying,
+    uint8 mask
+  ) external restricted {
+    require(mask != 0, InvalidBulkLeverMask());
+    ReserveKey memory key = _resolveReserveKey(spoke, hub, underlying);
+    if (_releaseFrozenRecord(spoke, key.reserveId, mask)) {
+      _unfreezeReserve(key);
     }
   }
 
@@ -584,7 +561,7 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
 
   /// @dev Freezes a reserve per `_freezeReserve`, and records `mask` as holding the frozen flag per
   /// `BulkLeversMap.brake`.
-  function _bulkFreeze(ReserveKey memory key, uint8 mask) internal {
+  function _holdFrozen(ReserveKey memory key, uint8 mask) internal {
     (bool frozenUpdated, ) = _freezeReserve(key);
     address spoke = address(key.spoke);
     _frozenByBulkLevers[spoke][key.reserveId] = BulkLeversMap.brake(
@@ -596,7 +573,11 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
 
   /// @dev Removes `mask` from the bulk levers holding the frozen flag. Returns true if `mask` held the flag and
   /// no other bulk lever still does, meaning the flag should be cleared.
-  function _releaseFrozen(address spoke, uint256 reserveId, uint8 mask) internal returns (bool) {
+  function _releaseFrozenRecord(
+    address spoke,
+    uint256 reserveId,
+    uint8 mask
+  ) internal returns (bool) {
     (uint8 bulkLevers, bool released) = BulkLeversMap.release(
       _frozenByBulkLevers[spoke][reserveId],
       mask
@@ -663,7 +644,7 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
   }
 
   /// @dev Sets the paused flag if not set, and records `mask` as holding it per `BulkLeversMap.brake`.
-  function _bulkPause(ReserveKey memory key, uint8 mask) internal {
+  function _holdPaused(ReserveKey memory key, uint8 mask) internal {
     ISpoke.ReserveConfig memory reserveConfig = key.spoke.getReserveConfig(key.reserveId);
     bool pausedUpdated = !reserveConfig.paused;
     if (pausedUpdated) {
@@ -688,7 +669,11 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
 
   /// @dev Removes `mask` from the bulk levers holding the paused flag. Returns true if `mask` held the flag and
   /// no other bulk lever still does, meaning the flag should be cleared.
-  function _releasePaused(address spoke, uint256 reserveId, uint8 mask) internal returns (bool) {
+  function _releasePausedRecord(
+    address spoke,
+    uint256 reserveId,
+    uint8 mask
+  ) internal returns (bool) {
     (uint8 bulkLevers, bool released) = BulkLeversMap.release(
       _pausedByBulkLevers[spoke][reserveId],
       mask
@@ -836,45 +821,6 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
         underlying: underlying,
         reserveId: ISpoke(spoke).getReserveId(hub, IHubBase(hub).getAssetId(underlying))
       });
-  }
-
-  function _getReserveKey(
-    ISpoke spoke,
-    uint256 reserveId
-  ) internal view returns (ReserveKey memory) {
-    ISpoke.Reserve memory reserve = spoke.getReserve(reserveId);
-    return
-      ReserveKey({
-        spoke: spoke,
-        hub: address(reserve.hub),
-        underlying: reserve.underlying,
-        reserveId: reserveId
-      });
-  }
-
-  /// @dev Returns false when the Spoke has no reserve for the Hub asset: either the lookup reverts with
-  /// `ReserveNotListed`, or it reverts without data because the Spoke does not implement `getReserveId`, as with
-  /// the TreasurySpoke and TokenizationSpoke. Any other revert is bubbled up, so an unexpected Spoke failure
-  /// stops the call instead of silently skipping the Spoke. Reverts from the subsequent configuration calls
-  /// also propagate.
-  function _tryGetReserveId(
-    ISpoke spoke,
-    address hub,
-    uint256 assetId
-  ) internal view returns (bool, uint256) {
-    try spoke.getReserveId(hub, assetId) returns (uint256 reserveId) {
-      return (true, reserveId);
-    } catch (bytes memory reason) {
-      if (
-        reason.length == 0 ||
-        (reason.length == 4 && bytes4(reason) == ISpoke.ReserveNotListed.selector)
-      ) {
-        return (false, 0);
-      }
-      assembly ('memory-safe') {
-        revert(add(reason, 32), mload(reason))
-      }
-    }
   }
 
   function _copy(

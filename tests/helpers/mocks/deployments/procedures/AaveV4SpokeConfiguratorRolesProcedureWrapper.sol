@@ -15,6 +15,16 @@ contract AaveV4SpokeConfiguratorRolesProcedureWrapper {
     AaveV4SpokeConfiguratorRolesProcedure.grantSpokeConfiguratorRole(accessManager, role, admin);
   }
 
+  function grantSpokeConfiguratorEmergencyStewardRole(
+    address accessManager,
+    address emergencySteward
+  ) external {
+    AaveV4SpokeConfiguratorRolesProcedure.grantSpokeConfiguratorEmergencyStewardRole(
+      accessManager,
+      emergencySteward
+    );
+  }
+
   function setupSpokeConfiguratorRoles(address accessManager, address spokeConfigurator) external {
     AaveV4SpokeConfiguratorRolesProcedure.setupSpokeConfiguratorAllRoles(
       accessManager,
@@ -38,5 +48,13 @@ contract AaveV4SpokeConfiguratorRolesProcedureWrapper {
 
   function getSpokeConfiguratorDomainAdminRoleSelectors() external pure returns (bytes4[] memory) {
     return Roles.getSpokeConfiguratorDomainAdminRoleSelectors();
+  }
+
+  function getSpokeConfiguratorEmergencyStewardRoleSelectors()
+    external
+    pure
+    returns (bytes4[] memory)
+  {
+    return Roles.getSpokeConfiguratorEmergencyStewardRoleSelectors();
   }
 }

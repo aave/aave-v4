@@ -107,6 +107,9 @@ import {AaveV4HubRolesProcedure} from 'src/deployments/procedures/roles/AaveV4Hu
 import {AaveV4SpokeRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol';
 import {AaveV4HubConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubConfiguratorRolesProcedure.sol';
 import {AaveV4SpokeConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeConfiguratorRolesProcedure.sol';
+import {AaveV4EmergencyStewardRolesProcedure} from 'src/deployments/procedures/roles/AaveV4EmergencyStewardRolesProcedure.sol';
+import {EmergencySteward, IEmergencySteward} from 'src/emergency/EmergencySteward.sol';
+import {BulkLeversMap} from 'src/libraries/BulkLeversMap.sol';
 
 // helpers
 import {TestTypes} from 'tests/utils/TestTypes.sol';
@@ -187,6 +190,7 @@ abstract contract Base is BaseHelpers, BatchTestProcedures {
 
     vm.label(report.configuratorReport.hubConfigurator, 'hubConfigurator');
     vm.label(report.configuratorReport.spokeConfigurator, 'spokeConfigurator');
+    vm.label(report.configuratorReport.emergencySteward, 'emergencySteward');
 
     return report;
   }
@@ -208,6 +212,7 @@ abstract contract Base is BaseHelpers, BatchTestProcedures {
     accessManager = IAccessManager(report.accessManager);
     hubConfigurator = IHubConfigurator(report.configuratorReport.hubConfigurator);
     spokeConfigurator = ISpokeConfigurator(report.configuratorReport.spokeConfigurator);
+    emergencySteward = IEmergencySteward(report.configuratorReport.emergencySteward);
   }
 
   function _setupFixturesRoles(TestTypes.TestEnvReport memory report) internal virtual {
@@ -235,6 +240,13 @@ abstract contract Base is BaseHelpers, BatchTestProcedures {
     // Grant SpokeConfigurator granular roles to SPOKE_CONFIGURATOR_ADMIN so it can call
     // SpokeConfigurator functions (addReserve, updateMaxReserves, freezeReserve, etc.)
     AaveV4SpokeConfiguratorRolesProcedure.grantSpokeConfiguratorAllRoles(
+      report.accessManager,
+      SPOKE_CONFIGURATOR_ADMIN
+    );
+
+    // Grant EmergencySteward roles to SPOKE_CONFIGURATOR_ADMIN so it can call the bulk levers
+    // (freezeAsset, pauseAllReserves, etc.)
+    AaveV4EmergencyStewardRolesProcedure.grantEmergencyStewardAllRoles(
       report.accessManager,
       SPOKE_CONFIGURATOR_ADMIN
     );

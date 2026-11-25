@@ -5,6 +5,7 @@ import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
 import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
+import {IEmergencySteward} from 'src/emergency/interfaces/IEmergencySteward.sol';
 
 /// @title Roles library
 /// @author Aave Labs
@@ -16,6 +17,7 @@ import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 ///   - HubConfigurator:   200-299
 ///   - Spoke:             300-399
 ///   - SpokeConfigurator: 400-499
+///   - EmergencySteward:  500-599
 ///
 /// ## Role strategy
 ///
@@ -59,6 +61,10 @@ library Roles {
 
   // SpokeConfigurator roles — granularize as needed with new roles appended
   uint64 public constant SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE = 400;
+  uint64 public constant SPOKE_CONFIGURATOR_EMERGENCY_STEWARD_ROLE = 401;
+
+  // EmergencySteward roles — granularize as needed with new roles appended
+  uint64 public constant EMERGENCY_STEWARD_DOMAIN_ADMIN_ROLE = 500;
 
   // ─── Hub selector getters ───
 
@@ -146,7 +152,7 @@ library Roles {
 
   /// @notice Returns the function selectors associated with the SpokeConfigurator Domain Admin role.
   function getSpokeConfiguratorDomainAdminRoleSelectors() internal pure returns (bytes4[] memory) {
-    bytes4[] memory selectors = new bytes4[](30);
+    bytes4[] memory selectors = new bytes4[](24);
     selectors[0] = ISpokeConfigurator.updateReservePriceSource.selector;
     selectors[1] = ISpokeConfigurator.updateLiquidationTargetHealthFactor.selector;
     selectors[2] = ISpokeConfigurator.updateHealthFactorForMaxBonus.selector;
@@ -165,18 +171,41 @@ library Roles {
     selectors[15] = ISpokeConfigurator.updateLiquidationFee.selector;
     selectors[16] = ISpokeConfigurator.addDynamicReserveConfig.selector;
     selectors[17] = ISpokeConfigurator.updateDynamicReserveConfig.selector;
-    selectors[18] = ISpokeConfigurator.pauseAllReserves.selector;
-    selectors[19] = ISpokeConfigurator.unpauseAllReserves.selector;
-    selectors[20] = ISpokeConfigurator.pauseReserve.selector;
-    selectors[21] = ISpokeConfigurator.freezeReserve.selector;
-    selectors[22] = ISpokeConfigurator.unfreezeReserve.selector;
-    selectors[23] = ISpokeConfigurator.freezeSpoke.selector;
-    selectors[24] = ISpokeConfigurator.unfreezeSpoke.selector;
-    selectors[25] = ISpokeConfigurator.freezeAsset.selector;
-    selectors[26] = ISpokeConfigurator.unfreezeAsset.selector;
-    selectors[27] = ISpokeConfigurator.zeroCollateralFactor.selector;
-    selectors[28] = ISpokeConfigurator.restoreCollateralFactor.selector;
-    selectors[29] = ISpokeConfigurator.updatePositionManager.selector;
+    selectors[18] = ISpokeConfigurator.pauseReserve.selector;
+    selectors[19] = ISpokeConfigurator.freezeReserve.selector;
+    selectors[20] = ISpokeConfigurator.unfreezeReserve.selector;
+    selectors[21] = ISpokeConfigurator.zeroCollateralFactor.selector;
+    selectors[22] = ISpokeConfigurator.restoreCollateralFactor.selector;
+    selectors[23] = ISpokeConfigurator.updatePositionManager.selector;
+    return selectors;
+  }
+
+  /// @notice Returns the function selectors associated with the SpokeConfigurator EmergencySteward role, held by
+  /// the EmergencySteward contract so its bulk levers can call the SpokeConfigurator.
+  function getSpokeConfiguratorEmergencyStewardRoleSelectors()
+    internal
+    pure
+    returns (bytes4[] memory)
+  {
+    bytes4[] memory selectors = new bytes4[](4);
+    selectors[0] = ISpokeConfigurator.holdPaused.selector;
+    selectors[1] = ISpokeConfigurator.releasePaused.selector;
+    selectors[2] = ISpokeConfigurator.holdFrozen.selector;
+    selectors[3] = ISpokeConfigurator.releaseFrozen.selector;
+    return selectors;
+  }
+
+  // ─── EmergencySteward selector getters ───
+
+  /// @notice Returns the function selectors associated with the EmergencySteward Domain Admin role.
+  function getEmergencyStewardDomainAdminRoleSelectors() internal pure returns (bytes4[] memory) {
+    bytes4[] memory selectors = new bytes4[](6);
+    selectors[0] = IEmergencySteward.pauseAllReserves.selector;
+    selectors[1] = IEmergencySteward.unpauseAllReserves.selector;
+    selectors[2] = IEmergencySteward.freezeSpoke.selector;
+    selectors[3] = IEmergencySteward.unfreezeSpoke.selector;
+    selectors[4] = IEmergencySteward.freezeAsset.selector;
+    selectors[5] = IEmergencySteward.unfreezeAsset.selector;
     return selectors;
   }
 }

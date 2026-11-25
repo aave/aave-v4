@@ -73,6 +73,45 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
       admin
     );
     assertTrue(hasRole);
+    (hasRole, ) = IAccessManager(accessManager).hasRole(
+      Roles.SPOKE_CONFIGURATOR_EMERGENCY_STEWARD_ROLE,
+      admin
+    );
+    assertTrue(hasRole);
+  }
+
+  function test_grantSpokeConfiguratorEmergencyStewardRole() public {
+    address emergencySteward = makeAddr('emergencySteward');
+    _grantAdminToWrapper(address(wrapper));
+    wrapper.grantSpokeConfiguratorEmergencyStewardRole({
+      accessManager: accessManager,
+      emergencySteward: emergencySteward
+    });
+
+    (bool hasRole, ) = IAccessManager(accessManager).hasRole(
+      Roles.SPOKE_CONFIGURATOR_EMERGENCY_STEWARD_ROLE,
+      emergencySteward
+    );
+    assertTrue(hasRole);
+    (hasRole, ) = IAccessManager(accessManager).hasRole(
+      Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE,
+      emergencySteward
+    );
+    assertFalse(hasRole);
+  }
+
+  function test_grantSpokeConfiguratorEmergencyStewardRole_reverts() public {
+    vm.expectRevert('invalid access manager');
+    wrapper.grantSpokeConfiguratorEmergencyStewardRole({
+      accessManager: address(0),
+      emergencySteward: makeAddr('emergencySteward')
+    });
+
+    vm.expectRevert('invalid admin');
+    wrapper.grantSpokeConfiguratorEmergencyStewardRole({
+      accessManager: accessManager,
+      emergencySteward: address(0)
+    });
   }
 
   function test_setupSpokeConfiguratorRoles() public {
@@ -89,6 +128,13 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
         Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE
       );
     }
+    selectors = wrapper.getSpokeConfiguratorEmergencyStewardRoleSelectors();
+    for (uint256 i; i < selectors.length; i++) {
+      assertEq(
+        IAccessManager(accessManager).getTargetFunctionRole(spokeConfigurator, selectors[i]),
+        Roles.SPOKE_CONFIGURATOR_EMERGENCY_STEWARD_ROLE
+      );
+    }
   }
 
   function _grantAdminToWrapper(address _wrapper) internal {
@@ -98,7 +144,7 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
 
   function test_getSpokeConfiguratorDomainAdminRoleSelectors() public view {
     bytes4[] memory selectors = wrapper.getSpokeConfiguratorDomainAdminRoleSelectors();
-    assertEq(selectors.length, 30);
+    assertEq(selectors.length, 24);
     assertEq(selectors[0], ISpokeConfigurator.updateReservePriceSource.selector);
     assertEq(selectors[1], ISpokeConfigurator.updateLiquidationTargetHealthFactor.selector);
     assertEq(selectors[2], ISpokeConfigurator.updateHealthFactorForMaxBonus.selector);
@@ -117,18 +163,21 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
     assertEq(selectors[15], ISpokeConfigurator.updateLiquidationFee.selector);
     assertEq(selectors[16], ISpokeConfigurator.addDynamicReserveConfig.selector);
     assertEq(selectors[17], ISpokeConfigurator.updateDynamicReserveConfig.selector);
-    assertEq(selectors[18], ISpokeConfigurator.pauseAllReserves.selector);
-    assertEq(selectors[19], ISpokeConfigurator.unpauseAllReserves.selector);
-    assertEq(selectors[20], ISpokeConfigurator.pauseReserve.selector);
-    assertEq(selectors[21], ISpokeConfigurator.freezeReserve.selector);
-    assertEq(selectors[22], ISpokeConfigurator.unfreezeReserve.selector);
-    assertEq(selectors[23], ISpokeConfigurator.freezeSpoke.selector);
-    assertEq(selectors[24], ISpokeConfigurator.unfreezeSpoke.selector);
-    assertEq(selectors[25], ISpokeConfigurator.freezeAsset.selector);
-    assertEq(selectors[26], ISpokeConfigurator.unfreezeAsset.selector);
-    assertEq(selectors[27], ISpokeConfigurator.zeroCollateralFactor.selector);
-    assertEq(selectors[28], ISpokeConfigurator.restoreCollateralFactor.selector);
-    assertEq(selectors[29], ISpokeConfigurator.updatePositionManager.selector);
+    assertEq(selectors[18], ISpokeConfigurator.pauseReserve.selector);
+    assertEq(selectors[19], ISpokeConfigurator.freezeReserve.selector);
+    assertEq(selectors[20], ISpokeConfigurator.unfreezeReserve.selector);
+    assertEq(selectors[21], ISpokeConfigurator.zeroCollateralFactor.selector);
+    assertEq(selectors[22], ISpokeConfigurator.restoreCollateralFactor.selector);
+    assertEq(selectors[23], ISpokeConfigurator.updatePositionManager.selector);
+  }
+
+  function test_getSpokeConfiguratorEmergencyStewardRoleSelectors() public view {
+    bytes4[] memory selectors = wrapper.getSpokeConfiguratorEmergencyStewardRoleSelectors();
+    assertEq(selectors.length, 4);
+    assertEq(selectors[0], ISpokeConfigurator.holdPaused.selector);
+    assertEq(selectors[1], ISpokeConfigurator.releasePaused.selector);
+    assertEq(selectors[2], ISpokeConfigurator.holdFrozen.selector);
+    assertEq(selectors[3], ISpokeConfigurator.releaseFrozen.selector);
   }
 
   function test_canCall_spokeConfiguratorAllRoles() public {
@@ -140,5 +189,6 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
     });
 
     _assertCanCall(spokeConfigurator, wrapper.getSpokeConfiguratorDomainAdminRoleSelectors());
+    _assertCanCall(spokeConfigurator, wrapper.getSpokeConfiguratorEmergencyStewardRoleSelectors());
   }
 }

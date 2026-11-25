@@ -5,6 +5,7 @@ import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
 import {AaveV4AuthorityBatch} from 'src/deployments/batches/AaveV4AuthorityBatch.sol';
 import {AaveV4ConfiguratorBatch} from 'src/deployments/batches/AaveV4ConfiguratorBatch.sol';
+import {AaveV4EmergencyStewardBatch} from 'src/deployments/batches/AaveV4EmergencyStewardBatch.sol';
 import {AaveV4GatewayBatch} from 'src/deployments/batches/AaveV4GatewayBatch.sol';
 import {AaveV4HubInstanceBatch} from 'src/deployments/batches/AaveV4HubInstanceBatch.sol';
 import {AaveV4PositionManagerBatch} from 'src/deployments/batches/AaveV4PositionManagerBatch.sol';
@@ -47,6 +48,24 @@ library AaveV4DeployBase {
       salt_: salt
     });
     return configuratorBatch.getReport();
+  }
+
+  /// @notice Deploys the EmergencySteward batch containing the EmergencySteward.
+  /// @param authority The access control authority for the EmergencySteward.
+  /// @param spokeConfigurator The address of the SpokeConfigurator the EmergencySteward calls.
+  /// @param salt The CREATE2 salt for deterministic deployment.
+  /// @return The EmergencySteward batch report.
+  function deployEmergencyStewardBatch(
+    address authority,
+    address spokeConfigurator,
+    bytes32 salt
+  ) internal returns (BatchReports.EmergencyStewardBatchReport memory) {
+    AaveV4EmergencyStewardBatch emergencyStewardBatch = new AaveV4EmergencyStewardBatch({
+      authority_: authority,
+      spokeConfigurator_: spokeConfigurator,
+      salt_: salt
+    });
+    return emergencyStewardBatch.getReport();
   }
 
   /// @notice Deploys the Treasury Spoke batch containing the TreasurySpoke proxy.

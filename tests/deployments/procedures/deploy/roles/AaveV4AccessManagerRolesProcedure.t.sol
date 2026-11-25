@@ -198,8 +198,35 @@ contract AaveV4AccessManagerRolesProcedureTest is ProceduresBase {
       Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE
     );
 
+    assertTrue(
+      accessManager.isRoleLabeled(Roles.SPOKE_CONFIGURATOR_EMERGENCY_STEWARD_ROLE),
+      'SPOKE_CONFIGURATOR_EMERGENCY_STEWARD labeled'
+    );
+    assertEq(
+      accessManager.getLabelOfRole(Roles.SPOKE_CONFIGURATOR_EMERGENCY_STEWARD_ROLE),
+      'SPOKE_CONFIGURATOR_EMERGENCY_STEWARD_ROLE'
+    );
+    assertEq(
+      accessManager.getRoleOfLabel('SPOKE_CONFIGURATOR_EMERGENCY_STEWARD_ROLE'),
+      Roles.SPOKE_CONFIGURATOR_EMERGENCY_STEWARD_ROLE
+    );
+
+    // EmergencySteward roles
+    assertTrue(
+      accessManager.isRoleLabeled(Roles.EMERGENCY_STEWARD_DOMAIN_ADMIN_ROLE),
+      'EMERGENCY_STEWARD_DOMAIN_ADMIN labeled'
+    );
+    assertEq(
+      accessManager.getLabelOfRole(Roles.EMERGENCY_STEWARD_DOMAIN_ADMIN_ROLE),
+      'EMERGENCY_STEWARD_DOMAIN_ADMIN_ROLE'
+    );
+    assertEq(
+      accessManager.getRoleOfLabel('EMERGENCY_STEWARD_DOMAIN_ADMIN_ROLE'),
+      Roles.EMERGENCY_STEWARD_DOMAIN_ADMIN_ROLE
+    );
+
     // Total label count
-    assertEq(accessManager.getRoleLabelCount(), 9, 'total label count');
+    assertEq(accessManager.getRoleLabelCount(), 11, 'total label count');
   }
 
   function test_labelAllRoles_reverts_zeroAddress() public {

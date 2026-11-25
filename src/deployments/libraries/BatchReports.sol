@@ -21,6 +21,11 @@ library BatchReports {
     address spokeConfiguratorImplementation;
   }
 
+  /// @dev emergencySteward The deployed EmergencySteward contract address.
+  struct EmergencyStewardBatchReport {
+    address emergencySteward;
+  }
+
   /// @dev spokeProxy The deployed Spoke proxy contract address.
   /// @dev spokeImplementation The deployed Spoke implementation contract address.
   /// @dev aaveOracle The deployed AaveOracle contract address.
