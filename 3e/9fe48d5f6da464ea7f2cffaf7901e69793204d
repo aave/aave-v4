@@ -1,0 +1,33 @@
+src/deployments/libraries/OrchestrationReports.sol
+  s_960a65d3660a8e::t_895c62eeb027a9 26,36
+src/deployments/utils/MetadataLogger.sol
+  s_960a65d3660a8e::t_895c62eeb027a9 30
+src/deployments/orchestration/AaveV4DeployOrchestration.sol
+  s_960a65d3660a8e::t_895c62eeb027a9 13,65-72,324-342,414,430-435,513-525,527
+  s_960a65d3660a8e::t_9dbb0a446235bd 526
+tests/utils/BatchTestProcedures.sol
+  s_960a65d3660a8e::t_895c62eeb027a9 36,277-281,809-818,826,883-941,991
+tests/deployments/fork/PostDeploymentVerificationBase.t.sol
+  s_960a65d3660a8e::t_895c62eeb027a9 45-48
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "3e9fe48d5f6da464ea7f2cffaf7901e69793204d",
+  "prompts": {},
+  "humans": {
+    "h_943f5bfc0f6106": {
+      "author": "AyushKaul <ayush@aave.com>"
+    }
+  },
+  "sessions": {
+    "s_960a65d3660a8e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "119aec35-2cca-4a8b-97f2-59c6dcd18776",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "AyushKaul <ayush@aave.com>"
+    }
+  }
+}

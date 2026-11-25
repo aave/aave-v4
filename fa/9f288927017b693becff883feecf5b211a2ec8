@@ -1,0 +1,149 @@
+src/deployments/procedures/deploy/emergency/AaveV4EmergencyStewardDeployProcedure.sol
+  s_c533bd68051b89::t_e02757dc120bd9 1-33
+tests/deployments/orchestration/AaveV4TestOrchestration.sol
+  s_c533bd68051b89::t_2d1b11c6640093 18
+  s_c533bd68051b89::t_01054651fa41eb 124-132
+  s_c533bd68051b89::t_66441d30d35a0d 276-279
+  s_c533bd68051b89::t_a2e5ab273e6ac8 348-360
+tests/deployments/procedures/ProceduresBase.t.sol
+  s_c533bd68051b89::t_a37ccf849b3b5f 26-28
+src/deployments/procedures/roles/AaveV4AccessManagerRolesProcedure.sol
+  s_c533bd68051b89::t_dba1df0446078d 36-42
+tests/deployments/procedures/deploy/roles/AaveV4SpokeConfiguratorRolesProcedure.t.sol
+  s_c533bd68051b89::t_73143ef8b5a298 166-175,177-180
+  s_c533bd68051b89::t_7603d6c50eb24e 192
+  s_c533bd68051b89::t_0fe49324fef1ba 76-114,131-135
+  s_960a65d3660a8e::t_45c785cbc6204f 136-137,147,176
+src/deployments/procedures/roles/AaveV4EmergencyStewardRolesProcedure.sol
+  s_c533bd68051b89::t_d2e1c74b11ae9e 1-55
+tests/contracts/spoke/configurator/SpokeConfigurator.Freeze.t.sol
+  s_c533bd68051b89::t_ee43dec538a8ac 178,209,224,245,261
+tests/helpers/mocks/deployments/procedures/AaveV4EmergencyStewardRolesProcedureWrapper.sol
+  s_c533bd68051b89::t_5411a471d8dd6f 1-42
+src/deployments/orchestration/AaveV4DeployBase.sol
+  s_c533bd68051b89::t_e77d75e376136f 8
+  s_c533bd68051b89::t_967cc8f3d09ca2 53-70
+src/deployments/utils/libraries/Roles.sol
+  s_c533bd68051b89::t_22b5796cb93d4e 8,20
+  s_c533bd68051b89::t_3bb51b89113b70 64-67
+  s_c533bd68051b89::t_c8af5cd4923fde 174-189,191-201,203-208
+  s_960a65d3660a8e::t_a2195ae6e8d88f 155,190,202
+tests/deployments/batches/AaveV4EmergencyStewardBatch.t.sol
+  s_c533bd68051b89::t_84c255f69cf2ca 1-62
+tests/contracts/spoke/configurator/SpokeConfigurator.GranularAccessControl.t.sol
+  s_c533bd68051b89::t_eb5b5936574431 47-48
+  s_b91fc36bc00997::t_9572598e4eaebd 204,210,216,222,437,450-451,459,467-468
+  s_c533bd68051b89::t_70041ee9ccfbd9 63-71
+  s_c533bd68051b89::t_7fca88fa9060c8 202-203,205-209,211-215,217,220-221,223
+  s_c533bd68051b89::t_dbabfbd8cf71bd 435,448,457,461-462,465,471
+src/deployments/batches/AaveV4EmergencyStewardBatch.sol
+  s_c533bd68051b89::t_5205bc490ed6b4 1-30
+tests/setup/BaseState.sol
+  s_c533bd68051b89::t_91ae57d673b741 20
+  s_c533bd68051b89::t_813f84f8ae3786 113
+tests/deployments/procedures/deploy/roles/AaveV4AccessManagerRolesProcedure.t.sol
+  s_c533bd68051b89::t_a4b46e4c6a165c 201-227,229
+src/emergency/EmergencySteward.sol
+  s_b91fc36bc00997::t_5c35b64ec13efe 35-41,49,52-53,63-69,77,80-81,94,97-98,112,115-116,123-129,137,141-143,149
+  s_c533bd68051b89::t_b35605c5572f8c 1-17,19-34,42-48,50-51,54-62,70-76,78-79,82-93,95-96,99-111,113-114,117-122,130-136,138-140,144-148,150-156
+  s_960a65d3660a8e::t_448f278deb8607 18
+tests/setup/Base.t.sol
+  s_c533bd68051b89::t_959efd3e84ee9f 193
+  s_c533bd68051b89::t_3800a69f6a8b39 247,249-253
+  s_960a65d3660a8e::t_1d400aba608a26 248
+  s_c533bd68051b89::t_0a5fd8ebf99130 215
+  s_c533bd68051b89::t_69f39900a8a0dd 110,112
+  s_960a65d3660a8e::t_9a8f2f6574396b 111
+src/deployments/procedures/roles/AaveV4SpokeConfiguratorRolesProcedure.sol
+  s_c533bd68051b89::t_bf4f0c6a73d959 11-12,14,17-36,66
+  s_c533bd68051b89::t_ec5c3fb9b86a94 49-50,61-65
+tests/utils/TestTypes.sol
+  s_c533bd68051b89::t_6520a0df776b3b 51
+tests/helpers/mocks/deployments/procedures/AaveV4SpokeConfiguratorRolesProcedureWrapper.sol
+  s_c533bd68051b89::t_6207a30030fd7a 52-59
+  s_c533bd68051b89::t_a598698d97803f 18-27
+tests/helpers/mocks/deployments/procedures/AaveV4EmergencyStewardDeployProcedureWrapper.sol
+  s_c533bd68051b89::t_45417b7bb5a07a 1-16
+src/emergency/interfaces/IEmergencySteward.sol
+  s_c533bd68051b89::t_4ce0046ba2c021 1-71
+src/spoke/interfaces/ISpokeConfigurator.sol
+  s_c533bd68051b89::t_65e41b91b49ee3 308
+  s_c533bd68051b89::t_1cbf721fb750da 615-616,622
+  s_b91fc36bc00997::t_2e34abace08da0 510-511,513,523-524,526,539,553
+  s_c533bd68051b89::t_915c5f4753fdcf 497,504-508,512,515-521,525,528-535,538,541-549,552
+  s_c533bd68051b89::t_43626d50de3193 488
+  s_c533bd68051b89::t_b9d5d51bbd97b2 605-608
+  s_c533bd68051b89::t_afee54265d16e4 476
+  s_c533bd68051b89::t_2b6507f3f8ee0b 249-251
+tests/deployments/procedures/deploy/roles/AaveV4EmergencyStewardRolesProcedure.t.sol
+  s_c533bd68051b89::t_7603d6c50eb24e 39-42
+  s_c533bd68051b89::t_2e14c98eee2198 1-38,43-93,95-118
+  s_960a65d3660a8e::t_e2354f617b0c9b 94
+tests/contracts/spoke/configurator/SpokeConfigurator.t.sol
+  s_b91fc36bc00997::t_9572598e4eaebd 1317,1326,1328,1330,1332,1336,1339,1341,1343,1345,1360,1374,1383,1388,1395,1402,1411,1416,1423-1424,1427,1431,1439,1445
+  s_c533bd68051b89::t_8eddd1f915c34e 1318-1320,1322,1324-1325,1327,1329,1331,1338,1340,1342,1344,1349,1361-1362,1375-1376,1379,1381-1382,1384-1385,1387,1389-1390,1393,1396-1398,1400,1403-1404,1407-1409,1413,1415,1418,1421,1425,1428-1429,1433-1434,1437,1440-1442,1444,1447
+  s_c533bd68051b89::t_ee43dec538a8ac 125-189
+  s_b91fc36bc00997::t_eec2a0d5fed0d9 1544,1617-1632
+  s_c533bd68051b89::t_62f3100d5714ee 1350-1358,1364-1371
+tests/deployments/procedures/deploy/emergency/AaveV4EmergencyStewardDeployProcedure.t.sol
+  s_c533bd68051b89::t_9458a4d69f4e85 1-40
+src/deployments/libraries/BatchReports.sol
+  s_c533bd68051b89::t_9cd4e0054090df 24-25
+  s_c533bd68051b89::t_008b9f86eab8fd 26
+  s_c533bd68051b89::t_88e352baf3c933 27-28
+tests/contracts/emergency/EmergencySteward.t.sol
+  s_c533bd68051b89::t_727ab2544a04ef 7-16,18-44,49-50
+  s_c533bd68051b89::t_ee43dec538a8ac 1-6,51-671
+  s_b91fc36bc00997::t_9572598e4eaebd 17
+  s_c533bd68051b89::t_7603d6c50eb24e 45-48
+tests/utils/BatchTestProcedures.sol
+  s_c533bd68051b89::t_540b575aa0d872 519-528
+  s_c533bd68051b89::t_1c8d070deb6b2e 479
+src/spoke/SpokeConfigurator.sol
+  s_b91fc36bc00997::t_71057a9a6283be 564,647
+  s_c533bd68051b89::t_902bf401c0f2c4 32-33,38-39
+  s_b91fc36bc00997::t_cff86f96573a0c 415-420,422,426-431,433-435,440-445,447,451-456,458-460
+  s_c533bd68051b89::t_eac3e7843abacc 421,432,446,457
+  s_b91fc36bc00997::t_309ae6c2202ba1 576-580,672-676
+snapshots/SignatureGateway.Operations.json
+  s_960a65d3660a8e::t_7b0a42ba088959 2-3,5
+snapshots/TakerPositionManager.Operations.json
+  s_960a65d3660a8e::t_7e5f331849eb5e 5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "fa9f288927017b693becff883feecf5b211a2ec8",
+  "prompts": {},
+  "humans": {
+    "h_943f5bfc0f6106": {
+      "author": "AyushKaul <ayush@aave.com>"
+    }
+  },
+  "sessions": {
+    "s_960a65d3660a8e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "119aec35-2cca-4a8b-97f2-59c6dcd18776",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "AyushKaul <ayush@aave.com>"
+    },
+    "s_b91fc36bc00997": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8d1e9cea-659f-4836-a72c-c6d4aa984eaf",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "AyushKaul <ayush@aave.com>"
+    },
+    "s_c533bd68051b89": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7e573400-7b8c-42a4-b6fd-c4e005c380f0",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "AyushKaul <ayush@aave.com>"
+    }
+  }
+}
