@@ -7,12 +7,12 @@ import {IPriceOracle} from 'src/spoke/interfaces/IPriceOracle.sol';
 /// @author Aave Labs
 /// @notice Interface for the Aave Oracle.
 interface IAaveOracle is IPriceOracle {
-  /// @dev Emitted when the price feed source of a reserve is updated.
+  /// @notice Emitted when the price feed source of a reserve is updated.
   /// @param reserveId The identifier of the reserve.
   /// @param source The price feed source of the reserve.
   event UpdateReserveSource(uint256 indexed reserveId, address indexed source);
 
-  /// @dev Emitted when the Spoke is set.
+  /// @notice Emitted when the Spoke is set.
   /// @param spoke The address of the Spoke.
   event SetSpoke(address indexed spoke);
 

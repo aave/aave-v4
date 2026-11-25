@@ -110,6 +110,7 @@ interface ITokenizationSpoke is IERC4626, IERC2612, IIntentConsumer {
   ) external returns (uint256);
 
   /// @notice Deposits assets into the vault with an underlying asset ERC2612-typed permit.
+  /// @dev Does not revert if the permit call fails.
   /// @param assets The amount of assets to deposit.
   /// @param receiver The receiver of the shares.
   /// @param deadline The deadline of the permit.
