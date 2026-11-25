@@ -152,7 +152,7 @@ library Roles {
 
   /// @notice Returns the function selectors associated with the SpokeConfigurator Domain Admin role.
   function getSpokeConfiguratorDomainAdminRoleSelectors() internal pure returns (bytes4[] memory) {
-    bytes4[] memory selectors = new bytes4[](24);
+    bytes4[] memory selectors = new bytes4[](23);
     selectors[0] = ISpokeConfigurator.updateReservePriceSource.selector;
     selectors[1] = ISpokeConfigurator.updateLiquidationTargetHealthFactor.selector;
     selectors[2] = ISpokeConfigurator.updateHealthFactorForMaxBonus.selector;
@@ -176,7 +176,6 @@ library Roles {
     selectors[20] = ISpokeConfigurator.unfreezeReserve.selector;
     selectors[21] = ISpokeConfigurator.zeroCollateralFactor.selector;
     selectors[22] = ISpokeConfigurator.restoreCollateralFactor.selector;
-    selectors[23] = ISpokeConfigurator.updatePositionManager.selector;
     return selectors;
   }
 
@@ -187,11 +186,12 @@ library Roles {
     pure
     returns (bytes4[] memory)
   {
-    bytes4[] memory selectors = new bytes4[](4);
+    bytes4[] memory selectors = new bytes4[](5);
     selectors[0] = ISpokeConfigurator.holdPaused.selector;
     selectors[1] = ISpokeConfigurator.releasePaused.selector;
     selectors[2] = ISpokeConfigurator.holdFrozen.selector;
     selectors[3] = ISpokeConfigurator.releaseFrozen.selector;
+    selectors[4] = ISpokeConfigurator.updatePositionManager.selector;
     return selectors;
   }
 
@@ -199,13 +199,14 @@ library Roles {
 
   /// @notice Returns the function selectors associated with the EmergencySteward Domain Admin role.
   function getEmergencyStewardDomainAdminRoleSelectors() internal pure returns (bytes4[] memory) {
-    bytes4[] memory selectors = new bytes4[](6);
+    bytes4[] memory selectors = new bytes4[](7);
     selectors[0] = IEmergencySteward.pauseAllReserves.selector;
     selectors[1] = IEmergencySteward.unpauseAllReserves.selector;
     selectors[2] = IEmergencySteward.freezeSpoke.selector;
     selectors[3] = IEmergencySteward.unfreezeSpoke.selector;
     selectors[4] = IEmergencySteward.freezeAsset.selector;
     selectors[5] = IEmergencySteward.unfreezeAsset.selector;
+    selectors[6] = IEmergencySteward.deactivatePositionManager.selector;
     return selectors;
   }
 }

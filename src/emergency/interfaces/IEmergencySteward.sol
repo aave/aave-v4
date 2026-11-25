@@ -65,6 +65,18 @@ interface IEmergencySteward {
   /// @param underlying The address of the underlying asset.
   function unfreezeAsset(address hub, address underlying) external;
 
+  /// @notice Deactivates a position manager on each of the specified Spokes.
+  /// @dev One-way: calls `SpokeConfigurator.updatePositionManager` with `active` set to false only. Re-activating
+  /// stays with `updatePositionManager`, one Spoke at a time.
+  /// @dev Skips Spokes where the position manager is already inactive, so a payload listing every Spoke does not
+  /// revert. User approvals are kept, so re-activating the position manager restores its access for the users
+  /// who approved it.
+  /// @dev Reverts if a Spoke where the position manager is active has not granted the SpokeConfigurator
+  /// permission.
+  /// @param spokes The addresses of the Spokes.
+  /// @param positionManager The address of the position manager.
+  function deactivatePositionManager(address[] calldata spokes, address positionManager) external;
+
   /// @notice Returns the address of the SpokeConfigurator that the levers call.
   /// @return The address of the SpokeConfigurator.
   function SPOKE_CONFIGURATOR() external view returns (address);

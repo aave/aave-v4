@@ -14,8 +14,8 @@ import {IEmergencySteward} from 'src/emergency/interfaces/IEmergencySteward.sol'
 /// @dev Holds no state. The bulk lever records and saved collateral factors stay in the SpokeConfigurator, which
 /// every configuration path writes through, so they stay correct when the same settings change outside this
 /// contract.
-/// @dev Must be granted the SpokeConfigurator selectors it calls: `holdPaused`, `releasePaused`, `holdFrozen`
-/// and `releaseFrozen`.
+/// @dev Must be granted the SpokeConfigurator selectors it calls: `holdPaused`, `releasePaused`, `holdFrozen`,
+/// `releaseFrozen` and `updatePositionManager`.
 contract EmergencySteward is AccessManaged, IEmergencySteward {
   /// @inheritdoc IEmergencySteward
   address public immutable SPOKE_CONFIGURATOR;
@@ -115,6 +115,22 @@ contract EmergencySteward is AccessManaged, IEmergencySteward {
           hub,
           underlying,
           BulkLeversMap.ASSET_MASK
+        );
+      }
+    }
+  }
+
+  /// @inheritdoc IEmergencySteward
+  function deactivatePositionManager(
+    address[] calldata spokes,
+    address positionManager
+  ) external restricted {
+    for (uint256 i = 0; i < spokes.length; ++i) {
+      if (ISpoke(spokes[i]).isPositionManagerActive(positionManager)) {
+        ISpokeConfigurator(SPOKE_CONFIGURATOR).updatePositionManager(
+          spokes[i],
+          positionManager,
+          false
         );
       }
     }

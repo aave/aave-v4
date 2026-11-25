@@ -245,7 +245,7 @@ abstract contract Base is BaseHelpers, BatchTestProcedures {
     );
 
     // Grant EmergencySteward roles to SPOKE_CONFIGURATOR_ADMIN so it can call the bulk levers
-    // (freezeAsset, pauseAllReserves, etc.)
+    // (freezeAsset, pauseAllReserves, deactivatePositionManager, etc.)
     AaveV4EmergencyStewardRolesProcedure.grantEmergencyStewardAllRoles(
       report.accessManager,
       SPOKE_CONFIGURATOR_ADMIN

@@ -39,6 +39,193 @@ contract EmergencyStewardTest is SpokeConfiguratorBaseTest {
     vm.stopPrank();
   }
 
+  function test_deactivatePositionManager_revertsWith_AccessManagedUnauthorized() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
+    vm.prank(alice);
+    emergencySteward.deactivatePositionManager(_allSpokeAddresses(), makeAddr('POSITION_MANAGER'));
+  }
+
+  function test_deactivatePositionManager() public {
+    address positionManager = makeAddr('POSITION_MANAGER');
+    address[] memory spokes = _allSpokeAddresses();
+    for (uint256 i; i < spokes.length; ++i) {
+      _activatePositionManager(spokes[i], positionManager);
+    }
+
+    vm.recordLogs();
+    for (uint256 i; i < spokes.length; ++i) {
+      vm.expectCall(
+        address(spokeConfigurator),
+        abi.encodeCall(
+          ISpokeConfigurator.updatePositionManager,
+          (spokes[i], positionManager, false)
+        )
+      );
+      vm.expectEmit(spokes[i]);
+      emit ISpoke.UpdatePositionManager(positionManager, false);
+      vm.expectEmit(address(spokeConfigurator));
+      emit ISpokeConfigurator.PositionManagerUpdated(spokes[i], positionManager, true, false);
+    }
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    emergencySteward.deactivatePositionManager(spokes, positionManager);
+
+    assertEq(_configuratorLogCount(), spokes.length);
+    for (uint256 i; i < spokes.length; ++i) {
+      assertFalse(ISpoke(spokes[i]).isPositionManagerActive(positionManager));
+    }
+  }
+
+  function test_fuzz_deactivatePositionManager_skipsSpokesWherePositionManagerIsInactive(
+    bool[3] memory active
+  ) public {
+    address positionManager = makeAddr('POSITION_MANAGER');
+    address[] memory spokes = _allSpokeAddresses();
+    uint256 activeCount;
+    for (uint256 i; i < spokes.length; ++i) {
+      if (active[i]) {
+        _activatePositionManager(spokes[i], positionManager);
+        ++activeCount;
+      }
+    }
+
+    vm.recordLogs();
+    for (uint256 i; i < spokes.length; ++i) {
+      if (active[i]) {
+        vm.expectEmit(address(spokeConfigurator));
+        emit ISpokeConfigurator.PositionManagerUpdated(spokes[i], positionManager, true, false);
+      } else {
+        vm.expectCall(
+          address(spokeConfigurator),
+          abi.encodeCall(
+            ISpokeConfigurator.updatePositionManager,
+            (spokes[i], positionManager, false)
+          ),
+          0
+        );
+      }
+    }
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    emergencySteward.deactivatePositionManager(spokes, positionManager);
+
+    assertEq(_configuratorLogCount(), activeCount);
+    for (uint256 i; i < spokes.length; ++i) {
+      assertFalse(ISpoke(spokes[i]).isPositionManagerActive(positionManager));
+    }
+  }
+
+  function test_deactivatePositionManager_duplicateSpoke() public {
+    address positionManager = makeAddr('POSITION_MANAGER');
+    _activatePositionManager(spokeAddr, positionManager);
+    address[] memory spokes = new address[](2);
+    spokes[0] = spokeAddr;
+    spokes[1] = spokeAddr;
+
+    vm.recordLogs();
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    emergencySteward.deactivatePositionManager(spokes, positionManager);
+
+    assertEq(_configuratorLogCount(), 1);
+    assertFalse(spoke.isPositionManagerActive(positionManager));
+  }
+
+  function test_deactivatePositionManager_keepsOtherPositionManagersActive() public {
+    address positionManager = makeAddr('POSITION_MANAGER');
+    address otherPositionManager = makeAddr('OTHER_POSITION_MANAGER');
+    address[] memory spokes = _allSpokeAddresses();
+    for (uint256 i; i < spokes.length; ++i) {
+      _activatePositionManager(spokes[i], positionManager);
+      _activatePositionManager(spokes[i], otherPositionManager);
+    }
+
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    emergencySteward.deactivatePositionManager(spokes, positionManager);
+
+    for (uint256 i; i < spokes.length; ++i) {
+      assertFalse(ISpoke(spokes[i]).isPositionManagerActive(positionManager));
+      assertTrue(ISpoke(spokes[i]).isPositionManagerActive(otherPositionManager));
+    }
+  }
+
+  function test_deactivatePositionManager_blocksApprovedPositionManager_keepsUserApproval() public {
+    address positionManager = makeAddr('POSITION_MANAGER');
+    _activatePositionManager(spokeAddr, positionManager);
+    vm.prank(alice);
+    spoke.setUserPositionManager(positionManager, true);
+    assertTrue(spoke.isPositionManager(alice, positionManager));
+
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    emergencySteward.deactivatePositionManager(_singleSpokeAddress(spokeAddr), positionManager);
+
+    assertFalse(spoke.isPositionManager(alice, positionManager));
+    vm.expectRevert(ISpoke.Unauthorized.selector);
+    vm.prank(positionManager);
+    spoke.setUsingAsCollateral(reserveId, true, alice);
+
+    // re-activating restores access without a new user approval
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.updatePositionManager(spokeAddr, positionManager, true);
+    assertTrue(spoke.isPositionManager(alice, positionManager));
+  }
+
+  function test_deactivatePositionManager_revertsWith_AccessManagedUnauthorized_onSpoke() public {
+    address positionManager = makeAddr('POSITION_MANAGER');
+    IAccessManager spokeAuthority = IAccessManager(spoke.authority());
+    vm.prank(ADMIN);
+    spokeAuthority.revokeRole(Roles.SPOKE_CONFIGURATOR_ROLE, address(spokeConfigurator));
+
+    // a Spoke where the position manager is already inactive is skipped without calling it
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    emergencySteward.deactivatePositionManager(_singleSpokeAddress(spokeAddr), positionManager);
+
+    _activatePositionManager(spokeAddr, positionManager);
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        IAccessManaged.AccessManagedUnauthorized.selector,
+        address(spokeConfigurator)
+      )
+    );
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    emergencySteward.deactivatePositionManager(_singleSpokeAddress(spokeAddr), positionManager);
+  }
+
+  function test_deactivatePositionManager_revertsWith_AccessManagedUnauthorized_withoutSpokeConfiguratorRole()
+    public
+  {
+    address positionManager = makeAddr('POSITION_MANAGER');
+    _activatePositionManager(spokeAddr, positionManager);
+    _revokeSpokeConfiguratorEmergencyStewardRole();
+
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        IAccessManaged.AccessManagedUnauthorized.selector,
+        address(emergencySteward)
+      )
+    );
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    emergencySteward.deactivatePositionManager(_singleSpokeAddress(spokeAddr), positionManager);
+  }
+
+  function _activatePositionManager(address targetSpoke, address positionManager) internal {
+    vm.prank(SPOKE_ADMIN);
+    ISpoke(targetSpoke).updatePositionManager(positionManager, true);
+  }
+
+  function _allSpokeAddresses() internal view returns (address[] memory spokes) {
+    spokes = new address[](3);
+    spokes[0] = address(spoke1);
+    spokes[1] = address(spoke2);
+    spokes[2] = address(spoke3);
+  }
+
+  function _singleSpokeAddress(
+    address targetSpoke
+  ) internal pure returns (address[] memory spokes) {
+    spokes = new address[](1);
+    spokes[0] = targetSpoke;
+  }
+
   function _revokeSpokeConfiguratorEmergencyStewardRole() internal {
     IAccessManager authority = IAccessManager(spoke.authority());
     vm.prank(ADMIN);
