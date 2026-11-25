@@ -17,8 +17,8 @@ abstract contract HubConfigurator is AccessManagedUpgradeable, IHubConfigurator 
   using SafeCast for uint256;
 
   /// @dev Map of Hub addresses, asset identifiers and Spoke addresses to the bulk levers holding the halted flag,
-  /// as a `BulkLeversMap` bitmap; `unhaltAsset` and `unhaltSpoke` only unhalt Spokes that no other bulk lever
-  /// holds.
+  /// as a `BulkLeversMap` bitmap; `unhaltAsset`, `unhaltSpoke` and `unhaltHub` only unhalt Spokes that no other
+  /// bulk lever holds.
   mapping(address hub => mapping(uint256 assetId => mapping(address spoke => uint8 bulkLevers)))
     internal _haltedByBulkLevers;
 
@@ -409,15 +409,51 @@ abstract contract HubConfigurator is AccessManagedUpgradeable, IHubConfigurator 
   }
 
   /// @inheritdoc IHubConfigurator
+  function haltHub(address hub) external restricted {
+    IHub targetHub = IHub(hub);
+    uint256 assetCount = targetHub.getAssetCount();
+    for (uint256 assetId = 0; assetId < assetCount; ++assetId) {
+      address underlying = _getUnderlying(targetHub, assetId);
+      uint256 spokesCount = targetHub.getSpokeCount(assetId);
+      for (uint256 i = 0; i < spokesCount; ++i) {
+        _bulkHalt(
+          targetHub,
+          underlying,
+          assetId,
+          targetHub.getSpokeAddress(assetId, i),
+          BulkLeversMap.HUB_MASK
+        );
+      }
+    }
+  }
+
+  /// @inheritdoc IHubConfigurator
+  function unhaltHub(address hub) external restricted {
+    IHub targetHub = IHub(hub);
+    uint256 assetCount = targetHub.getAssetCount();
+    for (uint256 assetId = 0; assetId < assetCount; ++assetId) {
+      address underlying = _getUnderlying(targetHub, assetId);
+      uint256 spokesCount = targetHub.getSpokeCount(assetId);
+      for (uint256 i = 0; i < spokesCount; ++i) {
+        address spoke = targetHub.getSpokeAddress(assetId, i);
+        if (_releaseHalted(hub, assetId, spoke, BulkLeversMap.HUB_MASK)) {
+          _unhalt(targetHub, underlying, assetId, spoke);
+        }
+      }
+    }
+  }
+
+  /// @inheritdoc IHubConfigurator
   function getHaltedByBulkLevers(
     address hub,
     address underlying,
     address spoke
-  ) external view returns (bool, bool) {
+  ) external view returns (bool, bool, bool) {
     uint8 bulkLevers = _haltedByBulkLevers[hub][IHub(hub).getAssetId(underlying)][spoke];
     return (
       BulkLeversMap.isHeld(bulkLevers, BulkLeversMap.ASSET_MASK),
-      BulkLeversMap.isHeld(bulkLevers, BulkLeversMap.SPOKE_MASK)
+      BulkLeversMap.isHeld(bulkLevers, BulkLeversMap.SPOKE_MASK),
+      BulkLeversMap.isHeld(bulkLevers, BulkLeversMap.HUB_MASK)
     );
   }
 

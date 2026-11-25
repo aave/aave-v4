@@ -12,6 +12,10 @@ contract BulkLeversMapWrapper {
     return BulkLeversMap.SPOKE_MASK;
   }
 
+  function HUB_MASK() external pure returns (uint8) {
+    return BulkLeversMap.HUB_MASK;
+  }
+
   function brake(uint8 bulkLevers, uint8 mask, bool flagUpdated) external pure returns (uint8) {
     return BulkLeversMap.brake(bulkLevers, mask, flagUpdated);
   }

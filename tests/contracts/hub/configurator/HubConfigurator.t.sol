@@ -1030,6 +1030,20 @@ contract HubConfiguratorTest is Base {
 
     hubConfigurator.unhaltSpoke(address(hub1), spokeAddress);
     _assertHaltedByBulkLevers(_assetId, spokeAddress, false, false);
+
+    hubConfigurator.haltHub(address(hub1));
+    _assertHaltedByBulkLevers(_assetId, spokeAddress, false, false, true);
+
+    hubConfigurator.haltAsset(address(hub1), _assetUnderlying);
+    hubConfigurator.haltSpoke(address(hub1), spokeAddress);
+    _assertHaltedByBulkLevers(_assetId, spokeAddress, true, true, true);
+
+    hubConfigurator.unhaltHub(address(hub1));
+    _assertHaltedByBulkLevers(_assetId, spokeAddress, true, true, false);
+
+    hubConfigurator.unhaltAsset(address(hub1), _assetUnderlying);
+    hubConfigurator.unhaltSpoke(address(hub1), spokeAddress);
+    _assertHaltedByBulkLevers(_assetId, spokeAddress, false, false, false);
     vm.stopPrank();
   }
 
@@ -1039,14 +1053,22 @@ contract HubConfiguratorTest is Base {
     bool byHaltAsset,
     bool byHaltSpoke
   ) internal view {
+    _assertHaltedByBulkLevers(assetId, spokeAddress, byHaltAsset, byHaltSpoke, false);
+  }
+
+  function _assertHaltedByBulkLevers(
+    uint256 assetId,
+    address spokeAddress,
+    bool byHaltAsset,
+    bool byHaltSpoke,
+    bool byHaltHub
+  ) internal view {
     (address assetUnderlying, ) = hub1.getAssetUnderlyingAndDecimals(assetId);
-    (bool haltedByHaltAsset, bool haltedByHaltSpoke) = hubConfigurator.getHaltedByBulkLevers(
-      address(hub1),
-      assetUnderlying,
-      spokeAddress
-    );
+    (bool haltedByHaltAsset, bool haltedByHaltSpoke, bool haltedByHaltHub) = hubConfigurator
+      .getHaltedByBulkLevers(address(hub1), assetUnderlying, spokeAddress);
     assertEq(haltedByHaltAsset, byHaltAsset, 'halted by haltAsset');
     assertEq(haltedByHaltSpoke, byHaltSpoke, 'halted by haltSpoke');
+    assertEq(haltedByHaltHub, byHaltHub, 'halted by haltHub');
   }
 
   function test_addSpoke_revertsWith_AccessManagedUnauthorized() public {
@@ -1621,6 +1643,255 @@ contract HubConfiguratorTest is Base {
     vm.prank(HUB_ADMIN);
     hub1.updateSpokeConfig(assetId, spokeAddress, spokeConfig);
     return spokeConfig;
+  }
+
+  function test_haltHub_revertsWith_AccessManagedUnauthorized() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
+    vm.prank(alice);
+    hubConfigurator.haltHub(address(hub1));
+  }
+
+  function test_haltHub() public {
+    assertGt(hub1.getAssetCount(), 1, 'hub1 has less than 2 assets listed');
+    (uint256[] memory assetIds, address[] memory spokes) = _hub1Pairs();
+    for (uint256 k; k < assetIds.length; ++k) {
+      IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(assetIds[k], spokes[k]);
+      assertFalse(spokeConfig.halted, 'halted before haltHub');
+      spokeConfig.halted = true;
+      vm.expectCall(
+        address(hub1),
+        abi.encodeCall(IHub.updateSpokeConfig, (assetIds[k], spokes[k], spokeConfig))
+      );
+      _expectSpokeHaltedEvent(assetIds[k], spokes[k], true);
+    }
+
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.haltHub(address(hub1));
+
+    for (uint256 k; k < assetIds.length; ++k) {
+      assertTrue(hub1.getSpokeConfig(assetIds[k], spokes[k]).halted);
+      _assertHaltedByBulkLevers(assetIds[k], spokes[k], false, false, true);
+    }
+  }
+
+  function test_haltHub_skipsSpokesAlreadyHalted() public {
+    address haltedSpoke = spokeAddresses[0];
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.updateSpokeHalted(address(hub1), _assetUnderlying, haltedSpoke, true);
+
+    IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(_assetId, haltedSpoke);
+    vm.expectCall(
+      address(hub1),
+      abi.encodeCall(IHub.updateSpokeConfig, (_assetId, haltedSpoke, spokeConfig)),
+      0
+    );
+
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.haltHub(address(hub1));
+
+    (uint256[] memory assetIds, address[] memory spokes) = _hub1Pairs();
+    for (uint256 k; k < assetIds.length; ++k) {
+      assertTrue(hub1.getSpokeConfig(assetIds[k], spokes[k]).halted);
+      bool haltedBefore = assetIds[k] == _assetId && spokes[k] == haltedSpoke;
+      _assertHaltedByBulkLevers(assetIds[k], spokes[k], false, false, !haltedBefore);
+    }
+  }
+
+  function test_unhaltHub_revertsWith_AccessManagedUnauthorized() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
+    vm.prank(alice);
+    hubConfigurator.unhaltHub(address(hub1));
+  }
+
+  function test_unhaltHub() public {
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.haltHub(address(hub1));
+
+    (uint256[] memory assetIds, address[] memory spokes) = _hub1Pairs();
+    for (uint256 k; k < assetIds.length; ++k) {
+      IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(assetIds[k], spokes[k]);
+      spokeConfig.halted = false;
+      vm.expectCall(
+        address(hub1),
+        abi.encodeCall(IHub.updateSpokeConfig, (assetIds[k], spokes[k], spokeConfig))
+      );
+      _expectSpokeHaltedEvent(assetIds[k], spokes[k], false);
+    }
+
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.unhaltHub(address(hub1));
+
+    for (uint256 k; k < assetIds.length; ++k) {
+      assertFalse(hub1.getSpokeConfig(assetIds[k], spokes[k]).halted);
+      _assertHaltedByBulkLevers(assetIds[k], spokes[k], false, false, false);
+    }
+  }
+
+  function test_unhaltHub_afterRepeatedHaltHub() public {
+    vm.startPrank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.haltHub(address(hub1));
+    hubConfigurator.haltHub(address(hub1));
+    hubConfigurator.unhaltHub(address(hub1));
+    vm.stopPrank();
+
+    _assertHub1Halted(type(uint256).max, address(0));
+  }
+
+  function test_unhaltHub_keepsSpokesHaltedBeforeHaltHub() public {
+    address haltedSpoke = spokeAddresses[0];
+    vm.startPrank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.updateSpokeHalted(address(hub1), _assetUnderlying, haltedSpoke, true);
+    hubConfigurator.haltHub(address(hub1));
+    hubConfigurator.unhaltHub(address(hub1));
+    vm.stopPrank();
+
+    _assertOnlyPairHalted(_assetId, haltedSpoke);
+  }
+
+  function test_unhaltHub_keepsSpokesHaltedThroughUpdateSpokeHalted() public {
+    address haltedSpoke = spokeAddresses[1];
+    vm.startPrank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.haltHub(address(hub1));
+    hubConfigurator.updateSpokeHalted(address(hub1), _assetUnderlying, haltedSpoke, true);
+    _assertHaltedByBulkLevers(_assetId, haltedSpoke, false, false, false);
+    hubConfigurator.unhaltHub(address(hub1));
+    vm.stopPrank();
+
+    _assertOnlyPairHalted(_assetId, haltedSpoke);
+  }
+
+  function test_unhaltHub_keepsSpokesHaltedThroughHaltAsset() public {
+    vm.startPrank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.haltHub(address(hub1));
+    hubConfigurator.haltAsset(address(hub1), _assetUnderlying);
+    _assertHaltedByBulkLevers(_assetId, address(spoke1), true, false, true);
+    hubConfigurator.unhaltHub(address(hub1));
+    vm.stopPrank();
+
+    _assertHub1Halted(_assetId, address(0));
+    _assertHaltedByBulkLevers(_assetId, address(spoke1), true, false, false);
+
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.unhaltAsset(address(hub1), _assetUnderlying);
+
+    _assertHub1Halted(type(uint256).max, address(0));
+  }
+
+  function test_unhaltHub_keepsAssetsHaltedThroughHaltSpoke() public {
+    vm.startPrank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.haltHub(address(hub1));
+    hubConfigurator.haltSpoke(address(hub1), address(spoke3));
+    _assertHaltedByBulkLevers(_assetId, address(spoke3), false, true, true);
+    hubConfigurator.unhaltHub(address(hub1));
+    vm.stopPrank();
+
+    _assertHub1Halted(type(uint256).max, address(spoke3));
+    _assertHaltedByBulkLevers(_assetId, address(spoke3), false, true, false);
+
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.unhaltSpoke(address(hub1), address(spoke3));
+
+    _assertHub1Halted(type(uint256).max, address(0));
+  }
+
+  function test_unhaltAsset_keepsSpokesHaltedThroughHaltHub() public {
+    vm.startPrank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.haltAsset(address(hub1), _assetUnderlying);
+    hubConfigurator.haltHub(address(hub1));
+    _assertHaltedByBulkLevers(_assetId, address(spoke1), true, false, true);
+    hubConfigurator.unhaltAsset(address(hub1), _assetUnderlying);
+    vm.stopPrank();
+
+    (uint256[] memory assetIds, address[] memory spokes) = _hub1Pairs();
+    for (uint256 k; k < assetIds.length; ++k) {
+      assertTrue(hub1.getSpokeConfig(assetIds[k], spokes[k]).halted);
+    }
+    _assertHaltedByBulkLevers(_assetId, address(spoke1), false, false, true);
+
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.unhaltHub(address(hub1));
+
+    _assertHub1Halted(type(uint256).max, address(0));
+  }
+
+  function test_unhaltHub_skipsSpokesUnhaltedOnHub() public {
+    address unhaltedSpoke = spokeAddresses[0];
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.haltHub(address(hub1));
+    IHub.SpokeConfig memory spokeConfig = _unhaltOnHub(_assetId, unhaltedSpoke);
+
+    vm.expectCall(
+      address(hub1),
+      abi.encodeCall(IHub.updateSpokeConfig, (_assetId, unhaltedSpoke, spokeConfig)),
+      0
+    );
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.unhaltHub(address(hub1));
+
+    _assertHub1Halted(type(uint256).max, address(0));
+  }
+
+  function test_unhaltHub_skipsSpokesNotHaltedByHaltHub() public {
+    address haltedSpoke = spokeAddresses[0];
+    vm.startPrank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.updateSpokeHalted(address(hub1), _assetUnderlying, haltedSpoke, true);
+    hubConfigurator.haltAsset(address(hub1), address(tokenList.weth));
+    vm.stopPrank();
+
+    vm.expectCall(address(hub1), abi.encodeWithSelector(IHub.updateSpokeConfig.selector), 0);
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.unhaltHub(address(hub1));
+
+    assertTrue(hub1.getSpokeConfig(_assetId, haltedSpoke).halted);
+    for (uint256 i; i < hub1.getSpokeCount(wethAssetId); ++i) {
+      assertTrue(hub1.getSpokeConfig(wethAssetId, hub1.getSpokeAddress(wethAssetId, i)).halted);
+    }
+  }
+
+  /// @dev Returns every asset and Spoke pair registered on hub1.
+  function _hub1Pairs() internal view returns (uint256[] memory assetIds, address[] memory spokes) {
+    uint256 assetCount = hub1.getAssetCount();
+    uint256 pairCount;
+    for (uint256 assetId; assetId < assetCount; ++assetId) {
+      pairCount += hub1.getSpokeCount(assetId);
+    }
+    assetIds = new uint256[](pairCount);
+    spokes = new address[](pairCount);
+    uint256 k;
+    for (uint256 assetId; assetId < assetCount; ++assetId) {
+      for (uint256 i; i < hub1.getSpokeCount(assetId); ++i) {
+        assetIds[k] = assetId;
+        spokes[k] = hub1.getSpokeAddress(assetId, i);
+        ++k;
+      }
+    }
+  }
+
+  /// @dev Asserts that a pair on hub1 is halted only if its asset is `haltedAssetId` or its Spoke is
+  /// `haltedSpoke`. Pass `type(uint256).max` and `address(0)` to assert that no pair is halted.
+  function _assertHub1Halted(uint256 haltedAssetId, address haltedSpoke) internal view {
+    (uint256[] memory assetIds, address[] memory spokes) = _hub1Pairs();
+    for (uint256 k; k < assetIds.length; ++k) {
+      assertEq(
+        hub1.getSpokeConfig(assetIds[k], spokes[k]).halted,
+        assetIds[k] == haltedAssetId || spokes[k] == haltedSpoke
+      );
+    }
+  }
+
+  /// @dev Asserts that the `assetId` pair of `haltedSpoke` is the only halted pair on hub1.
+  function _assertOnlyPairHalted(uint256 assetId, address haltedSpoke) internal view {
+    (uint256[] memory assetIds, address[] memory spokes) = _hub1Pairs();
+    for (uint256 k; k < assetIds.length; ++k) {
+      assertEq(
+        hub1.getSpokeConfig(assetIds[k], spokes[k]).halted,
+        assetIds[k] == assetId && spokes[k] == haltedSpoke
+      );
+    }
   }
 
   function test_resetSpokeCaps_revertsWith_AccessManagedUnauthorized() public {

@@ -39,8 +39,8 @@ contract HubConfiguratorGranularAccessControlTest is Base {
     manager.grantRole(ASSET_MANAGER_ROLE, ASSET_MANAGER, 0);
     manager.grantRole(SPOKE_MANAGER_ROLE, SPOKE_MANAGER, 0);
 
-    // Set up ASSET_MANAGER_ROLE permissions (12 functions)
-    bytes4[] memory assetSelectors = new bytes4[](12);
+    // Set up ASSET_MANAGER_ROLE permissions (14 functions)
+    bytes4[] memory assetSelectors = new bytes4[](14);
     assetSelectors[0] = IHubConfigurator.addAsset.selector;
     assetSelectors[1] = IHubConfigurator.addAssetWithDecimals.selector;
     assetSelectors[2] = IHubConfigurator.updateLiquidityFee.selector;
@@ -53,6 +53,8 @@ contract HubConfiguratorGranularAccessControlTest is Base {
     assetSelectors[9] = IHubConfigurator.deactivateAsset.selector;
     assetSelectors[10] = IHubConfigurator.haltAsset.selector;
     assetSelectors[11] = IHubConfigurator.unhaltAsset.selector;
+    assetSelectors[12] = IHubConfigurator.haltHub.selector;
+    assetSelectors[13] = IHubConfigurator.unhaltHub.selector;
     manager.setTargetFunctionRole(address(hubConfigurator), assetSelectors, ASSET_MANAGER_ROLE);
 
     // Set up SPOKE_MANAGER_ROLE permissions (11 functions)
@@ -142,6 +144,8 @@ contract HubConfiguratorGranularAccessControlTest is Base {
     assetManagerCalldata.push(
       abi.encodeCall(IHubConfigurator.unhaltAsset, (address(hub1), underlying))
     );
+    assetManagerCalldata.push(abi.encodeCall(IHubConfigurator.haltHub, (address(hub1))));
+    assetManagerCalldata.push(abi.encodeCall(IHubConfigurator.unhaltHub, (address(hub1))));
   }
 
   function _buildSpokeManagerCalldata() internal {
@@ -314,6 +318,30 @@ contract HubConfiguratorGranularAccessControlTest is Base {
 
     for (uint256 i = 0; i < hub1.getSpokeCount(assetId); ++i) {
       assertFalse(hub1.getSpokeConfig(assetId, hub1.getSpokeAddress(assetId, i)).halted);
+    }
+  }
+
+  function test_assetManager_canCall_haltHub() public {
+    vm.prank(ASSET_MANAGER);
+    hubConfigurator.haltHub(address(hub1));
+
+    for (uint256 id = 0; id < hub1.getAssetCount(); ++id) {
+      for (uint256 i = 0; i < hub1.getSpokeCount(id); ++i) {
+        assertTrue(hub1.getSpokeConfig(id, hub1.getSpokeAddress(id, i)).halted);
+      }
+    }
+  }
+
+  function test_assetManager_canCall_unhaltHub() public {
+    vm.startPrank(ASSET_MANAGER);
+    hubConfigurator.haltHub(address(hub1));
+    hubConfigurator.unhaltHub(address(hub1));
+    vm.stopPrank();
+
+    for (uint256 id = 0; id < hub1.getAssetCount(); ++id) {
+      for (uint256 i = 0; i < hub1.getSpokeCount(id); ++i) {
+        assertFalse(hub1.getSpokeConfig(id, hub1.getSpokeAddress(id, i)).halted);
+      }
     }
   }
 

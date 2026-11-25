@@ -12,6 +12,8 @@ library BulkLeversMap {
   uint8 internal constant ASSET_MASK = 0x01;
   /// @dev Mask for the Spoke-wide bulk levers, such as `haltSpoke`, `freezeSpoke` and `pauseAllReserves`.
   uint8 internal constant SPOKE_MASK = 0x02;
+  /// @dev Mask for the Hub-wide bulk levers, such as `haltHub`.
+  uint8 internal constant HUB_MASK = 0x04;
 
   /// @notice Returns the bulk levers holding a flag after a bulk brake.
   /// @dev A brake that sets the flag replaces the bitmap with its own mask, dropping bits left over from a flag

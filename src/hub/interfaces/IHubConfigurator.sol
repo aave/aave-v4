@@ -267,16 +267,16 @@ interface IHubConfigurator {
 
   /// @notice Halts an asset on a specified Hub by setting the halted flag to true on every Spoke of the asset.
   /// @dev Records the Spokes it halts so `unhaltAsset` unhalts only those. Spokes that are already halted are
-  /// recorded only if `haltSpoke` halted them, so they stay halted until both `unhaltSpoke` and `unhaltAsset`
-  /// run.
+  /// recorded only if `haltSpoke` or `haltHub` halted them, so they stay halted until every bulk lever holding
+  /// them is released.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
   function haltAsset(address hub, address underlying) external;
 
   /// @notice Unhalts the Spokes that `haltAsset` halted for an asset on a specified Hub.
-  /// @dev Spokes also halted by `haltSpoke` stay halted until `unhaltSpoke` runs. Spokes halted before
-  /// `haltAsset`, or set later through `updateSpokeHalted`, keep their halted flag. Changes made directly on the
-  /// Hub, bypassing this configurator, are not tracked.
+  /// @dev Spokes also halted by `haltSpoke` or `haltHub` stay halted until those levers are released. Spokes
+  /// halted before `haltAsset`, or set later through `updateSpokeHalted`, keep their halted flag. Changes made
+  /// directly on the Hub, bypassing this configurator, are not tracked.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
   function unhaltAsset(address hub, address underlying) external;
@@ -314,8 +314,8 @@ interface IHubConfigurator {
   function updateSpokeActive(address hub, address underlying, address spoke, bool active) external;
 
   /// @notice Updates the halted flag of an asset's Spoke on a specified Hub.
-  /// @dev Clears the `haltAsset` and `haltSpoke` records for the Spoke and asset, so `unhaltAsset` and
-  /// `unhaltSpoke` leave the flag as set here.
+  /// @dev Clears the `haltAsset`, `haltSpoke` and `haltHub` records for the Spoke and asset, so `unhaltAsset`,
+  /// `unhaltSpoke` and `unhaltHub` leave the flag as set here.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
   /// @param spoke The address of the Spoke.
@@ -379,16 +379,16 @@ interface IHubConfigurator {
 
   /// @notice Halts all assets of a Spoke on a specified Hub by setting the halted flag to true.
   /// @dev Records the assets it halts so `unhaltSpoke` unhalts only those. Assets that are already halted are
-  /// recorded only if `haltAsset` halted them, so they stay halted until both `unhaltAsset` and `unhaltSpoke`
-  /// run.
+  /// recorded only if `haltAsset` or `haltHub` halted them, so they stay halted until every bulk lever holding
+  /// them is released.
   /// @param hub The address of the Hub.
   /// @param spoke The address of the Spoke.
   function haltSpoke(address hub, address spoke) external;
 
   /// @notice Unhalts the assets that `haltSpoke` halted for a Spoke on a specified Hub.
-  /// @dev Assets also halted by `haltAsset` stay halted until `unhaltAsset` runs. Assets halted before
-  /// `haltSpoke`, or set later through `updateSpokeHalted`, keep their halted flag. Changes made directly on the
-  /// Hub, bypassing this configurator, are not tracked.
+  /// @dev Assets also halted by `haltAsset` or `haltHub` stay halted until those levers are released. Assets
+  /// halted before `haltSpoke`, or set later through `updateSpokeHalted`, keep their halted flag. Changes made
+  /// directly on the Hub, bypassing this configurator, are not tracked.
   /// @param hub The address of the Hub.
   /// @param spoke The address of the Spoke.
   function unhaltSpoke(address hub, address spoke) external;
@@ -405,6 +405,20 @@ interface IHubConfigurator {
   /// @param irData The interest rate data to apply to the given asset, encoded in bytes.
   function updateInterestRateData(address hub, address underlying, bytes calldata irData) external;
 
+  /// @notice Halts every Spoke of every asset on a specified Hub by setting the halted flag to true.
+  /// @dev Records the Spokes it halts so `unhaltHub` unhalts only those. Spokes that are already halted are
+  /// recorded only if `haltAsset` or `haltSpoke` halted them, so they stay halted until every bulk lever holding
+  /// them is released.
+  /// @param hub The address of the Hub.
+  function haltHub(address hub) external;
+
+  /// @notice Unhalts the Spokes that `haltHub` halted on a specified Hub.
+  /// @dev Spokes also halted by `haltAsset` or `haltSpoke` stay halted until those levers are released. Spokes
+  /// halted before `haltHub`, or set later through `updateSpokeHalted`, keep their halted flag. Changes made
+  /// directly on the Hub, bypassing this configurator, are not tracked.
+  /// @param hub The address of the Hub.
+  function unhaltHub(address hub) external;
+
   /// @notice Returns which bulk levers recorded a Spoke as halted for an asset on a specified Hub.
   /// @dev The Spoke is unhalted once every bulk lever that recorded it is released. A Spoke halted before the
   /// bulk lever, or set later through `updateSpokeHalted`, is not recorded.
@@ -413,9 +427,10 @@ interface IHubConfigurator {
   /// @param spoke The address of the Spoke.
   /// @return True if the Spoke is recorded as halted by `haltAsset`, released by `unhaltAsset`.
   /// @return True if the Spoke is recorded as halted by `haltSpoke`, released by `unhaltSpoke`.
+  /// @return True if the Spoke is recorded as halted by `haltHub`, released by `unhaltHub`.
   function getHaltedByBulkLevers(
     address hub,
     address underlying,
     address spoke
-  ) external view returns (bool, bool);
+  ) external view returns (bool, bool, bool);
 }

@@ -137,7 +137,7 @@ See `Roles.sol` NatSpec for the full role strategy and evolution guidelines. All
 
 | ID  | Name                               | Granted To           | Functions                                        |
 | --- | ---------------------------------- | -------------------- | ------------------------------------------------ |
-| 200 | HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE | hubConfiguratorAdmin | All 24 HubConfigurator selectors (see Roles.sol) |
+| 200 | HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE | hubConfiguratorAdmin | All 26 HubConfigurator selectors (see Roles.sol) |
 
 Domain admin role holds all selectors initially. Granular roles (201+) are carved out as needed.
 
