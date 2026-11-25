@@ -146,7 +146,7 @@ library Roles {
 
   /// @notice Returns the function selectors associated with the SpokeConfigurator Domain Admin role.
   function getSpokeConfiguratorDomainAdminRoleSelectors() internal pure returns (bytes4[] memory) {
-    bytes4[] memory selectors = new bytes4[](29);
+    bytes4[] memory selectors = new bytes4[](30);
     selectors[0] = ISpokeConfigurator.updateReservePriceSource.selector;
     selectors[1] = ISpokeConfigurator.updateLiquidationTargetHealthFactor.selector;
     selectors[2] = ISpokeConfigurator.updateHealthFactorForMaxBonus.selector;
@@ -166,16 +166,17 @@ library Roles {
     selectors[16] = ISpokeConfigurator.addDynamicReserveConfig.selector;
     selectors[17] = ISpokeConfigurator.updateDynamicReserveConfig.selector;
     selectors[18] = ISpokeConfigurator.pauseAllReserves.selector;
-    selectors[19] = ISpokeConfigurator.pauseReserve.selector;
-    selectors[20] = ISpokeConfigurator.freezeReserve.selector;
-    selectors[21] = ISpokeConfigurator.unfreezeReserve.selector;
-    selectors[22] = ISpokeConfigurator.freezeSpoke.selector;
-    selectors[23] = ISpokeConfigurator.unfreezeSpoke.selector;
-    selectors[24] = ISpokeConfigurator.freezeAsset.selector;
-    selectors[25] = ISpokeConfigurator.unfreezeAsset.selector;
-    selectors[26] = ISpokeConfigurator.zeroCollateralFactor.selector;
-    selectors[27] = ISpokeConfigurator.restoreCollateralFactor.selector;
-    selectors[28] = ISpokeConfigurator.updatePositionManager.selector;
+    selectors[19] = ISpokeConfigurator.unpauseAllReserves.selector;
+    selectors[20] = ISpokeConfigurator.pauseReserve.selector;
+    selectors[21] = ISpokeConfigurator.freezeReserve.selector;
+    selectors[22] = ISpokeConfigurator.unfreezeReserve.selector;
+    selectors[23] = ISpokeConfigurator.freezeSpoke.selector;
+    selectors[24] = ISpokeConfigurator.unfreezeSpoke.selector;
+    selectors[25] = ISpokeConfigurator.freezeAsset.selector;
+    selectors[26] = ISpokeConfigurator.unfreezeAsset.selector;
+    selectors[27] = ISpokeConfigurator.zeroCollateralFactor.selector;
+    selectors[28] = ISpokeConfigurator.restoreCollateralFactor.selector;
+    selectors[29] = ISpokeConfigurator.updatePositionManager.selector;
     return selectors;
   }
 }

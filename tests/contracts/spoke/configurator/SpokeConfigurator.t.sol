@@ -1163,6 +1163,166 @@ contract SpokeConfiguratorTest is SpokeConfiguratorBaseTest {
     assertEq(_configuratorLogCount(), reserveCount);
     for (uint256 reserveIdx; reserveIdx < reserveCount; ++reserveIdx) {
       assertEq(spoke.getReserveConfig(reserveIdx).paused, true);
+      _assertPausedByPauseAllReserves(reserveIdx, true);
+    }
+  }
+
+  function test_pauseAllReserves_skipsReservesAlreadyPaused() public {
+    uint256 daiId = _daiReserveId(spoke);
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.pauseReserve(spokeAddr, hubAddr, address(tokenList.dai));
+
+    ISpoke.ReserveConfig memory reserveConfig = spoke.getReserveConfig(daiId);
+    vm.expectCall(spokeAddr, abi.encodeCall(ISpoke.updateReserveConfig, (daiId, reserveConfig)), 0);
+    vm.recordLogs();
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.pauseAllReserves(spokeAddr);
+
+    assertEq(_configuratorLogCount(), spoke.getReserveCount() - 1);
+    for (uint256 id; id < spoke.getReserveCount(); ++id) {
+      assertTrue(spoke.getReserveConfig(id).paused);
+      _assertPausedByPauseAllReserves(id, id != daiId);
+    }
+  }
+
+  function test_unpauseAllReserves_revertsWith_AccessManagedUnauthorized() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
+    vm.prank(alice);
+    spokeConfigurator.unpauseAllReserves(spokeAddr);
+  }
+
+  function test_unpauseAllReserves() public {
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.pauseAllReserves(spokeAddr);
+
+    uint256 reserveCount = spoke.getReserveCount();
+    vm.recordLogs();
+    for (uint256 id; id < reserveCount; ++id) {
+      ISpoke.Reserve memory reserve = spoke.getReserve(id);
+      ISpoke.ReserveConfig memory reserveConfig = spoke.getReserveConfig(id);
+      reserveConfig.paused = false;
+      vm.expectCall(spokeAddr, abi.encodeCall(ISpoke.updateReserveConfig, (id, reserveConfig)));
+      vm.expectEmit(address(spoke));
+      emit ISpoke.UpdateReserveConfig(id, reserveConfig);
+      vm.expectEmit(address(spokeConfigurator));
+      emit ISpokeConfigurator.ReservePausedUpdated(
+        spokeAddr,
+        address(reserve.hub),
+        reserve.underlying,
+        id,
+        true,
+        false
+      );
+    }
+
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.unpauseAllReserves(spokeAddr);
+
+    assertEq(_configuratorLogCount(), reserveCount);
+    _assertOnlyReservePaused(type(uint256).max);
+    for (uint256 id; id < reserveCount; ++id) {
+      _assertPausedByPauseAllReserves(id, false);
+    }
+
+    // a second call is a no-op on every reserve and does not revert
+    vm.recordLogs();
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.unpauseAllReserves(spokeAddr);
+    assertEq(_configuratorLogCount(), 0);
+  }
+
+  function test_unpauseAllReserves_afterRepeatedPauseAllReserves() public {
+    vm.startPrank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.pauseAllReserves(spokeAddr);
+    spokeConfigurator.pauseAllReserves(spokeAddr);
+    spokeConfigurator.unpauseAllReserves(spokeAddr);
+    vm.stopPrank();
+
+    _assertOnlyReservePaused(type(uint256).max);
+  }
+
+  function test_unpauseAllReserves_keepsReservesPausedBeforePauseAllReserves() public {
+    vm.startPrank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.pauseReserve(spokeAddr, hubAddr, address(tokenList.dai));
+    spokeConfigurator.pauseAllReserves(spokeAddr);
+    spokeConfigurator.unpauseAllReserves(spokeAddr);
+    vm.stopPrank();
+
+    _assertOnlyReservePaused(_daiReserveId(spoke));
+  }
+
+  function test_unpauseAllReserves_keepsReservesPausedThroughPauseReserve() public {
+    vm.startPrank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.pauseAllReserves(spokeAddr);
+    spokeConfigurator.pauseReserve(spokeAddr, hubAddr, address(tokenList.dai));
+    _assertPausedByPauseAllReserves(_daiReserveId(spoke), false);
+    spokeConfigurator.unpauseAllReserves(spokeAddr);
+    vm.stopPrank();
+
+    _assertOnlyReservePaused(_daiReserveId(spoke));
+  }
+
+  function test_unpauseAllReserves_keepsReservesPausedThroughUpdatePaused() public {
+    vm.startPrank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.pauseAllReserves(spokeAddr);
+    spokeConfigurator.updatePaused(spokeAddr, hubAddr, address(tokenList.dai), true);
+    _assertPausedByPauseAllReserves(_daiReserveId(spoke), false);
+    spokeConfigurator.unpauseAllReserves(spokeAddr);
+    vm.stopPrank();
+
+    _assertOnlyReservePaused(_daiReserveId(spoke));
+  }
+
+  function test_unpauseAllReserves_skipsReservesUnpausedOnSpoke() public {
+    uint256 daiId = _daiReserveId(spoke);
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.pauseAllReserves(spokeAddr);
+    ISpoke.ReserveConfig memory reserveConfig = spoke.getReserveConfig(daiId);
+    reserveConfig.paused = false;
+    vm.prank(SPOKE_ADMIN);
+    spoke.updateReserveConfig(daiId, reserveConfig);
+
+    vm.expectCall(spokeAddr, abi.encodeCall(ISpoke.updateReserveConfig, (daiId, reserveConfig)), 0);
+    vm.recordLogs();
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.unpauseAllReserves(spokeAddr);
+
+    assertEq(_configuratorLogCount(), spoke.getReserveCount() - 1);
+    _assertOnlyReservePaused(type(uint256).max);
+  }
+
+  function test_isPausedByPauseAllReserves() public {
+    uint256 daiId = _daiReserveId(spoke);
+    _assertPausedByPauseAllReserves(daiId, false);
+
+    vm.startPrank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.pauseAllReserves(spokeAddr);
+    _assertPausedByPauseAllReserves(daiId, true);
+
+    spokeConfigurator.unpauseAllReserves(spokeAddr);
+    _assertPausedByPauseAllReserves(daiId, false);
+    vm.stopPrank();
+  }
+
+  function _assertPausedByPauseAllReserves(uint256 reserveId, bool expected) internal view {
+    ISpoke.Reserve memory reserve = spoke.getReserve(reserveId);
+    assertEq(
+      spokeConfigurator.isPausedByPauseAllReserves(
+        spokeAddr,
+        address(reserve.hub),
+        reserve.underlying
+      ),
+      expected,
+      'paused by pauseAllReserves'
+    );
+  }
+
+  /// @dev Asserts that `pausedId` is the only paused reserve of the Spoke; pass an unused id to assert none is.
+  function _assertOnlyReservePaused(uint256 pausedId) internal view {
+    for (uint256 id; id < spoke.getReserveCount(); ++id) {
+      assertEq(spoke.getReserveConfig(id).paused, id == pausedId);
     }
   }
 

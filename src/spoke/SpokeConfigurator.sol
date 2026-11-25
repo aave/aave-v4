@@ -35,6 +35,11 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
   mapping(address spoke => mapping(uint256 reserveId => uint8 bulkLevers))
     internal _frozenByBulkLevers;
 
+  /// @dev Map of Spoke addresses and reserve identifiers to the bulk levers holding the paused flag, as a
+  /// `BulkLeversMap` bitmap; `unpauseAllReserves` only unpauses recorded reserves.
+  mapping(address spoke => mapping(uint256 reserveId => uint8 bulkLevers))
+    internal _pausedByBulkLevers;
+
   /// @dev To be overridden by the inheriting SpokeConfigurator instance contract.
   function initialize(address authority) external virtual;
 
@@ -159,7 +164,9 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
     address underlying,
     bool paused
   ) external restricted {
-    _updatePaused(_resolveReserveKey(spoke, hub, underlying), paused);
+    ReserveKey memory key = _resolveReserveKey(spoke, hub, underlying);
+    delete _pausedByBulkLevers[spoke][key.reserveId];
+    _updatePaused(key, paused);
   }
 
   /// @inheritdoc ISpokeConfigurator
@@ -387,13 +394,26 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
     ISpoke targetSpoke = ISpoke(spoke);
     uint256 reserveCount = targetSpoke.getReserveCount();
     for (uint256 reserveId = 0; reserveId < reserveCount; ++reserveId) {
-      _updatePaused(_getReserveKey(targetSpoke, reserveId), true);
+      _bulkPause(_getReserveKey(targetSpoke, reserveId), BulkLeversMap.SPOKE_MASK);
+    }
+  }
+
+  /// @inheritdoc ISpokeConfigurator
+  function unpauseAllReserves(address spoke) external restricted {
+    ISpoke targetSpoke = ISpoke(spoke);
+    uint256 reserveCount = targetSpoke.getReserveCount();
+    for (uint256 reserveId = 0; reserveId < reserveCount; ++reserveId) {
+      if (_releasePaused(spoke, reserveId, BulkLeversMap.SPOKE_MASK)) {
+        _unpause(_getReserveKey(targetSpoke, reserveId));
+      }
     }
   }
 
   /// @inheritdoc ISpokeConfigurator
   function pauseReserve(address spoke, address hub, address underlying) external restricted {
-    _updatePaused(_resolveReserveKey(spoke, hub, underlying), true);
+    ReserveKey memory key = _resolveReserveKey(spoke, hub, underlying);
+    delete _pausedByBulkLevers[spoke][key.reserveId];
+    _updatePaused(key, true);
   }
 
   /// @inheritdoc ISpokeConfigurator
@@ -532,6 +552,16 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
     );
   }
 
+  /// @inheritdoc ISpokeConfigurator
+  function isPausedByPauseAllReserves(
+    address spoke,
+    address hub,
+    address underlying
+  ) external view returns (bool) {
+    uint256 reserveId = _resolveReserveKey(spoke, hub, underlying).reserveId;
+    return BulkLeversMap.isHeld(_pausedByBulkLevers[spoke][reserveId], BulkLeversMap.SPOKE_MASK);
+  }
+
   /// @dev Sets the frozen flag and zeroes the collateral factor. Returns whether the frozen flag changed
   /// and whether the collateral factor was zeroed.
   function _freezeReserve(ReserveKey memory key) internal returns (bool, bool) {
@@ -630,6 +660,58 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
       );
     }
     return newKey;
+  }
+
+  /// @dev Sets the paused flag if not set, and records `mask` as holding it per `BulkLeversMap.brake`.
+  function _bulkPause(ReserveKey memory key, uint8 mask) internal {
+    ISpoke.ReserveConfig memory reserveConfig = key.spoke.getReserveConfig(key.reserveId);
+    bool pausedUpdated = !reserveConfig.paused;
+    if (pausedUpdated) {
+      reserveConfig.paused = true;
+      key.spoke.updateReserveConfig(key.reserveId, reserveConfig);
+      emit ReservePausedUpdated(
+        address(key.spoke),
+        key.hub,
+        key.underlying,
+        key.reserveId,
+        false,
+        true
+      );
+    }
+    address spoke = address(key.spoke);
+    _pausedByBulkLevers[spoke][key.reserveId] = BulkLeversMap.brake(
+      _pausedByBulkLevers[spoke][key.reserveId],
+      mask,
+      pausedUpdated
+    );
+  }
+
+  /// @dev Removes `mask` from the bulk levers holding the paused flag. Returns true if `mask` held the flag and
+  /// no other bulk lever still does, meaning the flag should be cleared.
+  function _releasePaused(address spoke, uint256 reserveId, uint8 mask) internal returns (bool) {
+    (uint8 bulkLevers, bool released) = BulkLeversMap.release(
+      _pausedByBulkLevers[spoke][reserveId],
+      mask
+    );
+    _pausedByBulkLevers[spoke][reserveId] = bulkLevers;
+    return released;
+  }
+
+  /// @dev Clears the paused flag. Skips reserves that are not paused.
+  function _unpause(ReserveKey memory key) internal {
+    ISpoke.ReserveConfig memory reserveConfig = key.spoke.getReserveConfig(key.reserveId);
+    if (reserveConfig.paused) {
+      reserveConfig.paused = false;
+      key.spoke.updateReserveConfig(key.reserveId, reserveConfig);
+      emit ReservePausedUpdated(
+        address(key.spoke),
+        key.hub,
+        key.underlying,
+        key.reserveId,
+        true,
+        false
+      );
+    }
   }
 
   function _updatePaused(ReserveKey memory key, bool paused) internal {

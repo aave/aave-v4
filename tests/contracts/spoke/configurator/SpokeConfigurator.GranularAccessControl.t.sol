@@ -45,7 +45,7 @@ contract SpokeConfiguratorGranularAccessControlTest is Base {
     manager.grantRole(POSITION_MANAGER_ADMIN_ROLE, POSITION_MANAGER_ADMIN, 0);
 
     // Set up RESERVE_MANAGER_ROLE permissions (24 functions)
-    bytes4[] memory reserveSelectors = new bytes4[](24);
+    bytes4[] memory reserveSelectors = new bytes4[](25);
     reserveSelectors[0] = ISpokeConfigurator.updateReservePriceSource.selector;
     reserveSelectors[1] = ISpokeConfigurator.addReserve.selector;
     reserveSelectors[2] = ISpokeConfigurator.updatePaused.selector;
@@ -61,15 +61,16 @@ contract SpokeConfiguratorGranularAccessControlTest is Base {
     reserveSelectors[12] = ISpokeConfigurator.addDynamicReserveConfig.selector;
     reserveSelectors[13] = ISpokeConfigurator.updateDynamicReserveConfig.selector;
     reserveSelectors[14] = ISpokeConfigurator.pauseAllReserves.selector;
-    reserveSelectors[15] = ISpokeConfigurator.pauseReserve.selector;
-    reserveSelectors[16] = ISpokeConfigurator.freezeReserve.selector;
-    reserveSelectors[17] = ISpokeConfigurator.unfreezeReserve.selector;
-    reserveSelectors[18] = ISpokeConfigurator.freezeSpoke.selector;
-    reserveSelectors[19] = ISpokeConfigurator.unfreezeSpoke.selector;
-    reserveSelectors[20] = ISpokeConfigurator.freezeAsset.selector;
-    reserveSelectors[21] = ISpokeConfigurator.unfreezeAsset.selector;
-    reserveSelectors[22] = ISpokeConfigurator.zeroCollateralFactor.selector;
-    reserveSelectors[23] = ISpokeConfigurator.restoreCollateralFactor.selector;
+    reserveSelectors[15] = ISpokeConfigurator.unpauseAllReserves.selector;
+    reserveSelectors[16] = ISpokeConfigurator.pauseReserve.selector;
+    reserveSelectors[17] = ISpokeConfigurator.freezeReserve.selector;
+    reserveSelectors[18] = ISpokeConfigurator.unfreezeReserve.selector;
+    reserveSelectors[19] = ISpokeConfigurator.freezeSpoke.selector;
+    reserveSelectors[20] = ISpokeConfigurator.unfreezeSpoke.selector;
+    reserveSelectors[21] = ISpokeConfigurator.freezeAsset.selector;
+    reserveSelectors[22] = ISpokeConfigurator.unfreezeAsset.selector;
+    reserveSelectors[23] = ISpokeConfigurator.zeroCollateralFactor.selector;
+    reserveSelectors[24] = ISpokeConfigurator.restoreCollateralFactor.selector;
     manager.setTargetFunctionRole(
       address(spokeConfigurator),
       reserveSelectors,
@@ -191,6 +192,7 @@ contract SpokeConfiguratorGranularAccessControlTest is Base {
       )
     );
     reserveManagerCalldata.push(abi.encodeCall(ISpokeConfigurator.pauseAllReserves, (spokeAddr)));
+    reserveManagerCalldata.push(abi.encodeCall(ISpokeConfigurator.unpauseAllReserves, (spokeAddr)));
     reserveManagerCalldata.push(
       abi.encodeCall(ISpokeConfigurator.pauseReserve, (spokeAddr, hubAddr, underlying))
     );
@@ -446,6 +448,17 @@ contract SpokeConfiguratorGranularAccessControlTest is Base {
 
     for (uint256 i = 0; i < spoke.getReserveCount(); ++i) {
       assertTrue(spoke.getReserveConfig(i).paused);
+    }
+  }
+
+  function test_reserveManager_canCall_unpauseAllReserves() public {
+    vm.startPrank(RESERVE_MANAGER);
+    spokeConfigurator.pauseAllReserves(spokeAddr);
+    spokeConfigurator.unpauseAllReserves(spokeAddr);
+    vm.stopPrank();
+
+    for (uint256 i = 0; i < spoke.getReserveCount(); ++i) {
+      assertFalse(spoke.getReserveConfig(i).paused);
     }
   }
 

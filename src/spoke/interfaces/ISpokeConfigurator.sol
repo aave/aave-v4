@@ -302,6 +302,8 @@ interface ISpokeConfigurator {
   ) external returns (uint256);
 
   /// @notice Updates the paused flag of a reserve.
+  /// @dev Clears the `pauseAllReserves` record for the reserve, so `unpauseAllReserves` leaves the flag as set
+  /// here.
   /// @param spoke The address of the Spoke.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
@@ -469,10 +471,19 @@ interface ISpokeConfigurator {
   ) external;
 
   /// @notice Pauses all reserves of a spoke.
+  /// @dev Records the reserves it pauses so `unpauseAllReserves` unpauses only those; reserves that were
+  /// already paused are not recorded.
   /// @param spoke The address of the Spoke.
   function pauseAllReserves(address spoke) external;
 
+  /// @notice Unpauses the reserves that `pauseAllReserves` paused on a spoke.
+  /// @dev Reserves paused before `pauseAllReserves`, or set later through `pauseReserve` or `updatePaused`,
+  /// keep their paused flag. Changes made directly on the Spoke, bypassing this configurator, are not tracked.
+  /// @param spoke The address of the Spoke.
+  function unpauseAllReserves(address spoke) external;
+
   /// @notice Pauses a reserve of a spoke.
+  /// @dev Clears the `pauseAllReserves` record for the reserve, so `unpauseAllReserves` leaves it paused.
   /// @param spoke The address of the Spoke.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
@@ -601,4 +612,18 @@ interface ISpokeConfigurator {
     address hub,
     address underlying
   ) external view returns (bool, bool);
+
+  /// @notice Returns whether `pauseAllReserves` recorded a reserve as paused, meaning `unpauseAllReserves` will
+  /// unpause it.
+  /// @dev A reserve paused before `pauseAllReserves`, or set later through `pauseReserve` or `updatePaused`, is
+  /// not recorded.
+  /// @param spoke The address of the Spoke.
+  /// @param hub The address of the Hub.
+  /// @param underlying The address of the underlying asset.
+  /// @return True if the reserve is recorded as paused by `pauseAllReserves`.
+  function isPausedByPauseAllReserves(
+    address spoke,
+    address hub,
+    address underlying
+  ) external view returns (bool);
 }
