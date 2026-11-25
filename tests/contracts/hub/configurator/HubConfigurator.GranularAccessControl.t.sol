@@ -56,7 +56,7 @@ contract HubConfiguratorGranularAccessControlTest is Base {
     manager.setTargetFunctionRole(address(hubConfigurator), assetSelectors, ASSET_MANAGER_ROLE);
 
     // Set up SPOKE_MANAGER_ROLE permissions (11 functions)
-    bytes4[] memory spokeSelectors = new bytes4[](11);
+    bytes4[] memory spokeSelectors = new bytes4[](12);
     spokeSelectors[0] = IHubConfigurator.addSpoke.selector;
     spokeSelectors[1] = IHubConfigurator.addSpokeToAssets.selector;
     spokeSelectors[2] = IHubConfigurator.updateSpokeActive.selector;
@@ -67,7 +67,8 @@ contract HubConfiguratorGranularAccessControlTest is Base {
     spokeSelectors[7] = IHubConfigurator.updateSpokeCaps.selector;
     spokeSelectors[8] = IHubConfigurator.deactivateSpoke.selector;
     spokeSelectors[9] = IHubConfigurator.haltSpoke.selector;
-    spokeSelectors[10] = IHubConfigurator.resetSpokeCaps.selector;
+    spokeSelectors[10] = IHubConfigurator.unhaltSpoke.selector;
+    spokeSelectors[11] = IHubConfigurator.resetSpokeCaps.selector;
     manager.setTargetFunctionRole(address(hubConfigurator), spokeSelectors, SPOKE_MANAGER_ROLE);
 
     vm.stopPrank();
@@ -210,6 +211,9 @@ contract HubConfiguratorGranularAccessControlTest is Base {
       abi.encodeCall(IHubConfigurator.haltSpoke, (address(hub1), spokeAddr))
     );
     spokeManagerCalldata.push(
+      abi.encodeCall(IHubConfigurator.unhaltSpoke, (address(hub1), spokeAddr))
+    );
+    spokeManagerCalldata.push(
       abi.encodeCall(IHubConfigurator.resetSpokeCaps, (address(hub1), spokeAddr))
     );
   }
@@ -350,6 +354,19 @@ contract HubConfiguratorGranularAccessControlTest is Base {
     IHub.SpokeConfig memory config = hub1.getSpokeConfig(assetId, spokeAddr);
     assertEq(config.addCap, 100);
     assertEq(config.drawCap, 50);
+  }
+
+  function test_spokeManager_canCall_unhaltSpoke() public {
+    vm.startPrank(SPOKE_MANAGER);
+    hubConfigurator.haltSpoke(address(hub1), spokeAddr);
+    hubConfigurator.unhaltSpoke(address(hub1), spokeAddr);
+    vm.stopPrank();
+
+    for (uint256 i = 0; i < hub1.getAssetCount(); ++i) {
+      if (hub1.isSpokeListed(i, spokeAddr)) {
+        assertFalse(hub1.getSpokeConfig(i, spokeAddr).halted);
+      }
+    }
   }
 
   function test_spokeManager_canCall_resetSpokeCaps() public {

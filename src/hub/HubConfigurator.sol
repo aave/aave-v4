@@ -4,6 +4,7 @@ pragma solidity 0.8.28;
 import {IERC20Metadata} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';
 import {AccessManagedUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
+import {BulkLeversMap} from 'src/libraries/BulkLeversMap.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
 import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
@@ -15,10 +16,11 @@ import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
 abstract contract HubConfigurator is AccessManagedUpgradeable, IHubConfigurator {
   using SafeCast for uint256;
 
-  /// @dev Map of Hub addresses, asset identifiers and Spoke addresses to whether `haltAsset` halted the Spoke
-  /// for the asset; `unhaltAsset` only unhalts recorded Spokes.
-  mapping(address hub => mapping(uint256 assetId => mapping(address spoke => bool halted)))
-    internal _haltedByHaltAsset;
+  /// @dev Map of Hub addresses, asset identifiers and Spoke addresses to the bulk levers holding the halted flag,
+  /// as a `BulkLeversMap` bitmap; `unhaltAsset` and `unhaltSpoke` only unhalt Spokes that no other bulk lever
+  /// holds.
+  mapping(address hub => mapping(uint256 assetId => mapping(address spoke => uint8 bulkLevers)))
+    internal _haltedByBulkLevers;
 
   /// @dev To be overridden by the inheriting HubConfigurator instance contract.
   function initialize(address authority) external virtual;
@@ -187,11 +189,13 @@ abstract contract HubConfigurator is AccessManagedUpgradeable, IHubConfigurator 
     uint256 assetId = targetHub.getAssetId(underlying);
     uint256 spokesCount = targetHub.getSpokeCount(assetId);
     for (uint256 i = 0; i < spokesCount; ++i) {
-      address spoke = targetHub.getSpokeAddress(assetId, i);
-      if (!targetHub.getSpokeConfig(assetId, spoke).halted) {
-        _updateSpokeHalted(targetHub, underlying, assetId, spoke, true);
-        _haltedByHaltAsset[hub][assetId][spoke] = true;
-      }
+      _bulkHalt(
+        targetHub,
+        underlying,
+        assetId,
+        targetHub.getSpokeAddress(assetId, i),
+        BulkLeversMap.ASSET_MASK
+      );
     }
   }
 
@@ -202,9 +206,8 @@ abstract contract HubConfigurator is AccessManagedUpgradeable, IHubConfigurator 
     uint256 spokesCount = targetHub.getSpokeCount(assetId);
     for (uint256 i = 0; i < spokesCount; ++i) {
       address spoke = targetHub.getSpokeAddress(assetId, i);
-      if (_haltedByHaltAsset[hub][assetId][spoke]) {
-        delete _haltedByHaltAsset[hub][assetId][spoke];
-        _updateSpokeHalted(targetHub, underlying, assetId, spoke, false);
+      if (_releaseHalted(hub, assetId, spoke, BulkLeversMap.ASSET_MASK)) {
+        _unhalt(targetHub, underlying, assetId, spoke);
       }
     }
   }
@@ -253,7 +256,7 @@ abstract contract HubConfigurator is AccessManagedUpgradeable, IHubConfigurator 
   ) external restricted {
     IHub targetHub = IHub(hub);
     uint256 assetId = targetHub.getAssetId(underlying);
-    delete _haltedByHaltAsset[hub][assetId][spoke];
+    delete _haltedByBulkLevers[hub][assetId][spoke];
     _updateSpokeHalted(targetHub, underlying, assetId, spoke, halted);
   }
 
@@ -348,8 +351,25 @@ abstract contract HubConfigurator is AccessManagedUpgradeable, IHubConfigurator 
     uint256 assetCount = targetHub.getAssetCount();
     for (uint256 assetId = 0; assetId < assetCount; ++assetId) {
       if (targetHub.isSpokeListed(assetId, spoke)) {
-        delete _haltedByHaltAsset[hub][assetId][spoke];
-        _updateSpokeHalted(targetHub, _getUnderlying(targetHub, assetId), assetId, spoke, true);
+        _bulkHalt(
+          targetHub,
+          _getUnderlying(targetHub, assetId),
+          assetId,
+          spoke,
+          BulkLeversMap.SPOKE_MASK
+        );
+      }
+    }
+  }
+
+  /// @inheritdoc IHubConfigurator
+  function unhaltSpoke(address hub, address spoke) external restricted {
+    IHub targetHub = IHub(hub);
+    uint256 assetCount = targetHub.getAssetCount();
+    for (uint256 assetId = 0; assetId < assetCount; ++assetId) {
+      // Spokes not listed for the asset are never recorded, so they are skipped here.
+      if (_releaseHalted(hub, assetId, spoke, BulkLeversMap.SPOKE_MASK)) {
+        _unhalt(targetHub, _getUnderlying(targetHub, assetId), assetId, spoke);
       }
     }
   }
@@ -389,12 +409,16 @@ abstract contract HubConfigurator is AccessManagedUpgradeable, IHubConfigurator 
   }
 
   /// @inheritdoc IHubConfigurator
-  function isHaltedByHaltAsset(
+  function getHaltedByBulkLevers(
     address hub,
     address underlying,
     address spoke
-  ) external view returns (bool) {
-    return _haltedByHaltAsset[hub][IHub(hub).getAssetId(underlying)][spoke];
+  ) external view returns (bool, bool) {
+    uint8 bulkLevers = _haltedByBulkLevers[hub][IHub(hub).getAssetId(underlying)][spoke];
+    return (
+      BulkLeversMap.isHeld(bulkLevers, BulkLeversMap.ASSET_MASK),
+      BulkLeversMap.isHeld(bulkLevers, BulkLeversMap.SPOKE_MASK)
+    );
   }
 
   function _addAsset(
@@ -499,6 +523,54 @@ abstract contract HubConfigurator is AccessManagedUpgradeable, IHubConfigurator 
     config.halted = halted;
     hub.updateSpokeConfig(assetId, spoke, config);
     emit SpokeHaltedUpdated(address(hub), underlying, assetId, spoke, oldHalted, halted);
+  }
+
+  /// @dev Sets the halted flag if not set, and records `mask` as holding it per `BulkLeversMap.brake`.
+  function _bulkHalt(
+    IHub hub,
+    address underlying,
+    uint256 assetId,
+    address spoke,
+    uint8 mask
+  ) internal {
+    IHub.SpokeConfig memory config = hub.getSpokeConfig(assetId, spoke);
+    bool haltedUpdated = !config.halted;
+    if (haltedUpdated) {
+      config.halted = true;
+      hub.updateSpokeConfig(assetId, spoke, config);
+      emit SpokeHaltedUpdated(address(hub), underlying, assetId, spoke, false, true);
+    }
+    _haltedByBulkLevers[address(hub)][assetId][spoke] = BulkLeversMap.brake(
+      _haltedByBulkLevers[address(hub)][assetId][spoke],
+      mask,
+      haltedUpdated
+    );
+  }
+
+  /// @dev Removes `mask` from the bulk levers holding the halted flag. Returns true if `mask` held the flag and
+  /// no other bulk lever still does, meaning the flag should be cleared.
+  function _releaseHalted(
+    address hub,
+    uint256 assetId,
+    address spoke,
+    uint8 mask
+  ) internal returns (bool) {
+    (uint8 bulkLevers, bool released) = BulkLeversMap.release(
+      _haltedByBulkLevers[hub][assetId][spoke],
+      mask
+    );
+    _haltedByBulkLevers[hub][assetId][spoke] = bulkLevers;
+    return released;
+  }
+
+  /// @dev Clears the halted flag. Skips Spokes that are not halted.
+  function _unhalt(IHub hub, address underlying, uint256 assetId, address spoke) internal {
+    IHub.SpokeConfig memory config = hub.getSpokeConfig(assetId, spoke);
+    if (config.halted) {
+      config.halted = false;
+      hub.updateSpokeConfig(assetId, spoke, config);
+      emit SpokeHaltedUpdated(address(hub), underlying, assetId, spoke, true, false);
+    }
   }
 
   function _getUnderlying(IHub hub, uint256 assetId) internal view returns (address underlying) {
