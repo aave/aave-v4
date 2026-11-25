@@ -87,7 +87,8 @@ abstract contract Spoke is
     LiquidationLogic.DUST_LIQUIDATION_THRESHOLD;
 
   /// @notice Modifier that checks if the caller is an approved positionManager for `onBehalfOf`.
-  modifier onlyPositionManager(address onBehalfOf) {
+  /// @dev Virtual so that Spoke variants can add checks to position actions.
+  modifier onlyPositionManager(address onBehalfOf) virtual {
     require(_isPositionManager({user: onBehalfOf, manager: msg.sender}), Unauthorized());
     _;
   }
@@ -351,6 +352,7 @@ abstract contract Spoke is
     uint256 debtToCover,
     bool receiveShares
   ) external nonReentrant {
+    _validateLiquidator();
     UserAccountData memory userAccountData = _calculateUserAccountData(user);
     LiquidationLogic.LiquidateUserParams memory params = LiquidationLogic.LiquidateUserParams({
       collateralReserveId: collateralReserveId,
@@ -911,6 +913,9 @@ abstract contract Spoke is
     PositionManagerConfig storage config = _positionManager[manager];
     return config.active && config.approval[user];
   }
+
+  /// @dev Hook to validate the caller of `liquidationCall`. Empty by default, so liquidations are permissionless.
+  function _validateLiquidator() internal view virtual {}
 
   function _validateReserveConfig(ReserveConfig calldata config) internal pure {
     require(config.collateralRisk <= MAX_ALLOWED_COLLATERAL_RISK, InvalidCollateralRisk());

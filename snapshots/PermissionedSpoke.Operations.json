@@ -1,0 +1,21 @@
+{
+  "borrow: owner, canonical": "317158",
+  "borrow: owner, permissioned": "328116",
+  "borrow: position manager, canonical": "321560",
+  "borrow: position manager, permissioned": "335958",
+  "liquidationCall: partial, canonical": "351331",
+  "liquidationCall: partial, permissioned": "356762",
+  "repay: owner, partial, canonical": "142665",
+  "repay: owner, partial, permissioned": "147195",
+  "repay: position manager, partial, canonical": "147067",
+  "repay: position manager, partial, permissioned": "157717",
+  "repay: reserve manager, permissioned": "160856",
+  "supply: owner, canonical": "162024",
+  "supply: owner, permissioned": "172645",
+  "supply: position manager, canonical": "166426",
+  "supply: position manager, permissioned": "180487",
+  "usingAsCollateral: owner, enable, canonical": "59604",
+  "usingAsCollateral: owner, enable, permissioned": "70219",
+  "withdraw: owner, partial, canonical": "207189",
+  "withdraw: owner, partial, permissioned": "218158"
+}
