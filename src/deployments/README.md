@@ -164,7 +164,7 @@ Domain admin role holds all selectors initially. Granular roles (401+) are carve
 | --- | ----------------------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | 500 | EMERGENCY_STEWARD_DOMAIN_ADMIN_ROLE | spokeConfiguratorAdmin | pauseAllReserves, unpauseAllReserves, freezeSpoke, unfreezeSpoke, freezeAsset, unfreezeAsset, disableAssetBorrowing, deactivatePositionManager |
 
-The EmergencySteward runs the bulk emergency levers by calling the SpokeConfigurator. It holds no state: the bulk lever records and saved collateral factors stay in the SpokeConfigurator. Domain admin role holds all selectors initially. Granular roles (501+) are carved out as needed.
+The EmergencySteward runs the bulk emergency levers through the SpokeConfigurator. Domain admin role holds all selectors initially. Granular roles (501+) are carved out as needed.
 
 ## Data Flow
 

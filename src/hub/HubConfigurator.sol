@@ -17,8 +17,7 @@ abstract contract HubConfigurator is AccessManagedUpgradeable, IHubConfigurator 
   using SafeCast for uint256;
 
   /// @dev Map of Hub addresses, asset identifiers and Spoke addresses to the bulk levers holding the halted flag,
-  /// as a `BulkLeversMap` bitmap; `unhaltAsset`, `unhaltSpoke` and `unhaltHub` only unhalt Spokes that no other
-  /// bulk lever holds.
+  /// as a `BulkLeversMap` bitmap.
   mapping(address hub => mapping(uint256 assetId => mapping(address spoke => uint8 bulkLevers)))
     internal _haltedByBulkLevers;
 
@@ -367,7 +366,7 @@ abstract contract HubConfigurator is AccessManagedUpgradeable, IHubConfigurator 
     IHub targetHub = IHub(hub);
     uint256 assetCount = targetHub.getAssetCount();
     for (uint256 assetId = 0; assetId < assetCount; ++assetId) {
-      // Spokes not listed for the asset are never recorded, so they are skipped here.
+      // Spokes not listed for the asset are never recorded.
       if (_releaseHalted(hub, assetId, spoke, BulkLeversMap.SPOKE_MASK)) {
         _unhalt(targetHub, _getUnderlying(targetHub, assetId), assetId, spoke);
       }
@@ -583,8 +582,7 @@ abstract contract HubConfigurator is AccessManagedUpgradeable, IHubConfigurator 
     );
   }
 
-  /// @dev Removes `mask` from the bulk levers holding the halted flag. Returns true if `mask` held the flag and
-  /// no other bulk lever still does, meaning the flag should be cleared.
+  /// @dev Removes `mask` from the bulk levers holding the halted flag. Returns true if the flag should be cleared.
   function _releaseHalted(
     address hub,
     uint256 assetId,

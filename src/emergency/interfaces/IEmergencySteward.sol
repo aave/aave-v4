@@ -3,95 +3,61 @@ pragma solidity ^0.8.0;
 
 /// @title IEmergencySteward
 /// @author Aave Labs
-/// @notice Interface for the EmergencySteward, which runs the bulk emergency levers through the SpokeConfigurator.
+/// @notice Interface for the EmergencySteward.
 interface IEmergencySteward {
   /// @notice Thrown when an address parameter is the zero address.
   error InvalidAddress();
 
   /// @notice Pauses all reserves of a Spoke.
-  /// @dev Applies `SpokeConfigurator.holdPaused` to each reserve, which records the reserves this lever pauses so
-  /// `unpauseAllReserves` unpauses only those. Reserves that were already paused are not recorded.
+  /// @dev Records the reserves it pauses so `unpauseAllReserves` unpauses only those.
   /// @param spoke The address of the Spoke.
   function pauseAllReserves(address spoke) external;
 
   /// @notice Unpauses the reserves that `pauseAllReserves` paused on a Spoke.
-  /// @dev Applies `SpokeConfigurator.releasePaused` to each reserve. Reserves paused before `pauseAllReserves`, or
-  /// set later through `pauseReserve` or `updatePaused`, keep their paused flag. Changes made directly on the
-  /// Spoke, bypassing the SpokeConfigurator, are not tracked.
   /// @param spoke The address of the Spoke.
   function unpauseAllReserves(address spoke) external;
 
   /// @notice Freezes all reserves of a Spoke and zeroes their collateral factors.
-  /// @dev Applies `SpokeConfigurator.holdFrozen` to each reserve, skipping reserves already frozen with a zero
-  /// collateral factor. Records the reserves it freezes so `unfreezeSpoke` unfreezes only those. Reserves that
-  /// were already frozen are recorded only if `freezeAsset` froze them, so they stay frozen until both
-  /// `unfreezeAsset` and `unfreezeSpoke` run.
+  /// @dev Records the reserves it freezes so `unfreezeSpoke` unfreezes only those.
   /// @param spoke The address of the Spoke.
   function freezeSpoke(address spoke) external;
 
   /// @notice Unfreezes the reserves that `freezeSpoke` froze on a Spoke.
-  /// @dev Applies `SpokeConfigurator.releaseFrozen` to each reserve. Reserves also frozen by `freezeAsset` stay
-  /// frozen until `unfreezeAsset` runs. Reserves frozen before `freezeSpoke`, or set later through
-  /// `freezeReserve` or `unfreezeReserve`, keep their frozen flag. Changes made directly on the Spoke, bypassing
-  /// the SpokeConfigurator, are not tracked.
-  /// @dev Only clears the frozen flag; collateral factors are restored separately via `restoreCollateralFactor`.
+  /// @dev Reserves also frozen by `freezeAsset` stay frozen. Does not restore collateral factors; see
+  /// `SpokeConfigurator.restoreCollateralFactor`.
   /// @param spoke The address of the Spoke.
   function unfreezeSpoke(address spoke) external;
 
   /// @notice Freezes the reserve of an asset and zeroes its collateral factor on every Spoke registered for that
   /// asset on a specified Hub.
-  /// @dev Applies `SpokeConfigurator.holdFrozen` to the asset's reserve on each Spoke, skipping reserves already
-  /// frozen with a zero collateral factor and Spokes without a reserve for the asset, such as the TreasurySpoke
-  /// and TokenizationSpoke. Records the reserves it freezes so `unfreezeAsset` unfreezes only those. Reserves
-  /// that were already frozen are recorded only if `freezeSpoke` froze them, so they stay frozen until both
-  /// `unfreezeSpoke` and `unfreezeAsset` run.
-  /// @dev Reverts if any Spoke with a reserve for the asset has not granted the SpokeConfigurator permission.
-  /// @dev Reverts with the Spoke's error if its reserve lookup fails for a reason other than `ReserveNotListed` or
-  /// a missing `getReserveId`.
+  /// @dev Records the reserves it freezes so `unfreezeAsset` unfreezes only those. Skips Spokes without a reserve
+  /// for the asset.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
   function freezeAsset(address hub, address underlying) external;
 
   /// @notice Unfreezes the reserves that `freezeAsset` froze for an asset on a specified Hub.
-  /// @dev Applies `SpokeConfigurator.releaseFrozen` to the asset's reserve on each Spoke. Reserves also frozen by
-  /// `freezeSpoke` stay frozen until `unfreezeSpoke` runs. Reserves frozen before `freezeAsset`, or set later
-  /// through `freezeReserve` or `unfreezeReserve`, keep their frozen flag. Changes made directly on a Spoke,
-  /// bypassing the SpokeConfigurator, are not tracked.
-  /// @dev Only clears the frozen flag; collateral factors are restored separately via `restoreCollateralFactor`.
-  /// @dev Reverts if a Spoke whose reserve it unfreezes has not granted the SpokeConfigurator permission.
-  /// @dev Reverts with the Spoke's error if its reserve lookup fails for a reason other than `ReserveNotListed` or
-  /// a missing `getReserveId`.
+  /// @dev Reserves also frozen by `freezeSpoke` stay frozen. Does not restore collateral factors; see
+  /// `SpokeConfigurator.restoreCollateralFactor`.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
   function unfreezeAsset(address hub, address underlying) external;
 
   /// @notice Disables borrowing of an asset on every Spoke registered for that asset on a specified Hub.
-  /// @dev One-way: applies `SpokeConfigurator.disableBorrowing` to the asset's reserve on each Spoke. Re-enabling
-  /// stays with `SpokeConfigurator.updateBorrowable`, one reserve at a time.
-  /// @dev Blocks new borrows only. Supply, withdraw, repay, using the asset as collateral and liquidations keep
-  /// working, and existing borrows are unaffected.
-  /// @dev Skips reserves that are already not borrowable, so it does not revert when run more than once, and
-  /// Spokes without a reserve for the asset, such as the TreasurySpoke and TokenizationSpoke.
-  /// @dev Reverts if a Spoke whose reserve it disables has not granted the SpokeConfigurator permission.
-  /// @dev Reverts with the Spoke's error if its reserve lookup fails for a reason other than `ReserveNotListed` or
-  /// a missing `getReserveId`.
+  /// @dev Skips Spokes without a reserve for the asset. Re-enabling is done through
+  /// `SpokeConfigurator.updateBorrowable`.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
   function disableAssetBorrowing(address hub, address underlying) external;
 
   /// @notice Deactivates a position manager on each of the specified Spokes.
-  /// @dev One-way: calls `SpokeConfigurator.updatePositionManager` with `active` set to false only. Re-activating
-  /// stays with `updatePositionManager`, one Spoke at a time.
-  /// @dev Skips Spokes where the position manager is already inactive, so a payload listing every Spoke does not
-  /// revert. User approvals are kept, so re-activating the position manager restores its access for the users
-  /// who approved it.
-  /// @dev Reverts if a Spoke where the position manager is active has not granted the SpokeConfigurator
-  /// permission.
+  /// @dev Skips Spokes where the position manager is already inactive. Re-activating is done through
+  /// `SpokeConfigurator.updatePositionManager`.
   /// @param spokes The addresses of the Spokes.
   /// @param positionManager The address of the position manager.
   function deactivatePositionManager(address[] calldata spokes, address positionManager) external;
 
-  /// @notice Returns the address of the SpokeConfigurator that the levers call.
+  /// @notice Returns the address of the SpokeConfigurator.
   /// @return The address of the SpokeConfigurator.
   function SPOKE_CONFIGURATOR() external view returns (address);
 }

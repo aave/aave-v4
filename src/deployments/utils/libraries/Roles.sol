@@ -181,8 +181,7 @@ library Roles {
     return selectors;
   }
 
-  /// @notice Returns the function selectors associated with the SpokeConfigurator EmergencySteward role, held by
-  /// the EmergencySteward contract so its bulk levers can call the SpokeConfigurator.
+  /// @notice Returns the function selectors associated with the SpokeConfigurator EmergencySteward role.
   function getSpokeConfiguratorEmergencyStewardRoleSelectors()
     internal
     pure

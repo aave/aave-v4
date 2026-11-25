@@ -622,8 +622,7 @@ contract EmergencyStewardTest is SpokeConfiguratorBaseTest {
     emergencySteward.freezeAsset(hubAddr, underlying);
   }
 
-  /// @dev DAI on hub1 is registered for several Spokes and for the TreasurySpoke, which has no reserves
-  /// and does not implement `getReserveId`, so it must be skipped.
+  /// @dev DAI on hub1 is also registered for the TreasurySpoke, which has no reserves and must be skipped.
   function test_freezeAsset() public {
     address dai = address(tokenList.dai);
     assertTrue(hub1.isSpokeListed(daiAssetId, address(treasurySpoke)), 'treasury spoke listed');
@@ -866,8 +865,7 @@ contract EmergencyStewardTest is SpokeConfiguratorBaseTest {
     emergencySteward.disableAssetBorrowing(hubAddr, underlying);
   }
 
-  /// @dev DAI on hub1 is registered for several Spokes and for the TreasurySpoke, which has no reserves
-  /// and does not implement `getReserveId`, so it must be skipped.
+  /// @dev DAI on hub1 is also registered for the TreasurySpoke, which has no reserves and must be skipped.
   function test_disableAssetBorrowing() public {
     address dai = address(tokenList.dai);
     assertTrue(hub1.isSpokeListed(daiAssetId, address(treasurySpoke)), 'treasury spoke listed');

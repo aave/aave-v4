@@ -10,12 +10,8 @@ import {IEmergencySteward} from 'src/emergency/interfaces/IEmergencySteward.sol'
 
 /// @title EmergencySteward
 /// @author Aave Labs
-/// @notice Runs the bulk emergency levers by calling the SpokeConfigurator one reserve or Spoke at a time.
-/// @dev Holds no state. The bulk lever records and saved collateral factors stay in the SpokeConfigurator, which
-/// every configuration path writes through, so they stay correct when the same settings change outside this
-/// contract.
-/// @dev Must be granted the SpokeConfigurator selectors it calls: `disableBorrowing`, `holdPaused`,
-/// `releasePaused`, `holdFrozen`, `releaseFrozen` and `updatePositionManager`.
+/// @notice Runs the bulk emergency levers through the SpokeConfigurator.
+/// @dev Must be granted permission by the SpokeConfigurator.
 contract EmergencySteward is AccessManaged, IEmergencySteward {
   /// @inheritdoc IEmergencySteward
   address public immutable SPOKE_CONFIGURATOR;
@@ -158,11 +154,8 @@ contract EmergencySteward is AccessManaged, IEmergencySteward {
     return (address(reserve.hub), reserve.underlying);
   }
 
-  /// @dev Returns false when the Spoke has no reserve for the Hub asset: either the lookup reverts with
-  /// `ReserveNotListed`, or it reverts without data because the Spoke does not implement `getReserveId`, as with
-  /// the TreasurySpoke and TokenizationSpoke. Any other revert is bubbled up, so an unexpected Spoke failure
-  /// stops the call instead of silently skipping the Spoke. Reverts from the subsequent configuration calls
-  /// also propagate.
+  /// @dev Returns false if the Spoke has no reserve for the asset, including Spokes without `getReserveId` such as
+  /// the TreasurySpoke and TokenizationSpoke. Bubbles up any other revert.
   function _isReserveListed(
     ISpoke spoke,
     address hub,

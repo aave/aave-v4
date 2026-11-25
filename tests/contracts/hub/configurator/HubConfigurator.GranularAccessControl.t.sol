@@ -39,7 +39,7 @@ contract HubConfiguratorGranularAccessControlTest is Base {
     manager.grantRole(ASSET_MANAGER_ROLE, ASSET_MANAGER, 0);
     manager.grantRole(SPOKE_MANAGER_ROLE, SPOKE_MANAGER, 0);
 
-    // Set up ASSET_MANAGER_ROLE permissions (14 functions)
+    // Set up ASSET_MANAGER_ROLE permissions
     bytes4[] memory assetSelectors = new bytes4[](14);
     assetSelectors[0] = IHubConfigurator.addAsset.selector;
     assetSelectors[1] = IHubConfigurator.addAssetWithDecimals.selector;
@@ -57,7 +57,7 @@ contract HubConfiguratorGranularAccessControlTest is Base {
     assetSelectors[13] = IHubConfigurator.unhaltHub.selector;
     manager.setTargetFunctionRole(address(hubConfigurator), assetSelectors, ASSET_MANAGER_ROLE);
 
-    // Set up SPOKE_MANAGER_ROLE permissions (11 functions)
+    // Set up SPOKE_MANAGER_ROLE permissions
     bytes4[] memory spokeSelectors = new bytes4[](12);
     spokeSelectors[0] = IHubConfigurator.addSpoke.selector;
     spokeSelectors[1] = IHubConfigurator.addSpokeToAssets.selector;

@@ -246,7 +246,7 @@ interface ISpokeConfigurator {
   /// @notice Thrown when the dynamic config at the saved key has a zero collateral factor.
   error InvalidSavedCollateralFactor();
 
-  /// @notice Thrown when a bulk lever record function is called with a zero bulk lever mask.
+  /// @notice Thrown when the bulk lever mask is zero.
   error InvalidBulkLeverMask();
 
   /// @notice Updates the price source of a reserve.
@@ -305,7 +305,7 @@ interface ISpokeConfigurator {
   ) external returns (uint256);
 
   /// @notice Updates the paused flag of a reserve.
-  /// @dev Clears the bulk lever records of the paused flag, so no bulk release changes the flag as set here.
+  /// @dev Clears the bulk lever records of the paused flag.
   /// @param spoke The address of the Spoke.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
@@ -473,7 +473,7 @@ interface ISpokeConfigurator {
   ) external;
 
   /// @notice Pauses a reserve of a spoke.
-  /// @dev Clears the bulk lever records of the paused flag, so no bulk release unpauses the reserve.
+  /// @dev Clears the bulk lever records of the paused flag.
   /// @param spoke The address of the Spoke.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
@@ -485,7 +485,7 @@ interface ISpokeConfigurator {
   /// @dev Existing positions keep their dynamic config key until refreshed; on refresh (borrow, withdraw,
   /// disabling collateral or `updateUserDynamicConfig`) the zero collateral factor applies and the health
   /// factor is re-validated.
-  /// @dev Clears the bulk lever records of the frozen flag, so no bulk release unfreezes the reserve.
+  /// @dev Clears the bulk lever records of the frozen flag.
   /// @dev Reverts if the reserve is already frozen and its latest collateral factor is zero.
   /// @param spoke The address of the Spoke.
   /// @param hub The address of the Hub.
@@ -502,61 +502,39 @@ interface ISpokeConfigurator {
   function unfreezeReserve(address spoke, address hub, address underlying) external;
 
   /// @notice Disables borrowing of a reserve.
-  /// @dev One-way: only sets the borrowable flag to false. Re-enabling stays with `updateBorrowable`.
-  /// @dev Blocks new borrows only. Supply, withdraw, repay, using the reserve as collateral and liquidations
-  /// keep working, and existing borrows are unaffected.
-  /// @dev Does nothing if the reserve is already not borrowable, so a payload covering every reserve does not
-  /// revert. Used by the EmergencySteward's `disableAssetBorrowing`.
+  /// @dev Does nothing if the reserve is already not borrowable. Re-enabling is done through `updateBorrowable`.
   /// @param spoke The address of the Spoke.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
   function disableBorrowing(address spoke, address hub, address underlying) external;
 
-  /// @notice Pauses a reserve on behalf of a bulk lever and records the lever as holding the paused flag.
-  /// @dev Used by the EmergencySteward's bulk levers, such as `pauseAllReserves`. Sets the paused flag if not set.
-  /// A reserve that was already paused is recorded only if another bulk lever already holds it, per
-  /// `BulkLeversMap.brake`, so no bulk release unpauses a reserve that was paused outside the bulk levers.
-  /// @dev Reverts if `mask` is zero.
+  /// @notice Pauses a reserve and records `mask` as holding the paused flag, per `BulkLeversMap.brake`.
   /// @param spoke The address of the Spoke.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
   /// @param mask The `BulkLeversMap` mask of the bulk lever.
   function holdPaused(address spoke, address hub, address underlying, uint8 mask) external;
 
-  /// @notice Releases a bulk lever's hold on the paused flag of a reserve, and unpauses the reserve once no other
-  /// bulk lever holds it.
-  /// @dev Used by the EmergencySteward's bulk releases, such as `unpauseAllReserves`. Does nothing if the lever
-  /// does not hold the flag, so reserves paused before the bulk lever, or set later through `pauseReserve` or
-  /// `updatePaused`, keep their paused flag. Changes made directly on the Spoke, bypassing this configurator, are
-  /// not tracked.
-  /// @dev Reverts if `mask` is zero.
+  /// @notice Releases the hold of `mask` on the paused flag of a reserve, and unpauses the reserve once no bulk
+  /// lever holds it.
   /// @param spoke The address of the Spoke.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
   /// @param mask The `BulkLeversMap` mask of the bulk lever.
   function releasePaused(address spoke, address hub, address underlying, uint8 mask) external;
 
-  /// @notice Freezes a reserve and zeroes its collateral factor on behalf of a bulk lever, and records the lever
-  /// as holding the frozen flag.
-  /// @dev Used by the EmergencySteward's bulk levers, such as `freezeAsset` and `freezeSpoke`. Applies
-  /// `freezeReserve` without reverting when the reserve is already frozen with a zero collateral factor. A
-  /// reserve that was already frozen is recorded only if another bulk lever already holds it, per
-  /// `BulkLeversMap.brake`, so no bulk release unfreezes a reserve that was frozen outside the bulk levers.
-  /// @dev Reverts if `mask` is zero.
+  /// @notice Freezes a reserve, zeroes its collateral factor and records `mask` as holding the frozen flag, per
+  /// `BulkLeversMap.brake`.
+  /// @dev Unlike `freezeReserve`, does not revert if the reserve is already frozen with a zero collateral factor.
   /// @param spoke The address of the Spoke.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
   /// @param mask The `BulkLeversMap` mask of the bulk lever.
   function holdFrozen(address spoke, address hub, address underlying, uint8 mask) external;
 
-  /// @notice Releases a bulk lever's hold on the frozen flag of a reserve, and unfreezes the reserve once no other
-  /// bulk lever holds it.
-  /// @dev Used by the EmergencySteward's bulk releases, such as `unfreezeAsset` and `unfreezeSpoke`. Does nothing
-  /// if the lever does not hold the flag, so reserves frozen before the bulk lever, or set later through
-  /// `freezeReserve` or `unfreezeReserve`, keep their frozen flag. Changes made directly on the Spoke, bypassing
-  /// this configurator, are not tracked.
-  /// @dev Only clears the frozen flag; the collateral factor is restored separately via `restoreCollateralFactor`.
-  /// @dev Reverts if `mask` is zero.
+  /// @notice Releases the hold of `mask` on the frozen flag of a reserve, and unfreezes the reserve once no bulk
+  /// lever holds it.
+  /// @dev Does not restore the collateral factor; see `restoreCollateralFactor`.
   /// @param spoke The address of the Spoke.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
@@ -607,30 +585,23 @@ interface ISpokeConfigurator {
     address underlying
   ) external view returns (uint32);
 
-  /// @notice Returns which bulk levers recorded a reserve as frozen.
-  /// @dev The reserve is unfrozen once every bulk lever that recorded it is released. A reserve frozen before the
-  /// bulk lever, or set later through `freezeReserve` or `unfreezeReserve`, is not recorded.
+  /// @notice Returns which bulk levers hold the frozen flag of a reserve.
   /// @param spoke The address of the Spoke.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
-  /// @return True if the asset-wide bulk lever (`BulkLeversMap.ASSET_MASK`), the EmergencySteward's `freezeAsset`,
-  /// holds the frozen flag; its `unfreezeAsset` releases it.
-  /// @return True if the Spoke-wide bulk lever (`BulkLeversMap.SPOKE_MASK`), the EmergencySteward's `freezeSpoke`,
-  /// holds the frozen flag; its `unfreezeSpoke` releases it.
+  /// @return True if the asset-wide bulk lever (`freezeAsset`) holds the frozen flag.
+  /// @return True if the Spoke-wide bulk lever (`freezeSpoke`) holds the frozen flag.
   function getFrozenByBulkLevers(
     address spoke,
     address hub,
     address underlying
   ) external view returns (bool, bool);
 
-  /// @notice Returns whether the EmergencySteward's `pauseAllReserves` recorded a reserve as paused, meaning its
-  /// `unpauseAllReserves` will unpause it.
-  /// @dev A reserve paused before `pauseAllReserves`, or set later through `pauseReserve` or `updatePaused`, is
-  /// not recorded.
+  /// @notice Returns whether `pauseAllReserves` holds the paused flag of a reserve.
   /// @param spoke The address of the Spoke.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
-  /// @return True if the Spoke-wide bulk lever (`BulkLeversMap.SPOKE_MASK`) holds the paused flag.
+  /// @return True if the Spoke-wide bulk lever (`pauseAllReserves`) holds the paused flag.
   function isPausedByPauseAllReserves(
     address spoke,
     address hub,

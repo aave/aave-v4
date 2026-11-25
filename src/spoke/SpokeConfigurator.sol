@@ -29,14 +29,12 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
     internal _savedDynamicConfigKey;
 
   /// @dev Map of Spoke addresses and reserve identifiers to the bulk levers holding the frozen flag, as a
-  /// `BulkLeversMap` bitmap; `releaseFrozen` only unfreezes reserves that no other bulk lever holds. The
-  /// EmergencySteward's bulk levers write it through `holdFrozen` and `releaseFrozen`.
+  /// `BulkLeversMap` bitmap.
   mapping(address spoke => mapping(uint256 reserveId => uint8 bulkLevers))
     internal _frozenByBulkLevers;
 
   /// @dev Map of Spoke addresses and reserve identifiers to the bulk levers holding the paused flag, as a
-  /// `BulkLeversMap` bitmap; `releasePaused` only unpauses reserves that no other bulk lever holds. The
-  /// EmergencySteward's bulk levers write it through `holdPaused` and `releasePaused`.
+  /// `BulkLeversMap` bitmap.
   mapping(address spoke => mapping(uint256 reserveId => uint8 bulkLevers))
     internal _pausedByBulkLevers;
 
@@ -570,8 +568,7 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
     return (frozenUpdated, _zeroCollateralFactor(key));
   }
 
-  /// @dev Freezes a reserve per `_freezeReserve`, and records `mask` as holding the frozen flag per
-  /// `BulkLeversMap.brake`.
+  /// @dev Freezes a reserve and records `mask` as holding the frozen flag per `BulkLeversMap.brake`.
   function _holdFrozen(ReserveKey memory key, uint8 mask) internal {
     (bool frozenUpdated, ) = _freezeReserve(key);
     address spoke = address(key.spoke);
@@ -582,8 +579,7 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
     );
   }
 
-  /// @dev Removes `mask` from the bulk levers holding the frozen flag. Returns true if `mask` held the flag and
-  /// no other bulk lever still does, meaning the flag should be cleared.
+  /// @dev Removes `mask` from the bulk levers holding the frozen flag. Returns true if the flag should be cleared.
   function _releaseFrozenRecord(
     address spoke,
     uint256 reserveId,
@@ -678,8 +674,7 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
     );
   }
 
-  /// @dev Removes `mask` from the bulk levers holding the paused flag. Returns true if `mask` held the flag and
-  /// no other bulk lever still does, meaning the flag should be cleared.
+  /// @dev Removes `mask` from the bulk levers holding the paused flag. Returns true if the flag should be cleared.
   function _releasePausedRecord(
     address spoke,
     uint256 reserveId,
