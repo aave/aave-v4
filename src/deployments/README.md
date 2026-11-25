@@ -107,7 +107,7 @@ Hub and spoke labels (provided via `FullDeployInputs.hubLabels` / `spokeLabels`)
 
 ### Roles (`Roles.sol`)
 
-Roles are namespaced by contract domain: Hub (100-199), HubConfigurator (200-299), Spoke (300-399), SpokeConfigurator (400-499).
+Roles are namespaced by contract domain: Hub (100-199), HubConfigurator (200-299), Spoke (300-399), SpokeConfigurator (400-499), EmergencySteward (500-599).
 
 For configurators, initially a single Domain Admin role (HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE = 200, SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE = 400) holds all target selectors. As more granular roles are introduced, they should be added at the next available ID (201, 202, ... / 401, 402, ...) and the corresponding selectors reassigned from the Domain Admin role to the new granular role:
 
@@ -137,7 +137,7 @@ See `Roles.sol` NatSpec for the full role strategy and evolution guidelines. All
 
 | ID  | Name                               | Granted To           | Functions                                        |
 | --- | ---------------------------------- | -------------------- | ------------------------------------------------ |
-| 200 | HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE | hubConfiguratorAdmin | All 22 HubConfigurator selectors (see Roles.sol) |
+| 200 | HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE | hubConfiguratorAdmin | All 24 HubConfigurator selectors (see Roles.sol) |
 
 Domain admin role holds all selectors initially. Granular roles (201+) are carved out as needed.
 
@@ -151,11 +151,20 @@ Domain admin role holds all selectors initially. Granular roles (201+) are carve
 
 #### `SpokeConfigurator` Roles (on SpokeConfigurator contract)
 
-| ID  | Name                                 | Granted To             | Functions                                          |
-| --- | ------------------------------------ | ---------------------- | -------------------------------------------------- |
-| 400 | SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE | spokeConfiguratorAdmin | All 27 SpokeConfigurator selectors (see Roles.sol) |
+| ID  | Name                                      | Granted To                                        | Functions                                                                   |
+| --- | ----------------------------------------- | ------------------------------------------------- | --------------------------------------------------------------------------- |
+| 400 | SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE      | spokeConfiguratorAdmin                            | The remaining 23 SpokeConfigurator selectors (see Roles.sol)                |
+| 401 | SPOKE_CONFIGURATOR_EMERGENCY_STEWARD_ROLE | spokeConfiguratorAdmin, EmergencySteward contract | holdPaused, releasePaused, holdFrozen, releaseFrozen, updatePositionManager |
 
-Domain admin role holds all selectors initially. Granular roles (401+) are carved out as needed.
+Domain admin role holds all selectors initially. Granular roles (401+) are carved out as needed. Role 401 holds the selectors the EmergencySteward calls, so the EmergencySteward does not need the domain admin role.
+
+#### `EmergencySteward` Roles (on EmergencySteward contract)
+
+| ID  | Name                                | Granted To             | Functions                                                                                                               |
+| --- | ----------------------------------- | ---------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| 500 | EMERGENCY_STEWARD_DOMAIN_ADMIN_ROLE | spokeConfiguratorAdmin | pauseAllReserves, unpauseAllReserves, freezeSpoke, unfreezeSpoke, freezeAsset, unfreezeAsset, deactivatePositionManager |
+
+The EmergencySteward runs the bulk emergency levers by calling the SpokeConfigurator. It holds no state: the bulk lever records and saved collateral factors stay in the SpokeConfigurator. Domain admin role holds all selectors initially. Granular roles (501+) are carved out as needed.
 
 ## Data Flow
 
@@ -192,11 +201,19 @@ AaveV4DeployBatchBase.s.sol                         (Foundry script entry point)
     |     |           Create2Utils.create2Deploy() --> SpokeConfiguratorInstance (impl)
     |     |           Create2Utils.proxify() --> TransparentUpgradeableProxy (initialize(spokeAuth))
     |     |
+    |     +-- _deployEmergencyStewardBatch()
+    |     |     AaveV4DeployBase.deployEmergencyStewardBatch()
+    |     |       new AaveV4EmergencyStewardBatch(authority, spokeConfigurator, salt)
+    |     |         AaveV4EmergencyStewardDeployProcedure._deployEmergencySteward()
+    |     |           Create2Utils.create2Deploy() --> EmergencySteward
+    |     |
     |     +-- _setupConfiguratorRoles()
     |     |     AaveV4HubConfiguratorRolesProcedure.setupHubConfiguratorAllRoles()
     |     |       AccessManager.setTargetFunctionRole()  (selector -> role mappings for HubConfigurator)
     |     |     AaveV4SpokeConfiguratorRolesProcedure.setupSpokeConfiguratorAllRoles()
-    |     |       AccessManager.setTargetFunctionRole()  (selector -> role mappings for SpokeConfigurator)
+    |     |       AccessManager.setTargetFunctionRole()  (selector -> role mappings for SpokeConfigurator, roles 400-401)
+    |     |     AaveV4EmergencyStewardRolesProcedure.setupEmergencyStewardAllRoles()
+    |     |       AccessManager.setTargetFunctionRole()  (selector -> role mappings for EmergencySteward)
     |     |
     |     +-- _deployTreasurySpokeBatch()
     |     |     AaveV4DeployBase.deployTreasurySpokeBatch()
@@ -249,7 +266,11 @@ AaveV4DeployBatchBase.s.sol                         (Foundry script entry point)
     |     |       AaveV4SpokeRolesProcedure.grantSpokeAllRoles()     spokeAdmin gets roles 301-302
     |     |       AaveV4SpokeRolesProcedure.grantSpokeRole()         SpokeConfigurator gets role 301
     |     |       AaveV4SpokeConfiguratorRolesProcedure.grantSpokeConfiguratorAllRoles()
-    |     |                                                          spokeConfiguratorAdmin gets role 400
+    |     |                                                          spokeConfiguratorAdmin gets roles 400-401
+    |     |       AaveV4SpokeConfiguratorRolesProcedure.grantSpokeConfiguratorEmergencyStewardRole()
+    |     |                                                          EmergencySteward gets role 401
+    |     |       AaveV4EmergencyStewardRolesProcedure.grantEmergencyStewardAllRoles()
+    |     |                                                          spokeConfiguratorAdmin gets role 500
     |     |     AaveV4AccessManagerRolesProcedure.replaceDefaultAdminRole()
     |     |       (if accessManagerAdmin != deployer)
     |     |       grant role 0 to accessManagerAdmin, revoke from deployer
