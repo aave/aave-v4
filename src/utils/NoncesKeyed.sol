@@ -41,7 +41,7 @@ contract NoncesKeyed is INoncesKeyed {
     }
   }
 
-  /// @dev Same as `_useNonce` but checking that `nonce` is the next valid for `owner` for specified packed `keyNonce`.
+  /// @dev Same as `_useNonce` but checking that the packed `keyNonce` is the next valid one for `owner`.
   function _useCheckedNonce(address owner, uint256 keyNonce) internal {
     (uint192 key, ) = _unpack(keyNonce);
     uint256 current = _useNonce(owner, key);

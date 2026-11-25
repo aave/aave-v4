@@ -15,7 +15,7 @@ interface IHubConfigurator {
 
   /// @notice Adds a new asset to a specified Hub.
   /// @dev Retrieves the decimals of the underlying asset from its ERC20 contract.
-  /// @dev The fee receiver is automatically added as a Spoke with maximum caps.
+  /// @dev The fee receiver is automatically added as a Spoke with maximum add cap and zero draw cap.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
   /// @param feeReceiver The address of the fee receiver Spoke.
@@ -33,7 +33,7 @@ interface IHubConfigurator {
   ) external returns (uint256);
 
   /// @notice Adds a new asset to a specified Hub with explicit decimals.
-  /// @dev The fee receiver is automatically added as a Spoke with maximum caps.
+  /// @dev The fee receiver is automatically added as a Spoke with maximum add cap and zero draw cap.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
   /// @param decimals The number of decimals of the asset.
@@ -58,7 +58,7 @@ interface IHubConfigurator {
   /// @param liquidityFee The new liquidity fee.
   function updateLiquidityFee(address hub, uint256 assetId, uint256 liquidityFee) external;
 
-  /// @notice Updates the fee receiver of an asset on a specified hub.
+  /// @notice Updates the fee receiver of an asset on a specified Hub.
   /// @dev The fee receiver cannot be zero.
   /// @param hub The address of the Hub.
   /// @param assetId The identifier of the asset.
@@ -154,7 +154,7 @@ interface IHubConfigurator {
   /// @param halted The new halted flag.
   function updateSpokeHalted(address hub, uint256 assetId, address spoke, bool halted) external;
 
-  /// @notice Updates the add cap of an asset's spoke on a specified hub.
+  /// @notice Updates the add cap of an asset's Spoke on a specified Hub.
   /// @param hub The address of the Hub.
   /// @param assetId The identifier of the asset.
   /// @param spoke The address of the Spoke.

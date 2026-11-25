@@ -106,7 +106,7 @@ abstract contract PositionManagerBase is IPositionManagerBase, Ownable2Step, Res
     return _isSpokeRegistered(spoke);
   }
 
-  /// @dev Verifies the specified spoke is registered.
+  /// @dev Returns whether the specified spoke is registered.
   function _isSpokeRegistered(address spoke) internal view returns (bool) {
     return _registeredSpokes[spoke];
   }

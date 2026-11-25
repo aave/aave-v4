@@ -800,8 +800,9 @@ library LiquidationLogic {
       params.collateralFactor
     );
 
-    // denominator cannot be zero as `liquidationPenalty` is always < PercentageMath.PERCENTAGE_FACTOR
-    // `liquidationBonus.percentMulUp(collateralFactor) < PercentageMath.PERCENTAGE_FACTOR` is enforced in `_validateDynamicReserveConfig`
+    // denominator cannot be zero as `liquidationPenalty` is always < WadRayMath.WAD
+    // `maxLiquidationBonus.percentMulUp(collateralFactor) < PercentageMath.PERCENTAGE_FACTOR` is enforced in `_validateDynamicReserveConfig`
+    // with `liquidationBonus <= maxLiquidationBonus`
     // and targetHealthFactor is always >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD
     return
       Math.mulDiv(

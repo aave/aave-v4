@@ -103,13 +103,14 @@ interface ITokenizationSpoke is IERC4626, IERC2612, IIntentConsumer {
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The parameters for the redeem.
   /// @param signature The EIP712-typed signed bytes for the redeem.
-  /// @return The amount of assets burnt.
+  /// @return The amount of assets withdrawn.
   function redeemWithSig(
     TokenizedRedeem calldata params,
     bytes calldata signature
   ) external returns (uint256);
 
   /// @notice Deposits assets into the vault with an underlying asset ERC2612-typed permit.
+  /// @dev Does not revert if the permit call fails.
   /// @param assets The amount of assets to deposit.
   /// @param receiver The receiver of the shares.
   /// @param deadline The deadline of the permit.
@@ -146,7 +147,7 @@ interface ITokenizationSpoke is IERC4626, IERC2612, IIntentConsumer {
     bytes32 s
   ) external;
 
-  /// @notice Revokes the current PERMIT_NAMESPACE_NONCE of caller & increments the nonce at this key.
+  /// @notice Revokes the current nonce of caller at the `PERMIT_NONCE_NAMESPACE` key & increments the nonce at this key.
   /// @return The consumed keyed-nonce.
   function usePermitNonce() external returns (uint256);
 

@@ -15,8 +15,8 @@ library MathUtils {
   /// @notice Calculates the interest accumulated using a linear interest rate formula.
   /// @dev Reverts if `lastUpdateTimestamp` is greater than `block.timestamp`.
   /// @param rate The interest rate, expressed in RAY.
-  /// @param lastUpdateTimestamp The timestamp to calculate interest rate from.
-  /// @return result The interest rate linearly accumulated during the time delta, expressed in RAY.
+  /// @param lastUpdateTimestamp The timestamp from which interest is accrued.
+  /// @return result The linear interest growth factor over the time delta (`RAY + rate * timeDelta / SECONDS_PER_YEAR`), expressed in RAY.
   function calculateLinearInterest(
     uint96 rate,
     uint40 lastUpdateTimestamp

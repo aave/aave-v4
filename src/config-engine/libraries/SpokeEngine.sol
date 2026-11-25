@@ -13,7 +13,7 @@ import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEng
 library SpokeEngine {
   using SafeCast for uint256;
 
-  /// @dev Thrown when a reserve listing or dynamic reserve config addition field carries a
+  /// @notice Thrown when a reserve listing or dynamic reserve config addition field carries a
   /// KEEP_CURRENT sentinel. Both write new values with nothing current to keep, so a sentinel there
   /// is always a drafting mistake.
   error KeepCurrentNotAllowed();

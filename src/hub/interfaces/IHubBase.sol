@@ -90,7 +90,7 @@ interface IHubBase {
   );
 
   /// @notice Adds assets on behalf of a user.
-  /// @dev Only callable by active spokes.
+  /// @dev Only callable by active and non-halted spokes.
   /// @dev Underlying assets must be transferred to the Hub before invocation.
   /// @dev Extra untracked underlying liquidity in the Hub can be skimmed into the Hub's liquidity accounting through this action.
   /// @param assetId The identifier of the asset.
@@ -99,7 +99,7 @@ interface IHubBase {
   function add(uint256 assetId, uint256 amount) external returns (uint256);
 
   /// @notice Removes assets on behalf of a user.
-  /// @dev Only callable by active spokes.
+  /// @dev Only callable by active and non-halted spokes.
   /// @param assetId The identifier of the asset.
   /// @param amount The amount of asset liquidity to remove.
   /// @param to The address to transfer the assets to.
@@ -107,7 +107,7 @@ interface IHubBase {
   function remove(uint256 assetId, uint256 amount, address to) external returns (uint256);
 
   /// @notice Draws assets on behalf of a user.
-  /// @dev Only callable by active spokes.
+  /// @dev Only callable by active and non-halted spokes.
   /// @param assetId The identifier of the asset.
   /// @param amount The amount of assets to draw.
   /// @param to The address to transfer the underlying assets to.
@@ -115,8 +115,8 @@ interface IHubBase {
   function draw(uint256 assetId, uint256 amount, address to) external returns (uint256);
 
   /// @notice Restores assets on behalf of a user.
-  /// @dev Only callable by active spokes.
-  /// @dev Interest is always paid off first from premium, then from drawn.
+  /// @dev Only callable by active and non-halted spokes.
+  /// @dev The caller Spoke is expected to repay premium before drawn; the Hub does not enforce this ordering.
   /// @dev Underlying assets must be transferred to the Hub before invocation.
   /// @dev Extra untracked underlying liquidity in the Hub can be skimmed into the Hub's liquidity accounting through this action.
   /// @param assetId The identifier of the asset.
@@ -144,7 +144,7 @@ interface IHubBase {
 
   /// @notice Refreshes premium accounting.
   /// @dev Only callable by active spokes.
-  /// @dev Asset and spoke premium should not decrease.
+  /// @dev Asset and spoke premium must remain unchanged.
   /// @param assetId The identifier of the asset.
   /// @param premiumDelta The change in premium.
   function refreshPremium(uint256 assetId, PremiumDelta calldata premiumDelta) external;
@@ -280,14 +280,14 @@ interface IHubBase {
   function getAssetDeficitRay(uint256 assetId) external view returns (uint256);
 
   /// @notice Returns the total amount of the specified assets added to the Hub by the specified spoke.
-  /// @dev If spoke is `asset.feeReceiver`, includes converted `unrealizedFeeShares` in return value.
+  /// @dev If spoke is `asset.feeReceiver`, excludes accrued fees that are not yet minted (see `getAssetAccruedFees`).
   /// @param assetId The identifier of the asset.
   /// @param spoke The address of the Spoke.
   /// @return The amount of added assets.
   function getSpokeAddedAssets(uint256 assetId, address spoke) external view returns (uint256);
 
   /// @notice Returns the total amount of shares of the specified asset added to the Hub by the specified spoke.
-  /// @dev If spoke is `asset.feeReceiver`, includes `unrealizedFeeShares` in return value.
+  /// @dev If spoke is `asset.feeReceiver`, excludes accrued fees that are not yet minted (see `getAssetAccruedFees`).
   /// @param assetId The identifier of the asset.
   /// @param spoke The address of the Spoke.
   /// @return The amount of added shares.

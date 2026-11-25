@@ -13,7 +13,7 @@ abstract contract AaveV4Payload {
   /// @notice The config engine used to execute payload actions via delegatecall.
   IAaveV4ConfigEngine public immutable CONFIG_ENGINE;
 
-  /// @dev Thrown when the config engine address is zero.
+  /// @notice Thrown when the config engine address is zero.
   error InvalidConfigEngine();
 
   /// @param configEngine_ The IAaveV4ConfigEngine implementation to delegatecall into.

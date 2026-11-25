@@ -18,7 +18,7 @@ contract AaveV4SpokeInstanceBatch is AaveV4SpokeDeployProcedure, AaveV4AaveOracl
   /// @param authority_ The access-control authority for the Spoke.
   /// @param spokeBytecode_ The creation bytecode of the Spoke implementation.
   /// @param oracleDecimals_ The decimal precision for the AaveOracle.
-  /// @param maxUserReservesLimit_ The maximum number of reserves a user can interact with.
+  /// @param maxUserReservesLimit_ The maximum number of collateral and borrow reserves a user can have (each counted separately).
   /// @param salt_ The CREATE2 salt for deterministic deployment.
   constructor(
     address proxyAdminOwner_,

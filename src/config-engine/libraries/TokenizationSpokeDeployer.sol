@@ -10,7 +10,7 @@ import {TokenizationSpokeInstance} from 'src/spoke/instances/TokenizationSpokeIn
 /// @notice Library for deterministic CREATE2 deployment and address pre-computation of TokenizationSpoke proxies
 /// using the Safe Singleton Factory.
 library TokenizationSpokeDeployer {
-  /// @dev Thrown when the proxy admin owner is the zero address.
+  /// @notice Thrown when the proxy admin owner is the zero address.
   error InvalidProxyAdminOwner();
 
   /// @notice Deploys a TokenizationSpokeInstance implementation and TransparentUpgradeableProxy via CREATE2

@@ -496,7 +496,7 @@ library AaveV4DeployOrchestration {
   }
 
   /// @dev Derives the root salt with deployer address in the first 160 bits
-  ///      and the remaining 96 bits from the user-provided salt.
+  ///      and the remaining 96 bits from the hash of the base `SALT` and the user-provided salt.
   ///      Layout: [deployer (160 bits) | truncated_hash (96 bits)].
   function _deriveSalt(address deployer, bytes32 salt) internal pure returns (bytes32) {
     return bytes32(bytes20(deployer)) | (keccak256(abi.encode(SALT, salt)) >> 160);

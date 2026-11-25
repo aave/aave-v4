@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 /// @author Aave Labs
 /// @notice Sentinel values for partial updates in config engine structs.
 library EngineFlags {
-  /// @dev Thrown when toBool receives a value other than 0 or 1.
+  /// @notice Thrown when toBool receives a value other than 0 or 1.
   error InvalidBoolValue(uint256 value);
 
   /// @dev Sentinel value to keep the current uint value.

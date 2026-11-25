@@ -84,23 +84,23 @@ library ConfigPermissionsMap {
       });
   }
 
-  /// @notice Returns whether the `canSetUsingAsCollateral` permission or global permissions are enabled.
+  /// @notice Returns whether the `canSetUsingAsCollateral` permission is enabled.
   /// @param self The current ConfigPermissions.
-  /// @return Whether the `canSetUsingAsCollateral` permission or global permissions are enabled.
+  /// @return Whether the `canSetUsingAsCollateral` permission is enabled.
   function canSetUsingAsCollateral(ConfigPermissions self) internal pure returns (bool) {
     return _getStatus(self, CAN_SET_USING_AS_COLLATERAL_MASK);
   }
 
-  /// @notice Returns whether the `canUpdateUserRiskPremium` permission or global permissions are enabled.
+  /// @notice Returns whether the `canUpdateUserRiskPremium` permission is enabled.
   /// @param self The current ConfigPermissions.
-  /// @return Whether the `canUpdateUserRiskPremium` permission or global permissions are enabled
+  /// @return Whether the `canUpdateUserRiskPremium` permission is enabled.
   function canUpdateUserRiskPremium(ConfigPermissions self) internal pure returns (bool) {
     return _getStatus(self, CAN_UPDATE_USER_RISK_PREMIUM_MASK);
   }
 
-  /// @notice Returns whether the `canUpdateUserDynamicConfig` permission or global permissions are enabled.
+  /// @notice Returns whether the `canUpdateUserDynamicConfig` permission is enabled.
   /// @param self The current ConfigPermissions.
-  /// @return Whether the `canUpdateUserDynamicConfig` permission or global permissions are enabled
+  /// @return Whether the `canUpdateUserDynamicConfig` permission is enabled.
   function canUpdateUserDynamicConfig(ConfigPermissions self) internal pure returns (bool) {
     return _getStatus(self, CAN_UPDATE_USER_DYNAMIC_CONFIG_MASK);
   }

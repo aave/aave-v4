@@ -29,7 +29,7 @@ contract NativeTokenGateway is INativeTokenGateway, PositionManagerBase, Reentra
     NATIVE_TOKEN_WRAPPER = nativeTokenWrapper_;
   }
 
-  /// @dev Checks only 'nativeWrapper' can transfer native tokens.
+  /// @dev Checks only `NATIVE_TOKEN_WRAPPER` can transfer native tokens.
   receive() external payable {
     require(msg.sender == NATIVE_TOKEN_WRAPPER, UnsupportedAction());
   }

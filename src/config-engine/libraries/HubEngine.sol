@@ -15,15 +15,15 @@ import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEng
 library HubEngine {
   using SafeCast for uint256;
 
-  /// @dev Thrown when replacing an IR strategy but one or more irData fields still carry a
+  /// @notice Thrown when replacing an IR strategy but one or more irData fields still carry a
   /// KEEP_CURRENT sentinel. All fields must be explicitly set when the strategy changes.
   error InvalidIrDataWithNewStrategy();
 
-  /// @dev Thrown when a tokenization config is partially set. Either all fields are unset (no
+  /// @notice Thrown when a tokenization config is partially set. Either all fields are unset (no
   /// TokenizationSpoke) or `name`, `symbol` and `proxyAdminOwner` must all be provided.
   error InvalidTokenizationSpokeConfig();
 
-  /// @dev Thrown when an asset listing field carries a KEEP_CURRENT sentinel. A listing has no
+  /// @notice Thrown when an asset listing field carries a KEEP_CURRENT sentinel. A listing has no
   /// current value to keep, so a sentinel there is always a drafting mistake.
   error KeepCurrentNotAllowed();
 

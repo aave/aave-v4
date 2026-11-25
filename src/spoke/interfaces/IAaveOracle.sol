@@ -7,37 +7,37 @@ import {IPriceOracle} from 'src/spoke/interfaces/IPriceOracle.sol';
 /// @author Aave Labs
 /// @notice Interface for the Aave Oracle.
 interface IAaveOracle is IPriceOracle {
-  /// @dev Emitted when the price feed source of a reserve is updated.
+  /// @notice Emitted when the price feed source of a reserve is updated.
   /// @param reserveId The identifier of the reserve.
   /// @param source The price feed source of the reserve.
   event UpdateReserveSource(uint256 indexed reserveId, address indexed source);
 
-  /// @dev Emitted when the Spoke is set.
+  /// @notice Emitted when the Spoke is set.
   /// @param spoke The address of the Spoke.
   event SetSpoke(address indexed spoke);
 
-  /// @dev Thrown when the caller is not the deployer.
+  /// @notice Thrown when the caller is not the deployer.
   error OnlyDeployer();
 
-  /// @dev Thrown when the Spoke is already set.
+  /// @notice Thrown when the Spoke is already set.
   error SpokeAlreadySet();
 
-  /// @dev Thrown when the price feed source uses a different number of decimals than the oracle.
+  /// @notice Thrown when the price feed source uses a different number of decimals than the oracle.
   /// @param reserveId The identifier of the reserve.
   error InvalidSourceDecimals(uint256 reserveId);
 
-  /// @dev Thrown when the price feed source is invalid (zero address).
+  /// @notice Thrown when the price feed source is invalid (zero address).
   /// @param reserveId The identifier of the reserve.
   error InvalidSource(uint256 reserveId);
 
-  /// @dev Thrown when the price feed source returns an invalid price (non-positive).
+  /// @notice Thrown when the price feed source returns an invalid price (non-positive).
   /// @param reserveId The identifier of the reserve.
   error InvalidPrice(uint256 reserveId);
 
-  /// @dev Thrown when the given address is invalid.
+  /// @notice Thrown when the given address is invalid.
   error InvalidAddress();
 
-  /// @dev Thrown when the Spoke's oracle does not match the current oracle.
+  /// @notice Thrown when the Spoke's oracle does not match the current oracle.
   error OracleMismatch();
 
   /// @notice Sets the address of the Spoke.

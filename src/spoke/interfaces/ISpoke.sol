@@ -79,7 +79,7 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @notice Liquidation configuration data.
   /// @dev targetHealthFactor The ideal health factor to restore a user position during liquidation, expressed in WAD.
   /// @dev healthFactorForMaxBonus The health factor under which liquidation bonus is maximum, expressed in WAD.
-  /// @dev liquidationBonusFactor The value multiplied by `maxLiquidationBonus` to compute the minimum liquidation bonus, expressed in BPS.
+  /// @dev liquidationBonusFactor The value multiplied by the bonus part of `maxLiquidationBonus` (`maxLiquidationBonus - PercentageMath.PERCENTAGE_FACTOR`) to compute the bonus part of the minimum liquidation bonus, expressed in BPS.
   struct LiquidationConfig {
     uint128 targetHealthFactor;
     uint64 healthFactorForMaxBonus;
@@ -246,7 +246,7 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
     IHubBase.PremiumDelta premiumDelta
   );
 
-  /// @dev Emitted when a borrower is liquidated.
+  /// @notice Emitted when a borrower is liquidated.
   /// @param collateralReserveId The identifier of the reserve used as collateral, to receive as a result of the liquidation.
   /// @param debtReserveId The identifier of the reserve to be repaid with the liquidation.
   /// @param user The address of the borrower getting liquidated.
@@ -296,12 +296,12 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
     bool usingAsCollateral
   );
 
-  /// @notice Emitted on updateUserRiskPremium action.
+  /// @notice Emitted when the risk premium of a user is updated.
   /// @param user The owner of the position being modified.
   /// @param riskPremium The new risk premium (BPS) value of user.
   event UpdateUserRiskPremium(address indexed user, uint256 riskPremium);
 
-  /// @notice Emitted when a user's dynamic config is refreshed for all reserves to their latest config key.
+  /// @notice Emitted when a user's dynamic config is refreshed for all collateral reserves to their latest config key.
   /// @param user The address of the user.
   event RefreshAllUserDynamicConfig(address indexed user);
 
@@ -310,13 +310,13 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @param reserveId The identifier of the reserve.
   event RefreshSingleUserDynamicConfig(address indexed user, uint256 reserveId);
 
-  /// @notice Emitted on setUserPositionManager or renouncePositionManagerRole action.
+  /// @notice Emitted on setUserPositionManager, setUserPositionManagersWithSig or renouncePositionManagerRole action.
   /// @param user The address of the user on whose behalf position manager can act.
   /// @param positionManager The address of the position manager.
   /// @param approve True if position manager approval was granted, false if it was revoked.
   event SetUserPositionManager(address indexed user, address indexed positionManager, bool approve);
 
-  /// @notice Emitted on refreshPremiumDebt action.
+  /// @notice Emitted when the premium debt of a user position is refreshed after a risk premium update.
   /// @param reserveId The identifier of the reserve.
   /// @param user The address of the user.
   /// @param premiumDelta The change in premium values.
@@ -338,7 +338,7 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @notice Thrown when adding a new reserve if the asset decimals are invalid.
   error InvalidAssetDecimals();
 
-  /// @notice Thrown when updating a reserve if it is not listed.
+  /// @notice Thrown when a reserve is not listed.
   error ReserveNotListed();
 
   /// @notice Thrown when a reserve is not borrowable during a `borrow` action.
@@ -354,7 +354,7 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @notice Thrown when an action causes a user's health factor to fall below the liquidation threshold.
   error HealthFactorBelowThreshold();
 
-  /// @notice Thrown when reserve is not enabled as collateral during liquidation.
+  /// @notice Thrown when reserve is not enabled as collateral or has a zero collateral factor during liquidation.
   error ReserveNotEnabledAsCollateral();
 
   /// @notice Thrown when a specified reserve is not supplied by the user during liquidation.
@@ -390,7 +390,7 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @notice Thrown when a collateral factor and max liquidation bonus are invalid.
   error InvalidCollateralFactorAndMaxLiquidationBonus();
 
-  /// @notice Thrown when trying to set zero collateralFactor on historic dynamic configuration keys.
+  /// @notice Thrown when trying to set zero collateralFactor on existing dynamic configuration keys.
   error InvalidCollateralFactor();
 
   /// @notice Thrown when a self-liquidation is attempted.
@@ -443,11 +443,12 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   function updateReserveConfig(uint256 reserveId, ReserveConfig calldata params) external;
 
   /// @notice Updates the price source of a reserve.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @param reserveId The identifier of the reserve.
   /// @param priceSource The address of the price source.
   function updateReservePriceSource(uint256 reserveId, address priceSource) external;
 
-  /// @notice Updates the dynamic reserve config for a given reserve.
+  /// @notice Adds a new dynamic reserve config for a given reserve.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @dev Appends dynamic config to the next available key; reverts if `MAX_ALLOWED_DYNAMIC_CONFIG_KEY` is reached.
   /// @param reserveId The identifier of the reserve.
@@ -601,6 +602,7 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @notice Allows consuming a permit signature for the given reserve's underlying asset.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @dev The Spoke must be configured as the spender.
+  /// @dev Does not revert if the permit call fails.
   /// @param reserveId The identifier of the reserve.
   /// @param onBehalfOf The address of the user on whose behalf the permit is being used.
   /// @param value The amount of the underlying asset to permit.
@@ -622,10 +624,11 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   function getLiquidationConfig() external view returns (LiquidationConfig memory);
 
   /// @notice Returns the number of listed reserves on the Spoke.
-  /// @dev Count includes reserves that are not currently active.
+  /// @dev Count includes paused and frozen reserves.
   function getReserveCount() external view returns (uint256);
 
   /// @notice Returns the total amount of supplied assets of a given reserve.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @param reserveId The identifier of the reserve.
   /// @return The amount of supplied assets.
   function getReserveSuppliedAssets(uint256 reserveId) external view returns (uint256);
@@ -751,6 +754,7 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
 
   /// @notice Returns the liquidation bonus for a given health factor, based on the user's current dynamic configuration.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
+  /// @dev It reverts if `healthFactor` is above `HEALTH_FACTOR_LIQUIDATION_THRESHOLD`.
   /// @param reserveId The identifier of the reserve.
   /// @param user The address of the user.
   /// @param healthFactor The health factor of the user, expressed in WAD.
@@ -767,6 +771,7 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   function isPositionManagerActive(address positionManager) external view returns (bool);
 
   /// @notice Returns whether positionManager is active and approved by user.
+  /// @dev Returns true if `positionManager` is `user`.
   /// @param user The address of the user.
   /// @param positionManager The address of the position manager.
   /// @return True if positionManager is active and approved by user.
@@ -776,7 +781,7 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   function getLiquidationLogic() external pure returns (address);
 
   /// @notice Returns the type hash for the SetUserPositionManagers intent.
-  /// @return The bytes-encoded EIP-712 struct hash representing the intent.
+  /// @return The EIP-712 type hash of the SetUserPositionManagers struct.
   function SET_USER_POSITION_MANAGERS_TYPEHASH() external view returns (bytes32);
 
   /// @notice Returns the address of the AaveOracle contract.

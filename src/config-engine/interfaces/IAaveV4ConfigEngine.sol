@@ -11,11 +11,11 @@ import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateS
 /// @author Aave Labs
 /// @notice Interface for the Aave V4 Config Engine, defining all structs and engine method signatures.
 /// The engine is stateless and invoked via delegatecall from payload contracts.
-/// Update structs skip a field when it holds the EngineFlags sentinel matching the field's width:
-/// KEEP_CURRENT (type(uint256).max - 652) for uint256 fields, KEEP_CURRENT_ADDRESS for addresses, and
-/// KEEP_CURRENT_UINT64 / KEEP_CURRENT_UINT32 / KEEP_CURRENT_UINT16 for role ids, delays and interest rate
-/// data. A value that is not the matching sentinel is forwarded: type(uint64).max in a role field is
-/// PUBLIC_ROLE, not a skip. Boolean fields use uint256 (0=false, 1=true, KEEP_CURRENT=skip).
+/// Update structs skip a field when it holds the `EngineFlags` sentinel matching the field's width:
+/// `KEEP_CURRENT` (`type(uint256).max - 652`) for `uint256` fields, `KEEP_CURRENT_ADDRESS` for addresses, and
+/// `KEEP_CURRENT_UINT64` / `KEEP_CURRENT_UINT32` / `KEEP_CURRENT_UINT16` for role ids, delays and interest rate
+/// data. A value that is not the matching sentinel is forwarded: `type(uint64).max` in a role field is
+/// `PUBLIC_ROLE`, not a skip. Skippable boolean fields use `uint256` (`0` = false, `1` = true, `KEEP_CURRENT` = skip).
 /// @dev Every AccessManager role the governance executor exercises through the engine must have a zero
 /// execution delay. The engine cannot schedule operations, so a delayed role routes the call through
 /// `consumeScheduledOp`, which reverts with `AccessManagerNotScheduled`.

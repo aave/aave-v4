@@ -13,7 +13,7 @@ contract AaveV4SpokeDeployProcedure {
   /// @param authority The access control authority address used to initialize the Spoke.
   /// @param oracle The oracle address used by the Spoke instance.
   /// @param spokeBytecode The creation bytecode of the Spoke implementation.
-  /// @param maxUserReservesLimit The maximum number of reserves a single user can interact with.
+  /// @param maxUserReservesLimit The maximum number of collateral and borrow reserves a user can have (each counted separately).
   /// @param salt The CREATE2 salt for deterministic deployment.
   /// @return spokeProxy The address of the deployed transparent proxy.
   /// @return spokeImplementation The address of the deployed Spoke implementation contract.
