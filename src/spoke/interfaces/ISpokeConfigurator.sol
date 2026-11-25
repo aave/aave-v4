@@ -501,6 +501,17 @@ interface ISpokeConfigurator {
   /// @param underlying The address of the underlying asset.
   function unfreezeReserve(address spoke, address hub, address underlying) external;
 
+  /// @notice Disables borrowing of a reserve.
+  /// @dev One-way: only sets the borrowable flag to false. Re-enabling stays with `updateBorrowable`.
+  /// @dev Blocks new borrows only. Supply, withdraw, repay, using the reserve as collateral and liquidations
+  /// keep working, and existing borrows are unaffected.
+  /// @dev Does nothing if the reserve is already not borrowable, so a payload covering every reserve does not
+  /// revert. Used by the EmergencySteward's `disableAssetBorrowing`.
+  /// @param spoke The address of the Spoke.
+  /// @param hub The address of the Hub.
+  /// @param underlying The address of the underlying asset.
+  function disableBorrowing(address spoke, address hub, address underlying) external;
+
   /// @notice Pauses a reserve on behalf of a bulk lever and records the lever as holding the paused flag.
   /// @dev Used by the EmergencySteward's bulk levers, such as `pauseAllReserves`. Sets the paused flag if not set.
   /// A reserve that was already paused is recorded only if another bulk lever already holds it, per

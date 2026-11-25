@@ -187,6 +187,10 @@ abstract contract SpokeConfiguratorBaseTest is Base {
   function _isDaiFrozen(ISpoke targetSpoke) internal view returns (bool) {
     return targetSpoke.getReserveConfig(targetSpoke.getReserveId(hubAddr, daiAssetId)).frozen;
   }
+
+  function _isDaiBorrowable(ISpoke targetSpoke) internal view returns (bool) {
+    return targetSpoke.getReserveConfig(targetSpoke.getReserveId(hubAddr, daiAssetId)).borrowable;
+  }
 }
 
 contract SpokeConfiguratorTest is SpokeConfiguratorBaseTest {
@@ -1314,6 +1318,118 @@ contract SpokeConfiguratorTest is SpokeConfiguratorBaseTest {
     assertEq(_savedKey(spoke, reserveId), savedKey);
   }
 
+  function test_disableBorrowing_revertsWith_AccessManagedUnauthorized() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
+    vm.prank(alice);
+    spokeConfigurator.disableBorrowing(spokeAddr, hubAddr, underlying);
+  }
+
+  function test_disableBorrowing() public {
+    ISpoke.ReserveConfig memory reserveConfig = spoke.getReserveConfig(reserveId);
+    assertTrue(reserveConfig.borrowable);
+    reserveConfig.borrowable = false;
+    uint32 oldConfigKey = _latestKey(spoke, reserveId);
+
+    vm.recordLogs();
+    vm.expectCall(
+      spokeAddr,
+      abi.encodeCall(ISpoke.updateReserveConfig, (reserveId, reserveConfig))
+    );
+    vm.expectEmit(address(spoke));
+    emit ISpoke.UpdateReserveConfig(reserveId, reserveConfig);
+    vm.expectEmit(address(spokeConfigurator));
+    emit ISpokeConfigurator.ReserveBorrowableUpdated(
+      spokeAddr,
+      hubAddr,
+      underlying,
+      reserveId,
+      true,
+      false
+    );
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.disableBorrowing(spokeAddr, hubAddr, underlying);
+
+    assertEq(_configuratorLogCount(), 1);
+    // only the borrowable flag changes; the collateral factor stays on the same dynamic config key
+    assertEq(spoke.getReserveConfig(reserveId), reserveConfig);
+    assertEq(_latestKey(spoke, reserveId), oldConfigKey);
+  }
+
+  function test_disableBorrowing_skipsReserveAlreadyNotBorrowable() public {
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.updateBorrowable(spokeAddr, hubAddr, underlying, false);
+    ISpoke.ReserveConfig memory reserveConfig = spoke.getReserveConfig(reserveId);
+
+    vm.expectCall(
+      spokeAddr,
+      abi.encodeCall(ISpoke.updateReserveConfig, (reserveId, reserveConfig)),
+      0
+    );
+    vm.recordLogs();
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.disableBorrowing(spokeAddr, hubAddr, underlying);
+
+    assertEq(_configuratorLogCount(), 0);
+    assertFalse(spoke.getReserveConfig(reserveId).borrowable);
+  }
+
+  /// @dev Only new borrows are blocked: existing debt can be repaid, the reserve can still be supplied and
+  /// withdrawn, and borrowing resumes once it is re-enabled through `updateBorrowable`.
+  function test_disableBorrowing_onlyBlocksNewBorrows() public {
+    uint256 daiId = _daiReserveId(spoke);
+    address dai = address(tokenList.dai);
+    _increaseCollateralSupply(spoke, reserveId, 10e18, bob);
+    _increaseCollateralSupply(spoke, daiId, 1_000e18, alice);
+    SpokeActions.borrow({
+      spoke: spoke,
+      reserveId: daiId,
+      caller: bob,
+      amount: 100e18,
+      onBehalfOf: bob
+    });
+
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.disableBorrowing(spokeAddr, hubAddr, dai);
+
+    vm.expectRevert(ISpoke.ReserveNotBorrowable.selector);
+    SpokeActions.borrow({
+      spoke: spoke,
+      reserveId: daiId,
+      caller: bob,
+      amount: 1e18,
+      onBehalfOf: bob
+    });
+
+    SpokeActions.approve({spoke: spoke, reserveId: daiId, owner: bob, amount: UINT256_MAX});
+    SpokeActions.repay({
+      spoke: spoke,
+      reserveId: daiId,
+      caller: bob,
+      amount: 50e18,
+      onBehalfOf: bob
+    });
+    _increaseCollateralSupply(spoke, daiId, 10e18, alice);
+    SpokeActions.withdraw({
+      spoke: spoke,
+      reserveId: daiId,
+      caller: alice,
+      amount: 10e18,
+      onBehalfOf: alice
+    });
+
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.updateBorrowable(spokeAddr, hubAddr, dai, true);
+    SpokeActions.borrow({
+      spoke: spoke,
+      reserveId: daiId,
+      caller: bob,
+      amount: 1e18,
+      onBehalfOf: bob
+    });
+  }
+
   function test_bulkLeverRecordFunctions_revertsWith_AccessManagedUnauthorized() public {
     bytes memory expectedRevert = abi.encodeWithSelector(
       IAccessManaged.AccessManagedUnauthorized.selector,
@@ -1541,7 +1657,7 @@ contract SpokeConfiguratorTest is SpokeConfiguratorBaseTest {
       liquidationFee: 5_00
     });
 
-    calls = new bytes[](22);
+    calls = new bytes[](23);
     calls[0] = abi.encodeCall(
       ISpokeConfigurator.updateReservePriceSource,
       (spokeAddr, hubAddr, targetUnderlying, newPriceSource)
@@ -1629,6 +1745,10 @@ contract SpokeConfiguratorTest is SpokeConfiguratorBaseTest {
     calls[21] = abi.encodeCall(
       ISpokeConfigurator.releaseFrozen,
       (spokeAddr, hubAddr, targetUnderlying, BulkLeversMap.SPOKE_MASK)
+    );
+    calls[22] = abi.encodeCall(
+      ISpokeConfigurator.disableBorrowing,
+      (spokeAddr, hubAddr, targetUnderlying)
     );
   }
 }

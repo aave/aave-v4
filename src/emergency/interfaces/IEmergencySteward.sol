@@ -65,6 +65,20 @@ interface IEmergencySteward {
   /// @param underlying The address of the underlying asset.
   function unfreezeAsset(address hub, address underlying) external;
 
+  /// @notice Disables borrowing of an asset on every Spoke registered for that asset on a specified Hub.
+  /// @dev One-way: applies `SpokeConfigurator.disableBorrowing` to the asset's reserve on each Spoke. Re-enabling
+  /// stays with `SpokeConfigurator.updateBorrowable`, one reserve at a time.
+  /// @dev Blocks new borrows only. Supply, withdraw, repay, using the asset as collateral and liquidations keep
+  /// working, and existing borrows are unaffected.
+  /// @dev Skips reserves that are already not borrowable, so it does not revert when run more than once, and
+  /// Spokes without a reserve for the asset, such as the TreasurySpoke and TokenizationSpoke.
+  /// @dev Reverts if a Spoke whose reserve it disables has not granted the SpokeConfigurator permission.
+  /// @dev Reverts with the Spoke's error if its reserve lookup fails for a reason other than `ReserveNotListed` or
+  /// a missing `getReserveId`.
+  /// @param hub The address of the Hub.
+  /// @param underlying The address of the underlying asset.
+  function disableAssetBorrowing(address hub, address underlying) external;
+
   /// @notice Deactivates a position manager on each of the specified Spokes.
   /// @dev One-way: calls `SpokeConfigurator.updatePositionManager` with `active` set to false only. Re-activating
   /// stays with `updatePositionManager`, one Spoke at a time.

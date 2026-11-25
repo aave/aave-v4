@@ -186,12 +186,13 @@ library Roles {
     pure
     returns (bytes4[] memory)
   {
-    bytes4[] memory selectors = new bytes4[](5);
-    selectors[0] = ISpokeConfigurator.holdPaused.selector;
-    selectors[1] = ISpokeConfigurator.releasePaused.selector;
-    selectors[2] = ISpokeConfigurator.holdFrozen.selector;
-    selectors[3] = ISpokeConfigurator.releaseFrozen.selector;
-    selectors[4] = ISpokeConfigurator.updatePositionManager.selector;
+    bytes4[] memory selectors = new bytes4[](6);
+    selectors[0] = ISpokeConfigurator.disableBorrowing.selector;
+    selectors[1] = ISpokeConfigurator.holdPaused.selector;
+    selectors[2] = ISpokeConfigurator.releasePaused.selector;
+    selectors[3] = ISpokeConfigurator.holdFrozen.selector;
+    selectors[4] = ISpokeConfigurator.releaseFrozen.selector;
+    selectors[5] = ISpokeConfigurator.updatePositionManager.selector;
     return selectors;
   }
 
@@ -199,14 +200,15 @@ library Roles {
 
   /// @notice Returns the function selectors associated with the EmergencySteward Domain Admin role.
   function getEmergencyStewardDomainAdminRoleSelectors() internal pure returns (bytes4[] memory) {
-    bytes4[] memory selectors = new bytes4[](7);
+    bytes4[] memory selectors = new bytes4[](8);
     selectors[0] = IEmergencySteward.pauseAllReserves.selector;
     selectors[1] = IEmergencySteward.unpauseAllReserves.selector;
     selectors[2] = IEmergencySteward.freezeSpoke.selector;
     selectors[3] = IEmergencySteward.unfreezeSpoke.selector;
     selectors[4] = IEmergencySteward.freezeAsset.selector;
     selectors[5] = IEmergencySteward.unfreezeAsset.selector;
-    selectors[6] = IEmergencySteward.deactivatePositionManager.selector;
+    selectors[6] = IEmergencySteward.disableAssetBorrowing.selector;
+    selectors[7] = IEmergencySteward.deactivatePositionManager.selector;
     return selectors;
   }
 }

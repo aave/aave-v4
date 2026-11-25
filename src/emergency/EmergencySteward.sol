@@ -14,8 +14,8 @@ import {IEmergencySteward} from 'src/emergency/interfaces/IEmergencySteward.sol'
 /// @dev Holds no state. The bulk lever records and saved collateral factors stay in the SpokeConfigurator, which
 /// every configuration path writes through, so they stay correct when the same settings change outside this
 /// contract.
-/// @dev Must be granted the SpokeConfigurator selectors it calls: `holdPaused`, `releasePaused`, `holdFrozen`,
-/// `releaseFrozen` and `updatePositionManager`.
+/// @dev Must be granted the SpokeConfigurator selectors it calls: `disableBorrowing`, `holdPaused`,
+/// `releasePaused`, `holdFrozen`, `releaseFrozen` and `updatePositionManager`.
 contract EmergencySteward is AccessManaged, IEmergencySteward {
   /// @inheritdoc IEmergencySteward
   address public immutable SPOKE_CONFIGURATOR;
@@ -116,6 +116,19 @@ contract EmergencySteward is AccessManaged, IEmergencySteward {
           underlying,
           BulkLeversMap.ASSET_MASK
         );
+      }
+    }
+  }
+
+  /// @inheritdoc IEmergencySteward
+  function disableAssetBorrowing(address hub, address underlying) external restricted {
+    IHub targetHub = IHub(hub);
+    uint256 assetId = targetHub.getAssetId(underlying);
+    uint256 spokeCount = targetHub.getSpokeCount(assetId);
+    for (uint256 i = 0; i < spokeCount; ++i) {
+      address spoke = targetHub.getSpokeAddress(assetId, i);
+      if (_isReserveListed(ISpoke(spoke), hub, assetId)) {
+        ISpokeConfigurator(SPOKE_CONFIGURATOR).disableBorrowing(spoke, hub, underlying);
       }
     }
   }

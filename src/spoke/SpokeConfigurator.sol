@@ -412,6 +412,17 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
   }
 
   /// @inheritdoc ISpokeConfigurator
+  function disableBorrowing(address spoke, address hub, address underlying) external restricted {
+    ReserveKey memory key = _resolveReserveKey(spoke, hub, underlying);
+    ISpoke.ReserveConfig memory reserveConfig = key.spoke.getReserveConfig(key.reserveId);
+    if (reserveConfig.borrowable) {
+      reserveConfig.borrowable = false;
+      key.spoke.updateReserveConfig(key.reserveId, reserveConfig);
+      emit ReserveBorrowableUpdated(spoke, hub, underlying, key.reserveId, true, false);
+    }
+  }
+
+  /// @inheritdoc ISpokeConfigurator
   function holdPaused(
     address spoke,
     address hub,

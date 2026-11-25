@@ -36,6 +36,8 @@ contract EmergencyStewardTest is SpokeConfiguratorBaseTest {
     emergencySteward.freezeAsset(hubAddr, underlying);
     vm.expectRevert(expectedRevert);
     emergencySteward.unfreezeAsset(hubAddr, underlying);
+    vm.expectRevert(expectedRevert);
+    emergencySteward.disableAssetBorrowing(hubAddr, underlying);
     vm.stopPrank();
   }
 
@@ -854,5 +856,161 @@ contract EmergencyStewardTest is SpokeConfiguratorBaseTest {
 
     assertFalse(spoke.getReserveConfig(_daiReserveId(spoke)).frozen);
     assertTrue(spoke.getReserveConfig(_wethReserveId(spoke)).frozen);
+  }
+
+  function test_disableAssetBorrowing_revertsWith_AccessManagedUnauthorized() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
+    vm.prank(alice);
+    emergencySteward.disableAssetBorrowing(hubAddr, underlying);
+  }
+
+  /// @dev DAI on hub1 is registered for several Spokes and for the TreasurySpoke, which has no reserves
+  /// and does not implement `getReserveId`, so it must be skipped.
+  function test_disableAssetBorrowing() public {
+    address dai = address(tokenList.dai);
+    assertTrue(hub1.isSpokeListed(daiAssetId, address(treasurySpoke)), 'treasury spoke listed');
+    ISpoke[] memory daiSpokes = _grantAssetSpokesRole(daiAssetId);
+    assertGt(daiSpokes.length, 1, 'dai reserve on several spokes');
+
+    ISpoke.ReserveConfig[] memory expectedConfigs = new ISpoke.ReserveConfig[](daiSpokes.length);
+    uint32[] memory oldKeys = new uint32[](daiSpokes.length);
+    vm.recordLogs();
+    for (uint256 i; i < daiSpokes.length; ++i) {
+      uint256 id = _daiReserveId(daiSpokes[i]);
+      expectedConfigs[i] = daiSpokes[i].getReserveConfig(id);
+      assertTrue(expectedConfigs[i].borrowable);
+      expectedConfigs[i].borrowable = false;
+      oldKeys[i] = _latestKey(daiSpokes[i], id);
+      vm.expectCall(
+        address(spokeConfigurator),
+        abi.encodeCall(ISpokeConfigurator.disableBorrowing, (address(daiSpokes[i]), hubAddr, dai))
+      );
+      vm.expectCall(
+        address(daiSpokes[i]),
+        abi.encodeCall(ISpoke.updateReserveConfig, (id, expectedConfigs[i]))
+      );
+      vm.expectEmit(address(spokeConfigurator));
+      emit ISpokeConfigurator.ReserveBorrowableUpdated(
+        address(daiSpokes[i]),
+        hubAddr,
+        dai,
+        id,
+        true,
+        false
+      );
+    }
+
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    emergencySteward.disableAssetBorrowing(hubAddr, dai);
+
+    assertEq(_configuratorLogCount(), daiSpokes.length);
+    for (uint256 i; i < daiSpokes.length; ++i) {
+      uint256 id = _daiReserveId(daiSpokes[i]);
+      // only the borrowable flag changes; frozen, paused and the collateral factor are untouched
+      assertEq(daiSpokes[i].getReserveConfig(id), expectedConfigs[i]);
+      assertEq(_latestKey(daiSpokes[i], id), oldKeys[i]);
+    }
+  }
+
+  function test_disableAssetBorrowing_skipsReservesAlreadyNotBorrowable() public {
+    address dai = address(tokenList.dai);
+    ISpoke[] memory daiSpokes = _grantAssetSpokesRole(daiAssetId);
+    uint256 daiId = _daiReserveId(spoke);
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.updateBorrowable(spokeAddr, hubAddr, dai, false);
+
+    ISpoke.ReserveConfig memory reserveConfig = spoke.getReserveConfig(daiId);
+    vm.expectCall(spokeAddr, abi.encodeCall(ISpoke.updateReserveConfig, (daiId, reserveConfig)), 0);
+    vm.recordLogs();
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    emergencySteward.disableAssetBorrowing(hubAddr, dai);
+
+    assertEq(_configuratorLogCount(), daiSpokes.length - 1);
+    for (uint256 i; i < daiSpokes.length; ++i) {
+      assertFalse(_isDaiBorrowable(daiSpokes[i]));
+    }
+
+    // a second call is a no-op on every reserve and does not revert
+    vm.recordLogs();
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    emergencySteward.disableAssetBorrowing(hubAddr, dai);
+    assertEq(_configuratorLogCount(), 0);
+  }
+
+  function test_disableAssetBorrowing_skipsSpokeWithReserveNotListed() public {
+    ISpoke[] memory daiSpokes = _grantAssetSpokesRole(daiAssetId);
+    ISpoke unlistedSpoke = daiSpokes[0];
+    vm.mockCallRevert(
+      address(unlistedSpoke),
+      abi.encodeCall(ISpoke.getReserveId, (hubAddr, daiAssetId)),
+      abi.encodeWithSelector(ISpoke.ReserveNotListed.selector)
+    );
+
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    emergencySteward.disableAssetBorrowing(hubAddr, address(tokenList.dai));
+    vm.clearMockedCalls();
+
+    for (uint256 i; i < daiSpokes.length; ++i) {
+      assertEq(_isDaiBorrowable(daiSpokes[i]), daiSpokes[i] == unlistedSpoke);
+    }
+  }
+
+  function test_disableAssetBorrowing_revertsWith_unexpectedReserveLookupError() public {
+    ISpoke[] memory daiSpokes = _grantAssetSpokesRole(daiAssetId);
+    bytes memory unexpectedError = abi.encodeWithSelector(bytes4(keccak256('UnexpectedError()')));
+    vm.mockCallRevert(
+      address(daiSpokes[1]),
+      abi.encodeCall(ISpoke.getReserveId, (hubAddr, daiAssetId)),
+      unexpectedError
+    );
+
+    vm.expectRevert(unexpectedError);
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    emergencySteward.disableAssetBorrowing(hubAddr, address(tokenList.dai));
+  }
+
+  function test_disableAssetBorrowing_revertsWith_AccessManagedUnauthorized_onSpoke() public {
+    address dai = address(tokenList.dai);
+    ISpoke[] memory daiSpokes = _grantAssetSpokesRole(daiAssetId);
+    for (uint256 i; i < daiSpokes.length; ++i) {
+      IAccessManager spokeAuthority = IAccessManager(daiSpokes[i].authority());
+      vm.prank(ADMIN);
+      spokeAuthority.revokeRole(Roles.SPOKE_CONFIGURATOR_ROLE, address(spokeConfigurator));
+    }
+
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        IAccessManaged.AccessManagedUnauthorized.selector,
+        address(spokeConfigurator)
+      )
+    );
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    emergencySteward.disableAssetBorrowing(hubAddr, dai);
+
+    // reserves that are already not borrowable are skipped without calling the Spoke
+    for (uint256 i; i < daiSpokes.length; ++i) {
+      _updateReserveBorrowableFlag(daiSpokes[i], _daiReserveId(daiSpokes[i]), false);
+    }
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    emergencySteward.disableAssetBorrowing(hubAddr, dai);
+  }
+
+  function test_disableAssetBorrowing_leavesOtherAssetsBorrowable() public {
+    _grantAssetSpokesRole(daiAssetId);
+    uint256 daiId = _daiReserveId(spoke);
+    uint256 reserveCount = spoke.getReserveCount();
+    bool[] memory borrowableBefore = new bool[](reserveCount);
+    for (uint256 id; id < reserveCount; ++id) {
+      borrowableBefore[id] = spoke.getReserveConfig(id).borrowable;
+    }
+
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    emergencySteward.disableAssetBorrowing(hubAddr, address(tokenList.dai));
+
+    for (uint256 id; id < reserveCount; ++id) {
+      assertEq(spoke.getReserveConfig(id).borrowable, id == daiId ? false : borrowableBefore[id]);
+    }
   }
 }
