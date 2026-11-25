@@ -33,6 +33,7 @@ import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ITreasurySpoke} from 'src/spoke/interfaces/ITreasurySpoke.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {INativeTokenGateway} from 'src/position-manager/interfaces/INativeTokenGateway.sol';
+import {IEmergencySteward} from 'src/emergency/interfaces/IEmergencySteward.sol';
 
 contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
   Logger internal _logger;
@@ -273,6 +274,11 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     assertNotEq(report.authorityBatchReport.accessManager, address(0), 'AccessManager');
     assertNotEq(report.configuratorBatchReport.spokeConfigurator, address(0), 'SpokeConfigurator');
     assertNotEq(report.configuratorBatchReport.hubConfigurator, address(0), 'HubConfigurator');
+    assertNotEq(
+      report.emergencyStewardBatchReport.emergencySteward,
+      address(0),
+      'EmergencySteward'
+    );
     assertNotEq(report.treasurySpokeBatchReport.treasurySpoke, address(0), 'TreasurySpoke');
     for (uint256 i = 0; i < report.hubInstanceBatchReports.length; i++) {
       assertNotEq(report.hubInstanceBatchReports[i].report.hubProxy, address(0), 'Hub');
@@ -800,6 +806,16 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
       report.authorityBatchReport.accessManager,
       'SpokeConfigurator authority'
     );
+    assertEq(
+      IAccessManaged(report.emergencyStewardBatchReport.emergencySteward).authority(),
+      report.authorityBatchReport.accessManager,
+      'EmergencySteward authority'
+    );
+    assertEq(
+      IEmergencySteward(report.emergencyStewardBatchReport.emergencySteward).SPOKE_CONFIGURATOR(),
+      report.configuratorBatchReport.spokeConfigurator,
+      'EmergencySteward SpokeConfigurator'
+    );
 
     IAccessManagerEnumerable accessManager = IAccessManagerEnumerable(
       report.authorityBatchReport.accessManager
@@ -807,6 +823,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
 
     _checkHubConfiguratorBatchRoles(accessManager, report, inputs);
     _checkSpokeConfiguratorBatchRoles(accessManager, report, inputs);
+    _checkEmergencyStewardBatchRoles(accessManager, report, inputs);
   }
 
   function _checkHubConfiguratorBatchRoles(
@@ -863,6 +880,65 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
         assertTrue(allowed, 'SpokeConfigurator admin canCall selector');
       }
     }
+
+    address emergencySteward = report.emergencyStewardBatchReport.emergencySteward;
+    selectors = Roles.getSpokeConfiguratorEmergencyStewardRoleSelectors();
+    for (uint256 i; i < selectors.length; i++) {
+      assertEq(
+        accessManager.getTargetFunctionRole(spokeConfigurator, selectors[i]),
+        Roles.SPOKE_CONFIGURATOR_EMERGENCY_STEWARD_ROLE,
+        'SpokeConfigurator EmergencySteward selector role mapping'
+      );
+      (bool allowed, ) = accessManager.canCall(emergencySteward, spokeConfigurator, selectors[i]);
+      assertEq(
+        allowed,
+        inputs.grantRoles && inputs.spokeLabels.length > 0,
+        'EmergencySteward canCall SpokeConfigurator selector'
+      );
+      if (inputs.grantRoles && inputs.spokeLabels.length > 0) {
+        (allowed, ) = accessManager.canCall(
+          inputs.spokeConfiguratorAdmin,
+          spokeConfigurator,
+          selectors[i]
+        );
+        assertTrue(allowed, 'SpokeConfigurator admin canCall EmergencySteward selector');
+      }
+    }
+
+    // the EmergencySteward only holds the selectors it calls, not the domain admin ones
+    selectors = Roles.getSpokeConfiguratorDomainAdminRoleSelectors();
+    for (uint256 i; i < selectors.length; i++) {
+      (bool allowed, ) = accessManager.canCall(emergencySteward, spokeConfigurator, selectors[i]);
+      assertFalse(allowed, 'EmergencySteward cannot call SpokeConfigurator domain admin selector');
+    }
+  }
+
+  function _checkEmergencyStewardBatchRoles(
+    IAccessManagerEnumerable accessManager,
+    OrchestrationReports.FullDeploymentReport memory report,
+    InputUtils.FullDeployInputs memory inputs
+  ) internal view {
+    address emergencySteward = report.emergencyStewardBatchReport.emergencySteward;
+    bytes4[] memory selectors = Roles.getEmergencyStewardDomainAdminRoleSelectors();
+
+    for (uint256 i; i < selectors.length; i++) {
+      assertEq(
+        accessManager.getTargetFunctionRole(emergencySteward, selectors[i]),
+        Roles.EMERGENCY_STEWARD_DOMAIN_ADMIN_ROLE,
+        'EmergencySteward domain admin selector role mapping'
+      );
+    }
+
+    if (inputs.grantRoles && inputs.spokeLabels.length > 0) {
+      for (uint256 i; i < selectors.length; i++) {
+        (bool allowed, ) = accessManager.canCall(
+          inputs.spokeConfiguratorAdmin,
+          emergencySteward,
+          selectors[i]
+        );
+        assertTrue(allowed, 'EmergencySteward admin canCall selector');
+      }
+    }
   }
 
   function _checkGatewayRoles(
@@ -912,6 +988,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     _assertHasCode(report.authorityBatchReport.accessManager, 'accessManager');
     _assertHasCode(report.configuratorBatchReport.hubConfigurator, 'hubConfigurator');
     _assertHasCode(report.configuratorBatchReport.spokeConfigurator, 'spokeConfigurator');
+    _assertHasCode(report.emergencyStewardBatchReport.emergencySteward, 'emergencySteward');
     _assertHasCode(report.treasurySpokeBatchReport.treasurySpoke, 'treasurySpoke');
 
     for (uint256 i; i < report.hubInstanceBatchReports.length; i++) {

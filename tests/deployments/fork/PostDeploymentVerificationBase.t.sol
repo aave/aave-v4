@@ -42,6 +42,10 @@ abstract contract PostDeploymentVerificationBase is BatchTestProcedures {
       json,
       '$.spokeConfiguratorImplementation'
     );
+    report.emergencyStewardBatchReport.emergencySteward = vm.parseJsonAddress(
+      json,
+      '$.emergencySteward'
+    );
     report.treasurySpokeBatchReport.treasurySpoke = vm.parseJsonAddress(json, '$.treasurySpoke');
     report.salt = vm.parseJsonBytes32(json, '$.salt');
 

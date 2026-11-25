@@ -23,6 +23,7 @@ library OrchestrationReports {
 
   /// @dev authorityBatchReport AccessManager deployment report.
   /// @dev configuratorBatchReport Configurator deployment report.
+  /// @dev emergencyStewardBatchReport EmergencySteward deployment report.
   /// @dev treasurySpokeBatchReport TreasurySpoke deployment report.
   /// @dev spokeInstanceBatchReports Per-spoke deployment reports.
   /// @dev hubInstanceBatchReports Per-hub deployment reports.
@@ -32,6 +33,7 @@ library OrchestrationReports {
   struct FullDeploymentReport {
     BatchReports.AuthorityBatchReport authorityBatchReport;
     BatchReports.ConfiguratorBatchReport configuratorBatchReport;
+    BatchReports.EmergencyStewardBatchReport emergencyStewardBatchReport;
     BatchReports.TreasurySpokeBatchReport treasurySpokeBatchReport;
     SpokeDeploymentReport[] spokeInstanceBatchReports;
     HubDeploymentReport[] hubInstanceBatchReports;

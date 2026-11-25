@@ -27,6 +27,7 @@ contract MetadataLogger is Logger {
       'spokeConfiguratorImplementation',
       report.configuratorBatchReport.spokeConfiguratorImplementation
     );
+    _write('emergencySteward', report.emergencyStewardBatchReport.emergencySteward);
     _write('treasurySpoke', report.treasurySpokeBatchReport.treasurySpoke);
 
     // Group hubs by property type
