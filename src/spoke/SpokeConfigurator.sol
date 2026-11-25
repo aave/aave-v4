@@ -3,6 +3,7 @@ pragma solidity 0.8.28;
 
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {AccessManagedUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
+import {BulkLeversMap} from 'src/libraries/BulkLeversMap.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
@@ -28,9 +29,11 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
   mapping(address spoke => mapping(uint256 reserveId => uint32 dynamicConfigKey))
     internal _savedDynamicConfigKey;
 
-  /// @dev Map of Spoke addresses and reserve identifiers to whether `freezeAsset` froze the reserve;
-  /// `unfreezeAsset` only unfreezes recorded reserves.
-  mapping(address spoke => mapping(uint256 reserveId => bool frozen)) internal _frozenByFreezeAsset;
+  /// @dev Map of Spoke addresses and reserve identifiers to the bulk levers holding the frozen flag, as a
+  /// `BulkLeversMap` bitmap; `unfreezeAsset` and `unfreezeSpoke` only unfreeze reserves that no other bulk lever
+  /// holds.
+  mapping(address spoke => mapping(uint256 reserveId => uint8 bulkLevers))
+    internal _frozenByBulkLevers;
 
   /// @dev To be overridden by the inheriting SpokeConfigurator instance contract.
   function initialize(address authority) external virtual;
@@ -396,7 +399,7 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
   /// @inheritdoc ISpokeConfigurator
   function freezeReserve(address spoke, address hub, address underlying) external restricted {
     ReserveKey memory key = _resolveReserveKey(spoke, hub, underlying);
-    delete _frozenByFreezeAsset[spoke][key.reserveId];
+    delete _frozenByBulkLevers[spoke][key.reserveId];
     (bool frozenUpdated, bool collateralFactorZeroed) = _freezeReserve(key);
     require(frozenUpdated || collateralFactorZeroed, ReserveAlreadyFrozen());
   }
@@ -404,7 +407,7 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
   /// @inheritdoc ISpokeConfigurator
   function unfreezeReserve(address spoke, address hub, address underlying) external restricted {
     ReserveKey memory key = _resolveReserveKey(spoke, hub, underlying);
-    delete _frozenByFreezeAsset[spoke][key.reserveId];
+    delete _frozenByBulkLevers[spoke][key.reserveId];
     require(_unfreezeReserve(key), ReserveNotFrozen());
   }
 
@@ -413,8 +416,7 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
     ISpoke targetSpoke = ISpoke(spoke);
     uint256 reserveCount = targetSpoke.getReserveCount();
     for (uint256 reserveId = 0; reserveId < reserveCount; ++reserveId) {
-      delete _frozenByFreezeAsset[spoke][reserveId];
-      _freezeReserve(_getReserveKey(targetSpoke, reserveId));
+      _bulkFreeze(_getReserveKey(targetSpoke, reserveId), BulkLeversMap.SPOKE_MASK);
     }
   }
 
@@ -423,8 +425,9 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
     ISpoke targetSpoke = ISpoke(spoke);
     uint256 reserveCount = targetSpoke.getReserveCount();
     for (uint256 reserveId = 0; reserveId < reserveCount; ++reserveId) {
-      delete _frozenByFreezeAsset[spoke][reserveId];
-      _unfreezeReserve(_getReserveKey(targetSpoke, reserveId));
+      if (_releaseFrozen(spoke, reserveId, BulkLeversMap.SPOKE_MASK)) {
+        _unfreezeReserve(_getReserveKey(targetSpoke, reserveId));
+      }
     }
   }
 
@@ -437,12 +440,10 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
       ISpoke targetSpoke = ISpoke(targetHub.getSpokeAddress(assetId, i));
       (bool listed, uint256 reserveId) = _tryGetReserveId(targetSpoke, hub, assetId);
       if (listed) {
-        (bool frozenUpdated, ) = _freezeReserve(
-          ReserveKey({spoke: targetSpoke, hub: hub, underlying: underlying, reserveId: reserveId})
+        _bulkFreeze(
+          ReserveKey({spoke: targetSpoke, hub: hub, underlying: underlying, reserveId: reserveId}),
+          BulkLeversMap.ASSET_MASK
         );
-        if (frozenUpdated) {
-          _frozenByFreezeAsset[address(targetSpoke)][reserveId] = true;
-        }
       }
     }
   }
@@ -455,8 +456,7 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
     for (uint256 i = 0; i < spokeCount; ++i) {
       ISpoke targetSpoke = ISpoke(targetHub.getSpokeAddress(assetId, i));
       (bool listed, uint256 reserveId) = _tryGetReserveId(targetSpoke, hub, assetId);
-      if (listed && _frozenByFreezeAsset[address(targetSpoke)][reserveId]) {
-        delete _frozenByFreezeAsset[address(targetSpoke)][reserveId];
+      if (listed && _releaseFrozen(address(targetSpoke), reserveId, BulkLeversMap.ASSET_MASK)) {
         _unfreezeReserve(
           ReserveKey({spoke: targetSpoke, hub: hub, underlying: underlying, reserveId: reserveId})
         );
@@ -519,12 +519,17 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
   }
 
   /// @inheritdoc ISpokeConfigurator
-  function isFrozenByFreezeAsset(
+  function getFrozenByBulkLevers(
     address spoke,
     address hub,
     address underlying
-  ) external view returns (bool) {
-    return _frozenByFreezeAsset[spoke][_resolveReserveKey(spoke, hub, underlying).reserveId];
+  ) external view returns (bool, bool) {
+    uint256 reserveId = _resolveReserveKey(spoke, hub, underlying).reserveId;
+    uint8 bulkLevers = _frozenByBulkLevers[spoke][reserveId];
+    return (
+      BulkLeversMap.isHeld(bulkLevers, BulkLeversMap.ASSET_MASK),
+      BulkLeversMap.isHeld(bulkLevers, BulkLeversMap.SPOKE_MASK)
+    );
   }
 
   /// @dev Sets the frozen flag and zeroes the collateral factor. Returns whether the frozen flag changed
@@ -545,6 +550,29 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
       );
     }
     return (frozenUpdated, _zeroCollateralFactor(key));
+  }
+
+  /// @dev Freezes a reserve per `_freezeReserve`, and records `mask` as holding the frozen flag per
+  /// `BulkLeversMap.brake`.
+  function _bulkFreeze(ReserveKey memory key, uint8 mask) internal {
+    (bool frozenUpdated, ) = _freezeReserve(key);
+    address spoke = address(key.spoke);
+    _frozenByBulkLevers[spoke][key.reserveId] = BulkLeversMap.brake(
+      _frozenByBulkLevers[spoke][key.reserveId],
+      mask,
+      frozenUpdated
+    );
+  }
+
+  /// @dev Removes `mask` from the bulk levers holding the frozen flag. Returns true if `mask` held the flag and
+  /// no other bulk lever still does, meaning the flag should be cleared.
+  function _releaseFrozen(address spoke, uint256 reserveId, uint8 mask) internal returns (bool) {
+    (uint8 bulkLevers, bool released) = BulkLeversMap.release(
+      _frozenByBulkLevers[spoke][reserveId],
+      mask
+    );
+    _frozenByBulkLevers[spoke][reserveId] = bulkLevers;
+    return released;
   }
 
   /// @dev Clears the frozen flag. Returns false if the reserve is not frozen.

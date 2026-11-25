@@ -215,14 +215,15 @@ contract SpokeConfiguratorFreezeTest is SpokeConfiguratorBaseTest {
     uint256 wbtcId = _wbtcReserveId(spoke);
     uint256 daiId = _daiReserveId(spoke);
 
-    // weth: frozen with a zero collateral factor
+    // weth: frozen before `freezeSpoke`, so it is not recorded and stays frozen
     _freezeReserve(wethId);
-    // dai: frozen with a non-zero collateral factor
-    _freezeReserve(daiId);
-    _addCollateralFactor(daiId, 60_00);
-    // wbtc: not frozen with a zero collateral factor
+    // wbtc: not frozen with a zero collateral factor before `freezeSpoke`
     _zeroCollateralFactor(wbtcId);
-    // usdx, usdy: active collateral reserves
+    // usdx, usdy: active collateral reserves before `freezeSpoke`
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.freezeSpoke(spokeAddr);
+    // dai: frozen by `freezeSpoke`, then given a non-zero collateral factor
+    _addCollateralFactor(daiId, 60_00);
 
     uint256 reserveCount = spoke.getReserveCount();
     ISpoke.DynamicReserveConfig[] memory before = new ISpoke.DynamicReserveConfig[](reserveCount);
@@ -236,16 +237,16 @@ contract SpokeConfiguratorFreezeTest is SpokeConfiguratorBaseTest {
 
     vm.recordLogs();
     for (uint256 id; id < reserveCount; ++id) {
-      if (id == wethId || id == daiId) {
+      if (id != wethId) {
         _expectReserveFrozenUpdated(spoke, id, true, false);
       }
     }
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.unfreezeSpoke(spokeAddr);
 
-    assertEq(_configuratorLogCount(), 2);
+    assertEq(_configuratorLogCount(), reserveCount - 1);
     for (uint256 id; id < reserveCount; ++id) {
-      assertFalse(spoke.getReserveConfig(id).frozen);
+      assertEq(spoke.getReserveConfig(id).frozen, id == wethId);
       assertEq(_latestKey(spoke, id), beforeKeys[id]);
       assertEq(_getLatestDynamicReserveConfig(spoke, id), before[id]);
       assertEq(_savedKey(spoke, id), beforeSaved[id]);

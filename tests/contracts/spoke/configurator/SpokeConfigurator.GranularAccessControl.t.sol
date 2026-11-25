@@ -423,7 +423,12 @@ contract SpokeConfiguratorGranularAccessControlTest is Base {
     spokeConfigurator.freezeAsset(hubAddr, underlying);
 
     assertTrue(spoke.getReserveConfig(reserveId).frozen);
-    assertTrue(spokeConfigurator.isFrozenByFreezeAsset(spokeAddr, hubAddr, underlying));
+    (bool frozenByFreezeAsset, ) = spokeConfigurator.getFrozenByBulkLevers(
+      spokeAddr,
+      hubAddr,
+      underlying
+    );
+    assertTrue(frozenByFreezeAsset);
   }
 
   function test_reserveManager_canCall_unfreezeAsset() public {
