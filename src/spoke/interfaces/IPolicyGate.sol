@@ -20,13 +20,15 @@ interface IPolicyGate {
     uint8 auth
   ) external view returns (bool);
 
-  /// @notice Returns the actions an account can perform as reserve manager of a reserve on the calling Spoke.
-  /// @dev Action bits from `AuthKind`. The Spoke never lets a reserve manager borrow, whatever the bits.
+  /// @notice Returns whether an account can perform a call on the calling Spoke as reserve manager,
+  /// on the position of any user.
+  /// @dev Called by the Spoke when the caller is neither the owner nor an approved position manager.
+  /// The Spoke never lets a reserve manager borrow, whatever this returns.
   /// @param account The account.
-  /// @param reserveId The identifier of the reserve.
-  /// @return The granted action bits, zero if `account` is not a reserve manager of `reserveId`.
-  function getReserveManagerActions(
+  /// @param data The full calldata of the Spoke call.
+  /// @return True if `account` is allowed to perform the call as reserve manager.
+  function isReserveManagerAllowed(
     address account,
-    uint256 reserveId
-  ) external view returns (uint8);
+    bytes calldata data
+  ) external view returns (bool);
 }

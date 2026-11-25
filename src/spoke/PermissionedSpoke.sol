@@ -11,9 +11,8 @@ import {AuthKind} from 'src/spoke/libraries/AuthKind.sol';
 /// @author Aave Labs
 /// @notice Spoke where a policy gate decides who is eligible to use it.
 /// @dev Position actions keep the canonical authorization (owner or approved position manager). The
-/// policy gate is asked after it and can only restrict. Reserve managers can additionally perform the
-/// actions the policy gate grants them on the reserve in the call (supply, withdraw, repay, set
-/// collateral), never borrow.
+/// policy gate is asked after it and can only restrict. Reserve managers can additionally act on any
+/// position when the policy gate allows it, never to borrow.
 /// Every liquidation is checked by the policy gate.
 abstract contract PermissionedSpoke is IPermissionedSpoke, Spoke {
   /// @inheritdoc IPermissionedSpoke
@@ -39,21 +38,16 @@ abstract contract PermissionedSpoke is IPermissionedSpoke, Spoke {
   }
 
   /// @dev Reverts with `Unauthorized` if the caller is neither the owner, an approved position manager
-  /// nor a reserve manager of the reserve in the call, or if the policy gate rejects the call.
+  /// nor a reserve manager allowed by the policy gate, or if the policy gate rejects the call.
   function _validatePositionAction(address onBehalfOf) internal view {
     uint8 auth;
     if (_isPositionManager({user: onBehalfOf, manager: msg.sender})) {
       auth = msg.sender == onBehalfOf ? AuthKind.OWNER : AuthKind.POSITION_MANAGER;
     } else {
-      uint8 action = _reserveManagerAction(msg.data);
+      // a reserve manager can never borrow, the rest is up to the policy gate
       require(
-        action != 0 &&
-          IPolicyGate(POLICY_GATE).getReserveManagerActions(
-            msg.sender,
-            uint256(bytes32(msg.data[4:36]))
-          ) &
-            action !=
-            0,
+        bytes4(msg.data[0:4]) != ISpoke.borrow.selector &&
+          IPolicyGate(POLICY_GATE).isReserveManagerAllowed(msg.sender, msg.data),
         Unauthorized()
       );
       auth = AuthKind.RESERVE_MANAGER;
@@ -70,16 +64,5 @@ abstract contract PermissionedSpoke is IPermissionedSpoke, Spoke {
       IPolicyGate(POLICY_GATE).isEligible(msg.sender, msg.sender, msg.data, AuthKind.OWNER),
       Unauthorized()
     );
-  }
-
-  /// @dev Returns the reserve manager action bit of `data`, zero for calls a reserve manager can
-  /// never perform, such as borrow. All actions take the reserve identifier as first argument.
-  function _reserveManagerAction(bytes calldata data) internal pure returns (uint8) {
-    bytes4 selector = bytes4(data[0:4]);
-    if (selector == ISpoke.supply.selector) return AuthKind.ACTION_SUPPLY;
-    if (selector == ISpoke.withdraw.selector) return AuthKind.ACTION_WITHDRAW;
-    if (selector == ISpoke.repay.selector) return AuthKind.ACTION_REPAY;
-    if (selector == ISpoke.setUsingAsCollateral.selector) return AuthKind.ACTION_SET_COLLATERAL;
-    return 0;
   }
 }

@@ -10,7 +10,7 @@ import {AuthKind} from 'src/spoke/libraries/AuthKind.sol';
 /// @title EligibilityPolicyGate
 /// @author Aave Labs
 /// @notice Configurable stateless policy gate. Each permissioned Spoke uses its own, configured with:
-///   - `REGISTRY` (optional): statuses and reserve managers, e.g. Horizon KYC
+///   - `REGISTRY` (optional): statuses and reserve manager actions, e.g. Horizon KYC
 ///   - `ONLY_CALLER` (optional): the only caller allowed on position actions, e.g. CustodySync
 ///   - `ONLY_LIQUIDATOR` (optional): the only liquidator allowed
 ///   - `ALLOW_OWNER_REPAY`: whether the owner's own repay is always allowed
@@ -91,17 +91,33 @@ contract EligibilityPolicyGate is IEligibilityPolicyGate {
   }
 
   /// @inheritdoc IPolicyGate
-  function getReserveManagerActions(
+  /// @dev Allows the actions the registry grants `account` on the reserve in the call.
+  function isReserveManagerAllowed(
     address account,
-    uint256 reserveId
-  ) external view returns (uint8) {
-    if (address(REGISTRY) == address(0)) return 0;
+    bytes calldata data
+  ) external view returns (bool) {
+    if (address(REGISTRY) == address(0)) return false;
+    uint8 action = _reserveManagerAction(bytes4(data[0:4]));
+    if (action == 0) return false;
+    // all reserve manager actions take the reserve identifier as first argument
+    uint256 reserveId = uint256(bytes32(data[4:36]));
     return
       REGISTRY.getReserveManagerActions({
         spoke: msg.sender,
         reserveId: reserveId,
         manager: account
-      });
+      }) &
+        action !=
+      0;
+  }
+
+  /// @dev Returns the reserve manager action bit of `selector`, zero for any other call.
+  function _reserveManagerAction(bytes4 selector) internal pure returns (uint8) {
+    if (selector == ISpoke.supply.selector) return AuthKind.ACTION_SUPPLY;
+    if (selector == ISpoke.withdraw.selector) return AuthKind.ACTION_WITHDRAW;
+    if (selector == ISpoke.repay.selector) return AuthKind.ACTION_REPAY;
+    if (selector == ISpoke.setUsingAsCollateral.selector) return AuthKind.ACTION_SET_COLLATERAL;
+    return 0;
   }
 
   function _isActive(address account) internal view returns (bool) {

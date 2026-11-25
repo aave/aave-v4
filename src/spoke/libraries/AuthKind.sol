@@ -13,7 +13,7 @@ library AuthKind {
   /// @dev The caller is a reserve manager of the reserve in the call.
   uint8 internal constant RESERVE_MANAGER = 3;
 
-  /// @dev Reserve manager action bits. Borrow has no bit, so it can never be granted.
+  /// @dev Reserve manager action bits, stored in the registry. Borrow has no bit.
   uint8 internal constant ACTION_SUPPLY = 1;
   uint8 internal constant ACTION_WITHDRAW = 2;
   uint8 internal constant ACTION_REPAY = 4;
