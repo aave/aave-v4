@@ -1,0 +1,95 @@
+tests/helpers/mocks/deployments/procedures/AaveV4HubConfiguratorDeployProcedureWrapper.sol
+  s_749ec6df6c6031::t_3f9caa00835c1e 12
+  s_749ec6df6c6031::t_2be7c97a6b145f 15-16
+tests/contracts/spoke/configurator/SpokeConfigurator.Freeze.t.sol
+  s_749ec6df6c6031::t_2be7c97a6b145f 816-818
+tests/deployments/AaveV4BatchDeployment.t.sol
+  s_749ec6df6c6031::t_3f9caa00835c1e 296-297,301-309,342-343,347-355
+tests/deployments/fork/PostDeploymentVerificationBase.t.sol
+  s_749ec6df6c6031::t_3f9caa00835c1e 132-134,165-167,196-198
+tests/deployments/procedures/deploy/hub/AaveV4HubConfiguratorDeployProcedure.t.sol
+  s_bf3583794f186d::t_85168f32fea320 33-35,37-52
+  s_749ec6df6c6031::t_3f9caa00835c1e 16,32,62
+  s_bf3583794f186d::t_8b8ae678309ed5 36
+tests/helpers/mocks/deployments/procedures/AaveV4SpokeConfiguratorDeployProcedureWrapper.sol
+  s_749ec6df6c6031::t_3f9caa00835c1e 12
+  s_749ec6df6c6031::t_2be7c97a6b145f 15-21
+tests/utils/BatchTestProcedures.sol
+  s_749ec6df6c6031::t_3f9caa00835c1e 71-72,76-84
+src/deployments/utils/interfaces/IHubConfiguratorInstance.sol
+  s_749ec6df6c6031::t_0b5a4b22dda439 1-16
+tests/setup/Base.t.sol
+  s_749ec6df6c6031::t_3f9caa00835c1e 62-63,859,861,876
+  s_749ec6df6c6031::t_2be7c97a6b145f 872-874
+src/deployments/README.md
+  s_749ec6df6c6031::t_2be7c97a6b145f 93,196
+tests/contracts/hub/configurator/HubConfigurator.t.sol
+  s_749ec6df6c6031::t_3f9caa00835c1e 2101,2117,2121,2133,2138
+  s_749ec6df6c6031::t_2be7c97a6b145f 2125-2127,2139-2145
+src/deployments/utils/libraries/BytecodeHelper.sol
+  s_749ec6df6c6031::t_2be7c97a6b145f 33-34
+  s_749ec6df6c6031::t_0b5a4b22dda439 23-32,35
+tests/deployments/procedures/ProceduresBase.t.sol
+  s_749ec6df6c6031::t_3f9caa00835c1e 65-66
+  s_749ec6df6c6031::t_2be7c97a6b145f 73-78
+src/deployments/orchestration/AaveV4DeployBase.sol
+  s_749ec6df6c6031::t_0b5a4b22dda439 36-37,44-45,52-53
+src/deployments/batches/AaveV4ConfiguratorBatch.sol
+  s_749ec6df6c6031::t_0b5a4b22dda439 21-22,28-29,38,47
+src/deployments/procedures/deploy/hub/AaveV4HubConfiguratorDeployProcedure.sol
+  s_749ec6df6c6031::t_0b5a4b22dda439 6,15,22,29,35
+  s_bf3583794f186d::t_8148f7335209bf 37-41
+src/deployments/orchestration/AaveV4DeployOrchestration.sol
+  s_749ec6df6c6031::t_0b5a4b22dda439 30-31,38-40,66-67,311-312,321-322
+src/deployments/procedures/deploy/spoke/AaveV4SpokeConfiguratorDeployProcedure.sol
+  s_749ec6df6c6031::t_0b5a4b22dda439 6,15,22,29,35
+  s_bf3583794f186d::t_6f2126f372e953 37-41
+foundry.toml
+  s_749ec6df6c6031::t_fb482894e54a9e 25,31-32
+src/deployments/utils/interfaces/ISpokeConfiguratorInstance.sol
+  s_749ec6df6c6031::t_0b5a4b22dda439 1-16
+tests/deployments/batches/AaveV4ConfiguratorBatch.t.sol
+  s_bf3583794f186d::t_6b79db794a1969 77-105
+  s_749ec6df6c6031::t_3f9caa00835c1e 19-20,47-48,59-60,71-72,111-112
+  s_bf3583794f186d::t_6bd17f26d712e7 7-9
+tests/deployments/batches/BatchBase.t.sol
+  s_749ec6df6c6031::t_2be7c97a6b145f 52-57
+  s_749ec6df6c6031::t_3f9caa00835c1e 43-44
+scripts/deploy/AaveV4DeployBatchBase.s.sol
+  s_749ec6df6c6031::t_0b5a4b22dda439 55-57
+tests/deployments/orchestration/AaveV4TestOrchestration.sol
+  s_749ec6df6c6031::t_3f9caa00835c1e 25,120-121
+tests/deployments/procedures/deploy/spoke/AaveV4SpokeConfiguratorDeployProcedure.t.sol
+  s_bf3583794f186d::t_4425c4e2ace789 34-36,38-53
+  s_749ec6df6c6031::t_3f9caa00835c1e 17,33,63
+  s_bf3583794f186d::t_04baa91b9da2d1 37
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "8008458440d2e7908212536c372e1b83e4ee97a1",
+  "prompts": {},
+  "humans": {
+    "h_943f5bfc0f6106": {
+      "author": "AyushKaul <ayush@aave.com>"
+    }
+  },
+  "sessions": {
+    "s_749ec6df6c6031": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3c17bdd3-896c-4d85-87e4-73237a2c6e23",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "AyushKaul <ayush@aave.com>"
+    },
+    "s_bf3583794f186d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "cb268504-b8b2-4b05-b074-12fc77f8b8c5",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "AyushKaul <ayush@aave.com>"
+    }
+  }
+}
