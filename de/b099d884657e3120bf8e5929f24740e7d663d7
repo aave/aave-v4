@@ -1,0 +1,54 @@
+src/hub/HubConfigurator.sol
+  s_76dae7b87c60b9::t_e8052b5ec2d4cc 237,253-259
+  s_76dae7b87c60b9::t_4b3e51bc440efa 755
+  s_76dae7b87c60b9::t_4d841e116427dd 399,415-422
+  s_76dae7b87c60b9::t_d28d97674979e5 189
+  s_76dae7b87c60b9::t_dc09354e4b5aee 504,523-529
+  s_76dae7b87c60b9::t_0cff1cca7c4e3d 688
+  s_76dae7b87c60b9::t_693cfcf8858586 445
+  s_76dae7b87c60b9::t_0beffce7cc90d8 735
+  s_76dae7b87c60b9::t_a1ac8209912df2 205
+  s_76dae7b87c60b9::t_968f4e107e545e 462
+  s_76dae7b87c60b9::t_32f0df8ace737c 709,711-712,716,718,721-724
+tests/contracts/spoke/configurator/SpokeConfigurator.GranularAccessControl.t.sol
+  s_76dae7b87c60b9::t_a93e01988f1c7b 473
+src/spoke/SpokeConfigurator.sol
+  s_76dae7b87c60b9::t_ee6f0ac7f28a52 533
+  s_76dae7b87c60b9::t_aef3d4c5a9982e 442
+  s_76dae7b87c60b9::t_0e79cf91b69bc7 464
+  s_76dae7b87c60b9::t_7fa2d5b982a09c 572-574,576,579-582
+  s_76dae7b87c60b9::t_13a990787f402b 664-666,668,671-674
+tests/contracts/hub/configurator/HubConfigurator.t.sol
+  s_76dae7b87c60b9::t_4af72c5023d602 1334
+tests/contracts/spoke/configurator/SpokeConfigurator.t.sol
+  s_76dae7b87c60b9::t_eeeaed81ac3f9c 1473,1487,1496
+  s_76dae7b87c60b9::t_80a7203d37a1c5 129
+  s_76dae7b87c60b9::t_4a7986ed70920b 126-127
+  s_76dae7b87c60b9::t_54ee25265fcd39 169,173
+tests/contracts/emergency/EmergencySteward.t.sol
+  s_76dae7b87c60b9::t_21baecc5e0ed13 284,302,344,378,389,416,420,423
+  s_76dae7b87c60b9::t_755f59e182f62a 414
+src/spoke/interfaces/ISpokeConfigurator.sol
+  s_76dae7b87c60b9::t_555b7a1be9f297 584,589
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "deb099d884657e3120bf8e5929f24740e7d663d7",
+  "prompts": {},
+  "humans": {
+    "h_943f5bfc0f6106": {
+      "author": "AyushKaul <ayush@aave.com>"
+    }
+  },
+  "sessions": {
+    "s_76dae7b87c60b9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ff917bac-fa5e-4c9a-b680-857b884f946d",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "AyushKaul <ayush@aave.com>"
+    }
+  }
+}
