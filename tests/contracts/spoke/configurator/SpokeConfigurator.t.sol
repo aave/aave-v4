@@ -132,38 +132,6 @@ abstract contract SpokeConfiguratorBaseTest is Base {
     );
   }
 
-  /// @dev Asserts that `pausedId` is the only paused reserve of the Spoke; pass an unused id to assert none is.
-  function _assertOnlyReservePaused(uint256 pausedId) internal view {
-    for (uint256 id; id < spoke.getReserveCount(); ++id) {
-      assertEq(spoke.getReserveConfig(id).paused, id == pausedId);
-    }
-  }
-
-  /// @dev Asserts that `frozenId` is the only frozen reserve of the Spoke; pass an unused id to assert none is.
-  function _assertOnlyReserveFrozen(uint256 frozenId) internal view {
-    for (uint256 id; id < spoke.getReserveCount(); ++id) {
-      assertEq(spoke.getReserveConfig(id).frozen, id == frozenId);
-    }
-  }
-
-  /// @dev Grants this configurator permission on every Spoke with a reserve for the asset on hub1 and
-  /// returns them, skipping the TreasurySpoke.
-  function _grantAssetSpokesRole(uint256 assetId) internal returns (ISpoke[] memory spokes) {
-    uint256 spokeCount = hub1.getSpokeCount(assetId);
-    spokes = new ISpoke[](spokeCount);
-    uint256 count;
-    for (uint256 i; i < spokeCount; ++i) {
-      address spokeAddress = hub1.getSpokeAddress(assetId, i);
-      if (spokeAddress == address(treasurySpoke)) continue;
-      spokes[count] = ISpoke(spokeAddress);
-      _grantSpokeConfiguratorRole(spokes[count], address(spokeConfigurator));
-      ++count;
-    }
-    assembly ('memory-safe') {
-      mstore(spokes, count)
-    }
-  }
-
   function _assertFrozenByBulkLevers(
     ISpoke targetSpoke,
     uint256 targetReserveId,
@@ -178,14 +146,6 @@ abstract contract SpokeConfiguratorBaseTest is Base {
     );
     assertEq(frozenByFreezeAsset, byFreezeAsset, 'frozen by freezeAsset');
     assertEq(frozenByFreezeSpoke, byFreezeSpoke, 'frozen by freezeSpoke');
-  }
-
-  function _isDaiFrozen(ISpoke targetSpoke) internal view returns (bool) {
-    return targetSpoke.getReserveConfig(targetSpoke.getReserveId(hubAddr, daiAssetId)).frozen;
-  }
-
-  function _isDaiBorrowable(ISpoke targetSpoke) internal view returns (bool) {
-    return targetSpoke.getReserveConfig(targetSpoke.getReserveId(hubAddr, daiAssetId)).borrowable;
   }
 }
 

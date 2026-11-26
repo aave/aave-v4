@@ -478,6 +478,107 @@ contract EmergencyStewardTest is SpokeConfiguratorBaseTest {
     }
   }
 
+  function test_freezeSpoke_mixedReserveStates() public {
+    uint256 wethId = _wethReserveId(spoke);
+    uint256 wbtcId = _wbtcReserveId(spoke);
+    uint256 daiId = _daiReserveId(spoke);
+    uint256 usdxId = _usdxReserveId(spoke);
+    uint256 usdyId = _usdyReserveId(spoke);
+
+    vm.startPrank(SPOKE_CONFIGURATOR_ADMIN);
+    // wbtc: frozen with a non-zero collateral factor
+    spokeConfigurator.freezeReserve(spokeAddr, hubAddr, address(tokenList.wbtc));
+    uint32 wbtcLiftedKey = spokeConfigurator.addCollateralFactor(
+      spokeAddr,
+      hubAddr,
+      address(tokenList.wbtc),
+      60_00
+    );
+    // dai: not frozen with a zero collateral factor
+    spokeConfigurator.zeroCollateralFactor(spokeAddr, hubAddr, address(tokenList.dai));
+    // usdx: frozen with a zero collateral factor
+    spokeConfigurator.freezeReserve(spokeAddr, hubAddr, address(tokenList.usdx));
+    // weth, usdy: active collateral reserves
+    vm.stopPrank();
+
+    uint256 reserveCount = spoke.getReserveCount();
+    ISpoke.DynamicReserveConfig[] memory before = new ISpoke.DynamicReserveConfig[](reserveCount);
+    uint32[] memory beforeKeys = new uint32[](reserveCount);
+    uint32[] memory beforeSaved = new uint32[](reserveCount);
+    for (uint256 id; id < reserveCount; ++id) {
+      before[id] = _getLatestDynamicReserveConfig(spoke, id);
+      beforeKeys[id] = _latestKey(spoke, id);
+      beforeSaved[id] = _savedKey(spoke, id);
+    }
+
+    vm.recordLogs();
+    uint256 expectedLogs;
+    for (uint256 id; id < reserveCount; ++id) {
+      ISpoke.DynamicReserveConfig memory zeroed = _getLatestDynamicReserveConfig(spoke, id);
+      zeroed.collateralFactor = 0;
+      if (id == wethId || id == usdyId) {
+        _expectReserveFrozenUpdated(spoke, id, false, true);
+        _expectDynamicConfigUpdated(
+          spoke,
+          id,
+          beforeKeys[id],
+          beforeKeys[id] + 1,
+          before[id],
+          zeroed
+        );
+        _expectSavedDynamicConfigKeyUpdated(spoke, id, beforeSaved[id], beforeKeys[id]);
+        expectedLogs += 5;
+      } else if (id == wbtcId) {
+        _expectDynamicConfigUpdated(
+          spoke,
+          id,
+          wbtcLiftedKey,
+          wbtcLiftedKey + 1,
+          before[id],
+          zeroed
+        );
+        _expectSavedDynamicConfigKeyUpdated(spoke, id, beforeSaved[id], wbtcLiftedKey);
+        expectedLogs += 4;
+      } else if (id == daiId) {
+        _expectReserveFrozenUpdated(spoke, id, false, true);
+        expectedLogs += 1;
+      }
+    }
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    emergencySteward.freezeSpoke(spokeAddr);
+
+    assertEq(expectedLogs, 15);
+    assertEq(_configuratorLogCount(), expectedLogs);
+
+    for (uint256 id; id < reserveCount; ++id) {
+      assertTrue(spoke.getReserveConfig(id).frozen);
+      assertEq(_getLatestDynamicReserveConfig(spoke, id).collateralFactor, 0);
+    }
+    // weth, usdy: frozen and zeroed, saved key is the pre-freeze key
+    assertEq(_latestKey(spoke, wethId), beforeKeys[wethId] + 1);
+    assertEq(_savedKey(spoke, wethId), beforeKeys[wethId]);
+    assertEq(_latestKey(spoke, usdyId), beforeKeys[usdyId] + 1);
+    assertEq(_savedKey(spoke, usdyId), beforeKeys[usdyId]);
+    // wbtc: zeroed only, saved key is the lifted key
+    assertEq(_latestKey(spoke, wbtcId), wbtcLiftedKey + 1);
+    assertEq(_savedKey(spoke, wbtcId), wbtcLiftedKey);
+    ISpoke.DynamicReserveConfig memory wbtcZeroed = before[wbtcId];
+    wbtcZeroed.collateralFactor = 0;
+    assertEq(_getLatestDynamicReserveConfig(spoke, wbtcId), wbtcZeroed);
+    // dai: flag only
+    assertEq(_latestKey(spoke, daiId), beforeKeys[daiId]);
+    assertEq(_savedKey(spoke, daiId), beforeSaved[daiId]);
+    // usdx: untouched
+    assertEq(_latestKey(spoke, usdxId), beforeKeys[usdxId]);
+    assertEq(_savedKey(spoke, usdxId), beforeSaved[usdxId]);
+
+    // a second call is a no-op on every reserve and does not revert
+    vm.recordLogs();
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    emergencySteward.freezeSpoke(spokeAddr);
+    assertEq(_configuratorLogCount(), 0);
+  }
+
   function test_unfreezeSpoke_revertsWith_AccessManagedUnauthorized() public {
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
@@ -596,6 +697,59 @@ contract EmergencyStewardTest is SpokeConfiguratorBaseTest {
 
     assertEq(_configuratorLogCount(), spoke.getReserveCount() - 1);
     _assertOnlyReserveFrozen(type(uint256).max);
+  }
+
+  function test_unfreezeSpoke_mixedReserveStates() public {
+    uint256 wethId = _wethReserveId(spoke);
+    uint256 wbtcId = _wbtcReserveId(spoke);
+    uint256 daiId = _daiReserveId(spoke);
+
+    vm.startPrank(SPOKE_CONFIGURATOR_ADMIN);
+    // weth: frozen before `freezeSpoke`, so it is not recorded and stays frozen
+    spokeConfigurator.freezeReserve(spokeAddr, hubAddr, address(tokenList.weth));
+    // wbtc: not frozen with a zero collateral factor before `freezeSpoke`
+    spokeConfigurator.zeroCollateralFactor(spokeAddr, hubAddr, address(tokenList.wbtc));
+    // usdx, usdy: active collateral reserves before `freezeSpoke`
+    emergencySteward.freezeSpoke(spokeAddr);
+    // dai: frozen by `freezeSpoke`, then given a non-zero collateral factor
+    spokeConfigurator.addCollateralFactor(spokeAddr, hubAddr, address(tokenList.dai), 60_00);
+    vm.stopPrank();
+
+    uint256 reserveCount = spoke.getReserveCount();
+    ISpoke.DynamicReserveConfig[] memory before = new ISpoke.DynamicReserveConfig[](reserveCount);
+    uint32[] memory beforeKeys = new uint32[](reserveCount);
+    uint32[] memory beforeSaved = new uint32[](reserveCount);
+    for (uint256 id; id < reserveCount; ++id) {
+      before[id] = _getLatestDynamicReserveConfig(spoke, id);
+      beforeKeys[id] = _latestKey(spoke, id);
+      beforeSaved[id] = _savedKey(spoke, id);
+    }
+
+    vm.recordLogs();
+    for (uint256 id; id < reserveCount; ++id) {
+      if (id != wethId) {
+        _expectReserveFrozenUpdated(spoke, id, true, false);
+      }
+    }
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    emergencySteward.unfreezeSpoke(spokeAddr);
+
+    assertEq(_configuratorLogCount(), reserveCount - 1);
+    for (uint256 id; id < reserveCount; ++id) {
+      assertEq(spoke.getReserveConfig(id).frozen, id == wethId);
+      assertEq(_latestKey(spoke, id), beforeKeys[id]);
+      assertEq(_getLatestDynamicReserveConfig(spoke, id), before[id]);
+      assertEq(_savedKey(spoke, id), beforeSaved[id]);
+    }
+    assertEq(before[wethId].collateralFactor, 0);
+    assertEq(before[daiId].collateralFactor, 60_00);
+    assertEq(before[wbtcId].collateralFactor, 0);
+
+    // a second call is a no-op on every reserve and does not revert
+    vm.recordLogs();
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    emergencySteward.unfreezeSpoke(spokeAddr);
+    assertEq(_configuratorLogCount(), 0);
   }
 
   function test_getFrozenByBulkLevers() public {
@@ -1015,5 +1169,45 @@ contract EmergencyStewardTest is SpokeConfiguratorBaseTest {
     for (uint256 id; id < reserveCount; ++id) {
       assertEq(spoke.getReserveConfig(id).borrowable, id == daiId ? false : borrowableBefore[id]);
     }
+  }
+
+  /// @dev Asserts that `pausedId` is the only paused reserve of the Spoke; pass an unused id to assert none is.
+  function _assertOnlyReservePaused(uint256 pausedId) internal view {
+    for (uint256 id; id < spoke.getReserveCount(); ++id) {
+      assertEq(spoke.getReserveConfig(id).paused, id == pausedId);
+    }
+  }
+
+  /// @dev Asserts that `frozenId` is the only frozen reserve of the Spoke; pass an unused id to assert none is.
+  function _assertOnlyReserveFrozen(uint256 frozenId) internal view {
+    for (uint256 id; id < spoke.getReserveCount(); ++id) {
+      assertEq(spoke.getReserveConfig(id).frozen, id == frozenId);
+    }
+  }
+
+  /// @dev Grants this configurator permission on every Spoke with a reserve for the asset on hub1 and
+  /// returns them, skipping the TreasurySpoke.
+  function _grantAssetSpokesRole(uint256 assetId) internal returns (ISpoke[] memory spokes) {
+    uint256 spokeCount = hub1.getSpokeCount(assetId);
+    spokes = new ISpoke[](spokeCount);
+    uint256 count;
+    for (uint256 i; i < spokeCount; ++i) {
+      address spokeAddress = hub1.getSpokeAddress(assetId, i);
+      if (spokeAddress == address(treasurySpoke)) continue;
+      spokes[count] = ISpoke(spokeAddress);
+      _grantSpokeConfiguratorRole(spokes[count], address(spokeConfigurator));
+      ++count;
+    }
+    assembly ('memory-safe') {
+      mstore(spokes, count)
+    }
+  }
+
+  function _isDaiFrozen(ISpoke targetSpoke) internal view returns (bool) {
+    return targetSpoke.getReserveConfig(targetSpoke.getReserveId(hubAddr, daiAssetId)).frozen;
+  }
+
+  function _isDaiBorrowable(ISpoke targetSpoke) internal view returns (bool) {
+    return targetSpoke.getReserveConfig(targetSpoke.getReserveId(hubAddr, daiAssetId)).borrowable;
   }
 }
