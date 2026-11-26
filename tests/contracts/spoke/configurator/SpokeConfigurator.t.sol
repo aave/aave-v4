@@ -1425,23 +1425,36 @@ contract SpokeConfiguratorTest is SpokeConfiguratorBaseTest {
     });
   }
 
-  function test_bulkLeverRecordFunctions_revertsWith_AccessManagedUnauthorized() public {
-    bytes memory expectedRevert = abi.encodeWithSelector(
-      IAccessManaged.AccessManagedUnauthorized.selector,
-      alice
+  function test_holdPaused_revertsWith_AccessManagedUnauthorized() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
     );
-    uint8 mask = BulkLeversMap.SPOKE_MASK;
+    vm.prank(alice);
+    spokeConfigurator.holdPaused(spokeAddr, hubAddr, underlying, BulkLeversMap.SPOKE_MASK);
+  }
 
-    vm.startPrank(alice);
-    vm.expectRevert(expectedRevert);
-    spokeConfigurator.holdPaused(spokeAddr, hubAddr, underlying, mask);
-    vm.expectRevert(expectedRevert);
-    spokeConfigurator.releasePaused(spokeAddr, hubAddr, underlying, mask);
-    vm.expectRevert(expectedRevert);
-    spokeConfigurator.holdFrozen(spokeAddr, hubAddr, underlying, mask);
-    vm.expectRevert(expectedRevert);
-    spokeConfigurator.releaseFrozen(spokeAddr, hubAddr, underlying, mask);
-    vm.stopPrank();
+  function test_releasePaused_revertsWith_AccessManagedUnauthorized() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
+    vm.prank(alice);
+    spokeConfigurator.releasePaused(spokeAddr, hubAddr, underlying, BulkLeversMap.SPOKE_MASK);
+  }
+
+  function test_holdFrozen_revertsWith_AccessManagedUnauthorized() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
+    vm.prank(alice);
+    spokeConfigurator.holdFrozen(spokeAddr, hubAddr, underlying, BulkLeversMap.SPOKE_MASK);
+  }
+
+  function test_releaseFrozen_revertsWith_AccessManagedUnauthorized() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
+    vm.prank(alice);
+    spokeConfigurator.releaseFrozen(spokeAddr, hubAddr, underlying, BulkLeversMap.SPOKE_MASK);
   }
 
   function test_bulkLeverRecordFunctions_revertsWith_InvalidBulkLeverMask() public {

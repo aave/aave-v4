@@ -273,7 +273,6 @@ contract SpokeConfiguratorGranularAccessControlTest is Base {
     vm.assume(caller != RESERVE_MANAGER);
     vm.assume(caller != ADMIN);
     vm.assume(caller != address(0));
-    // the proxy rejects its admin with `ProxyDeniedAdminAccess` before access control runs
     vm.assume(caller != ProxyHelper.getProxyAdmin(address(spokeConfigurator)));
 
     for (uint256 i = 0; i < reserveManagerCalldata.length; ++i) {
@@ -293,7 +292,6 @@ contract SpokeConfiguratorGranularAccessControlTest is Base {
     vm.assume(caller != LIQUIDATION_CONFIG_MANAGER);
     vm.assume(caller != ADMIN);
     vm.assume(caller != address(0));
-    // the proxy rejects its admin with `ProxyDeniedAdminAccess` before access control runs
     vm.assume(caller != ProxyHelper.getProxyAdmin(address(spokeConfigurator)));
 
     for (uint256 i = 0; i < liquidationConfigManagerCalldata.length; ++i) {
@@ -313,7 +311,6 @@ contract SpokeConfiguratorGranularAccessControlTest is Base {
     vm.assume(caller != POSITION_MANAGER_ADMIN);
     vm.assume(caller != ADMIN);
     vm.assume(caller != address(0));
-    // the proxy rejects its admin with `ProxyDeniedAdminAccess` before access control runs
     vm.assume(caller != ProxyHelper.getProxyAdmin(address(spokeConfigurator)));
 
     for (uint256 i = 0; i < positionManagerAdminCalldata.length; ++i) {

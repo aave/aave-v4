@@ -2426,7 +2426,7 @@ contract HubConfiguratorTest is Base {
     assertFalse(hub1.isUnderlyingListed(unlisted));
     IHub.SpokeConfig memory spokeConfig;
 
-    bytes[] memory calls = new bytes[](19);
+    bytes[] memory calls = new bytes[](21);
     calls[0] = abi.encodeCall(IHubConfigurator.updateLiquidityFee, (address(hub1), unlisted, 1));
     calls[1] = abi.encodeCall(
       IHubConfigurator.updateFeeReceiver,
@@ -2453,35 +2453,40 @@ contract HubConfiguratorTest is Base {
     calls[8] = abi.encodeCall(IHubConfigurator.restoreAssetCaps, (address(hub1), unlisted));
     calls[9] = abi.encodeCall(IHubConfigurator.deactivateAsset, (address(hub1), unlisted));
     calls[10] = abi.encodeCall(IHubConfigurator.haltAsset, (address(hub1), unlisted));
-    calls[11] = abi.encodeCall(
+    calls[11] = abi.encodeCall(IHubConfigurator.unhaltAsset, (address(hub1), unlisted));
+    calls[12] = abi.encodeCall(
       IHubConfigurator.addSpoke,
       (address(hub1), makeAddr('newSpoke'), unlisted, spokeConfig)
     );
-    calls[12] = abi.encodeCall(
+    calls[13] = abi.encodeCall(
       IHubConfigurator.updateSpokeActive,
       (address(hub1), unlisted, spoke, false)
     );
-    calls[13] = abi.encodeCall(
+    calls[14] = abi.encodeCall(
       IHubConfigurator.updateSpokeHalted,
       (address(hub1), unlisted, spoke, true)
     );
-    calls[14] = abi.encodeCall(
+    calls[15] = abi.encodeCall(
       IHubConfigurator.updateSpokeAddCap,
       (address(hub1), unlisted, spoke, 1)
     );
-    calls[15] = abi.encodeCall(
+    calls[16] = abi.encodeCall(
       IHubConfigurator.updateSpokeDrawCap,
       (address(hub1), unlisted, spoke, 1)
     );
-    calls[16] = abi.encodeCall(
+    calls[17] = abi.encodeCall(
       IHubConfigurator.updateSpokeRiskPremiumThreshold,
       (address(hub1), unlisted, spoke, 1)
     );
-    calls[17] = abi.encodeCall(
+    calls[18] = abi.encodeCall(
       IHubConfigurator.updateSpokeCaps,
       (address(hub1), unlisted, spoke, 1, 1)
     );
-    calls[18] = abi.encodeCall(IHubConfigurator.getSavedCaps, (address(hub1), unlisted, spoke));
+    calls[19] = abi.encodeCall(
+      IHubConfigurator.getHaltedByBulkLevers,
+      (address(hub1), unlisted, spoke)
+    );
+    calls[20] = abi.encodeCall(IHubConfigurator.getSavedCaps, (address(hub1), unlisted, spoke));
 
     for (uint256 i; i < calls.length; ++i) {
       vm.prank(HUB_CONFIGURATOR_ADMIN);

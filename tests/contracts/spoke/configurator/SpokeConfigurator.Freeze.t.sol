@@ -547,10 +547,7 @@ contract SpokeConfiguratorFreezeTest is SpokeConfiguratorBaseTest {
   function test_restoreCollateralFactor_revertsWith_CannotRestoreFrozenReserve() public {
     _freezeReserve(reserveId);
 
-    vm.expectRevert(
-      ISpokeConfigurator.CannotRestoreFrozenReserve.selector,
-      address(spokeConfigurator)
-    );
+    vm.expectRevert(ISpokeConfigurator.CannotRestoreFrozenReserve.selector);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.restoreCollateralFactor(spokeAddr, hubAddr, underlying);
   }
