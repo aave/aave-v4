@@ -1,0 +1,26 @@
+tests/contracts/emergency/EmergencySteward.t.sol
+  s_76dae7b87c60b9::t_f30c6d065c2283 481-581
+  s_76dae7b87c60b9::t_f8ff4e581b3546 702-754
+  s_76dae7b87c60b9::t_0c50cc3739f644 1173-1212
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "9b46bcea907f0651e8858a0b7227c1ced1d6b7cf",
+  "prompts": {},
+  "humans": {
+    "h_943f5bfc0f6106": {
+      "author": "AyushKaul <ayush@aave.com>"
+    }
+  },
+  "sessions": {
+    "s_76dae7b87c60b9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ff917bac-fa5e-4c9a-b680-857b884f946d",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "AyushKaul <ayush@aave.com>"
+    }
+  }
+}
