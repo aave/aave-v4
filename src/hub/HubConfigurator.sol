@@ -695,7 +695,7 @@ abstract contract HubConfigurator is AccessManagedUpgradeable, IHubConfigurator 
     );
   }
 
-  /// @dev Removes `mask` from the bulk levers holding the halted flag. Returns true if the flag should be cleared.
+  /// @dev Returns true if the halted flag should be cleared.
   function _releaseHalted(
     address hub,
     uint256 assetId,
@@ -710,7 +710,6 @@ abstract contract HubConfigurator is AccessManagedUpgradeable, IHubConfigurator 
     return released;
   }
 
-  /// @dev Clears the halted flag. Skips Spokes that are not halted.
   function _unhalt(IHub hub, address underlying, uint256 assetId, address spoke) internal {
     IHub.SpokeConfig memory config = hub.getSpokeConfig(assetId, spoke);
     if (config.halted) {

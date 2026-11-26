@@ -51,8 +51,7 @@ interface IEmergencySteward {
   function disableAssetBorrowing(address hub, address underlying) external;
 
   /// @notice Deactivates a position manager on each of the specified Spokes.
-  /// @dev Skips Spokes where the position manager is already inactive. Re-activating is done through
-  /// `SpokeConfigurator.updatePositionManager`.
+  /// @dev Re-activating is done through `SpokeConfigurator.updatePositionManager`.
   /// @param spokes The addresses of the Spokes.
   /// @param positionManager The address of the position manager.
   function deactivatePositionManager(address[] calldata spokes, address positionManager) external;

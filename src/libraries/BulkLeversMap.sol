@@ -3,22 +3,19 @@ pragma solidity ^0.8.20;
 
 /// @title BulkLeversMap Library
 /// @author Aave Labs
-/// @notice Implements the bitmap logic that records which bulk emergency levers hold a flag, so each bulk
-/// release only clears the flags that its own bulk brake set.
-/// @dev Each bit marks one bulk lever. A flag that is already set while no bulk lever holds it, because it was
-/// set manually or before any bulk brake, is never recorded, so no bulk release clears it.
+/// @notice Records which bulk emergency levers hold a flag, so a bulk release clears only what its brake set.
+/// @dev Each bit marks one bulk lever.
 library BulkLeversMap {
-  /// @dev Mask for the asset-wide bulk levers, such as `haltAsset` and `freezeAsset`.
+  /// @dev Mask for the asset-wide bulk levers.
   uint8 internal constant ASSET_MASK = 0x01;
-  /// @dev Mask for the Spoke-wide bulk levers, such as `haltSpoke`, `freezeSpoke` and `pauseAllReserves`.
+  /// @dev Mask for the Spoke-wide bulk levers.
   uint8 internal constant SPOKE_MASK = 0x02;
-  /// @dev Mask for the Hub-wide bulk levers, such as `haltHub`.
+  /// @dev Mask for the Hub-wide bulk levers.
   uint8 internal constant HUB_MASK = 0x04;
 
   /// @notice Returns the bulk levers holding a flag after a bulk brake.
-  /// @dev A brake that sets the flag replaces the bitmap with its own mask, dropping bits left over from a flag
-  /// that was cleared outside the configurator. A brake that finds the flag already set adds its mask only if
-  /// another bulk lever already holds the flag.
+  /// @dev A brake that sets the flag replaces the bitmap with its mask. A brake that finds the flag already set
+  /// adds its mask only if another bulk lever holds the flag.
   /// @param bulkLevers The bulk levers holding the flag before the brake.
   /// @param mask The mask of the bulk lever.
   /// @param flagUpdated True if the brake set the flag, false if the flag was already set.

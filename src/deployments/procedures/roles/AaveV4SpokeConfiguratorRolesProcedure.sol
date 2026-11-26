@@ -44,8 +44,9 @@ library AaveV4SpokeConfiguratorRolesProcedure {
     IAccessManager(accessManager).grantRole({roleId: role, account: admin, executionDelay: 0});
   }
 
-  /// @notice Sets up the SpokeConfigurator domain admin (400) and EmergencySteward (401) roles with their target
-  /// selectors.
+  /// @notice Sets up the SpokeConfigurator domain admin and EmergencySteward roles with their target selectors.
+  /// @param accessManager The address of the AccessManager contract.
+  /// @param spokeConfigurator The address of the SpokeConfigurator contract.
   function setupSpokeConfiguratorAllRoles(
     address accessManager,
     address spokeConfigurator

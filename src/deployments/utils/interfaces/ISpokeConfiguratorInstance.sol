@@ -12,5 +12,6 @@ interface ISpokeConfiguratorInstance is ISpokeConfigurator {
   function initialize(address authority) external;
 
   /// @notice Returns the revision number of this SpokeConfigurator implementation.
+  /// @return The revision number.
   function SPOKE_CONFIGURATOR_REVISION() external view returns (uint64);
 }

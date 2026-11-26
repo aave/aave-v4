@@ -12,5 +12,6 @@ interface IHubConfiguratorInstance is IHubConfigurator {
   function initialize(address authority) external;
 
   /// @notice Returns the revision number of this HubConfigurator implementation.
+  /// @return The revision number.
   function HUB_CONFIGURATOR_REVISION() external view returns (uint64);
 }

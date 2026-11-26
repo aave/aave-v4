@@ -32,8 +32,7 @@ library SpokeEngine {
   }
 
   /// @notice Updates reserve config on Spokes.
-  /// @dev `frozen` dispatches to `freezeReserve` (which also zeroes the collateral factor) unless the
-  /// reserve is already frozen with a zero collateral factor, or to `unfreezeReserve` if the reserve is frozen.
+  /// @dev Freezing also zeroes the collateral factor; unfreezing does not restore it.
   /// @param updates The reserve config updates to execute.
   function executeSpokeReserveConfigUpdates(
     IAaveV4ConfigEngine.ReserveConfigUpdate[] calldata updates

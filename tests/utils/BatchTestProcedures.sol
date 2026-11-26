@@ -915,7 +915,6 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
       }
     }
 
-    // the EmergencySteward only holds the selectors it calls, not the domain admin ones
     selectors = Roles.getSpokeConfiguratorDomainAdminRoleSelectors();
     for (uint256 i; i < selectors.length; i++) {
       (bool allowed, ) = accessManager.canCall(emergencySteward, spokeConfigurator, selectors[i]);

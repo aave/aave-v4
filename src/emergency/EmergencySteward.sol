@@ -17,7 +17,7 @@ contract EmergencySteward is AccessManaged, IEmergencySteward {
   address public immutable SPOKE_CONFIGURATOR;
 
   /// @dev Constructor.
-  /// @param authority_ The address of the authority contract that manages access control.
+  /// @param authority_ The address of the authority contract which manages permissions.
   /// @param spokeConfigurator_ The address of the SpokeConfigurator.
   constructor(address authority_, address spokeConfigurator_) AccessManaged(authority_) {
     require(spokeConfigurator_ != address(0), InvalidAddress());
@@ -145,7 +145,6 @@ contract EmergencySteward is AccessManaged, IEmergencySteward {
     }
   }
 
-  /// @dev Returns the Hub and underlying asset addresses of a Spoke's reserve.
   function _getReserveAddresses(
     ISpoke spoke,
     uint256 reserveId
@@ -154,8 +153,8 @@ contract EmergencySteward is AccessManaged, IEmergencySteward {
     return (address(reserve.hub), reserve.underlying);
   }
 
-  /// @dev Returns false if the Spoke has no reserve for the asset, including Spokes without `getReserveId` such as
-  /// the TreasurySpoke and TokenizationSpoke. Bubbles up any other revert.
+  /// @dev Returns false if the Spoke has no reserve for the asset or does not implement `getReserveId`. Bubbles up
+  /// any other revert.
   function _isReserveListed(
     ISpoke spoke,
     address hub,

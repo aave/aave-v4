@@ -244,7 +244,7 @@ abstract contract Base is BaseHelpers, BatchTestProcedures {
       SPOKE_CONFIGURATOR_ADMIN
     );
 
-    // Grant EmergencySteward roles to SPOKE_CONFIGURATOR_ADMIN
+    // Grant EmergencySteward roles to SPOKE_CONFIGURATOR_ADMIN so it can call the bulk levers
     AaveV4EmergencyStewardRolesProcedure.grantEmergencyStewardAllRoles(
       report.accessManager,
       SPOKE_CONFIGURATOR_ADMIN

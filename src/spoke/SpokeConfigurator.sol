@@ -497,9 +497,6 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
       _savedDynamicConfigKey[spoke][key.reserveId]
     );
     require(savedConfig.collateralFactor != 0, InvalidSavedCollateralFactor());
-    // Re-adds the full saved config rather than only its collateral factor, so max liquidation bonus and
-    // liquidation fee changes made on later keys are dropped. Open for review; may change to restore the
-    // collateral factor alone.
     return _addDynamicReserveConfig(key, oldKey, oldConfig, savedConfig);
   }
 
@@ -548,8 +545,7 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
     return BulkLeversMap.isHeld(_pausedByBulkLevers[spoke][reserveId], BulkLeversMap.SPOKE_MASK);
   }
 
-  /// @dev Sets the frozen flag and zeroes the collateral factor. Returns whether the frozen flag changed
-  /// and whether the collateral factor was zeroed.
+  /// @dev Returns whether the frozen flag changed and whether the collateral factor was zeroed.
   function _freezeReserve(ReserveKey memory key) internal returns (bool, bool) {
     ISpoke.ReserveConfig memory reserveConfig = key.spoke.getReserveConfig(key.reserveId);
     bool frozenUpdated = !reserveConfig.frozen;
@@ -579,7 +575,7 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
     );
   }
 
-  /// @dev Removes `mask` from the bulk levers holding the frozen flag. Returns true if the flag should be cleared.
+  /// @dev Returns true if the frozen flag should be cleared.
   function _releaseFrozenRecord(
     address spoke,
     uint256 reserveId,
@@ -593,7 +589,7 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
     return released;
   }
 
-  /// @dev Clears the frozen flag. Returns false if the reserve is not frozen.
+  /// @dev Returns false if the reserve is not frozen.
   function _unfreezeReserve(ReserveKey memory key) internal returns (bool) {
     ISpoke.ReserveConfig memory reserveConfig = key.spoke.getReserveConfig(key.reserveId);
     if (!reserveConfig.frozen) {
@@ -612,8 +608,7 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
     return true;
   }
 
-  /// @dev Adds a copy of the latest dynamic config with a zero collateral factor. Returns false if the
-  /// latest collateral factor is already zero.
+  /// @dev Returns false if the latest collateral factor is already zero.
   function _zeroCollateralFactor(ReserveKey memory key) internal returns (bool) {
     (uint32 oldKey, ISpoke.DynamicReserveConfig memory oldConfig) = _getLatestDynamicConfig(key);
     if (oldConfig.collateralFactor == 0) {
@@ -625,8 +620,7 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
     return true;
   }
 
-  /// @dev Adds a dynamic config and saves `oldKey` as the restore target when the collateral factor goes
-  /// from non-zero to zero.
+  /// @dev Saves `oldKey` as the restore target when the collateral factor goes from non-zero to zero.
   function _addDynamicReserveConfig(
     ReserveKey memory key,
     uint32 oldKey,
@@ -674,7 +668,7 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
     );
   }
 
-  /// @dev Removes `mask` from the bulk levers holding the paused flag. Returns true if the flag should be cleared.
+  /// @dev Returns true if the paused flag should be cleared.
   function _releasePausedRecord(
     address spoke,
     uint256 reserveId,
@@ -688,7 +682,6 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
     return released;
   }
 
-  /// @dev Clears the paused flag. Skips reserves that are not paused.
   function _unpause(ReserveKey memory key) internal {
     ISpoke.ReserveConfig memory reserveConfig = key.spoke.getReserveConfig(key.reserveId);
     if (reserveConfig.paused) {

@@ -7,7 +7,6 @@ import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateS
 /// @title IHubConfigurator
 /// @author Aave Labs
 /// @notice Interface for HubConfigurator.
-/// @dev Assets are addressed by `(hub, underlying)`; the asset identifier is resolved on the Hub.
 interface IHubConfigurator {
   /// @notice Emitted when the liquidity fee of an asset is updated.
   /// @param hub The address of the Hub.
@@ -168,12 +167,12 @@ interface IHubConfigurator {
   /// @notice Adds a new asset to a specified Hub.
   /// @dev Retrieves the decimals of the underlying asset from its ERC20 contract.
   /// @dev The fee receiver is automatically added as a Spoke with maximum caps.
-  /// @dev The interest rate strategy must implement `IAssetInterestRateStrategy`.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
   /// @param feeReceiver The address of the fee receiver Spoke.
   /// @param liquidityFee The liquidity fee of the asset, expressed in BPS.
-  /// @param irStrategy The address of the interest rate strategy contract.
+  /// @param irStrategy The address of the interest rate strategy contract, which must implement
+  /// `IAssetInterestRateStrategy`.
   /// @param irData The interest rate data to apply to the given asset, encoded in bytes.
   /// @return The unique identifier of the added asset.
   function addAsset(
@@ -187,13 +186,13 @@ interface IHubConfigurator {
 
   /// @notice Adds a new asset to a specified Hub with explicit decimals.
   /// @dev The fee receiver is automatically added as a Spoke with maximum caps.
-  /// @dev The interest rate strategy must implement `IAssetInterestRateStrategy`.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
   /// @param decimals The number of decimals of the asset.
   /// @param feeReceiver The address of the fee receiver Spoke.
   /// @param liquidityFee The liquidity fee of the asset, expressed in BPS.
-  /// @param irStrategy The address of the interest rate strategy contract.
+  /// @param irStrategy The address of the interest rate strategy contract, which must implement
+  /// `IAssetInterestRateStrategy`.
   /// @param irData The interest rate data to apply to the given asset, encoded in bytes.
   /// @return The unique identifier of the added asset.
   function addAssetWithDecimals(
@@ -439,9 +438,9 @@ interface IHubConfigurator {
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
   /// @param spoke The address of the Spoke.
-  /// @return True if `haltAsset` holds the halted flag.
-  /// @return True if `haltSpoke` holds the halted flag.
-  /// @return True if `haltHub` holds the halted flag.
+  /// @return True if the asset-wide bulk lever holds the halted flag.
+  /// @return True if the Spoke-wide bulk lever holds the halted flag.
+  /// @return True if the Hub-wide bulk lever holds the halted flag.
   function getHaltedByBulkLevers(
     address hub,
     address underlying,
@@ -455,8 +454,8 @@ interface IHubConfigurator {
   /// @param spoke The address of the Spoke.
   /// @return The saved add cap.
   /// @return The saved draw cap.
-  /// @return True if `zeroAssetCaps` holds the caps at zero.
-  /// @return True if `zeroSpokeCaps` holds the caps at zero.
+  /// @return True if the asset-wide bulk lever holds the caps at zero.
+  /// @return True if the Spoke-wide bulk lever holds the caps at zero.
   function getSavedCaps(
     address hub,
     address underlying,

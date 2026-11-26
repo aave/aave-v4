@@ -1352,7 +1352,6 @@ contract SpokeConfiguratorTest is SpokeConfiguratorBaseTest {
     spokeConfigurator.disableBorrowing(spokeAddr, hubAddr, underlying);
 
     assertEq(_configuratorLogCount(), 1);
-    // only the borrowable flag changes; the collateral factor stays on the same dynamic config key
     assertEq(spoke.getReserveConfig(reserveId), reserveConfig);
     assertEq(_latestKey(spoke, reserveId), oldConfigKey);
   }
