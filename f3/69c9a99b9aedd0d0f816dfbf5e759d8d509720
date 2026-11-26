@@ -1,0 +1,38 @@
+tests/config-engine/BaseConfigEngine.t.sol
+  s_7ec280db1063f8::t_00da3cc1b06af3 221-225,228-232
+  s_7ec280db1063f8::t_3701cad1856b8f 241,243-247
+tests/config-engine/AaveV4Payload.t.sol
+  s_7ec280db1063f8::t_1ed78fea714edb 676-679
+tests/contracts/addresses-provider/AddressesProvider.t.sol
+  s_7ec280db1063f8::t_1970eec7252cf1 398-402,423-427
+  s_7ec280db1063f8::t_b1a8d618ff377c 195-196,200-201,208,215,230
+  s_7ec280db1063f8::t_1350f8de1683a7 391-397,407,417-422,428,452-454,477-479,496-498
+  s_7ec280db1063f8::t_3b56279dc01e46 137-138
+  s_7ec280db1063f8::t_869ca0d6966a9d 234,238-240,243-245,247-252,254
+  s_7ec280db1063f8::t_33e5f30e2727a4 116-118
+  s_7ec280db1063f8::t_c82c3454edfc9c 94-95,97-98,100-101
+  s_7ec280db1063f8::t_cee547e45bcfad 358,363-364,367-368,371,373-378,380,383,385-386
+  s_7ec280db1063f8::t_85cc6c3fbee043 323
+tests/config-engine/EngineUtils.t.sol
+  s_7ec280db1063f8::t_1ed78fea714edb 53,70,77,82,87,97,104,118,129
+tests/config-engine/AddressesProviderRegistration.t.sol
+  s_7ec280db1063f8::t_1ed78fea714edb 77-84,486-492
+src/config-engine/libraries/HubEngine.sol
+  s_7ec280db1063f8::t_bab60850afc69a 315-319
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "f369c9a99b9aedd0d0f816dfbf5e759d8d509720",
+  "prompts": {},
+  "sessions": {
+    "s_7ec280db1063f8": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f6eca046-101a-4f2f-995c-14a34db2a81c",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}

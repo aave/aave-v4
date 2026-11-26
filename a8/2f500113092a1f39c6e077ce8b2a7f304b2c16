@@ -1,0 +1,36 @@
+src/deployments/libraries/BatchReports.sol
+  h_0f977de3f043fc 45,48-49
+  s_ac9d5715f256b6::t_1899832925aac0 43-44,46-47
+tests/deployments/procedures/deploy/addresses-provider/AaveV4AddressesProviderDeployProcedure.t.sol
+  s_ac9d5715f256b6::t_48f87b958dc8bb 22
+  s_ac9d5715f256b6::t_46ac9d1366ced0 16-21
+  s_ac9d5715f256b6::t_d1ddd85367068f 23-26
+src/deployments/batches/AaveV4AddressesProviderBatch.sol
+  s_ac9d5715f256b6::t_d1ddd85367068f 17-20
+  s_ac9d5715f256b6::t_5e4b2a02aa764c 21-24
+tests/helpers/mocks/deployments/procedures/AaveV4AddressesProviderDeployProcedureWrapper.sol
+  s_ac9d5715f256b6::t_7fc4c88c72e526 9-12
+src/deployments/procedures/deploy/addresses-provider/AaveV4AddressesProviderDeployProcedure.sol
+  s_ac9d5715f256b6::t_c67e8ae5219ff5 15-32
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "a82f500113092a1f39c6e077ce8b2a7f304b2c16",
+  "prompts": {},
+  "humans": {
+    "h_0f977de3f043fc": {
+      "author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  },
+  "sessions": {
+    "s_ac9d5715f256b6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "71b6486e-09c5-4a7d-a9e9-ccab3d378f32",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}

@@ -1,0 +1,45 @@
+src/deployments/orchestration/AaveV4DeployOrchestration.sol
+  s_b5a8ba063f759a::t_cf0638f50ffc0f 209-211,285-288
+src/deployments/procedures/deploy/hub/AaveV4HubImplementationDeployProcedure.sol
+  s_b5a8ba063f759a::t_9f72988898a7cb 23-30
+src/deployments/procedures/deploy/spoke/AaveV4SpokeImplementationDeployProcedure.sol
+  s_b5a8ba063f759a::t_408d1c1e942f32 46-58
+tests/deployments/batches/AaveV4AaveOracleBatch.t.sol
+  s_b5a8ba063f759a::t_8ce48c53f8412c 130-133
+tests/deployments/batches/AaveV4HubProxyBatch.t.sol
+  s_b5a8ba063f759a::t_acf501a8b35b0c 21-23,58-60,71-73,84-86,98-100,125-127
+tests/deployments/batches/AaveV4SpokeProxyBatch.t.sol
+  s_b5a8ba063f759a::t_716c53a0707d25 126-129
+tests/deployments/batches/AaveV4TokenizationSpokeBatch.t.sol
+  s_b5a8ba063f759a::t_7648506e6dea2d 28-30
+tests/deployments/orchestration/AaveV4TestOrchestration.sol
+  s_b5a8ba063f759a::t_a1344392650f1f 393-395,424-427
+tests/deployments/procedures/ProceduresBase.t.sol
+  s_b5a8ba063f759a::t_5347128128a4e5 30
+tests/deployments/procedures/deploy/hub/AaveV4HubImplementationDeployProcedure.t.sol
+  s_b5a8ba063f759a::t_e102ddfad1fdaa 23-29
+tests/deployments/procedures/deploy/hub/AaveV4HubProxyDeployProcedure.t.sol
+  s_b5a8ba063f759a::t_2fabacd9098e5d 24,40-42,53-55,66-68
+tests/deployments/procedures/deploy/spoke/AaveV4SpokeImplementationDeployProcedure.t.sol
+  s_b5a8ba063f759a::t_47aa2fc0606300 25-29,54-64
+tests/deployments/procedures/deploy/spoke/AaveV4SpokeProxyDeployProcedure.t.sol
+  s_b5a8ba063f759a::t_c4f819fb9abf2a 14-20,22-23
+tests/deployments/procedures/deploy/spoke/AaveV4TokenizationSpokeDeployProcedure.t.sol
+  s_b5a8ba063f759a::t_beaa517b4d91ad 26-28
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "1105f0dd150be3e12b53cc692431614cef549d33",
+  "prompts": {},
+  "sessions": {
+    "s_b5a8ba063f759a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e21f9af4-2976-4fc6-9fca-5c29e8c8d9fc",
+        "model": "claude-fable-5-2"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}

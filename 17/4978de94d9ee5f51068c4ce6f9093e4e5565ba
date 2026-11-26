@@ -1,0 +1,19 @@
+tests/misc/z3/babylon_resized_drawn_shares.py
+  s_8735c0799a11e7::t_fc6e1c084e1072 7,10,14-15,32,40,44,50,52-54,56,62,65-66,69,77,79,84-85,89-90
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "174978de94d9ee5f51068c4ce6f9093e4e5565ba",
+  "prompts": {},
+  "sessions": {
+    "s_8735c0799a11e7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3b79ae1e-863b-4fc1-bc48-ba957ce7e0b8",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}

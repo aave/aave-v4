@@ -1,0 +1,21 @@
+src/spoke/interfaces/IAaveOracle.sol
+  s_2edb996a46df23::t_71a6f067aa0286 43-44
+tests/contracts/spoke/AaveOracle.t.sol
+  s_2edb996a46df23::t_e35f442031e44b 145,148-149,151-153,155
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "8ff93f5cbecc535f6f50cab790f4543214e17a1e",
+  "prompts": {},
+  "sessions": {
+    "s_2edb996a46df23": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6c371a7f-79c4-4828-9825-be341be0509c",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}

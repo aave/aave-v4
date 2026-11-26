@@ -1,0 +1,24 @@
+snapshots/PermissionedSpoke.Operations.json
+  h_5f4a69ef285bfa 3,5,7,9,11-12,14,16,18,20
+src/spoke/PermissionedSpoke.sol
+  h_5f4a69ef285bfa 14-15,41,47,49-50
+src/spoke/gates/EligibilityPolicyGate.sol
+  h_5f4a69ef285bfa 13,94-95,97-103,109-120
+src/spoke/interfaces/IPolicyGate.sol
+  h_5f4a69ef285bfa 23-26,28-30,32-33
+src/spoke/libraries/AuthKind.sol
+  h_5f4a69ef285bfa 16
+tests/contracts/spoke/gates/EligibilityPolicyGate.t.sol
+  h_5f4a69ef285bfa 61-65,70-83,85,88,91
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "c04b23eedeb14317aed4bd8903cb88c4dfe2c2ee",
+  "prompts": {},
+  "humans": {
+    "h_5f4a69ef285bfa": {
+      "author": "Prince <sinhaprince013@gmail.com>"
+    }
+  }
+}

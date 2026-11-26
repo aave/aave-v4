@@ -1,0 +1,21 @@
+src/deployments/procedures/deploy/hub/AaveV4HubImplementationDeployProcedure.sol
+  s_b5a8ba063f759a::t_c7fe701f85aafa 9-11
+src/deployments/procedures/deploy/spoke/AaveV4SpokeImplementationDeployProcedure.sol
+  s_b5a8ba063f759a::t_a7ac1ebe7b832c 9-11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "bf81319b05514980dc5c7f72d06c4d2a9948eb2e",
+  "prompts": {},
+  "sessions": {
+    "s_b5a8ba063f759a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e21f9af4-2976-4fc6-9fca-5c29e8c8d9fc",
+        "model": "claude-fable-5-2"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}

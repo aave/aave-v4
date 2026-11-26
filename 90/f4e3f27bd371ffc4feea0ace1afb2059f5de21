@@ -1,0 +1,19 @@
+tests/contracts/spoke/liquidation/Spoke.BabylonLiquidationCall.Fuzz.t.sol
+  s_4234357a097dc9::t_1b5a129b1d15f7 1-582
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "90f4e3f27bd371ffc4feea0ace1afb2059f5de21",
+  "prompts": {},
+  "sessions": {
+    "s_4234357a097dc9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e46603eb-682a-4e30-8a94-e7285f89e305",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}

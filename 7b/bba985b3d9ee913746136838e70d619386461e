@@ -1,0 +1,24 @@
+src/deployments/procedures/deploy/spoke/AaveV4SpokeConfiguratorDeployProcedure.sol
+  s_79e03752657a2e::t_b1feca8369e825 4,16
+src/deployments/utils/libraries/BytecodeHelper.sol
+  s_79e03752657a2e::t_b1feca8369e825 5-6,14-26
+  s_79e03752657a2e::t_fa2825db6a45c7 27
+src/deployments/procedures/deploy/hub/AaveV4HubConfiguratorDeployProcedure.sol
+  s_79e03752657a2e::t_b1feca8369e825 5,17
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7bbba985b3d9ee913746136838e70d619386461e",
+  "prompts": {},
+  "sessions": {
+    "s_79e03752657a2e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ffa71-5465-7fe0-8faf-43d0db8de960",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}

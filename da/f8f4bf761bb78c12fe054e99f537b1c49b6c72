@@ -1,0 +1,74 @@
+tests/contracts/babylon-spoke/BabylonSpoke.LiquidationCall.MaxCollateralToRemove.t.sol
+  s_602c0abcbd103d::t_c3fa6ffc8724e7 1-250
+src/spoke/instances/BabylonSpokeInstance.sol
+  s_602c0abcbd103d::t_bc11c9f97ef9fe 1-34
+tests/contracts/babylon-spoke/BabylonSpoke.Config.t.sol
+  s_602c0abcbd103d::t_2e3aadd549f354 1-64,66-68,70-85
+  s_602c0abcbd103d::t_9276d43a71f527 65,69
+tests/contracts/babylon-spoke/BabylonSpoke.LiquidationCall.BypassTargetHealthFactor.t.sol
+  s_602c0abcbd103d::t_e1bd8c1f7cf200 1-119
+tests/contracts/babylon-spoke/BabylonSpoke.Base.t.sol
+  s_602c0abcbd103d::t_07361b12752547 1-101
+src/spoke/interfaces/IBabylonSpoke.sol
+  s_602c0abcbd103d::t_0dd79a25e82090 1-60
+src/spoke/Spoke.sol
+  s_602c0abcbd103d::t_5eebb5f4379e09 353-376,395-396
+src/spoke/BabylonSpoke.sol
+  s_602c0abcbd103d::t_41b4a379a115e9 1-76
+src/spoke/libraries/LiquidationLogic.sol
+  s_602c0abcbd103d::t_f8597d96b1e2f2 164-174
+  s_602c0abcbd103d::t_190b384605dfa6 217,224-225
+  s_602c0abcbd103d::t_df633a50c47b2b 254
+  s_602c0abcbd103d::t_60555d990934a7 779-888
+  s_602c0abcbd103d::t_810245c8522442 414
+  s_602c0abcbd103d::t_fe0589d308d64f 607-608,622-623
+  s_602c0abcbd103d::t_857e8753f7157b 148
+  s_602c0abcbd103d::t_d29708a7bcb8f3 188
+  s_602c0abcbd103d::t_616030568fe6a7 713-730
+  s_602c0abcbd103d::t_cd757d9f35707f 44-53
+  s_602c0abcbd103d::t_ed63190620f351 896-910
+  s_602c0abcbd103d::t_43676c824f8381 944
+  s_602c0abcbd103d::t_870d985995ac7a 652
+  s_602c0abcbd103d::t_376a5cee927a84 71
+  s_602c0abcbd103d::t_21379c82ab63eb 665-675
+foundry.toml
+  s_602c0abcbd103d::t_e16665038f2799 30
+snapshots/Hub.Operations.json
+  s_602c0abcbd103d::t_468e71a84b0089 17
+snapshots/PositionManagerBase.Operations.json
+  s_602c0abcbd103d::t_6964fc954c692a 2
+snapshots/SignatureGateway.Operations.json
+  s_602c0abcbd103d::t_78eb2a8634a304 4,7-9
+snapshots/Spoke.Operations.ZeroRiskPremium.json
+  s_602c0abcbd103d::t_e0e5332d49bf40 4-8,10,15
+snapshots/Spoke.Operations.json
+  s_602c0abcbd103d::t_e37492a6940e57 4-8,10,15
+snapshots/TakerPositionManager.Operations.json
+  s_602c0abcbd103d::t_44b8309525a74e 5
+tests/contracts/spoke/libraries/liquidation-logic/LiquidationLogic.Base.t.sol
+  s_602c0abcbd103d::t_5e2020f381d5b4 125-126,237,362-377
+tests/contracts/spoke/libraries/liquidation-logic/LiquidationLogic.ExecuteLiquidation.t.sol
+  s_602c0abcbd103d::t_2c0bfcfbcdd8a3 72
+tests/contracts/spoke/libraries/liquidation-logic/LiquidationLogic.LiquidationAmounts.t.sol
+  s_602c0abcbd103d::t_a056287464e54e 206,267,289-618
+tests/contracts/spoke/liquidation/Spoke.LiquidationCall.Base.t.sol
+  s_602c0abcbd103d::t_457f1ad2b4b7a9 198
+tests/helpers/mocks/LiquidationLogicWrapper.sol
+  s_602c0abcbd103d::t_b8e544282b5cf2 172-186,193-194
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "daf8f4bf761bb78c12fe054e99f537b1c49b6c72",
+  "prompts": {},
+  "sessions": {
+    "s_602c0abcbd103d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1ea1deba-813b-43d3-807f-1e851ba7b60a",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}

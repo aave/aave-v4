@@ -1,0 +1,25 @@
+tests/contracts/spoke/configurator/SpokeConfigurator.Freeze.t.sol
+  s_b3156abe964aba::t_96342f87916c70 549-552,799
+  s_b3156abe964aba::t_afbc9daec4d090 546,762-798,800-830
+  s_b3156abe964aba::t_a0a16fe054ebd4 831
+tests/config-engine/AaveV4Payload.t.sol
+  s_b3156abe964aba::t_afbc9daec4d090 762-805
+src/config-engine/README.md
+  s_b3156abe964aba::t_0972225eb7d9ec 132
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7644928b2760e3d470722bb02485a40d5064c4ab",
+  "prompts": {},
+  "sessions": {
+    "s_b3156abe964aba": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6546e81d-cda2-4205-a961-bc35c12e7458",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "DhairyaSethi <55102840+DhairyaSethi@users.noreply.github.com>"
+    }
+  }
+}

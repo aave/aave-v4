@@ -1,0 +1,19 @@
+snapshots/TakerPositionManager.Operations.json
+  s_f9d3a438256120::t_70373388d36649 3,5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "2019e85e70eeb0d10b976195a85949c6358dcfab",
+  "prompts": {},
+  "sessions": {
+    "s_f9d3a438256120": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a04e52-b690-7103-b402-945ae1523285",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}

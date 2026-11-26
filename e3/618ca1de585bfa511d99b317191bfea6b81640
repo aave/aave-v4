@@ -1,0 +1,35 @@
+tests/helpers/mocks/deployments/procedures/AaveV4AaveOracleDeployProcedureWrapper.sol
+  s_4f5261c6e21dbb::t_ed00c79433e7be 9-10
+src/deployments/procedures/deploy/spoke/AaveV4AaveOracleDeployProcedure.sol
+  s_4f5261c6e21dbb::t_ed00c79433e7be 11-13,15,17,19
+src/deployments/batches/AaveV4SpokeInstanceBatch.sol
+  s_4f5261c6e21dbb::t_ed00c79433e7be 31
+tests/deployments/procedures/deploy/spoke/AaveV4AaveOracleDeployProcedure.t.sol
+  s_4f5261c6e21dbb::t_6f26396c62efd7 5
+  s_4f5261c6e21dbb::t_42e78df5a88c9f 15-24,30
+src/deployments/README.md
+  s_4f5261c6e21dbb::t_ed00c79433e7be 221-222
+tests/deployments/AaveV4BatchDeployment.t.sol
+  s_4f5261c6e21dbb::t_42e78df5a88c9f 37-57,470-482
+  s_4f5261c6e21dbb::t_6f26396c62efd7 5
+  s_4f5261c6e21dbb::t_98522b72adc0e9 483
+src/deployments/orchestration/AaveV4DeployBase.sol
+  s_4f5261c6e21dbb::t_526423b0e76351 102-106
+  s_4f5261c6e21dbb::t_ed00c79433e7be 14,107-120,122
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e3618ca1de585bfa511d99b317191bfea6b81640",
+  "prompts": {},
+  "sessions": {
+    "s_4f5261c6e21dbb": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "af35560e-00c7-4b1d-9586-dde333921e50",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "DhairyaSethi <55102840+DhairyaSethi@users.noreply.github.com>"
+    }
+  }
+}

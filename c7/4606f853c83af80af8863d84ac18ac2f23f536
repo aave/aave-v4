@@ -1,0 +1,47 @@
+tests/contracts/spoke/configurator/SpokeConfigurator.t.sol
+  s_dee9832c98fc23::t_d158c652d739d2 1344
+  s_dee9832c98fc23::t_828eb240541439 1423,1428,1530,1543-1548,1620,1665,1680,1687,1693,1758-1771
+  s_dee9832c98fc23::t_a0894a502ef061 1468-1488
+  s_b6ed679d663ba8::t_a6d8024f6f0e50 1379-1409,1411-1422,1424-1427,1429-1467,1489-1492,1688-1692
+  s_dee9832c98fc23::t_7e1da3e7c3e788 1410
+  s_dee9832c98fc23::t_6976f415db587f 1378
+tests/contracts/spoke/configurator/SpokeConfigurator.Freeze.t.sol
+  s_b6ed679d663ba8::t_e8ce5c48fd6fac 218,220,222-226,240,247,249
+src/spoke/interfaces/ISpokeConfigurator.sol
+  s_dee9832c98fc23::t_f5252cfc5aa4db 591-593,597-599,603
+  s_b6ed679d663ba8::t_e478d2a8b41ac2 487-488,497,506-508,512-516,525-527,536-538
+src/spoke/SpokeConfigurator.sol
+  s_dee9832c98fc23::t_5a7652f5d75667 6
+  s_b6ed679d663ba8::t_e478d2a8b41ac2 35-36
+  s_dee9832c98fc23::t_43dfaeaea56f29 527-528
+  s_dee9832c98fc23::t_2f7ee7caca7fe4 445,526,529
+  s_b6ed679d663ba8::t_3a3892f6383174 32-34,419,443,522,532,555-572
+  s_b6ed679d663ba8::t_a5febad94f6642 573-575
+  s_dee9832c98fc23::t_6b723c6b350698 402,410,428-430,444,459,530-531,576-577
+tests/contracts/spoke/configurator/SpokeConfigurator.GranularAccessControl.t.sol
+  s_dee9832c98fc23::t_b3b9e6f3148138 426-431
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "c74606f853c83af80af8863d84ac18ac2f23f536",
+  "prompts": {},
+  "sessions": {
+    "s_b6ed679d663ba8": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "40b65890-0023-40ef-92d3-13282155b8a7",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "AyushKaul <ayush@aave.com>"
+    },
+    "s_dee9832c98fc23": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f8345fe8-6589-450b-9245-70fc6894eed5",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "AyushKaul <ayush@aave.com>"
+    }
+  }
+}

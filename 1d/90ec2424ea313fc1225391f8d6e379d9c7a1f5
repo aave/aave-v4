@@ -1,0 +1,24 @@
+tests/deployments/fork/PostDeploymentVerificationBase.t.sol
+  s_2f6dddbd868477::t_5e4e86bfb0987c 30,40-48
+tests/utils/BatchTestProcedures.sol
+  s_2f6dddbd868477::t_5e4e86bfb0987c 52-53,242-248,375-377,899-904
+  s_2f6dddbd868477::t_51ff2643e58d9d 193
+tests/deployments/fork/PostDeploymentVerificationTest.t.sol
+  s_2f6dddbd868477::t_6fc05433639c8e 7,50-69
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "1d90ec2424ea313fc1225391f8d6e379d9c7a1f5",
+  "prompts": {},
+  "sessions": {
+    "s_2f6dddbd868477": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "52eda097-9f9d-49e1-848d-3540693350bb",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "DhairyaSethi <55102840+DhairyaSethi@users.noreply.github.com>"
+    }
+  }
+}

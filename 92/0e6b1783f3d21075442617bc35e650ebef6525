@@ -1,0 +1,19 @@
+tests/deployments/AaveV4BatchDeployment.t.sol
+  s_4f5261c6e21dbb::t_55b9e8b395dc5a 39-44,49-50
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "920e6b1783f3d21075442617bc35e650ebef6525",
+  "prompts": {},
+  "sessions": {
+    "s_4f5261c6e21dbb": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "af35560e-00c7-4b1d-9586-dde333921e50",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "DhairyaSethi <55102840+DhairyaSethi@users.noreply.github.com>"
+    }
+  }
+}

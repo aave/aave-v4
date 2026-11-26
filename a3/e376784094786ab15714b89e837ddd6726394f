@@ -1,0 +1,47 @@
+tests/unit/libraries/LiquidationLogic/LiquidationLogic.LiquidateUser.t.sol
+  s_8b8ed63d4bd550::t_ecab1bcab1ae43 60-61
+snapshots/SignatureGateway.Operations.json
+  s_8b8ed63d4bd550::t_49b05d1eb3d641 2-3
+src/spoke/interfaces/ISpoke.sol
+  s_8b8ed63d4bd550::t_754605f125b54b 89-100,420-422,572-581
+tests/unit/libraries/LiquidationLogic/LiquidationLogic.ValidateLiquidationCall.t.sol
+  s_8b8ed63d4bd550::t_4229d44b805af8 27-28
+snapshots/NativeTokenGateway.Operations.json
+  s_8b8ed63d4bd550::t_b710bcc36e7363 2-3
+foundry.toml
+  s_8b8ed63d4bd550::t_dec570a0d4be2d 11,20,26,54
+src/spoke/libraries/LiquidationLogic.sol
+  s_8b8ed63d4bd550::t_7559def5bdc0f3 42,68,114,236-237,311-312,331-334,377-378,555,557,750,806-808,810
+snapshots/Spoke.Operations.json
+  s_8b8ed63d4bd550::t_439a1e7ee4c905 2-13,16
+tests/mocks/LiquidationLogicWrapper.sol
+  s_8b8ed63d4bd550::t_b6c00accb9ebdc 242
+tests/unit/libraries/LiquidationLogic/LiquidationLogic.ExecuteLiquidation.t.sol
+  s_8b8ed63d4bd550::t_43b8aafec8a5aa 68-69
+snapshots/TakerPositionManager.Operations.json
+  s_8b8ed63d4bd550::t_38c2b635e4e2a8 6
+snapshots/GiverPositionManager.Operations.json
+  s_8b8ed63d4bd550::t_090274c367c821 2
+snapshots/Spoke.Operations.ZeroRiskPremium.json
+  s_8b8ed63d4bd550::t_4928b1d7624eed 2-13,16
+src/spoke/Spoke.sol
+  s_8b8ed63d4bd550::t_e8b1946d82b150 364-365,391-446
+snapshots/Spoke.Getters.json
+  s_8b8ed63d4bd550::t_128d0bcf1a18b0 2-6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "a3e376784094786ab15714b89e837ddd6726394f",
+  "prompts": {},
+  "sessions": {
+    "s_8b8ed63d4bd550": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "badec474-4a1f-4ce1-9f7d-c557c414d757",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}

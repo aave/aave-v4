@@ -1,0 +1,39 @@
+tests/deployments/fork/PostDeploymentVerificationBase.t.sol
+  0c60325957cf70a6 140,144-145
+tests/deployments/fork/PostDeploymentVerificationTest.t.sol
+  5cbfca345ded2e91 31-36,39-43,47-51,55-59,63-68,70-75,77-82,84-89,91-98,100-104,106-115,118-123,125-133,135-141,143,145-151,155-161,166-168,170-172,175-189,193,197-201
+  0c60325957cf70a6 21,24,202
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.3",
+  "base_commit_sha": "14c8e308d9cd38639112ee515bd4fb42b8f00e2a",
+  "prompts": {
+    "0c60325957cf70a6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "768e740e-f293-4da7-8f48-2694a6f0ba96",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "YBM",
+      "messages": [],
+      "total_additions": 43,
+      "total_deletions": 29,
+      "accepted_lines": 26,
+      "overriden_lines": 2
+    },
+    "5cbfca345ded2e91": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "377efc66-accf-43de-9c46-02021b98e86c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "YBM",
+      "messages": [],
+      "total_additions": 174,
+      "total_deletions": 96,
+      "accepted_lines": 144,
+      "overriden_lines": 7
+    }
+  }
+}

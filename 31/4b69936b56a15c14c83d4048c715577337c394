@@ -1,0 +1,14 @@
+reports/mutation-survivors.json
+  h_89d2da8ff33004 22,331,341,361,371,381,391,401,411
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "314b69936b56a15c14c83d4048c715577337c394",
+  "prompts": {},
+  "humans": {
+    "h_89d2da8ff33004": {
+      "author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}

@@ -1,0 +1,19 @@
+src/deployments/README.md
+  s_a7c93df1b6897d::t_10e849cfd1f13f 39
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ce77775979b6ae1042a9fa11dd6e9c814477a238",
+  "prompts": {},
+  "sessions": {
+    "s_a7c93df1b6897d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6b3b0537-862f-4af3-bbaf-239e58b03252",
+        "model": "claude-fable-5-2"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}

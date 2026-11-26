@@ -1,0 +1,32 @@
+tests/misc/z3/babylon_max_collateral_cap_conversion.py
+  s_4234357a097dc9::t_508682829133e4 1-2,4-6
+src/spoke/libraries/BabylonLiquidationLogic.sol
+  s_4234357a097dc9::t_75300bd696416d 276,282-285
+  s_4234357a097dc9::t_b76323855bff38 330-331,338,344
+  s_4234357a097dc9::t_e9e6df8b29a5f4 235-236,249
+  s_4234357a097dc9::t_6338009abe7eec 310,319
+  s_4234357a097dc9::t_d116c17b8c2b76 308
+  s_4234357a097dc9::t_c593db38e0caa7 85
+  s_4234357a097dc9::t_2c6f44907f5f23 258-259,267-268
+  s_4234357a097dc9::t_3ed20d44c021f2 279-281,286-290
+  s_4234357a097dc9::t_ff6c3157093d29 406
+  s_4234357a097dc9::t_b79bd40244ea3e 232
+snapshots/BabylonSpoke.Operations.json
+  s_4234357a097dc9::t_4ea6107dc37449 4-8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "058b2037f1363833c1bd3c01429b808a197bba72",
+  "prompts": {},
+  "sessions": {
+    "s_4234357a097dc9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e46603eb-682a-4e30-8a94-e7285f89e305",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}

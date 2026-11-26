@@ -1,0 +1,46 @@
+resources/config-engine.svg
+  h_89d2da8ff33004 1,19,22,25,27,32,34-35,37,42,44-56,64-65,68,71,74-75,78,82-83,86-87,90-91,94-95,101-102,104-105,107-108,110-111,114,118-119,122-123,126-127,130-131,136,139-140,142-143,145-149,151
+src/config-engine/AaveV4Payload.sol
+  h_89d2da8ff33004 407-408,417-423
+src/config-engine/README.md
+  h_89d2da8ff33004 11,25-35,103-107,135,150-159
+src/config-engine/interfaces/IAaveV4ConfigEngine.sol
+  h_89d2da8ff33004 18-23,26,312,320,428-430
+src/config-engine/libraries/AccessManagerEngine.sol
+  h_89d2da8ff33004 35-36,52-54
+src/config-engine/libraries/HubEngine.sol
+  h_89d2da8ff33004 22-25,27,223-224,228-234,237,239-245,254
+src/config-engine/libraries/TokenizationSpokeDeployer.sol
+  h_89d2da8ff33004 13-15,18,23,29-30,32-33,45,70
+tests/config-engine/AaveV4Payload.t.sol
+  h_89d2da8ff33004 879-880,1025-1026,1029-1031,1035-1113
+tests/config-engine/AccessManagerEngine.t.sol
+  h_89d2da8ff33004 6-7,223-224,250-251,275-276,301-302,324-325,331-389,400-401,428-429,459-460
+tests/config-engine/BaseConfigEngine.t.sol
+  h_89d2da8ff33004 41,78-79,81,159,340-345
+tests/config-engine/GovernanceTopology.t.sol
+  h_89d2da8ff33004 1-87
+tests/config-engine/HubEngine.t.sol
+  h_89d2da8ff33004 6,763,779,785-790,798,802-814,822,832,842,847,852-854,856-866,868,870-878,880-881,884,889,891,894-896,898-908,910,912-923,929-930,932-936,970-980,1166
+tests/helpers/mocks/config-engine/MockGovernanceExecutor.sol
+  h_89d2da8ff33004 1-26
+tests/helpers/mocks/config-engine/MockTokenizationListingPayload.sol
+  h_89d2da8ff33004 1-65
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "2524fe4018a42750300e114f2a8c4355df62a878",
+  "prompts": {},
+  "humans": {
+    "h_0f977de3f043fc": {
+      "author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    },
+    "h_89d2da8ff33004": {
+      "author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    },
+    "h_e42aa0fb58e660": {
+      "author": "Alexandru Niculae"
+    }
+  }
+}

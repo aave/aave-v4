@@ -1,0 +1,56 @@
+src/spoke/instances/PermissionedSpokeInstance.sol
+  s_8edb99a82f115a::t_b7d8f69831b135 21-29
+tests/helpers/mocks/MockSpokeGate.sol
+  s_8edb99a82f115a::t_7b0449e76bf699 10-11
+  s_8edb99a82f115a::t_015442c8691f51 36
+src/spoke/PermissionedSpoke.sol
+  s_8edb99a82f115a::t_4ab70ad53ec9c5 9-10,12,22-25,27,29-30
+src/spoke/Spoke.sol
+  s_8edb99a82f115a::t_c50867720dee78 915-926
+  s_8edb99a82f115a::t_dc8a16ff8e3e6b 89-91
+  s_8edb99a82f115a::t_58be6d60e4ef5b 353
+  s_8edb99a82f115a::t_157464f353a204 229,248,278,309,395
+src/spoke/interfaces/ISpokeGate.sol
+  s_8edb99a82f115a::t_4d3d863f6d0178 6-7,9,11
+tests/contracts/spoke/misc/PermissionedSpoke.t.sol
+  s_8edb99a82f115a::t_d47f1fc579f853 152,178-190
+  s_8edb99a82f115a::t_111b58caff1712 191
+snapshots/ConfigPositionManager.Operations.json
+  s_8edb99a82f115a::t_2b3099dd1d450a 10
+snapshots/GiverPositionManager.Operations.json
+  s_8edb99a82f115a::t_bebaeaf57d9efb 2-3
+snapshots/NativeTokenGateway.Operations.json
+  s_8edb99a82f115a::t_f0efc5debf08fc 2-7
+snapshots/PermissionedSpoke.Operations.json
+  s_8edb99a82f115a::t_83448ae30ca7cc 2-16
+snapshots/SignatureGateway.Operations.json
+  s_8edb99a82f115a::t_1bff484f243966 2-3,5-6,8-9
+snapshots/Spoke.Operations.ZeroRiskPremium.json
+  s_8edb99a82f115a::t_923d96b89a0ae2 2-13,16-19,24-33
+snapshots/Spoke.Operations.json
+  s_8edb99a82f115a::t_e2349b434e5ce4 2-13,16-19,24-33
+snapshots/TakerPositionManager.Operations.json
+  s_8edb99a82f115a::t_e4fe569dab92fa 5-6,9-10
+tests/contracts/spoke/position-manager/Spoke.PositionManager.t.sol
+  s_8edb99a82f115a::t_beaef0e38f171a 52,98,157,217,306,351,404
+tests/helpers/mocks/MockSpoke.sol
+  s_8edb99a82f115a::t_fe85ed8e416a7d 40
+tests/helpers/mocks/PolicyGates.sol
+  s_8edb99a82f115a::t_44ea1bd8f774fd 11,16,18,34,37,56
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "9cc0d0f8300c904d0b1c4406c7d3449a684fcf00",
+  "prompts": {},
+  "sessions": {
+    "s_8edb99a82f115a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "eef1846f-483e-488d-9f7c-f625a7b2a5cd",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}

@@ -1,0 +1,23 @@
+certora/spec/SpokeHealthFactor.spec
+  afb38c95ecb411cf 38
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.3",
+  "base_commit_sha": "c77f15863506aff315e36dfb0390ccc86c53a1e5",
+  "prompts": {
+    "afb38c95ecb411cf": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ca113ec8-5b10-409f-bcde-9391394f9498",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "YBM",
+      "messages": [],
+      "total_additions": 9,
+      "total_deletions": 9,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    }
+  }
+}

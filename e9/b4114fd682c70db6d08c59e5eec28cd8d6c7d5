@@ -1,0 +1,24 @@
+src/deployments/README.md
+  s_960a65d3660a8e::t_fba3dcf909a63e 110,140,154-157,159-167,204-209,214-216,269-273
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "e9b4114fd682c70db6d08c59e5eec28cd8d6c7d5",
+  "prompts": {},
+  "humans": {
+    "h_943f5bfc0f6106": {
+      "author": "AyushKaul <ayush@aave.com>"
+    }
+  },
+  "sessions": {
+    "s_960a65d3660a8e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "119aec35-2cca-4a8b-97f2-59c6dcd18776",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "AyushKaul <ayush@aave.com>"
+    }
+  }
+}

@@ -1,0 +1,46 @@
+src/utils/IFeeSharesMinter.sol
+  s_415829168c7d16::t_5d7a55a870a28d 20
+  s_415829168c7d16::t_866ca1c67c7f48 25
+tests/contracts/utils/FeeSharesMinter.t.sol
+  s_415829168c7d16::t_9901edd6a9d11e 270-279,287,290-291,294-316
+  s_415829168c7d16::t_7f6cc6cba85309 207,212-213,218,221-223,225-231,234
+  s_415829168c7d16::t_5650d13bda4227 53,56-59,61-62,71-73,77-81
+  s_415829168c7d16::t_abb96a033d03f7 27
+  s_415829168c7d16::t_9b8a966c52beaf 208-211,214-217,219-220,224
+  s_415829168c7d16::t_ea9ee7a81672f6 293
+  s_415829168c7d16::t_7940c144c5e634 54-55,60,149,151-153,157,159-160,163,166,170,172-175,177,180,186,188-191,197-198,201-204,238,252,254-255,263,266-269,280-286,288-289,292,317-326
+  s_415829168c7d16::t_67bb56fbba733d 119-122
+  s_415829168c7d16::t_9593713a7589e6 140-142
+  s_415829168c7d16::t_a834c546e8ab55 126,134,143,145
+src/utils/FeeSharesMinter.sol
+  s_415829168c7d16::t_74b17febafcf1c 14-15
+  s_415829168c7d16::t_200fa0994d28bd 29-30,32
+  s_415829168c7d16::t_9d51040e1335cb 75-77,82,87
+  h_0f977de3f043fc 7,37-38,44-45
+  s_415829168c7d16::t_c3d3eb7024d012 46,48
+src/deployments/utils/libraries/InputUtils.sol
+  s_415829168c7d16::t_821375901bc3a9 11
+src/deployments/orchestration/AaveV4DeployOrchestration.sol
+  s_415829168c7d16::t_3a882b41f151d3 400
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "98c4cc4ed47fd7b7fe5275cfaa5c0cc2f409af6a",
+  "prompts": {},
+  "humans": {
+    "h_0f977de3f043fc": {
+      "author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  },
+  "sessions": {
+    "s_415829168c7d16": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b166ab29-a97a-4a2a-8af0-71269f85957d",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}

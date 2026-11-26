@@ -1,0 +1,20 @@
+src/spoke/libraries/BabylonLiquidationLogic.sol
+  s_602c0abcbd103d::t_54ecb2f0efc5f1 15
+  s_602c0abcbd103d::t_85da43a2eade8a 205-208
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "f20da4a69b156b79de6d58a6e53a24c22ca042df",
+  "prompts": {},
+  "sessions": {
+    "s_602c0abcbd103d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1ea1deba-813b-43d3-807f-1e851ba7b60a",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}

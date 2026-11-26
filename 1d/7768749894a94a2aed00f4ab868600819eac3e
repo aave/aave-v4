@@ -1,0 +1,35 @@
+tests/contracts/libraries/BulkLeversMap.t.sol
+  s_b6ed679d663ba8::t_bf4fc3b6ef75b9 23-26,35-38
+  s_dee9832c98fc23::t_ff0d21788bb75d 61-66
+  s_b6ed679d663ba8::t_6b229b6985451a 1-22,27-34,39-60,67-100
+tests/helpers/mocks/BulkLeversMapWrapper.sol
+  s_dee9832c98fc23::t_ccdcfc55b3a14d 22-25
+  s_b6ed679d663ba8::t_8830de9113c6d6 1-21,26
+src/libraries/BulkLeversMap.sol
+  s_dee9832c98fc23::t_40c8a6e225e9fa 38,43-50
+  s_b6ed679d663ba8::t_1c5cda7936ba76 1-37,39-42,51-52
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "1d7768749894a94a2aed00f4ab868600819eac3e",
+  "prompts": {},
+  "sessions": {
+    "s_b6ed679d663ba8": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "40b65890-0023-40ef-92d3-13282155b8a7",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "AyushKaul <ayush@aave.com>"
+    },
+    "s_dee9832c98fc23": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f8345fe8-6589-450b-9245-70fc6894eed5",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "AyushKaul <ayush@aave.com>"
+    }
+  }
+}

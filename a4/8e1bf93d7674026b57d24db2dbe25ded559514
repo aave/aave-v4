@@ -1,0 +1,110 @@
+tests/contracts/tokenization-spoke/TokenizationSpoke.LegacyUpgrade.t.sol
+  s_2f6dddbd868477::t_28804a3d48dc53 1-165
+src/config-engine/libraries/HubEngine.sol
+  s_2f6dddbd868477::t_a06bda29fb5e21 27-28,30-34,47,226,230-231,245
+src/config-engine/libraries/TokenizationSpokeDeployer.sol
+  s_2f6dddbd868477::t_9f9d61b083c1cc 16,19,27,36-38,43,51,58-62,65-66,70-75,77-81
+tests/config-engine/BaseConfigEngine.t.sol
+  s_2f6dddbd868477::t_7f5988714d6960 37-38
+  s_2f6dddbd868477::t_bfaea834ada7e7 162
+snapshots/TokenizationSpoke.Operations.json
+  s_2f6dddbd868477::t_5e41bd4241a436 2-16
+tests/helpers/mocks/deployments/procedures/AaveV4TokenizationSpokeDeployProcedureWrapper.sol
+  s_2f6dddbd868477::t_a6c9c4bca03d43 9-14,21,23-24
+tests/deployments/batches/AaveV4TokenizationSpokeImplementationBatch.t.sol
+  s_2f6dddbd868477::t_5b7ce89d449921 1-4,6-44
+  s_2f6dddbd868477::t_8c40b513a37aa1 5
+src/spoke/interfaces/ITokenizationSpoke.sol
+  s_2f6dddbd868477::t_5a3b88c824bb4b 67,72-73
+  s_2f6dddbd868477::t_389309a1ad936b 74
+tests/deployments/procedures/deploy/spoke/AaveV4TokenizationSpokeDeployProcedure.t.sol
+  s_2f6dddbd868477::t_a6c9c4bca03d43 12,19,21,60,62-78,80-83,87-88,91-102,104-105,115-116,126-127,137-138,148,150-151,160,162-164
+  s_2f6dddbd868477::t_e884db67424adc 161
+  s_2f6dddbd868477::t_4616b8d5d32993 5
+tests/config-engine/HubEngine.t.sol
+  s_2f6dddbd868477::t_bfaea834ada7e7 775,792-804,821,843,942,977-984
+  s_2f6dddbd868477::t_e5250dfc7a8247 988,991
+src/spoke/instances/TokenizationSpokeInstance.sol
+  s_2f6dddbd868477::t_5a3b88c824bb4b 9,11,14,19-20,24-25,29
+tests/deployments/batches/BatchBase.t.sol
+  s_2f6dddbd868477::t_76283ce6b49206 19
+tests/contracts/tokenization-spoke/TokenizationSpoke.Upgradeable.t.sol
+  s_2f6dddbd868477::t_4df8bde4e6f52a 22
+  s_2f6dddbd868477::t_379e8886343d5f 47,69,104,165-170
+  s_2f6dddbd868477::t_e884db67424adc 176
+tests/helpers/mocks/LegacyTokenizationSpokeInstance.sol
+  s_2f6dddbd868477::t_fff79239c55cb7 1-16,18-471
+  s_2f6dddbd868477::t_5a203cf169369f 17
+src/deployments/batches/AaveV4TokenizationSpokeImplementationBatch.sol
+  s_2f6dddbd868477::t_953b40a07e829f 1-29
+src/deployments/procedures/deploy/spoke/AaveV4TokenizationSpokeDeployProcedure.sol
+  s_2f6dddbd868477::t_953b40a07e829f 12,14-27,35-36,43-44,52,54-57
+tests/deployments/batches/AaveV4TokenizationSpokeBatch.t.sol
+  s_2f6dddbd868477::t_76283ce6b49206 14,59-62,65,78-79,96-117,123,136,149,162,174
+tests/utils/BatchTestProcedures.sol
+  s_2f6dddbd868477::t_72bbafd8c61ce4 440,893-896
+  s_2f6dddbd868477::t_09f21ea171f1fa 34,240-244,371,425-439
+  s_2f6dddbd868477::t_a4529f1985800f 441-442
+src/config-engine/interfaces/IAaveV4ConfigEngine.sol
+  s_2f6dddbd868477::t_a06bda29fb5e21 345-351,353
+src/deployments/libraries/BatchReports.sol
+  s_2f6dddbd868477::t_953b40a07e829f 59-63,65
+tests/contracts/tokenization-spoke/TokenizationSpoke.Config.t.sol
+  s_2f6dddbd868477::t_16fbb8622ed420 7-8,13-17,19-24,27-51,54-60,68-97,125-135
+tests/deployments/utils/MetadataLogger.t.sol
+  s_2f6dddbd868477::t_09f21ea171f1fa 21-23,78-81
+src/deployments/README.md
+  s_2f6dddbd868477::t_8686a880d0cd81 35,39-41
+src/deployments/libraries/OrchestrationReports.sol
+  s_2f6dddbd868477::t_953b40a07e829f 27,37
+tests/deployments/orchestration/AaveV4TestOrchestration.sol
+  s_2f6dddbd868477::t_76283ce6b49206 179,189
+src/config-engine/AaveV4ConfigEngine.sol
+  s_2f6dddbd868477::t_a06bda29fb5e21 16-27,30
+  s_2f6dddbd868477::t_4d80003814549a 15
+src/deployments/utils/MetadataLogger.sol
+  s_2f6dddbd868477::t_953b40a07e829f 23-26
+tests/helpers/tokenization-spoke/SetupHelpers.sol
+  s_2f6dddbd868477::t_379e8886343d5f 17-19,31-33,36,38-41
+tests/config-engine/GovernanceTopology.t.sol
+  s_2f6dddbd868477::t_bfaea834ada7e7 66
+tests/helpers/mocks/MockTokenizationSpokeInstance.sol
+  s_2f6dddbd868477::t_379e8886343d5f 16,23-24,28
+src/deployments/orchestration/AaveV4DeployBase.sol
+  s_2f6dddbd868477::t_953b40a07e829f 13,152-165,174,183
+src/spoke/TokenizationSpoke.sol
+  s_2f6dddbd868477::t_5a3b88c824bb4b 37,61
+  s_2f6dddbd868477::t_e884db67424adc 478-482
+  s_2f6dddbd868477::t_87d23ff6da0c4a 10,23,38-44,47-51,53-58,60,63-64,68-80
+  s_2f6dddbd868477::t_dd74c1507299cc 200,255-256,261-262,267-268,273-274,289-290,294,297,330-334,337,342,347,352,446-448,454-455,465-466,470-477,483-484
+  s_2f6dddbd868477::t_0534951fdad1d9 485
+src/deployments/orchestration/AaveV4DeployOrchestration.sol
+  s_2f6dddbd868477::t_e884db67424adc 74-75
+  s_2f6dddbd868477::t_953b40a07e829f 73,76-79,350-356
+  s_2f6dddbd868477::t_1c6835a62166cd 357-360
+src/deployments/batches/AaveV4TokenizationSpokeBatch.sol
+  s_2f6dddbd868477::t_953b40a07e829f 9,14,22,30-38,41-42
+src/config-engine/README.md
+  s_2f6dddbd868477::t_8686a880d0cd81 151-153
+  s_2f6dddbd868477::t_d577ed510e5070 154
+tests/deployments/fork/PostDeploymentVerificationBase.t.sol
+  s_2f6dddbd868477::t_72bbafd8c61ce4 38-39
+src/deployments/utils/interfaces/ITokenizationSpokeInstance.sol
+  s_2f6dddbd868477::t_5a3b88c824bb4b 10-12,15-20
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a48e1bf93d7674026b57d24db2dbe25ded559514",
+  "prompts": {},
+  "sessions": {
+    "s_2f6dddbd868477": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "52eda097-9f9d-49e1-848d-3540693350bb",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "DhairyaSethi <55102840+DhairyaSethi@users.noreply.github.com>"
+    }
+  }
+}

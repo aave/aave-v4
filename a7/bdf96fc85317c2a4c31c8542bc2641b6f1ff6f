@@ -1,0 +1,28 @@
+src/horizon/interfaces/IHorizonSpokeGate.sol
+  s_8edb99a82f115a::t_f70d1d90393ffe 1-28
+tests/setup/PermissionedSpokeBase.sol
+  s_8edb99a82f115a::t_a76044ee1c8a3a 25-29,31
+src/horizon/HorizonSpokeGate.sol
+  s_8edb99a82f115a::t_5109bf56e9a6f4 1-56
+tests/contracts/horizon/HorizonSpokeGate.t.sol
+  s_8edb99a82f115a::t_9fc40dbb52bb7a 185
+  s_8edb99a82f115a::t_df7f2fa99d5783 1-134,136-184,186-263
+  s_8edb99a82f115a::t_3d1dcaeddf7235 135
+  s_8edb99a82f115a::t_46faf1f0334007 264-271
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "a7bdf96fc85317c2a4c31c8542bc2641b6f1ff6f",
+  "prompts": {},
+  "sessions": {
+    "s_8edb99a82f115a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "eef1846f-483e-488d-9f7c-f625a7b2a5cd",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}

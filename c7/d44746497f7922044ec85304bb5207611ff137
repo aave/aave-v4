@@ -1,0 +1,82 @@
+tests/setup/BabylonBase.t.sol
+  s_8735c0799a11e7::t_076025c0aa5d98 9-11,24-34,80-81,86,185-209
+src/spoke/Spoke.sol
+  s_8735c0799a11e7::t_30990dc6f05299 127,132,171,173,915
+src/deployments/orchestration/AaveV4DeployBase.sol
+  s_8735c0799a11e7::t_c2e65394a16336 116-117,125-126,134-135
+src/deployments/orchestration/AaveV4DeployOrchestration.sol
+  s_8735c0799a11e7::t_49fbf92b4b627a 251-255,263-264,279-280,293-294,300
+snapshots/Spoke.Operations.json
+  s_8735c0799a11e7::t_8f9d375827bee5 11
+src/deployments/procedures/deploy/spoke/AaveV4SpokeDeployProcedure.sol
+  s_8735c0799a11e7::t_d0bec124a3260e 47-48,52-53,62-63,70,73-76
+tests/deployments/orchestration/AaveV4TestOrchestration.sol
+  s_8735c0799a11e7::t_d082eb201fa303 181-182,191-192
+snapshots/Spoke.Operations.ZeroRiskPremium.json
+  s_8735c0799a11e7::t_9a3cc7cda68d67 11
+tests/contracts/spoke/configuration/BabylonSpoke.Config.t.sol
+  s_8735c0799a11e7::t_d7c5dc149af98d 1-29,40-291
+  s_8735c0799a11e7::t_f9159e70ffdc5b 30-39
+src/deployments/utils/libraries/InputUtils.sol
+  s_8735c0799a11e7::t_229ed76df4f8ba 31-32,53-54
+src/spoke/BabylonSpoke.sol
+  s_8735c0799a11e7::t_da5901c3683d49 4,13,23-24,27,29-40,50,59,100-127,135,140-143,145
+tests/contracts/spoke/liquidation/Spoke.BabylonLiquidationCall.Scenarios.t.sol
+  s_8735c0799a11e7::t_9ea3af6c560585 6-7,54-59,79-84,106-111,133-138,159-162,164,182,184,212,252-253,255-258,260-261,263-264,267-268,287,303-304,309,315-318,320-321,346,349,363,369,375
+tests/deployments/batches/AaveV4BabylonSpokeInstanceBatch.t.sol
+  s_8735c0799a11e7::t_0757a2e9c896f0 5,52-81
+  s_8735c0799a11e7::t_fa11e02744d032 6,11,18-19,46-51,92-106,118-119,131-132,143-144
+tests/deployments/fork/PostDeploymentVerificationTest.t.sol
+  s_8735c0799a11e7::t_0f8c7ec902dc7e 221-222,276-277
+src/spoke/instances/BabylonSpokeInstance.sol
+  s_8735c0799a11e7::t_0c430830ab81ab 15-21,27-28,32-33
+src/deployments/README.md
+  s_8735c0799a11e7::t_f56a10aac7ef05 39
+src/config-engine/README.md
+  s_8735c0799a11e7::t_a308ad6e8d825c 39-46
+tests/helpers/mocks/MockBabylonSpokeInstance.sol
+  s_8735c0799a11e7::t_3ee2e9d22073ac 1-43
+snapshots/TakerPositionManager.Operations.json
+  s_8735c0799a11e7::t_7fa222d6ee18ef 5
+tests/deployments/AaveV4BatchDeployment.t.sol
+  s_8735c0799a11e7::t_0e18849b9ea12d 31-32,334,337-340,369-403,462-463,500-501
+src/deployments/batches/AaveV4BabylonSpokeInstanceBatch.sol
+  s_8735c0799a11e7::t_5afce3716a268a 14-15,25-26,33-34,44-45
+snapshots/SignatureGateway.Operations.json
+  s_8735c0799a11e7::t_986296308af1da 2,5,8
+scripts/deploy/examples/AaveV4DeployAnvil.s.sol
+  s_8735c0799a11e7::t_6ddae057ff8fef 61-62
+snapshots/BabylonSpoke.Operations.json
+  s_8735c0799a11e7::t_be39ae866891ee 4-8,14,21
+tests/scripts/AaveV4DeployBatchBaseScript.t.sol
+  s_8735c0799a11e7::t_4a08a47ed160e7 72-73
+tests/utils/BatchTestProcedures.sol
+  s_8735c0799a11e7::t_c69517d326a7cc 172-173,445
+tests/contracts/spoke/liquidation/Spoke.BabylonLiquidationCall.Fuzz.t.sol
+  s_8735c0799a11e7::t_b241da92baf223 8-10,28-30,39,137,160
+tests/deployments/procedures/deploy/roles/AaveV4AccessManagerRolesProcedure.t.sol
+  s_8735c0799a11e7::t_9835abcddb5b0e 202
+tests/contracts/spoke/liquidation/Spoke.BabylonLiquidationCall.Base.t.sol
+  s_8735c0799a11e7::t_dc3936411f4fbc 58
+src/spoke/interfaces/IBabylonSpoke.sol
+  s_8735c0799a11e7::t_23398d2dc262c0 11,14,47,70-74
+  s_8735c0799a11e7::t_ef4118b242b483 51
+tests/gas/BabylonSpoke.Operations.gas.t.sol
+  s_8735c0799a11e7::t_13b306d84356ea 13,16-26
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "c7d44746497f7922044ec85304bb5207611ff137",
+  "prompts": {},
+  "sessions": {
+    "s_8735c0799a11e7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3b79ae1e-863b-4fc1-bc48-ba957ce7e0b8",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}

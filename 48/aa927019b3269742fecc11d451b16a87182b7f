@@ -1,0 +1,23 @@
+certora/README.md
+  b9de9c4f23cf0b21 354-371,373-374,445,447,449-454,478-485,487,637-642
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.22",
+  "base_commit_sha": "48aa927019b3269742fecc11d451b16a87182b7f",
+  "prompts": {
+    "b9de9c4f23cf0b21": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "20be5a7b-a17f-4d9b-ba5f-9aa411647a53",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "YBM <31329384+yan-man@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 48,
+      "total_deletions": 0,
+      "accepted_lines": 46,
+      "overriden_lines": 2
+    }
+  }
+}

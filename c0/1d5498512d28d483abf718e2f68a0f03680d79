@@ -1,0 +1,36 @@
+tests/contracts/spoke/configurator/SpokeConfigurator.GranularAccessControl.t.sol
+  047f86d45167dcfe 40,45-48,377-381,383-394,396-470
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "c01d5498512d28d483abf718e2f68a0f03680d79",
+  "prompts": {
+    "047f86d45167dcfe": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c7e9afa7-9cdc-4c6c-814c-e06e6bf5d5b7",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "YBM",
+      "messages": [],
+      "total_additions": 141,
+      "total_deletions": 50,
+      "accepted_lines": 97,
+      "overriden_lines": 1
+    },
+    "3a8e8c0833755170": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8e65e4b7-c5fc-477b-9952-258b7f4ee945",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "YBM",
+      "messages": [],
+      "total_additions": 2,
+      "total_deletions": 2,
+      "accepted_lines": 0,
+      "overriden_lines": 0
+    }
+  }
+}

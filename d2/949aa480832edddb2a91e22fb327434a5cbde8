@@ -1,0 +1,43 @@
+tests/contracts/position-manager/NativeTokenGateway.t.sol
+  s_13d08828548eba::t_ab986d2971639e 113-114,134-135,415-416,436-437,551-552,572-573,885-886,906-907
+tests/contracts/spoke/risk-premium/Spoke.UpdateUserRiskPremium.t.sol
+  s_13d08828548eba::t_ab986d2971639e 35-36
+tests/contracts/spoke/withdraw/Spoke.Withdraw.t.sol
+  s_13d08828548eba::t_ab986d2971639e 56-57,89-90
+tests/helpers/mocks/MockTransientStoreCaller.sol
+  s_13d08828548eba::t_ab986d2971639e 1-15
+tests/helpers/mocks/MockReentrantCaller.sol
+  s_13d08828548eba::t_ab986d2971639e 5,14,16,19,23
+tests/setup/BaseState.sol
+  s_13d08828548eba::t_ab986d2971639e 93-97
+tests/contracts/spoke/configuration/Spoke.UpdateUserDynamicConfig.t.sol
+  s_13d08828548eba::t_ab986d2971639e 35-36
+tests/contracts/spoke/borrow/Spoke.Borrow.t.sol
+  s_13d08828548eba::t_ab986d2971639e 26-27,52-53
+tests/setup/Base.t.sol
+  s_13d08828548eba::t_f99118b1289cdf 132,265,267
+tests/contracts/spoke/liquidation/Spoke.LiquidationCall.Scenarios.t.sol
+  s_13d08828548eba::t_ab986d2971639e 79-80,107-108,137-138,165-166
+tests/contracts/spoke/misc/Spoke.SetUsingAsCollateral.t.sol
+  s_13d08828548eba::t_ab986d2971639e 94-95
+tests/contracts/spoke/repay/Spoke.Repay.t.sol
+  s_13d08828548eba::t_ab986d2971639e 133-134
+tests/contracts/spoke/supply/Spoke.Supply.t.sol
+  s_13d08828548eba::t_ab986d2971639e 99-100
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d2949aa480832edddb2a91e22fb327434a5cbde8",
+  "prompts": {},
+  "sessions": {
+    "s_13d08828548eba": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e1c4d0f4-ec86-460c-8f74-44b0d0d80705",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "DhairyaSethi <55102840+DhairyaSethi@users.noreply.github.com>"
+    }
+  }
+}

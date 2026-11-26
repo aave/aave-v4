@@ -1,0 +1,39 @@
+src/emergency/EmergencySteward.sol
+  s_960a65d3660a8e::t_0ac0d86a2b3c70 17-18,123-133
+  s_960a65d3660a8e::t_710f7e6ad1016d 134-138
+src/deployments/utils/libraries/Roles.sol
+  s_960a65d3660a8e::t_0ac0d86a2b3c70 155,189,194,202,209
+tests/contracts/emergency/EmergencySteward.t.sol
+  s_960a65d3660a8e::t_0ac0d86a2b3c70 42-228
+tests/deployments/procedures/deploy/roles/AaveV4SpokeConfiguratorRolesProcedure.t.sol
+  s_960a65d3660a8e::t_0ac0d86a2b3c70 147,175,180
+src/emergency/interfaces/IEmergencySteward.sol
+  s_960a65d3660a8e::t_0ac0d86a2b3c70 68-79
+tests/config-engine/AaveV4Payload.t.sol
+  s_960a65d3660a8e::t_0ac0d86a2b3c70 19,897
+tests/deployments/procedures/deploy/roles/AaveV4EmergencyStewardRolesProcedure.t.sol
+  s_960a65d3660a8e::t_0ac0d86a2b3c70 94,101
+tests/setup/Base.t.sol
+  s_960a65d3660a8e::t_0ac0d86a2b3c70 248
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "a139c2a7c3ba51362ba2ffffa6e2c8d20967bed0",
+  "prompts": {},
+  "humans": {
+    "h_943f5bfc0f6106": {
+      "author": "AyushKaul <ayush@aave.com>"
+    }
+  },
+  "sessions": {
+    "s_960a65d3660a8e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "119aec35-2cca-4a8b-97f2-59c6dcd18776",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "AyushKaul <ayush@aave.com>"
+    }
+  }
+}

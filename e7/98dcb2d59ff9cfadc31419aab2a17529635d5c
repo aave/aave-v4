@@ -1,0 +1,142 @@
+tests/contracts/spoke/liquidation/Spoke.LiquidationCall.MaxCollateralToRemove.t.sol
+  s_602c0abcbd103d::t_5c5693c8c1d044 297-298
+  s_602c0abcbd103d::t_e65c3b016eee15 1-296,299-318
+  s_602c0abcbd103d::t_e0e5190ea33634 319-321
+src/spoke/Spoke.sol
+  s_602c0abcbd103d::t_b171d7aaf20f11 181-183
+  s_602c0abcbd103d::t_fc57c6e66aaf61 154-156
+  s_602c0abcbd103d::t_71f7f457ce1ea3 555-557
+  s_602c0abcbd103d::t_d63184495e2458 356,367
+tests/helpers/mocks/ReserveFlagsMapWrapper.sol
+  s_602c0abcbd103d::t_ad61e085651d8c 13-15,22-24,47-60,77-84,100-107
+src/spoke/SpokeConfigurator.sol
+  s_602c0abcbd103d::t_c3423149cf7b8d 120-143
+src/spoke/BabylonSpoke.sol
+  s_602c0abcbd103d::t_ec9af7e0b42419 1-9
+src/config-engine/interfaces/IAaveV4ConfigEngine.sol
+  s_602c0abcbd103d::t_44d69b22f56b34 194-195,207-208
+src/spoke/interfaces/ISpokeConfigurator.sol
+  s_602c0abcbd103d::t_d27e5cf5e884d6 90-109
+src/spoke/instances/BabylonSpokeInstance.sol
+  s_602c0abcbd103d::t_bd8161b4fe5018 1-34
+foundry.toml
+  s_602c0abcbd103d::t_a6ed88d3d04991 30
+tests/contracts/spoke/liquidation/Spoke.LiquidationCall.BypassTargetHealthFactor.t.sol
+  s_602c0abcbd103d::t_713a639f74f5f4 1-145
+  s_602c0abcbd103d::t_57d78d336b2fee 146-148
+tests/helpers/spoke/ConfigHelpers.sol
+  s_602c0abcbd103d::t_700f369c4d7684 61-88
+src/spoke/interfaces/ISpoke.sol
+  s_602c0abcbd103d::t_67b017460de76b 61-62,69-70
+  s_602c0abcbd103d::t_d58e105f7f2416 551-554
+  s_602c0abcbd103d::t_a9fed128110d6c 559,566
+  s_602c0abcbd103d::t_cd981b8472989c 412-414
+src/spoke/libraries/LiquidationLogic.sol
+  s_602c0abcbd103d::t_7ad91ac3b7009d 247
+  s_602c0abcbd103d::t_697e1854d2f029 568
+  s_602c0abcbd103d::t_4365691c2de96f 671-681
+  s_602c0abcbd103d::t_dff7e714e86040 727,731-734,835-840,844-871
+  s_602c0abcbd103d::t_513026dc27d715 416,422-423
+  s_602c0abcbd103d::t_49d79e13b038c9 658
+  s_602c0abcbd103d::t_c148e837cd24bb 728-729,785-834,841-843,872-873
+  s_602c0abcbd103d::t_087c0f6f12fc3c 157-167
+  s_602c0abcbd103d::t_f278ca19644486 181,187-188
+  s_602c0abcbd103d::t_a5416abbc4d866 735-736
+  s_602c0abcbd103d::t_b1c25da830652b 140-141
+  s_602c0abcbd103d::t_bfbab566b7cdd6 110
+  s_602c0abcbd103d::t_9283b8e361ce94 950
+  s_602c0abcbd103d::t_73c778ed8ca793 39
+  s_602c0abcbd103d::t_a2c7fe8b2b1af4 62
+  s_602c0abcbd103d::t_488f959afee5c6 384,392-398
+  s_602c0abcbd103d::t_140fb853734188 612-613,627-629
+  s_602c0abcbd103d::t_4a7f4a7f211d5f 902-916
+  s_602c0abcbd103d::t_86045ee4f69524 874-894
+  s_602c0abcbd103d::t_4fcccaaaa1a5fb 399,719-726,730
+src/spoke/libraries/ReserveFlagsMap.sol
+  s_602c0abcbd103d::t_2effc43247d035 18-21,28-29,35-37,44-45
+  s_602c0abcbd103d::t_51ff64f71866d4 87-114
+  s_602c0abcbd103d::t_530c811905a561 143-156
+src/config-engine/libraries/SpokeEngine.sol
+  s_602c0abcbd103d::t_3fd0513f10a0d7 90-103
+tests/helpers/spoke/Assertions.sol
+  s_602c0abcbd103d::t_ead1b06fc9438d 496-497
+tests/setup/BaseHelpers.sol
+  s_602c0abcbd103d::t_b100a02ca96cda 262-276
+  s_602c0abcbd103d::t_451a77b37c1fc5 261
+snapshots/ConfigPositionManager.Operations.json
+  s_602c0abcbd103d::t_10066b9f0b679f 10-12
+snapshots/GiverPositionManager.Operations.json
+  s_602c0abcbd103d::t_9e593c0e4f5cc8 2-3
+snapshots/NativeTokenGateway.Operations.json
+  s_602c0abcbd103d::t_2324d5341ee226 2-7
+snapshots/SignatureGateway.Operations.json
+  s_602c0abcbd103d::t_ea75ac52822cb4 2-3,5-9
+snapshots/Spoke.Getters.json
+  s_602c0abcbd103d::t_02fec738603a50 2-6
+snapshots/Spoke.Operations.ZeroRiskPremium.json
+  s_602c0abcbd103d::t_c897d98bddf25b 4-13,16-28
+snapshots/Spoke.Operations.json
+  s_602c0abcbd103d::t_0b316a23a923f0 4-13,16-28
+snapshots/TakerPositionManager.Operations.json
+  s_602c0abcbd103d::t_e707cba818c5bf 6,9-10
+src/deployments/utils/libraries/Roles.sol
+  s_602c0abcbd103d::t_9ca3b714d5ee34 147,172-173
+tests/config-engine/AaveV4Payload.t.sol
+  s_602c0abcbd103d::t_bfb9bfe41ed3cb 665-667
+tests/config-engine/BaseConfigEngine.t.sol
+  s_602c0abcbd103d::t_9a3f471164c667 266-268,404-406,450-452
+tests/config-engine/SpokeEngine.t.sol
+  s_602c0abcbd103d::t_998c52b3dbb8eb 55-56,74-76,87-137,155-157,192-194,221-223,690-692,781-783,796-798,915-917,930-932
+tests/contracts/spoke/configuration/Spoke.Config.t.sol
+  s_602c0abcbd103d::t_69b6c5dd73924c 95-96
+tests/contracts/spoke/configuration/Spoke.DynamicConfig.Triggers.t.sol
+  s_602c0abcbd103d::t_85f8ed6008550b 137-144,160
+tests/contracts/spoke/configurator/SpokeConfigurator.GranularAccessControl.t.sol
+  s_602c0abcbd103d::t_0f3152073108f8 45-46,64-65,133-141
+tests/contracts/spoke/configurator/SpokeConfigurator.t.sol
+  s_602c0abcbd103d::t_7906f2001daaaf 323-384
+tests/contracts/spoke/libraries/ReserveFlagsMap.t.sol
+  s_602c0abcbd103d::t_e7f04aae454f62 13-14,27-28,35-37,43-45,52-53,188-225,229-234
+tests/contracts/spoke/libraries/SpokeUtils.t.sol
+  s_602c0abcbd103d::t_ebc1075353b5bf 24,34,44
+tests/contracts/spoke/libraries/liquidation-logic/LiquidationLogic.Base.t.sol
+  s_602c0abcbd103d::t_adadb1fe37c02e 125-127,238-240,365-367
+tests/contracts/spoke/libraries/liquidation-logic/LiquidationLogic.ExecuteLiquidation.t.sol
+  s_602c0abcbd103d::t_723d61050d9249 52,63,72
+tests/contracts/spoke/libraries/liquidation-logic/LiquidationLogic.LiquidateUser.t.sol
+  s_602c0abcbd103d::t_7e8ceec026543e 59,81,96-98
+tests/contracts/spoke/libraries/liquidation-logic/LiquidationLogic.LiquidationAmounts.t.sol
+  s_602c0abcbd103d::t_1834bb2cd0a49b 206,212-213,269,275-276,293-610
+tests/contracts/spoke/libraries/liquidation-logic/LiquidationLogic.ValidateLiquidationCall.t.sol
+  s_602c0abcbd103d::t_ecea1256aba5c6 14-22,31
+tests/contracts/spoke/liquidation/Spoke.LiquidationCall.Base.t.sol
+  s_602c0abcbd103d::t_c0897afdfd81ff 198,214-215,1356
+tests/contracts/spoke/liquidation/Spoke.LiquidationCall.Dust.t.sol
+  s_602c0abcbd103d::t_ce8a3cfc6fa3d1 121,131,196-203,210,269-276,283,349-356,363
+tests/contracts/spoke/liquidation/Spoke.LiquidationCall.Scenarios.t.sol
+  s_602c0abcbd103d::t_844c97ca691905 84,112,142,170,623,649,726,751,800,835,892,932
+tests/deployments/procedures/deploy/roles/AaveV4SpokeConfiguratorRolesProcedure.t.sol
+  s_602c0abcbd103d::t_9a212bc4e01862 101,126-127
+tests/gas/Spoke.Operations.gas.t.sol
+  s_602c0abcbd103d::t_939d9f376b1aec 145,161,178,195,212
+tests/helpers/spoke/SpokeActions.sol
+  s_602c0abcbd103d::t_e178292b0007d2 101-108
+tests/setup/Base.t.sol
+  s_602c0abcbd103d::t_f6aeddba2538be 993-994
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "e798dcb2d59ff9cfadc31419aab2a17529635d5c",
+  "prompts": {},
+  "sessions": {
+    "s_602c0abcbd103d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1ea1deba-813b-43d3-807f-1e851ba7b60a",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}
