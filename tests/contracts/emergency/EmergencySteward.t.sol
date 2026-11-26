@@ -281,7 +281,7 @@ contract EmergencyStewardTest is SpokeConfiguratorBaseTest {
     assertEq(_configuratorLogCount(), reserveCount);
     for (uint256 reserveIdx; reserveIdx < reserveCount; ++reserveIdx) {
       assertEq(spoke.getReserveConfig(reserveIdx).paused, true);
-      _assertPausedByPauseAllReserves(reserveIdx, true);
+      _assertPausedByBulkLevers(reserveIdx, true);
     }
   }
 
@@ -299,7 +299,7 @@ contract EmergencyStewardTest is SpokeConfiguratorBaseTest {
     assertEq(_configuratorLogCount(), spoke.getReserveCount() - 1);
     for (uint256 id; id < spoke.getReserveCount(); ++id) {
       assertTrue(spoke.getReserveConfig(id).paused);
-      _assertPausedByPauseAllReserves(id, id != daiId);
+      _assertPausedByBulkLevers(id, id != daiId);
     }
   }
 
@@ -341,7 +341,7 @@ contract EmergencyStewardTest is SpokeConfiguratorBaseTest {
     assertEq(_configuratorLogCount(), reserveCount);
     _assertOnlyReservePaused(type(uint256).max);
     for (uint256 id; id < reserveCount; ++id) {
-      _assertPausedByPauseAllReserves(id, false);
+      _assertPausedByBulkLevers(id, false);
     }
 
     // a second call is a no-op on every reserve and does not revert
@@ -375,7 +375,7 @@ contract EmergencyStewardTest is SpokeConfiguratorBaseTest {
     vm.startPrank(SPOKE_CONFIGURATOR_ADMIN);
     emergencySteward.pauseAllReserves(spokeAddr);
     spokeConfigurator.pauseReserve(spokeAddr, hubAddr, address(tokenList.dai));
-    _assertPausedByPauseAllReserves(_daiReserveId(spoke), false);
+    _assertPausedByBulkLevers(_daiReserveId(spoke), false);
     emergencySteward.unpauseAllReserves(spokeAddr);
     vm.stopPrank();
 
@@ -386,7 +386,7 @@ contract EmergencyStewardTest is SpokeConfiguratorBaseTest {
     vm.startPrank(SPOKE_CONFIGURATOR_ADMIN);
     emergencySteward.pauseAllReserves(spokeAddr);
     spokeConfigurator.updatePaused(spokeAddr, hubAddr, address(tokenList.dai), true);
-    _assertPausedByPauseAllReserves(_daiReserveId(spoke), false);
+    _assertPausedByBulkLevers(_daiReserveId(spoke), false);
     emergencySteward.unpauseAllReserves(spokeAddr);
     vm.stopPrank();
 
@@ -411,16 +411,16 @@ contract EmergencyStewardTest is SpokeConfiguratorBaseTest {
     _assertOnlyReservePaused(type(uint256).max);
   }
 
-  function test_isPausedByPauseAllReserves() public {
+  function test_getPausedByBulkLevers() public {
     uint256 daiId = _daiReserveId(spoke);
-    _assertPausedByPauseAllReserves(daiId, false);
+    _assertPausedByBulkLevers(daiId, false);
 
     vm.startPrank(SPOKE_CONFIGURATOR_ADMIN);
     emergencySteward.pauseAllReserves(spokeAddr);
-    _assertPausedByPauseAllReserves(daiId, true);
+    _assertPausedByBulkLevers(daiId, true);
 
     emergencySteward.unpauseAllReserves(spokeAddr);
-    _assertPausedByPauseAllReserves(daiId, false);
+    _assertPausedByBulkLevers(daiId, false);
     vm.stopPrank();
   }
 

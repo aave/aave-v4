@@ -470,7 +470,7 @@ contract SpokeConfiguratorGranularAccessControlTest is Base {
     spokeConfigurator.holdPaused(spokeAddr, hubAddr, underlying, BulkLeversMap.SPOKE_MASK);
 
     assertTrue(spoke.getReserveConfig(reserveId).paused);
-    assertTrue(spokeConfigurator.isPausedByPauseAllReserves(spokeAddr, hubAddr, underlying));
+    assertTrue(spokeConfigurator.getPausedByBulkLevers(spokeAddr, hubAddr, underlying));
   }
 
   function test_reserveManager_canCall_releasePaused() public {

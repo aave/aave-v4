@@ -581,12 +581,12 @@ interface ISpokeConfigurator {
     address underlying
   ) external view returns (bool, bool);
 
-  /// @notice Returns whether the Spoke-wide bulk lever holds the paused flag of a reserve.
+  /// @notice Returns which bulk levers hold the paused flag of a reserve.
   /// @param spoke The address of the Spoke.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
   /// @return True if the Spoke-wide bulk lever holds the paused flag.
-  function isPausedByPauseAllReserves(
+  function getPausedByBulkLevers(
     address spoke,
     address hub,
     address underlying

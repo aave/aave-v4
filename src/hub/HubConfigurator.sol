@@ -186,7 +186,7 @@ abstract contract HubConfigurator is AccessManagedUpgradeable, IHubConfigurator 
     uint256 assetId = targetHub.getAssetId(underlying);
     uint256 spokesCount = targetHub.getSpokeCount(assetId);
     for (uint256 i = 0; i < spokesCount; ++i) {
-      _bulkZeroCaps(
+      _holdZeroCaps(
         targetHub,
         underlying,
         assetId,
@@ -202,7 +202,7 @@ abstract contract HubConfigurator is AccessManagedUpgradeable, IHubConfigurator 
     uint256 assetId = targetHub.getAssetId(underlying);
     uint256 spokesCount = targetHub.getSpokeCount(assetId);
     for (uint256 i = 0; i < spokesCount; ++i) {
-      _bulkRestoreCaps(
+      _releaseZeroCaps(
         targetHub,
         underlying,
         assetId,
@@ -234,7 +234,7 @@ abstract contract HubConfigurator is AccessManagedUpgradeable, IHubConfigurator 
     uint256 assetId = targetHub.getAssetId(underlying);
     uint256 spokesCount = targetHub.getSpokeCount(assetId);
     for (uint256 i = 0; i < spokesCount; ++i) {
-      _bulkHalt(
+      _holdHalted(
         targetHub,
         underlying,
         assetId,
@@ -250,10 +250,13 @@ abstract contract HubConfigurator is AccessManagedUpgradeable, IHubConfigurator 
     uint256 assetId = targetHub.getAssetId(underlying);
     uint256 spokesCount = targetHub.getSpokeCount(assetId);
     for (uint256 i = 0; i < spokesCount; ++i) {
-      address spoke = targetHub.getSpokeAddress(assetId, i);
-      if (_releaseHalted(hub, assetId, spoke, BulkLeversMap.ASSET_MASK)) {
-        _unhalt(targetHub, underlying, assetId, spoke);
-      }
+      _releaseHalted(
+        targetHub,
+        underlying,
+        assetId,
+        targetHub.getSpokeAddress(assetId, i),
+        BulkLeversMap.ASSET_MASK
+      );
     }
   }
 
@@ -393,7 +396,7 @@ abstract contract HubConfigurator is AccessManagedUpgradeable, IHubConfigurator 
     uint256 assetCount = targetHub.getAssetCount();
     for (uint256 assetId = 0; assetId < assetCount; ++assetId) {
       if (targetHub.isSpokeListed(assetId, spoke)) {
-        _bulkHalt(
+        _holdHalted(
           targetHub,
           _getUnderlying(targetHub, assetId),
           assetId,
@@ -409,9 +412,14 @@ abstract contract HubConfigurator is AccessManagedUpgradeable, IHubConfigurator 
     IHub targetHub = IHub(hub);
     uint256 assetCount = targetHub.getAssetCount();
     for (uint256 assetId = 0; assetId < assetCount; ++assetId) {
-      // Spokes not listed for the asset are never recorded.
-      if (_releaseHalted(hub, assetId, spoke, BulkLeversMap.SPOKE_MASK)) {
-        _unhalt(targetHub, _getUnderlying(targetHub, assetId), assetId, spoke);
+      if (targetHub.isSpokeListed(assetId, spoke)) {
+        _releaseHalted(
+          targetHub,
+          _getUnderlying(targetHub, assetId),
+          assetId,
+          spoke,
+          BulkLeversMap.SPOKE_MASK
+        );
       }
     }
   }
@@ -434,7 +442,7 @@ abstract contract HubConfigurator is AccessManagedUpgradeable, IHubConfigurator 
     uint256 assetCount = targetHub.getAssetCount();
     for (uint256 assetId = 0; assetId < assetCount; ++assetId) {
       if (targetHub.isSpokeListed(assetId, spoke)) {
-        _bulkZeroCaps(
+        _holdZeroCaps(
           targetHub,
           _getUnderlying(targetHub, assetId),
           assetId,
@@ -451,7 +459,7 @@ abstract contract HubConfigurator is AccessManagedUpgradeable, IHubConfigurator 
     uint256 assetCount = targetHub.getAssetCount();
     for (uint256 assetId = 0; assetId < assetCount; ++assetId) {
       if (targetHub.isSpokeListed(assetId, spoke)) {
-        _bulkRestoreCaps(
+        _releaseZeroCaps(
           targetHub,
           _getUnderlying(targetHub, assetId),
           assetId,
@@ -493,7 +501,7 @@ abstract contract HubConfigurator is AccessManagedUpgradeable, IHubConfigurator 
       address underlying = _getUnderlying(targetHub, assetId);
       uint256 spokesCount = targetHub.getSpokeCount(assetId);
       for (uint256 i = 0; i < spokesCount; ++i) {
-        _bulkHalt(
+        _holdHalted(
           targetHub,
           underlying,
           assetId,
@@ -512,10 +520,13 @@ abstract contract HubConfigurator is AccessManagedUpgradeable, IHubConfigurator 
       address underlying = _getUnderlying(targetHub, assetId);
       uint256 spokesCount = targetHub.getSpokeCount(assetId);
       for (uint256 i = 0; i < spokesCount; ++i) {
-        address spoke = targetHub.getSpokeAddress(assetId, i);
-        if (_releaseHalted(hub, assetId, spoke, BulkLeversMap.HUB_MASK)) {
-          _unhalt(targetHub, underlying, assetId, spoke);
-        }
+        _releaseHalted(
+          targetHub,
+          underlying,
+          assetId,
+          targetHub.getSpokeAddress(assetId, i),
+          BulkLeversMap.HUB_MASK
+        );
       }
     }
   }
@@ -674,7 +685,7 @@ abstract contract HubConfigurator is AccessManagedUpgradeable, IHubConfigurator 
   }
 
   /// @dev Sets the halted flag if not set, and records `mask` as holding it per `BulkLeversMap.brake`.
-  function _bulkHalt(
+  function _holdHalted(
     IHub hub,
     address underlying,
     uint256 assetId,
@@ -695,22 +706,22 @@ abstract contract HubConfigurator is AccessManagedUpgradeable, IHubConfigurator 
     );
   }
 
-  /// @dev Returns true if the halted flag should be cleared.
+  /// @dev Clears the halted flag once no bulk lever holds it.
   function _releaseHalted(
-    address hub,
+    IHub hub,
+    address underlying,
     uint256 assetId,
     address spoke,
     uint8 mask
-  ) internal returns (bool) {
+  ) internal {
     (uint8 bulkLevers, bool released) = BulkLeversMap.release(
-      _haltedByBulkLevers[hub][assetId][spoke],
+      _haltedByBulkLevers[address(hub)][assetId][spoke],
       mask
     );
-    _haltedByBulkLevers[hub][assetId][spoke] = bulkLevers;
-    return released;
-  }
-
-  function _unhalt(IHub hub, address underlying, uint256 assetId, address spoke) internal {
+    _haltedByBulkLevers[address(hub)][assetId][spoke] = bulkLevers;
+    if (!released) {
+      return;
+    }
     IHub.SpokeConfig memory config = hub.getSpokeConfig(assetId, spoke);
     if (config.halted) {
       config.halted = false;
@@ -721,7 +732,7 @@ abstract contract HubConfigurator is AccessManagedUpgradeable, IHubConfigurator 
 
   /// @dev Saves and zeroes the caps unless both are already zero, and records `mask` as holding them per
   /// `BulkLeversMap.brake`.
-  function _bulkZeroCaps(
+  function _holdZeroCaps(
     IHub hub,
     address underlying,
     uint256 assetId,
@@ -741,7 +752,7 @@ abstract contract HubConfigurator is AccessManagedUpgradeable, IHubConfigurator 
   }
 
   /// @dev Writes the saved caps back once no bulk lever holds them, if both caps are still zero.
-  function _bulkRestoreCaps(
+  function _releaseZeroCaps(
     IHub hub,
     address underlying,
     uint256 assetId,

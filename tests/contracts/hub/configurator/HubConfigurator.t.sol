@@ -1330,9 +1330,8 @@ contract HubConfiguratorTest is Base {
     bool byHaltSpoke,
     bool byHaltHub
   ) internal view {
-    (address assetUnderlying, ) = hub1.getAssetUnderlyingAndDecimals(assetId);
     (bool haltedByHaltAsset, bool haltedByHaltSpoke, bool haltedByHaltHub) = hubConfigurator
-      .getHaltedByBulkLevers(address(hub1), assetUnderlying, spokeAddress);
+      .getHaltedByBulkLevers(address(hub1), _hub1Underlying(assetId), spokeAddress);
     assertEq(haltedByHaltAsset, byHaltAsset, 'halted by haltAsset');
     assertEq(haltedByHaltSpoke, byHaltSpoke, 'halted by haltSpoke');
     assertEq(haltedByHaltHub, byHaltHub, 'halted by haltHub');

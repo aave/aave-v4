@@ -123,14 +123,10 @@ abstract contract SpokeConfiguratorBaseTest is Base {
     return targetSpoke.getReserve(targetReserveId).dynamicConfigKey;
   }
 
-  function _assertPausedByPauseAllReserves(uint256 reserveId, bool expected) internal view {
-    ISpoke.Reserve memory reserve = spoke.getReserve(reserveId);
+  function _assertPausedByBulkLevers(uint256 targetReserveId, bool expected) internal view {
+    ISpoke.Reserve memory reserve = spoke.getReserve(targetReserveId);
     assertEq(
-      spokeConfigurator.isPausedByPauseAllReserves(
-        spokeAddr,
-        address(reserve.hub),
-        reserve.underlying
-      ),
+      spokeConfigurator.getPausedByBulkLevers(spokeAddr, address(reserve.hub), reserve.underlying),
       expected,
       'paused by pauseAllReserves'
     );
@@ -170,11 +166,11 @@ abstract contract SpokeConfiguratorBaseTest is Base {
 
   function _assertFrozenByBulkLevers(
     ISpoke targetSpoke,
-    uint256 reserveId,
+    uint256 targetReserveId,
     bool byFreezeAsset,
     bool byFreezeSpoke
   ) internal view {
-    ISpoke.Reserve memory reserve = targetSpoke.getReserve(reserveId);
+    ISpoke.Reserve memory reserve = targetSpoke.getReserve(targetReserveId);
     (bool frozenByFreezeAsset, bool frozenByFreezeSpoke) = spokeConfigurator.getFrozenByBulkLevers(
       address(targetSpoke),
       address(reserve.hub),
@@ -1474,7 +1470,7 @@ contract SpokeConfiguratorTest is SpokeConfiguratorBaseTest {
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.holdPaused(spokeAddr, hubAddr, underlying, BulkLeversMap.SPOKE_MASK);
     assertTrue(spoke.getReserveConfig(reserveId).paused);
-    _assertPausedByPauseAllReserves(reserveId, true);
+    _assertPausedByBulkLevers(reserveId, true);
 
     vm.expectEmit(address(spokeConfigurator));
     emit ISpokeConfigurator.ReservePausedUpdated(
@@ -1488,7 +1484,7 @@ contract SpokeConfiguratorTest is SpokeConfiguratorBaseTest {
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.releasePaused(spokeAddr, hubAddr, underlying, BulkLeversMap.SPOKE_MASK);
     assertFalse(spoke.getReserveConfig(reserveId).paused);
-    _assertPausedByPauseAllReserves(reserveId, false);
+    _assertPausedByBulkLevers(reserveId, false);
   }
 
   function test_holdPaused_alreadyPaused_doesNotRecord() public {
@@ -1497,7 +1493,7 @@ contract SpokeConfiguratorTest is SpokeConfiguratorBaseTest {
     vm.recordLogs();
     spokeConfigurator.holdPaused(spokeAddr, hubAddr, underlying, BulkLeversMap.SPOKE_MASK);
     assertEq(_configuratorLogCount(), 0);
-    _assertPausedByPauseAllReserves(reserveId, false);
+    _assertPausedByBulkLevers(reserveId, false);
 
     // the release finds no record, so the reserve stays paused
     spokeConfigurator.releasePaused(spokeAddr, hubAddr, underlying, BulkLeversMap.SPOKE_MASK);

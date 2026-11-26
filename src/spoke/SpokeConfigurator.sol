@@ -439,10 +439,7 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
     uint8 mask
   ) external restricted {
     require(mask != 0, InvalidBulkLeverMask());
-    ReserveKey memory key = _resolveReserveKey(spoke, hub, underlying);
-    if (_releasePausedRecord(spoke, key.reserveId, mask)) {
-      _unpause(key);
-    }
+    _releasePaused(_resolveReserveKey(spoke, hub, underlying), mask);
   }
 
   /// @inheritdoc ISpokeConfigurator
@@ -464,10 +461,7 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
     uint8 mask
   ) external restricted {
     require(mask != 0, InvalidBulkLeverMask());
-    ReserveKey memory key = _resolveReserveKey(spoke, hub, underlying);
-    if (_releaseFrozenRecord(spoke, key.reserveId, mask)) {
-      _unfreezeReserve(key);
-    }
+    _releaseFrozen(_resolveReserveKey(spoke, hub, underlying), mask);
   }
 
   /// @inheritdoc ISpokeConfigurator
@@ -536,7 +530,7 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
   }
 
   /// @inheritdoc ISpokeConfigurator
-  function isPausedByPauseAllReserves(
+  function getPausedByBulkLevers(
     address spoke,
     address hub,
     address underlying
@@ -575,18 +569,17 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
     );
   }
 
-  /// @dev Returns true if the frozen flag should be cleared.
-  function _releaseFrozenRecord(
-    address spoke,
-    uint256 reserveId,
-    uint8 mask
-  ) internal returns (bool) {
+  /// @dev Clears the frozen flag once no bulk lever holds it.
+  function _releaseFrozen(ReserveKey memory key, uint8 mask) internal {
+    address spoke = address(key.spoke);
     (uint8 bulkLevers, bool released) = BulkLeversMap.release(
-      _frozenByBulkLevers[spoke][reserveId],
+      _frozenByBulkLevers[spoke][key.reserveId],
       mask
     );
-    _frozenByBulkLevers[spoke][reserveId] = bulkLevers;
-    return released;
+    _frozenByBulkLevers[spoke][key.reserveId] = bulkLevers;
+    if (released) {
+      _unfreezeReserve(key);
+    }
   }
 
   /// @dev Returns false if the reserve is not frozen.
@@ -668,21 +661,17 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
     );
   }
 
-  /// @dev Returns true if the paused flag should be cleared.
-  function _releasePausedRecord(
-    address spoke,
-    uint256 reserveId,
-    uint8 mask
-  ) internal returns (bool) {
+  /// @dev Clears the paused flag once no bulk lever holds it.
+  function _releasePaused(ReserveKey memory key, uint8 mask) internal {
+    address spoke = address(key.spoke);
     (uint8 bulkLevers, bool released) = BulkLeversMap.release(
-      _pausedByBulkLevers[spoke][reserveId],
+      _pausedByBulkLevers[spoke][key.reserveId],
       mask
     );
-    _pausedByBulkLevers[spoke][reserveId] = bulkLevers;
-    return released;
-  }
-
-  function _unpause(ReserveKey memory key) internal {
+    _pausedByBulkLevers[spoke][key.reserveId] = bulkLevers;
+    if (!released) {
+      return;
+    }
     ISpoke.ReserveConfig memory reserveConfig = key.spoke.getReserveConfig(key.reserveId);
     if (reserveConfig.paused) {
       reserveConfig.paused = false;
