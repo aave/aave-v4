@@ -1,0 +1,81 @@
+src/deployments/utils/interfaces/IHubConfiguratorInstance.sol
+  s_eca3654a1cdaf8::t_41e710c618a602 15
+src/hub/HubConfigurator.sol
+  s_eca3654a1cdaf8::t_cae0b9c219db86 698
+src/libraries/BulkLeversMap.sol
+  s_eca3654a1cdaf8::t_e1df73dae8035f 6
+  s_eca3654a1cdaf8::t_07cc33228b7f46 7,9,11,13
+  s_eca3654a1cdaf8::t_4e7084e56847dd 17-18
+src/emergency/interfaces/IEmergencySteward.sol
+  s_eca3654a1cdaf8::t_f43969db3c926f 54
+src/deployments/procedures/roles/AaveV4SpokeConfiguratorRolesProcedure.sol
+  s_eca3654a1cdaf8::t_3982c37a1e87d5 48-49
+  s_eca3654a1cdaf8::t_b47e46e4af8473 47
+src/deployments/utils/interfaces/ISpokeConfiguratorInstance.sol
+  s_eca3654a1cdaf8::t_983da07007c7eb 15
+src/hub/interfaces/IHubConfigurator.sol
+  s_eca3654a1cdaf8::t_4161016b473a80 174-175
+  s_55095d9c241f6c::t_c00429105bf2ad 441-443
+  s_eca3654a1cdaf8::t_f291e68655e277 194-195
+  s_55095d9c241f6c::t_5f26284c02038b 457-458
+src/emergency/EmergencySteward.sol
+  s_55095d9c241f6c::t_152142e8f7c95c 20
+  s_eca3654a1cdaf8::t_4601cdad0b123a 156-157
+tests/setup/Base.t.sol
+  s_eca3654a1cdaf8::t_861ff7f1ded64b 247
+src/deployments/README.md
+  s_eca3654a1cdaf8::t_d203f890900695 167
+  s_eca3654a1cdaf8::t_6661dd7b77b0c2 159
+src/spoke/interfaces/ISpokeConfigurator.sol
+  s_eca3654a1cdaf8::t_97c88e386824d7 584
+  s_eca3654a1cdaf8::t_0a9aca01ec84b3 366-367,455-456
+  s_eca3654a1cdaf8::t_62a6e47fdae91d 424-425
+  s_eca3654a1cdaf8::t_ffde5c043e60c9 588
+  s_eca3654a1cdaf8::t_ce9d071e9dd83e 576-577
+  s_eca3654a1cdaf8::t_570b453ddc16e6 395-396
+  s_eca3654a1cdaf8::t_0647695ddb1d2a 486-487
+  s_eca3654a1cdaf8::t_fd990cfb63740b 542
+  s_55095d9c241f6c::t_eb9238ed275099 543-544
+  s_eca3654a1cdaf8::t_1ceca7544e188a 351-352
+  s_eca3654a1cdaf8::t_d1b4d76b3150b7 440-441
+  s_eca3654a1cdaf8::t_9c33c9422e4f6b 478-479
+  s_eca3654a1cdaf8::t_74edd3477ace21 534-535
+src/config-engine/libraries/SpokeEngine.sol
+  s_eca3654a1cdaf8::t_059b9bdf376974 35
+src/spoke/SpokeConfigurator.sol
+  s_eca3654a1cdaf8::t_4edaae78e06311 611
+  s_eca3654a1cdaf8::t_af07d153e9bb1b 578
+  s_eca3654a1cdaf8::t_382af2ca5addc8 592
+  s_eca3654a1cdaf8::t_3fec2d2d2718c3 623
+  s_eca3654a1cdaf8::t_dd666b77a33198 671
+  s_eca3654a1cdaf8::t_ed767660b539f8 548
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "6354186be3861e371bc09900a0e5cc118b0eb5c5",
+  "prompts": {},
+  "humans": {
+    "h_943f5bfc0f6106": {
+      "author": "AyushKaul <ayush@aave.com>"
+    }
+  },
+  "sessions": {
+    "s_55095d9c241f6c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1e002aa3-ce54-4965-ae19-34c1a50db491",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "AyushKaul <ayush@aave.com>"
+    },
+    "s_eca3654a1cdaf8": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "174bc034-568e-49c0-b45e-d1f5192083ac",
+        "model": "unknown"
+      },
+      "human_author": "AyushKaul <ayush@aave.com>"
+    }
+  }
+}
