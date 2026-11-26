@@ -1,0 +1,47 @@
+tests/utils/TestTypes.sol
+  s_76dae7b87c60b9::t_237d776780bd7d 56
+src/deployments/README.md
+  s_76dae7b87c60b9::t_b389d8a7e9cfd9 35
+  s_76dae7b87c60b9::t_640d5c99ef0db2 216-217
+  s_76dae7b87c60b9::t_f125c0af8c45ef 273
+  s_76dae7b87c60b9::t_e9176565ea234e 68
+  s_76dae7b87c60b9::t_9b25cfb0ae6395 113
+  s_76dae7b87c60b9::t_2821937e3b43e2 117
+tests/deployments/orchestration/AaveV4TestOrchestration.sol
+  s_76dae7b87c60b9::t_fa895f3ac31e51 279-280,283
+  s_76dae7b87c60b9::t_7a3fcbc8eb8e7d 128
+  s_76dae7b87c60b9::t_e23e101337fd21 355,357-358
+src/deployments/orchestration/AaveV4DeployOrchestration.sol
+  s_76dae7b87c60b9::t_7f0674c05b9324 427
+  s_76dae7b87c60b9::t_5b3738321f99ae 536,538-539
+  s_76dae7b87c60b9::t_96b0eb9adca72e 82-84
+  s_76dae7b87c60b9::t_9afc37be8405a5 443,445-448
+src/deployments/utils/libraries/InputUtils.sol
+  s_76dae7b87c60b9::t_3ff8beaa5caec8 16-17
+src/deployments/utils/libraries/Roles.sol
+  s_76dae7b87c60b9::t_dde7aaa0396476 32,34-35,37,41
+tests/setup/Base.t.sol
+  s_76dae7b87c60b9::t_a17a307455ff65 215
+  s_76dae7b87c60b9::t_777c168c93fdc5 193
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "220c325f0bea919909331383662f63a93cd4b4aa",
+  "prompts": {},
+  "humans": {
+    "h_943f5bfc0f6106": {
+      "author": "AyushKaul <ayush@aave.com>"
+    }
+  },
+  "sessions": {
+    "s_76dae7b87c60b9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ff917bac-fa5e-4c9a-b680-857b884f946d",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "AyushKaul <ayush@aave.com>"
+    }
+  }
+}
