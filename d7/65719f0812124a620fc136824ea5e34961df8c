@@ -1,0 +1,29 @@
+tests/contracts/spoke/configurator/SpokeConfigurator.Freeze.t.sol
+  s_76dae7b87c60b9::t_3bc8f8ca151633 550
+tests/contracts/spoke/configurator/SpokeConfigurator.t.sol
+  s_76dae7b87c60b9::t_7684955518eb0f 1428-1457
+tests/contracts/hub/configurator/HubConfigurator.t.sol
+  s_76dae7b87c60b9::t_b0304a0e2a1325 2429
+  s_76dae7b87c60b9::t_eff9cead11bb30 2456-2457,2461,2465,2469,2473,2477,2481,2485-2489
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "d765719f0812124a620fc136824ea5e34961df8c",
+  "prompts": {},
+  "humans": {
+    "h_943f5bfc0f6106": {
+      "author": "AyushKaul <ayush@aave.com>"
+    }
+  },
+  "sessions": {
+    "s_76dae7b87c60b9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ff917bac-fa5e-4c9a-b680-857b884f946d",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "AyushKaul <ayush@aave.com>"
+    }
+  }
+}
