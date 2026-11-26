@@ -9,8 +9,15 @@ contract AaveV4SpokeConfiguratorDeployProcedureWrapper is AaveV4SpokeConfigurato
   function deployUpgradeableSpokeConfigurator(
     address proxyAdminOwner,
     address authority,
+    bytes memory spokeConfiguratorBytecode,
     bytes32 salt
   ) external returns (address, address) {
-    return _deployUpgradeableSpokeConfigurator(proxyAdminOwner, authority, salt);
+    return
+      _deployUpgradeableSpokeConfigurator(
+        proxyAdminOwner,
+        authority,
+        spokeConfiguratorBytecode,
+        salt
+      );
   }
 }

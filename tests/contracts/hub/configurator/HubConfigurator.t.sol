@@ -2098,7 +2098,7 @@ contract HubConfiguratorTest is Base {
   }
 
   function test_implementation_initialize_revertsWith_InvalidInitialization() public {
-    HubConfiguratorInstance impl = HubConfiguratorInstance(
+    IHubConfiguratorInstance impl = IHubConfiguratorInstance(
       _getImplementationAddress(address(hubConfigurator))
     );
     assertEq(_getProxyInitializedVersion(address(impl)), type(uint64).max);
@@ -2114,27 +2114,35 @@ contract HubConfiguratorTest is Base {
     address authority = hub1.authority();
 
     vm.expectRevert(Initializable.InvalidInitialization.selector);
-    HubConfiguratorInstance(address(hubConfigurator)).initialize(authority);
+    IHubConfiguratorInstance(address(hubConfigurator)).initialize(authority);
   }
 
   function test_revision() public view {
-    assertEq(HubConfiguratorInstance(address(hubConfigurator)).HUB_CONFIGURATOR_REVISION(), 1);
+    assertEq(IHubConfiguratorInstance(address(hubConfigurator)).HUB_CONFIGURATOR_REVISION(), 1);
   }
 
   function test_proxy_constructor_revertsWith_InvalidAddress() public {
-    address impl = address(new HubConfiguratorInstance());
+    address impl = deployCode(
+      'src/hub/instances/HubConfiguratorInstance.sol:HubConfiguratorInstance'
+    );
 
     vm.expectRevert(IHubConfigurator.InvalidAddress.selector);
     new TransparentUpgradeableProxy(
       impl,
       ADMIN,
-      abi.encodeCall(HubConfiguratorInstance.initialize, (address(0)))
+      abi.encodeCall(IHubConfiguratorInstance.initialize, (address(0)))
     );
   }
 
   function test_initialize_revertsWith_InvalidAddress() public {
-    HubConfiguratorInstance proxy = HubConfiguratorInstance(
-      address(new TransparentUpgradeableProxy(address(new HubConfiguratorInstance()), ADMIN, ''))
+    IHubConfiguratorInstance proxy = IHubConfiguratorInstance(
+      address(
+        new TransparentUpgradeableProxy(
+          deployCode('src/hub/instances/HubConfiguratorInstance.sol:HubConfiguratorInstance'),
+          ADMIN,
+          ''
+        )
+      )
     );
     assertEq(_getProxyInitializedVersion(address(proxy)), 0);
 

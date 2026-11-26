@@ -52,7 +52,9 @@ abstract contract AaveV4DeployBatchBaseScript is Script {
         deployer,
         inputs,
         BytecodeHelper.getHubBytecode(),
-        BytecodeHelper.getSpokeBytecode()
+        BytecodeHelper.getSpokeBytecode(),
+        BytecodeHelper.getHubConfiguratorBytecode(),
+        BytecodeHelper.getSpokeConfiguratorBytecode()
       );
     vm.stopBroadcast();
     logger.writeJsonReportMarket(report);

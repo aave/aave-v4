@@ -813,7 +813,9 @@ contract SpokeConfiguratorFreezeTest is SpokeConfiguratorBaseTest {
     assertEq(_savedKey(spoke, reserveId), savedKey);
 
     address proxyAdmin = _getProxyAdminAddress(address(spokeConfigurator));
-    address newImplementation = address(new SpokeConfiguratorInstance());
+    address newImplementation = deployCode(
+      'src/spoke/instances/SpokeConfiguratorInstance.sol:SpokeConfiguratorInstance'
+    );
     vm.prank(Ownable(proxyAdmin).owner());
     ProxyAdmin(proxyAdmin).upgradeAndCall(
       ITransparentUpgradeableProxy(address(spokeConfigurator)),

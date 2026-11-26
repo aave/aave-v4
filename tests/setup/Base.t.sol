@@ -59,8 +59,8 @@ import {
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {TreasurySpoke, ITreasurySpoke} from 'src/spoke/TreasurySpoke.sol';
 import {TreasurySpokeInstance} from 'src/spoke/instances/TreasurySpokeInstance.sol';
-import {HubConfiguratorInstance} from 'src/hub/instances/HubConfiguratorInstance.sol';
-import {SpokeConfiguratorInstance} from 'src/spoke/instances/SpokeConfiguratorInstance.sol';
+import {IHubConfiguratorInstance} from 'src/deployments/utils/interfaces/IHubConfiguratorInstance.sol';
+import {ISpokeConfiguratorInstance} from 'src/deployments/utils/interfaces/ISpokeConfiguratorInstance.sol';
 import {IPriceOracle} from 'src/spoke/interfaces/IPriceOracle.sol';
 import {IPriceFeed} from 'src/spoke/interfaces/IPriceFeed.sol';
 import {AaveOracle} from 'src/spoke/AaveOracle.sol';
@@ -856,9 +856,9 @@ abstract contract Base is BaseHelpers, BatchTestProcedures {
       IHubConfigurator(
         address(
           new TransparentUpgradeableProxy(
-            address(new HubConfiguratorInstance()),
+            deployCode('src/hub/instances/HubConfiguratorInstance.sol:HubConfiguratorInstance'),
             ADMIN,
-            abi.encodeCall(HubConfiguratorInstance.initialize, (authority))
+            abi.encodeCall(IHubConfiguratorInstance.initialize, (authority))
           )
         )
       );
@@ -869,9 +869,11 @@ abstract contract Base is BaseHelpers, BatchTestProcedures {
       ISpokeConfigurator(
         address(
           new TransparentUpgradeableProxy(
-            address(new SpokeConfiguratorInstance()),
+            deployCode(
+              'src/spoke/instances/SpokeConfiguratorInstance.sol:SpokeConfiguratorInstance'
+            ),
             ADMIN,
-            abi.encodeCall(SpokeConfiguratorInstance.initialize, (authority))
+            abi.encodeCall(ISpokeConfiguratorInstance.initialize, (authority))
           )
         )
       );

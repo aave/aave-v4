@@ -27,13 +27,17 @@ library AaveV4DeployOrchestration {
   /// @param deployInputs The full set of deployment configuration inputs.
   /// @param hubBytecode The creation bytecode of the HubInstance contract.
   /// @param spokeBytecode The creation bytecode of the SpokeInstance contract.
+  /// @param hubConfiguratorBytecode The creation bytecode of the HubConfiguratorInstance contract.
+  /// @param spokeConfiguratorBytecode The creation bytecode of the SpokeConfiguratorInstance contract.
   /// @return report The full deployment report containing all batch sub-reports.
   function deployAaveV4(
     Logger logger,
     address deployer,
     InputUtils.FullDeployInputs memory deployInputs,
     bytes memory hubBytecode,
-    bytes memory spokeBytecode
+    bytes memory spokeBytecode,
+    bytes memory hubConfiguratorBytecode,
+    bytes memory spokeConfiguratorBytecode
   ) internal returns (OrchestrationReports.FullDeploymentReport memory report) {
     bytes32 salt = _deriveSalt({deployer: deployer, salt: deployInputs.salt});
     report.salt = deployInputs.salt;
@@ -59,6 +63,8 @@ library AaveV4DeployOrchestration {
       proxyAdminOwner: deployInputs.proxyAdminOwner,
       hubConfiguratorAuthority: accessManager,
       spokeConfiguratorAuthority: accessManager,
+      hubConfiguratorBytecode: hubConfiguratorBytecode,
+      spokeConfiguratorBytecode: spokeConfiguratorBytecode,
       salt: salt
     });
 
@@ -302,6 +308,8 @@ library AaveV4DeployOrchestration {
     address proxyAdminOwner,
     address hubConfiguratorAuthority,
     address spokeConfiguratorAuthority,
+    bytes memory hubConfiguratorBytecode,
+    bytes memory spokeConfiguratorBytecode,
     bytes32 salt
   ) internal returns (BatchReports.ConfiguratorBatchReport memory report) {
     logger.logHeader1('deploying ConfiguratorBatch');
@@ -310,6 +318,8 @@ library AaveV4DeployOrchestration {
       proxyAdminOwner: proxyAdminOwner,
       hubConfiguratorAuthority: hubConfiguratorAuthority,
       spokeConfiguratorAuthority: spokeConfiguratorAuthority,
+      hubConfiguratorBytecode: hubConfiguratorBytecode,
+      spokeConfiguratorBytecode: spokeConfiguratorBytecode,
       salt: salt
     });
 

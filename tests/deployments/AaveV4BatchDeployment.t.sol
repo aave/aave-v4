@@ -293,10 +293,20 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
 
     bytes memory hubBytecode = BytecodeHelper.getHubBytecode();
     bytes memory spokeBytecode = BytecodeHelper.getSpokeBytecode();
+    bytes memory hubConfiguratorBytecode = BytecodeHelper.getHubConfiguratorBytecode();
+    bytes memory spokeConfiguratorBytecode = BytecodeHelper.getSpokeConfiguratorBytecode();
 
     vm.startPrank(_deployer);
     OrchestrationReports.FullDeploymentReport memory report = AaveV4DeployOrchestration
-      .deployAaveV4(_logger, _deployer, _inputs, hubBytecode, spokeBytecode);
+      .deployAaveV4(
+        _logger,
+        _deployer,
+        _inputs,
+        hubBytecode,
+        spokeBytecode,
+        hubConfiguratorBytecode,
+        spokeConfiguratorBytecode
+      );
     vm.stopPrank();
 
     IAccessManagerEnumerable accessManager = IAccessManagerEnumerable(
@@ -329,10 +339,20 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
 
     bytes memory hubBytecode = BytecodeHelper.getHubBytecode();
     bytes memory spokeBytecode = BytecodeHelper.getSpokeBytecode();
+    bytes memory hubConfiguratorBytecode = BytecodeHelper.getHubConfiguratorBytecode();
+    bytes memory spokeConfiguratorBytecode = BytecodeHelper.getSpokeConfiguratorBytecode();
 
     vm.startPrank(_deployer);
     OrchestrationReports.FullDeploymentReport memory report = AaveV4DeployOrchestration
-      .deployAaveV4(_logger, _deployer, _inputs, hubBytecode, spokeBytecode);
+      .deployAaveV4(
+        _logger,
+        _deployer,
+        _inputs,
+        hubBytecode,
+        spokeBytecode,
+        hubConfiguratorBytecode,
+        spokeConfiguratorBytecode
+      );
     vm.stopPrank();
 
     IAccessManagerEnumerable accessManager = IAccessManagerEnumerable(

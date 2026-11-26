@@ -62,12 +62,20 @@ contract ProceduresBase is Create2TestHelper {
   bytes32 public salt;
   bytes internal hubBytecode;
   bytes internal spokeBytecode;
+  bytes internal hubConfiguratorBytecode;
+  bytes internal spokeConfiguratorBytecode;
 
   function setUp() public virtual {
     _etchCreate2Factory();
 
     hubBytecode = vm.getCode('src/hub/instances/HubInstance.sol:HubInstance');
     spokeBytecode = vm.getCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance');
+    hubConfiguratorBytecode = vm.getCode(
+      'src/hub/instances/HubConfiguratorInstance.sol:HubConfiguratorInstance'
+    );
+    spokeConfiguratorBytecode = vm.getCode(
+      'src/spoke/instances/SpokeConfiguratorInstance.sol:SpokeConfiguratorInstance'
+    );
     accessManager = address(new AccessManagerEnumerable(accessManagerAdmin));
     aaveOracle = address(new AaveOracle(oracleDecimals));
     salt = keccak256('testSalt');

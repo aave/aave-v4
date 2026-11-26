@@ -22,6 +22,7 @@ import {AaveV4HubInstanceBatch} from 'src/deployments/batches/AaveV4HubInstanceB
 import {AaveV4SpokeInstanceBatch} from 'src/deployments/batches/AaveV4SpokeInstanceBatch.sol';
 import {TestTokensBatch} from 'tests/deployments/batches/TestTokensBatch.sol';
 import {AaveV4DeployBase} from 'src/deployments/orchestration/AaveV4DeployBase.sol';
+import {BytecodeHelper} from 'src/deployments/utils/libraries/BytecodeHelper.sol';
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
@@ -116,6 +117,8 @@ library AaveV4TestOrchestration {
         proxyAdminOwner: admin,
         hubConfiguratorAuthority: report.accessManager,
         spokeConfiguratorAuthority: report.accessManager,
+        hubConfiguratorBytecode: BytecodeHelper.getHubConfiguratorBytecode(),
+        spokeConfiguratorBytecode: BytecodeHelper.getSpokeConfiguratorBytecode(),
         salt: keccak256(abi.encodePacked(salt, 'configurator'))
       });
     report.configuratorReport.hubConfigurator = configuratorReport.hubConfigurator;

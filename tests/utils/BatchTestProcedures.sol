@@ -68,10 +68,20 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
   function checkedV4Deployment() public {
     bytes memory hubBytecode = BytecodeHelper.getHubBytecode();
     bytes memory spokeBytecode = BytecodeHelper.getSpokeBytecode();
+    bytes memory hubConfiguratorBytecode = BytecodeHelper.getHubConfiguratorBytecode();
+    bytes memory spokeConfiguratorBytecode = BytecodeHelper.getSpokeConfiguratorBytecode();
 
     vm.startPrank(_deployer);
     OrchestrationReports.FullDeploymentReport memory report = AaveV4DeployOrchestration
-      .deployAaveV4(_logger, _deployer, _inputs, hubBytecode, spokeBytecode);
+      .deployAaveV4(
+        _logger,
+        _deployer,
+        _inputs,
+        hubBytecode,
+        spokeBytecode,
+        hubConfiguratorBytecode,
+        spokeConfiguratorBytecode
+      );
     vm.stopPrank();
     _checkDeployment({report: report, inputs: _inputs});
   }

@@ -18,11 +18,15 @@ contract AaveV4ConfiguratorBatch is
   /// @param proxyAdminOwner_ The owner of the proxy admin of both configurators.
   /// @param hubConfiguratorAuthority_ The authority for the HubConfigurator.
   /// @param spokeConfiguratorAuthority_ The authority for the SpokeConfigurator.
+  /// @param hubConfiguratorBytecode_ The creation bytecode of the HubConfigurator implementation.
+  /// @param spokeConfiguratorBytecode_ The creation bytecode of the SpokeConfigurator implementation.
   /// @param salt_ The CREATE2 salt for deterministic deployment.
   constructor(
     address proxyAdminOwner_,
     address hubConfiguratorAuthority_,
     address spokeConfiguratorAuthority_,
+    bytes memory hubConfiguratorBytecode_,
+    bytes memory spokeConfiguratorBytecode_,
     bytes32 salt_
   ) {
     (
@@ -31,6 +35,7 @@ contract AaveV4ConfiguratorBatch is
     ) = _deployUpgradeableHubConfigurator({
         proxyAdminOwner: proxyAdminOwner_,
         authority: hubConfiguratorAuthority_,
+        hubConfiguratorBytecode: hubConfiguratorBytecode_,
         salt: salt_
       });
     (
@@ -39,6 +44,7 @@ contract AaveV4ConfiguratorBatch is
     ) = _deployUpgradeableSpokeConfigurator({
         proxyAdminOwner: proxyAdminOwner_,
         authority: spokeConfiguratorAuthority_,
+        spokeConfiguratorBytecode: spokeConfiguratorBytecode_,
         salt: salt_
       });
 

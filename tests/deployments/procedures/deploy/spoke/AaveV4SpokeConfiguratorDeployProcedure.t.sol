@@ -14,7 +14,7 @@ contract AaveV4SpokeConfiguratorDeployProcedureTest is ProceduresBase {
 
   function test_deploySpokeConfigurator() public {
     (address proxy, address implementation) = aaveV4SpokeConfiguratorDeployProcedureWrapper
-      .deployUpgradeableSpokeConfigurator(admin, accessManager, salt);
+      .deployUpgradeableSpokeConfigurator(admin, accessManager, spokeConfiguratorBytecode, salt);
     assertNotEq(proxy, address(0));
     assertNotEq(implementation, address(0));
     assertNotEq(proxy, implementation);
@@ -30,6 +30,27 @@ contract AaveV4SpokeConfiguratorDeployProcedureTest is ProceduresBase {
     aaveV4SpokeConfiguratorDeployProcedureWrapper.deployUpgradeableSpokeConfigurator({
       proxyAdminOwner: admin,
       authority: address(0),
+      spokeConfiguratorBytecode: spokeConfiguratorBytecode,
+      salt: salt
+    });
+  }
+
+  function test_deploySpokeConfigurator_reverts_hubConfiguratorBytecode() public {
+    vm.expectRevert('invalid spoke configurator bytecode');
+    aaveV4SpokeConfiguratorDeployProcedureWrapper.deployUpgradeableSpokeConfigurator({
+      proxyAdminOwner: admin,
+      authority: accessManager,
+      spokeConfiguratorBytecode: hubConfiguratorBytecode,
+      salt: salt
+    });
+  }
+
+  function test_deploySpokeConfigurator_reverts_hubBytecode() public {
+    vm.expectRevert('invalid spoke configurator bytecode');
+    aaveV4SpokeConfiguratorDeployProcedureWrapper.deployUpgradeableSpokeConfigurator({
+      proxyAdminOwner: admin,
+      authority: accessManager,
+      spokeConfiguratorBytecode: hubBytecode,
       salt: salt
     });
   }
@@ -39,6 +60,7 @@ contract AaveV4SpokeConfiguratorDeployProcedureTest is ProceduresBase {
     aaveV4SpokeConfiguratorDeployProcedureWrapper.deployUpgradeableSpokeConfigurator({
       proxyAdminOwner: address(0),
       authority: accessManager,
+      spokeConfiguratorBytecode: spokeConfiguratorBytecode,
       salt: salt
     });
   }

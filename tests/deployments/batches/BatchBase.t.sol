@@ -40,6 +40,8 @@ contract BatchBaseTest is Create2TestHelper {
   address public nativeWrapper;
   bytes internal hubBytecode;
   bytes internal spokeBytecode;
+  bytes internal hubConfiguratorBytecode;
+  bytes internal spokeConfiguratorBytecode;
 
   function setUp() public virtual {
     salt = keccak256('testSalt');
@@ -47,6 +49,12 @@ contract BatchBaseTest is Create2TestHelper {
 
     hubBytecode = vm.getCode('src/hub/instances/HubInstance.sol:HubInstance');
     spokeBytecode = vm.getCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance');
+    hubConfiguratorBytecode = vm.getCode(
+      'src/hub/instances/HubConfiguratorInstance.sol:HubConfiguratorInstance'
+    );
+    spokeConfiguratorBytecode = vm.getCode(
+      'src/spoke/instances/SpokeConfiguratorInstance.sol:SpokeConfiguratorInstance'
+    );
 
     // used Hub, Spoke, Configurator batches
     AaveV4AuthorityBatch authorityBatch = new AaveV4AuthorityBatch({admin_: admin, salt_: salt});

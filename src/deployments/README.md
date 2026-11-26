@@ -90,7 +90,7 @@ src/deployments/
       InputUtils              FullDeployInputs struct and label validation
       Roles                   Role ID constants and selector getters
       Create2Utils            Deterministic deployment helpers
-      BytecodeHelper          Hub/Spoke bytecode retrieval
+      BytecodeHelper          Hub/Spoke/configurator bytecode retrieval
       DeployConstants         Shared deploy constants
     Logger & MetadataLogger    Deployment logging and JSON output
 ```
@@ -193,7 +193,7 @@ AaveV4DeployBatchBase.s.sol                         (Foundry script entry point)
     |     |
     |     +-- _deployConfiguratorBatch()
     |     |     AaveV4DeployBase.deployConfiguratorBatch()
-    |     |       new AaveV4ConfiguratorBatch(proxyAdminOwner, hubAuth, spokeAuth, salt)
+    |     |       new AaveV4ConfiguratorBatch(proxyAdminOwner, hubAuth, spokeAuth, hubConfiguratorBytecode, spokeConfiguratorBytecode, salt)
     |     |         AaveV4HubConfiguratorDeployProcedure._deployUpgradeableHubConfigurator()
     |     |           Create2Utils.create2Deploy() --> HubConfiguratorInstance (impl)
     |     |           Create2Utils.proxify() --> TransparentUpgradeableProxy (initialize(hubAuth))

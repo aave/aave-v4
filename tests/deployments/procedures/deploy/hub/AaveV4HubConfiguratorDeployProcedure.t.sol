@@ -13,7 +13,7 @@ contract AaveV4HubConfiguratorDeployProcedureTest is ProceduresBase {
 
   function test_deployHubConfigurator() public {
     (address proxy, address implementation) = aaveV4HubConfiguratorDeployProcedureWrapper
-      .deployUpgradeableHubConfigurator(admin, accessManager, salt);
+      .deployUpgradeableHubConfigurator(admin, accessManager, hubConfiguratorBytecode, salt);
     assertNotEq(proxy, address(0));
     assertNotEq(implementation, address(0));
     assertNotEq(proxy, implementation);
@@ -29,6 +29,27 @@ contract AaveV4HubConfiguratorDeployProcedureTest is ProceduresBase {
     aaveV4HubConfiguratorDeployProcedureWrapper.deployUpgradeableHubConfigurator({
       proxyAdminOwner: admin,
       authority: address(0),
+      hubConfiguratorBytecode: hubConfiguratorBytecode,
+      salt: salt
+    });
+  }
+
+  function test_deployHubConfigurator_reverts_spokeConfiguratorBytecode() public {
+    vm.expectRevert('invalid hub configurator bytecode');
+    aaveV4HubConfiguratorDeployProcedureWrapper.deployUpgradeableHubConfigurator({
+      proxyAdminOwner: admin,
+      authority: accessManager,
+      hubConfiguratorBytecode: spokeConfiguratorBytecode,
+      salt: salt
+    });
+  }
+
+  function test_deployHubConfigurator_reverts_hubBytecode() public {
+    vm.expectRevert('invalid hub configurator bytecode');
+    aaveV4HubConfiguratorDeployProcedureWrapper.deployUpgradeableHubConfigurator({
+      proxyAdminOwner: admin,
+      authority: accessManager,
+      hubConfiguratorBytecode: hubBytecode,
       salt: salt
     });
   }
@@ -38,6 +59,7 @@ contract AaveV4HubConfiguratorDeployProcedureTest is ProceduresBase {
     aaveV4HubConfiguratorDeployProcedureWrapper.deployUpgradeableHubConfigurator({
       proxyAdminOwner: address(0),
       authority: accessManager,
+      hubConfiguratorBytecode: hubConfiguratorBytecode,
       salt: salt
     });
   }

@@ -20,4 +20,17 @@ library BytecodeHelper {
   function getSpokeBytecode() internal view returns (bytes memory) {
     return vm.getCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance');
   }
+
+  /// @notice Loads the creation bytecode for the HubConfiguratorInstance contract.
+  /// @return The raw creation bytecode.
+  function getHubConfiguratorBytecode() internal view returns (bytes memory) {
+    return vm.getCode('src/hub/instances/HubConfiguratorInstance.sol:HubConfiguratorInstance');
+  }
+
+  /// @notice Loads the creation bytecode for the SpokeConfiguratorInstance contract.
+  /// @return The raw creation bytecode.
+  function getSpokeConfiguratorBytecode() internal view returns (bytes memory) {
+    return
+      vm.getCode('src/spoke/instances/SpokeConfiguratorInstance.sol:SpokeConfiguratorInstance');
+  }
 }

@@ -9,8 +9,10 @@ contract AaveV4HubConfiguratorDeployProcedureWrapper is AaveV4HubConfiguratorDep
   function deployUpgradeableHubConfigurator(
     address proxyAdminOwner,
     address authority,
+    bytes memory hubConfiguratorBytecode,
     bytes32 salt
   ) external returns (address, address) {
-    return _deployUpgradeableHubConfigurator(proxyAdminOwner, authority, salt);
+    return
+      _deployUpgradeableHubConfigurator(proxyAdminOwner, authority, hubConfiguratorBytecode, salt);
   }
 }

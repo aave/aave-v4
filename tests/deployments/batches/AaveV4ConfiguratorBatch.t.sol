@@ -4,6 +4,9 @@ pragma solidity ^0.8.0;
 import 'tests/deployments/batches/BatchBase.t.sol';
 
 contract AaveV4ConfiguratorBatchTest is BatchBaseTest {
+  /// @dev EIP-3860 initcode size limit.
+  uint256 internal constant MAX_INITCODE_SIZE = 49_152;
+
   AaveV4ConfiguratorBatch public configuratorBatch;
   BatchReports.ConfiguratorBatchReport public report;
 
@@ -13,6 +16,8 @@ contract AaveV4ConfiguratorBatchTest is BatchBaseTest {
       proxyAdminOwner_: admin,
       hubConfiguratorAuthority_: accessManager,
       spokeConfiguratorAuthority_: accessManager,
+      hubConfiguratorBytecode_: hubConfiguratorBytecode,
+      spokeConfiguratorBytecode_: spokeConfiguratorBytecode,
       salt_: salt
     });
     report = configuratorBatch.getReport();
@@ -39,6 +44,8 @@ contract AaveV4ConfiguratorBatchTest is BatchBaseTest {
       proxyAdminOwner_: address(0),
       hubConfiguratorAuthority_: accessManager,
       spokeConfiguratorAuthority_: accessManager,
+      hubConfiguratorBytecode_: hubConfiguratorBytecode,
+      spokeConfiguratorBytecode_: spokeConfiguratorBytecode,
       salt_: keccak256('zeroProxyAdminOwnerSalt')
     });
   }
@@ -49,6 +56,8 @@ contract AaveV4ConfiguratorBatchTest is BatchBaseTest {
       proxyAdminOwner_: admin,
       hubConfiguratorAuthority_: address(0),
       spokeConfiguratorAuthority_: accessManager,
+      hubConfiguratorBytecode_: hubConfiguratorBytecode,
+      spokeConfiguratorBytecode_: spokeConfiguratorBytecode,
       salt_: salt
     });
   }
@@ -59,7 +68,38 @@ contract AaveV4ConfiguratorBatchTest is BatchBaseTest {
       proxyAdminOwner_: admin,
       hubConfiguratorAuthority_: accessManager,
       spokeConfiguratorAuthority_: address(0),
+      hubConfiguratorBytecode_: hubConfiguratorBytecode,
+      spokeConfiguratorBytecode_: spokeConfiguratorBytecode,
       salt_: keccak256('zeroSpokeCfgSalt')
+    });
+  }
+
+  /// @dev EIP-3860 counts the constructor arguments, which carry both configurator bytecodes.
+  /// `forge build --sizes` and the test EVM do not check this.
+  function test_deployInitcode_withinLimit() public view {
+    bytes memory initcode = abi.encodePacked(
+      type(AaveV4ConfiguratorBatch).creationCode,
+      abi.encode(
+        admin,
+        accessManager,
+        accessManager,
+        hubConfiguratorBytecode,
+        spokeConfiguratorBytecode,
+        salt
+      )
+    );
+    assertLe(initcode.length, MAX_INITCODE_SIZE);
+  }
+
+  function test_revert_swappedConfiguratorBytecode() public {
+    vm.expectRevert('invalid hub configurator bytecode');
+    new AaveV4ConfiguratorBatch({
+      proxyAdminOwner_: admin,
+      hubConfiguratorAuthority_: accessManager,
+      spokeConfiguratorAuthority_: accessManager,
+      hubConfiguratorBytecode_: spokeConfiguratorBytecode,
+      spokeConfiguratorBytecode_: hubConfiguratorBytecode,
+      salt_: keccak256('swappedBytecodeSalt')
     });
   }
 
@@ -68,6 +108,8 @@ contract AaveV4ConfiguratorBatchTest is BatchBaseTest {
       proxyAdminOwner_: admin,
       hubConfiguratorAuthority_: accessManager,
       spokeConfiguratorAuthority_: accessManager,
+      hubConfiguratorBytecode_: hubConfiguratorBytecode,
+      spokeConfiguratorBytecode_: spokeConfiguratorBytecode,
       salt_: keccak256('differentSalt')
     });
     assertNotEq(report.hubConfigurator, newBatch.getReport().hubConfigurator);

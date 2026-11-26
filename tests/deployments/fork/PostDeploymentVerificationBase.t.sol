@@ -129,7 +129,9 @@ abstract contract PostDeploymentVerificationBase is BatchTestProcedures {
         deployer: _deployer,
         deployInputs: sanitizedInputs,
         hubBytecode: BytecodeHelper.getHubBytecode(),
-        spokeBytecode: BytecodeHelper.getSpokeBytecode()
+        spokeBytecode: BytecodeHelper.getSpokeBytecode(),
+        hubConfiguratorBytecode: BytecodeHelper.getHubConfiguratorBytecode(),
+        spokeConfiguratorBytecode: BytecodeHelper.getSpokeConfiguratorBytecode()
       });
     vm.stopPrank();
 
@@ -160,7 +162,9 @@ abstract contract PostDeploymentVerificationBase is BatchTestProcedures {
         deployer: _deployer,
         deployInputs: sanitizedInputs,
         hubBytecode: BytecodeHelper.getHubBytecode(),
-        spokeBytecode: BytecodeHelper.getSpokeBytecode()
+        spokeBytecode: BytecodeHelper.getSpokeBytecode(),
+        hubConfiguratorBytecode: BytecodeHelper.getHubConfiguratorBytecode(),
+        spokeConfiguratorBytecode: BytecodeHelper.getSpokeConfiguratorBytecode()
       });
     vm.stopPrank();
 
@@ -189,7 +193,9 @@ abstract contract PostDeploymentVerificationBase is BatchTestProcedures {
         deployer: _deployer,
         deployInputs: sanitizedInputs,
         hubBytecode: BytecodeHelper.getHubBytecode(),
-        spokeBytecode: BytecodeHelper.getSpokeBytecode()
+        spokeBytecode: BytecodeHelper.getSpokeBytecode(),
+        hubConfiguratorBytecode: BytecodeHelper.getHubConfiguratorBytecode(),
+        spokeConfiguratorBytecode: BytecodeHelper.getSpokeConfiguratorBytecode()
       });
     vm.stopPrank();
     _verifyPostDeployment({report: report, inputs: sanitizedInputs});
