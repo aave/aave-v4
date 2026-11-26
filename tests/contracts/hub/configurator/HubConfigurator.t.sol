@@ -776,6 +776,273 @@ contract HubConfiguratorTest is Base {
     }
   }
 
+  function test_zeroAssetCaps_revertsWith_AccessManagedUnauthorized() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
+    vm.prank(alice);
+    hubConfigurator.zeroAssetCaps(address(hub1), _assetUnderlying);
+  }
+
+  function test_zeroAssetCaps_savesCaps() public {
+    (uint256[] memory addCaps, uint256[] memory drawCaps) = _capsOfAsset(_assetId);
+
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.zeroAssetCaps(address(hub1), _assetUnderlying);
+
+    for (uint256 i; i < addCaps.length; ++i) {
+      assertTrue(addCaps[i] != 0 || drawCaps[i] != 0, 'caps zero before zeroAssetCaps');
+      _assertSavedCaps(
+        _assetId,
+        hub1.getSpokeAddress(_assetId, i),
+        addCaps[i],
+        drawCaps[i],
+        true,
+        false
+      );
+      _assertCaps(_assetId, hub1.getSpokeAddress(_assetId, i), 0, 0);
+    }
+  }
+
+  function test_zeroAssetCaps_skipsSpokesWithZeroCaps() public {
+    address zeroCapsSpoke = spokeAddresses[0];
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.updateSpokeCaps(address(hub1), _assetUnderlying, zeroCapsSpoke, 0, 0);
+
+    IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(_assetId, zeroCapsSpoke);
+    vm.expectCall(
+      address(hub1),
+      abi.encodeCall(IHub.updateSpokeConfig, (_assetId, zeroCapsSpoke, spokeConfig)),
+      0
+    );
+
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.zeroAssetCaps(address(hub1), _assetUnderlying);
+
+    _assertSavedCaps(_assetId, zeroCapsSpoke, 0, 0, false, false);
+  }
+
+  function test_restoreAssetCaps_revertsWith_AccessManagedUnauthorized() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
+    vm.prank(alice);
+    hubConfigurator.restoreAssetCaps(address(hub1), _assetUnderlying);
+  }
+
+  function test_restoreAssetCaps() public {
+    (uint256[] memory addCaps, uint256[] memory drawCaps) = _capsOfAsset(_assetId);
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.zeroAssetCaps(address(hub1), _assetUnderlying);
+
+    for (uint256 i; i < addCaps.length; ++i) {
+      address spokeAddress = hub1.getSpokeAddress(_assetId, i);
+      IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(_assetId, spokeAddress);
+      spokeConfig.addCap = addCaps[i].toUint40();
+      spokeConfig.drawCap = drawCaps[i].toUint40();
+      vm.expectCall(
+        address(hub1),
+        abi.encodeCall(IHub.updateSpokeConfig, (_assetId, spokeAddress, spokeConfig))
+      );
+      _expectSpokeCapsEvents(_assetId, spokeAddress, addCaps[i], drawCaps[i]);
+    }
+
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.restoreAssetCaps(address(hub1), _assetUnderlying);
+
+    _assertCapsOfAsset(_assetId, addCaps, drawCaps);
+    for (uint256 i; i < addCaps.length; ++i) {
+      _assertSavedCaps(_assetId, hub1.getSpokeAddress(_assetId, i), 0, 0, false, false);
+    }
+  }
+
+  function test_restoreAssetCaps_afterRepeatedZeroAssetCaps() public {
+    (uint256[] memory addCaps, uint256[] memory drawCaps) = _capsOfAsset(_assetId);
+
+    vm.startPrank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.zeroAssetCaps(address(hub1), _assetUnderlying);
+    hubConfigurator.zeroAssetCaps(address(hub1), _assetUnderlying);
+    hubConfigurator.restoreAssetCaps(address(hub1), _assetUnderlying);
+    vm.stopPrank();
+
+    _assertCapsOfAsset(_assetId, addCaps, drawCaps);
+  }
+
+  function test_restoreAssetCaps_restoresSingleNonZeroCap() public {
+    address addCapSpoke = spokeAddresses[0];
+    address drawCapSpoke = spokeAddresses[1];
+
+    vm.startPrank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.updateSpokeCaps(address(hub1), _assetUnderlying, addCapSpoke, 100, 0);
+    hubConfigurator.updateSpokeCaps(address(hub1), _assetUnderlying, drawCapSpoke, 0, 200);
+    hubConfigurator.zeroAssetCaps(address(hub1), _assetUnderlying);
+    _assertSavedCaps(_assetId, addCapSpoke, 100, 0, true, false);
+    _assertSavedCaps(_assetId, drawCapSpoke, 0, 200, true, false);
+    hubConfigurator.restoreAssetCaps(address(hub1), _assetUnderlying);
+    vm.stopPrank();
+
+    _assertCaps(_assetId, addCapSpoke, 100, 0);
+    _assertCaps(_assetId, drawCapSpoke, 0, 200);
+  }
+
+  function test_restoreAssetCaps_keepsCapsZeroBeforeZeroAssetCaps() public {
+    address zeroCapsSpoke = spokeAddresses[0];
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.updateSpokeCaps(address(hub1), _assetUnderlying, zeroCapsSpoke, 0, 0);
+    (uint256[] memory addCaps, uint256[] memory drawCaps) = _capsOfAsset(_assetId);
+
+    vm.startPrank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.zeroAssetCaps(address(hub1), _assetUnderlying);
+    hubConfigurator.restoreAssetCaps(address(hub1), _assetUnderlying);
+    vm.stopPrank();
+
+    _assertCaps(_assetId, zeroCapsSpoke, 0, 0);
+    _assertCapsOfAsset(_assetId, addCaps, drawCaps);
+  }
+
+  function test_restoreAssetCaps_keepsCapsSetThroughCapSetters() public {
+    vm.startPrank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.zeroAssetCaps(address(hub1), _assetUnderlying);
+    hubConfigurator.updateSpokeCaps(address(hub1), _assetUnderlying, spokeAddresses[0], 1, 2);
+    hubConfigurator.updateSpokeAddCap(address(hub1), _assetUnderlying, spokeAddresses[1], 3);
+    hubConfigurator.updateSpokeDrawCap(address(hub1), _assetUnderlying, spokeAddresses[2], 4);
+    vm.stopPrank();
+
+    for (uint256 i; i < 3; ++i) {
+      _assertSavedCaps(_assetId, spokeAddresses[i], 0, 0, false, false);
+    }
+    vm.expectCall(
+      address(hub1),
+      abi.encodeWithSelector(IHub.updateSpokeConfig.selector, _assetId, spokeAddresses[0]),
+      0
+    );
+    vm.expectCall(
+      address(hub1),
+      abi.encodeWithSelector(IHub.updateSpokeConfig.selector, _assetId, spokeAddresses[1]),
+      0
+    );
+    vm.expectCall(
+      address(hub1),
+      abi.encodeWithSelector(IHub.updateSpokeConfig.selector, _assetId, spokeAddresses[2]),
+      0
+    );
+
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.restoreAssetCaps(address(hub1), _assetUnderlying);
+
+    _assertCaps(_assetId, spokeAddresses[0], 1, 2);
+    _assertCaps(_assetId, spokeAddresses[1], 3, 0);
+    _assertCaps(_assetId, spokeAddresses[2], 0, 4);
+  }
+
+  function test_restoreAssetCaps_keepsCapsZeroThroughZeroSpokeCaps() public {
+    address spokeAddress = address(spoke1);
+    (uint256[] memory addCaps, uint256[] memory drawCaps) = _capsOfAsset(_assetId);
+    IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(_assetId, spokeAddress);
+
+    vm.startPrank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.zeroAssetCaps(address(hub1), _assetUnderlying);
+    hubConfigurator.zeroSpokeCaps(address(hub1), spokeAddress);
+    _assertSavedCaps(_assetId, spokeAddress, spokeConfig.addCap, spokeConfig.drawCap, true, true);
+    hubConfigurator.restoreAssetCaps(address(hub1), _assetUnderlying);
+    vm.stopPrank();
+
+    for (uint256 i; i < addCaps.length; ++i) {
+      address restoredSpoke = hub1.getSpokeAddress(_assetId, i);
+      if (restoredSpoke == spokeAddress) {
+        _assertCaps(_assetId, restoredSpoke, 0, 0);
+      } else {
+        _assertCaps(_assetId, restoredSpoke, addCaps[i], drawCaps[i]);
+      }
+    }
+    _assertSavedCaps(_assetId, spokeAddress, spokeConfig.addCap, spokeConfig.drawCap, false, true);
+
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.restoreSpokeCaps(address(hub1), spokeAddress);
+
+    _assertCapsOfAsset(_assetId, addCaps, drawCaps);
+  }
+
+  function test_restoreAssetCaps_skipsSpokesWithCapsChangedOnHub() public {
+    address changedSpoke = spokeAddresses[0];
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.zeroAssetCaps(address(hub1), _assetUnderlying);
+    _setCapsOnHub(_assetId, changedSpoke, 5, 0);
+
+    vm.expectCall(
+      address(hub1),
+      abi.encodeWithSelector(IHub.updateSpokeConfig.selector, _assetId, changedSpoke),
+      0
+    );
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.restoreAssetCaps(address(hub1), _assetUnderlying);
+
+    _assertCaps(_assetId, changedSpoke, 5, 0);
+    _assertSavedCaps(_assetId, changedSpoke, 0, 0, false, false);
+  }
+
+  function test_restoreAssetCaps_skipsSpokesNotZeroedByZeroAssetCaps() public {
+    address zeroCapsSpoke = spokeAddresses[0];
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.updateSpokeCaps(address(hub1), _assetUnderlying, zeroCapsSpoke, 0, 0);
+
+    vm.expectCall(address(hub1), abi.encodeWithSelector(IHub.updateSpokeConfig.selector), 0);
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.restoreAssetCaps(address(hub1), _assetUnderlying);
+
+    _assertCaps(_assetId, zeroCapsSpoke, 0, 0);
+  }
+
+  function test_restoreAssetCaps_leavesOtherAssetsZeroed() public {
+    (uint256[] memory addCaps, uint256[] memory drawCaps) = _capsOfAsset(_assetId);
+
+    vm.startPrank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.zeroAssetCaps(address(hub1), _assetUnderlying);
+    hubConfigurator.zeroAssetCaps(address(hub1), address(tokenList.weth));
+    hubConfigurator.restoreAssetCaps(address(hub1), _assetUnderlying);
+    vm.stopPrank();
+
+    _assertCapsOfAsset(_assetId, addCaps, drawCaps);
+    for (uint256 i; i < hub1.getSpokeCount(wethAssetId); ++i) {
+      _assertCaps(wethAssetId, hub1.getSpokeAddress(wethAssetId, i), 0, 0);
+    }
+  }
+
+  function test_restoreAssetCaps_keepsCapsZeroedByResetAssetCaps() public {
+    assertGt(
+      hub1.getSpokeConfig(_assetId, spokeAddresses[0]).addCap,
+      0,
+      'add cap zero before reset'
+    );
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.resetAssetCaps(address(hub1), _assetUnderlying);
+
+    vm.expectCall(address(hub1), abi.encodeWithSelector(IHub.updateSpokeConfig.selector), 0);
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.restoreAssetCaps(address(hub1), _assetUnderlying);
+
+    for (uint256 i; i < hub1.getSpokeCount(_assetId); ++i) {
+      _assertCaps(_assetId, hub1.getSpokeAddress(_assetId, i), 0, 0);
+    }
+  }
+
+  function test_restoreAssetCaps_keepsCapsZeroedByResetAssetCapsAfterZeroAssetCaps() public {
+    vm.startPrank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.zeroAssetCaps(address(hub1), _assetUnderlying);
+    hubConfigurator.resetAssetCaps(address(hub1), _assetUnderlying);
+    vm.stopPrank();
+
+    vm.expectCall(address(hub1), abi.encodeWithSelector(IHub.updateSpokeConfig.selector), 0);
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.restoreAssetCaps(address(hub1), _assetUnderlying);
+
+    for (uint256 i; i < hub1.getSpokeCount(_assetId); ++i) {
+      address spokeAddress = hub1.getSpokeAddress(_assetId, i);
+      _assertCaps(_assetId, spokeAddress, 0, 0);
+      _assertSavedCaps(_assetId, spokeAddress, 0, 0, false, false);
+    }
+  }
+
   function test_deactivateAsset_revertsWith_AccessManagedUnauthorized() public {
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
@@ -1937,6 +2204,131 @@ contract HubConfiguratorTest is Base {
     }
   }
 
+  function test_zeroSpokeCaps_revertsWith_AccessManagedUnauthorized() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
+    vm.prank(alice);
+    hubConfigurator.zeroSpokeCaps(address(hub1), address(spoke3));
+  }
+
+  function test_zeroSpokeCaps_savesCaps() public {
+    address spokeAddress = address(spoke3);
+    (uint256[] memory addCaps, uint256[] memory drawCaps) = _capsOfSpoke(spokeAddress);
+
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.zeroSpokeCaps(address(hub1), spokeAddress);
+
+    for (uint256 assetId; assetId < addCaps.length; ++assetId) {
+      if (hub1.isSpokeListed(assetId, spokeAddress)) {
+        _assertSavedCaps(assetId, spokeAddress, addCaps[assetId], drawCaps[assetId], false, true);
+        _assertCaps(assetId, spokeAddress, 0, 0);
+      }
+    }
+  }
+
+  function test_restoreSpokeCaps_revertsWith_AccessManagedUnauthorized() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
+    vm.prank(alice);
+    hubConfigurator.restoreSpokeCaps(address(hub1), address(spoke3));
+  }
+
+  function test_restoreSpokeCaps() public {
+    address spokeAddress = address(spoke3);
+    (uint256[] memory addCaps, uint256[] memory drawCaps) = _capsOfSpoke(spokeAddress);
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.zeroSpokeCaps(address(hub1), spokeAddress);
+
+    for (uint256 assetId; assetId < addCaps.length; ++assetId) {
+      if (hub1.isSpokeListed(assetId, spokeAddress)) {
+        IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(assetId, spokeAddress);
+        spokeConfig.addCap = addCaps[assetId].toUint40();
+        spokeConfig.drawCap = drawCaps[assetId].toUint40();
+        vm.expectCall(
+          address(hub1),
+          abi.encodeCall(IHub.updateSpokeConfig, (assetId, spokeAddress, spokeConfig))
+        );
+        _expectSpokeCapsEvents(assetId, spokeAddress, addCaps[assetId], drawCaps[assetId]);
+      }
+    }
+
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.restoreSpokeCaps(address(hub1), spokeAddress);
+
+    _assertCapsOfSpoke(spokeAddress, addCaps, drawCaps);
+    for (uint256 assetId; assetId < addCaps.length; ++assetId) {
+      if (hub1.isSpokeListed(assetId, spokeAddress)) {
+        _assertSavedCaps(assetId, spokeAddress, 0, 0, false, false);
+      }
+    }
+  }
+
+  function test_restoreSpokeCaps_keepsCapsZeroThroughZeroAssetCaps() public {
+    address spokeAddress = address(spoke3);
+    (uint256[] memory addCaps, uint256[] memory drawCaps) = _capsOfSpoke(spokeAddress);
+    (uint256[] memory assetAddCaps, uint256[] memory assetDrawCaps) = _capsOfAsset(_assetId);
+
+    vm.startPrank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.zeroSpokeCaps(address(hub1), spokeAddress);
+    hubConfigurator.zeroAssetCaps(address(hub1), _assetUnderlying);
+    hubConfigurator.restoreSpokeCaps(address(hub1), spokeAddress);
+    vm.stopPrank();
+
+    for (uint256 assetId; assetId < addCaps.length; ++assetId) {
+      if (assetId == _assetId) {
+        _assertCaps(assetId, spokeAddress, 0, 0);
+      } else if (hub1.isSpokeListed(assetId, spokeAddress)) {
+        _assertCaps(assetId, spokeAddress, addCaps[assetId], drawCaps[assetId]);
+      }
+    }
+    _assertSavedCaps(_assetId, spokeAddress, addCaps[_assetId], drawCaps[_assetId], true, false);
+
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.restoreAssetCaps(address(hub1), _assetUnderlying);
+
+    _assertCapsOfSpoke(spokeAddress, addCaps, drawCaps);
+    _assertCapsOfAsset(_assetId, assetAddCaps, assetDrawCaps);
+  }
+
+  function test_restoreSpokeCaps_leavesOtherSpokesZeroed() public {
+    (uint256[] memory addCaps, uint256[] memory drawCaps) = _capsOfSpoke(address(spoke3));
+
+    vm.startPrank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.zeroSpokeCaps(address(hub1), address(spoke2));
+    hubConfigurator.zeroSpokeCaps(address(hub1), address(spoke3));
+    hubConfigurator.restoreSpokeCaps(address(hub1), address(spoke3));
+    vm.stopPrank();
+
+    _assertCapsOfSpoke(address(spoke3), addCaps, drawCaps);
+    for (uint256 assetId; assetId < hub1.getAssetCount(); ++assetId) {
+      if (hub1.isSpokeListed(assetId, address(spoke2))) {
+        _assertCaps(assetId, address(spoke2), 0, 0);
+      }
+    }
+  }
+
+  function test_getSavedCaps() public {
+    address spokeAddress = address(spoke3);
+    IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(_assetId, spokeAddress);
+    _assertSavedCaps(_assetId, spokeAddress, 0, 0, false, false);
+
+    vm.startPrank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.zeroAssetCaps(address(hub1), _assetUnderlying);
+    _assertSavedCaps(_assetId, spokeAddress, spokeConfig.addCap, spokeConfig.drawCap, true, false);
+
+    hubConfigurator.zeroSpokeCaps(address(hub1), spokeAddress);
+    _assertSavedCaps(_assetId, spokeAddress, spokeConfig.addCap, spokeConfig.drawCap, true, true);
+
+    hubConfigurator.restoreAssetCaps(address(hub1), _assetUnderlying);
+    _assertSavedCaps(_assetId, spokeAddress, spokeConfig.addCap, spokeConfig.drawCap, false, true);
+
+    hubConfigurator.restoreSpokeCaps(address(hub1), spokeAddress);
+    _assertSavedCaps(_assetId, spokeAddress, 0, 0, false, false);
+    vm.stopPrank();
+  }
+
   function test_updateInterestRateData_revertsWith_AccessManagedUnauthorized() public {
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
@@ -2035,7 +2427,7 @@ contract HubConfiguratorTest is Base {
     assertFalse(hub1.isUnderlyingListed(unlisted));
     IHub.SpokeConfig memory spokeConfig;
 
-    bytes[] memory calls = new bytes[](16);
+    bytes[] memory calls = new bytes[](19);
     calls[0] = abi.encodeCall(IHubConfigurator.updateLiquidityFee, (address(hub1), unlisted, 1));
     calls[1] = abi.encodeCall(
       IHubConfigurator.updateFeeReceiver,
@@ -2058,36 +2450,39 @@ contract HubConfiguratorTest is Base {
       (address(hub1), unlisted, _encodedIrData)
     );
     calls[6] = abi.encodeCall(IHubConfigurator.resetAssetCaps, (address(hub1), unlisted));
-    calls[7] = abi.encodeCall(IHubConfigurator.deactivateAsset, (address(hub1), unlisted));
-    calls[8] = abi.encodeCall(IHubConfigurator.haltAsset, (address(hub1), unlisted));
-    calls[9] = abi.encodeCall(
+    calls[7] = abi.encodeCall(IHubConfigurator.zeroAssetCaps, (address(hub1), unlisted));
+    calls[8] = abi.encodeCall(IHubConfigurator.restoreAssetCaps, (address(hub1), unlisted));
+    calls[9] = abi.encodeCall(IHubConfigurator.deactivateAsset, (address(hub1), unlisted));
+    calls[10] = abi.encodeCall(IHubConfigurator.haltAsset, (address(hub1), unlisted));
+    calls[11] = abi.encodeCall(
       IHubConfigurator.addSpoke,
       (address(hub1), makeAddr('newSpoke'), unlisted, spokeConfig)
     );
-    calls[10] = abi.encodeCall(
+    calls[12] = abi.encodeCall(
       IHubConfigurator.updateSpokeActive,
       (address(hub1), unlisted, spoke, false)
     );
-    calls[11] = abi.encodeCall(
+    calls[13] = abi.encodeCall(
       IHubConfigurator.updateSpokeHalted,
       (address(hub1), unlisted, spoke, true)
     );
-    calls[12] = abi.encodeCall(
+    calls[14] = abi.encodeCall(
       IHubConfigurator.updateSpokeAddCap,
       (address(hub1), unlisted, spoke, 1)
     );
-    calls[13] = abi.encodeCall(
+    calls[15] = abi.encodeCall(
       IHubConfigurator.updateSpokeDrawCap,
       (address(hub1), unlisted, spoke, 1)
     );
-    calls[14] = abi.encodeCall(
+    calls[16] = abi.encodeCall(
       IHubConfigurator.updateSpokeRiskPremiumThreshold,
       (address(hub1), unlisted, spoke, 1)
     );
-    calls[15] = abi.encodeCall(
+    calls[17] = abi.encodeCall(
       IHubConfigurator.updateSpokeCaps,
       (address(hub1), unlisted, spoke, 1, 1)
     );
+    calls[18] = abi.encodeCall(IHubConfigurator.getSavedCaps, (address(hub1), unlisted, spoke));
 
     for (uint256 i; i < calls.length; ++i) {
       vm.prank(HUB_CONFIGURATOR_ADMIN);
@@ -2370,5 +2765,105 @@ contract HubConfiguratorTest is Base {
         caller != ADMIN &&
         caller != HUB_ADMIN
     );
+  }
+
+  /// @dev Returns the caps of every Spoke of `assetId` on hub1, in Hub order.
+  function _capsOfAsset(
+    uint256 assetId
+  ) internal view returns (uint256[] memory addCaps, uint256[] memory drawCaps) {
+    uint256 spokeCount = hub1.getSpokeCount(assetId);
+    addCaps = new uint256[](spokeCount);
+    drawCaps = new uint256[](spokeCount);
+    for (uint256 i; i < spokeCount; ++i) {
+      IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(
+        assetId,
+        hub1.getSpokeAddress(assetId, i)
+      );
+      addCaps[i] = spokeConfig.addCap;
+      drawCaps[i] = spokeConfig.drawCap;
+    }
+  }
+
+  /// @dev Returns the caps of `spokeAddress` on hub1, indexed by asset identifier, with zero for unlisted assets.
+  function _capsOfSpoke(
+    address spokeAddress
+  ) internal view returns (uint256[] memory addCaps, uint256[] memory drawCaps) {
+    uint256 assetCount = hub1.getAssetCount();
+    addCaps = new uint256[](assetCount);
+    drawCaps = new uint256[](assetCount);
+    for (uint256 assetId; assetId < assetCount; ++assetId) {
+      if (hub1.isSpokeListed(assetId, spokeAddress)) {
+        IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(assetId, spokeAddress);
+        addCaps[assetId] = spokeConfig.addCap;
+        drawCaps[assetId] = spokeConfig.drawCap;
+      }
+    }
+  }
+
+  function _assertCapsOfAsset(
+    uint256 assetId,
+    uint256[] memory addCaps,
+    uint256[] memory drawCaps
+  ) internal view {
+    for (uint256 i; i < addCaps.length; ++i) {
+      _assertCaps(assetId, hub1.getSpokeAddress(assetId, i), addCaps[i], drawCaps[i]);
+    }
+  }
+
+  function _assertCapsOfSpoke(
+    address spokeAddress,
+    uint256[] memory addCaps,
+    uint256[] memory drawCaps
+  ) internal view {
+    for (uint256 assetId; assetId < addCaps.length; ++assetId) {
+      if (hub1.isSpokeListed(assetId, spokeAddress)) {
+        _assertCaps(assetId, spokeAddress, addCaps[assetId], drawCaps[assetId]);
+      }
+    }
+  }
+
+  function _assertCaps(
+    uint256 assetId,
+    address spokeAddress,
+    uint256 addCap,
+    uint256 drawCap
+  ) internal view {
+    IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(assetId, spokeAddress);
+    assertEq(spokeConfig.addCap, addCap, 'add cap');
+    assertEq(spokeConfig.drawCap, drawCap, 'draw cap');
+  }
+
+  function _assertSavedCaps(
+    uint256 assetId,
+    address spokeAddress,
+    uint256 addCap,
+    uint256 drawCap,
+    bool byZeroAssetCaps,
+    bool byZeroSpokeCaps
+  ) internal view {
+    (
+      uint256 savedAddCap,
+      uint256 savedDrawCap,
+      bool heldByZeroAssetCaps,
+      bool heldByZeroSpokeCaps
+    ) = hubConfigurator.getSavedCaps(address(hub1), _hub1Underlying(assetId), spokeAddress);
+    assertEq(savedAddCap, addCap, 'saved add cap');
+    assertEq(savedDrawCap, drawCap, 'saved draw cap');
+    assertEq(heldByZeroAssetCaps, byZeroAssetCaps, 'held by zeroAssetCaps');
+    assertEq(heldByZeroSpokeCaps, byZeroSpokeCaps, 'held by zeroSpokeCaps');
+  }
+
+  /// @dev Sets the caps directly on hub1, bypassing the configurator.
+  function _setCapsOnHub(
+    uint256 assetId,
+    address spokeAddress,
+    uint256 addCap,
+    uint256 drawCap
+  ) internal {
+    IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(assetId, spokeAddress);
+    spokeConfig.addCap = addCap.toUint40();
+    spokeConfig.drawCap = drawCap.toUint40();
+    vm.prank(HUB_ADMIN);
+    hub1.updateSpokeConfig(assetId, spokeAddress, spokeConfig);
   }
 }

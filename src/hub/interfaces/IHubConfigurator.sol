@@ -256,9 +256,22 @@ interface IHubConfigurator {
   ) external;
 
   /// @notice Resets all Spokes' add and draw caps to zero for an asset on a specified Hub.
+  /// @dev Clears the caps saved by bulk levers, so a bulk restore keeps the caps at zero.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
   function resetAssetCaps(address hub, address underlying) external;
+
+  /// @notice Sets all Spokes' add and draw caps to zero for an asset on a specified Hub.
+  /// @dev Saves the caps it zeroes so `restoreAssetCaps` restores only those.
+  /// @param hub The address of the Hub.
+  /// @param underlying The address of the underlying asset.
+  function zeroAssetCaps(address hub, address underlying) external;
+
+  /// @notice Restores the caps that `zeroAssetCaps` zeroed for an asset on a specified Hub.
+  /// @dev Caps also zeroed by another bulk lever stay at zero.
+  /// @param hub The address of the Hub.
+  /// @param underlying The address of the underlying asset.
+  function restoreAssetCaps(address hub, address underlying) external;
 
   /// @notice Deactivates an asset on a specified Hub.
   /// @param hub The address of the Hub.
@@ -318,6 +331,7 @@ interface IHubConfigurator {
   function updateSpokeHalted(address hub, address underlying, address spoke, bool halted) external;
 
   /// @notice Updates the add cap of an asset's spoke on a specified hub.
+  /// @dev Clears the caps saved by bulk levers.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
   /// @param spoke The address of the Spoke.
@@ -330,6 +344,7 @@ interface IHubConfigurator {
   ) external;
 
   /// @notice Updates the draw cap of an asset's Spoke on a specified Hub.
+  /// @dev Clears the caps saved by bulk levers.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
   /// @param spoke The address of the Spoke.
@@ -354,6 +369,7 @@ interface IHubConfigurator {
   ) external;
 
   /// @notice Updates the caps of an asset's Spoke on a specified Hub.
+  /// @dev Clears the caps saved by bulk levers.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
   /// @param spoke The address of the Spoke.
@@ -385,9 +401,22 @@ interface IHubConfigurator {
   function unhaltSpoke(address hub, address spoke) external;
 
   /// @notice Resets draw cap and add cap to zero for a Spoke on a specified Hub.
+  /// @dev Clears the caps saved by bulk levers, so a bulk restore keeps the caps at zero.
   /// @param hub The address of the Hub.
   /// @param spoke The address of the Spoke.
   function resetSpokeCaps(address hub, address spoke) external;
+
+  /// @notice Sets draw cap and add cap to zero for a Spoke on a specified Hub.
+  /// @dev Saves the caps it zeroes so `restoreSpokeCaps` restores only those.
+  /// @param hub The address of the Hub.
+  /// @param spoke The address of the Spoke.
+  function zeroSpokeCaps(address hub, address spoke) external;
+
+  /// @notice Restores the caps that `zeroSpokeCaps` zeroed for a Spoke on a specified Hub.
+  /// @dev Caps also zeroed by another bulk lever stay at zero.
+  /// @param hub The address of the Hub.
+  /// @param spoke The address of the Spoke.
+  function restoreSpokeCaps(address hub, address spoke) external;
 
   /// @notice Updates the interest rate data for an asset.
   /// @dev The current strategy must implement `IAssetInterestRateStrategy`.
@@ -418,4 +447,19 @@ interface IHubConfigurator {
     address underlying,
     address spoke
   ) external view returns (bool, bool, bool);
+
+  /// @notice Returns the caps saved for an asset's Spoke on a specified Hub, and which bulk levers hold them at
+  /// zero.
+  /// @param hub The address of the Hub.
+  /// @param underlying The address of the underlying asset.
+  /// @param spoke The address of the Spoke.
+  /// @return The saved add cap.
+  /// @return The saved draw cap.
+  /// @return True if `zeroAssetCaps` holds the caps at zero.
+  /// @return True if `zeroSpokeCaps` holds the caps at zero.
+  function getSavedCaps(
+    address hub,
+    address underlying,
+    address spoke
+  ) external view returns (uint256, uint256, bool, bool);
 }

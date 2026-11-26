@@ -97,7 +97,7 @@ library Roles {
 
   /// @notice Returns the function selectors associated with the HubConfigurator Domain Admin role.
   function getHubConfiguratorDomainAdminRoleSelectors() internal pure returns (bytes4[] memory) {
-    bytes4[] memory selectors = new bytes4[](26);
+    bytes4[] memory selectors = new bytes4[](30);
     selectors[0] = IHubConfigurator.addAsset.selector;
     selectors[1] = IHubConfigurator.addAssetWithDecimals.selector;
     selectors[2] = IHubConfigurator.updateLiquidityFee.selector;
@@ -106,24 +106,28 @@ library Roles {
     selectors[5] = IHubConfigurator.updateInterestRateStrategy.selector;
     selectors[6] = IHubConfigurator.updateReinvestmentController.selector;
     selectors[7] = IHubConfigurator.resetAssetCaps.selector;
-    selectors[8] = IHubConfigurator.deactivateAsset.selector;
-    selectors[9] = IHubConfigurator.haltAsset.selector;
-    selectors[10] = IHubConfigurator.unhaltAsset.selector;
-    selectors[11] = IHubConfigurator.addSpoke.selector;
-    selectors[12] = IHubConfigurator.addSpokeToAssets.selector;
-    selectors[13] = IHubConfigurator.updateSpokeActive.selector;
-    selectors[14] = IHubConfigurator.updateSpokeHalted.selector;
-    selectors[15] = IHubConfigurator.updateSpokeAddCap.selector;
-    selectors[16] = IHubConfigurator.updateSpokeDrawCap.selector;
-    selectors[17] = IHubConfigurator.updateSpokeRiskPremiumThreshold.selector;
-    selectors[18] = IHubConfigurator.updateSpokeCaps.selector;
-    selectors[19] = IHubConfigurator.deactivateSpoke.selector;
-    selectors[20] = IHubConfigurator.haltSpoke.selector;
-    selectors[21] = IHubConfigurator.unhaltSpoke.selector;
-    selectors[22] = IHubConfigurator.resetSpokeCaps.selector;
-    selectors[23] = IHubConfigurator.updateInterestRateData.selector;
-    selectors[24] = IHubConfigurator.haltHub.selector;
-    selectors[25] = IHubConfigurator.unhaltHub.selector;
+    selectors[8] = IHubConfigurator.zeroAssetCaps.selector;
+    selectors[9] = IHubConfigurator.restoreAssetCaps.selector;
+    selectors[10] = IHubConfigurator.deactivateAsset.selector;
+    selectors[11] = IHubConfigurator.haltAsset.selector;
+    selectors[12] = IHubConfigurator.unhaltAsset.selector;
+    selectors[13] = IHubConfigurator.addSpoke.selector;
+    selectors[14] = IHubConfigurator.addSpokeToAssets.selector;
+    selectors[15] = IHubConfigurator.updateSpokeActive.selector;
+    selectors[16] = IHubConfigurator.updateSpokeHalted.selector;
+    selectors[17] = IHubConfigurator.updateSpokeAddCap.selector;
+    selectors[18] = IHubConfigurator.updateSpokeDrawCap.selector;
+    selectors[19] = IHubConfigurator.updateSpokeRiskPremiumThreshold.selector;
+    selectors[20] = IHubConfigurator.updateSpokeCaps.selector;
+    selectors[21] = IHubConfigurator.deactivateSpoke.selector;
+    selectors[22] = IHubConfigurator.haltSpoke.selector;
+    selectors[23] = IHubConfigurator.unhaltSpoke.selector;
+    selectors[24] = IHubConfigurator.resetSpokeCaps.selector;
+    selectors[25] = IHubConfigurator.zeroSpokeCaps.selector;
+    selectors[26] = IHubConfigurator.restoreSpokeCaps.selector;
+    selectors[27] = IHubConfigurator.updateInterestRateData.selector;
+    selectors[28] = IHubConfigurator.haltHub.selector;
+    selectors[29] = IHubConfigurator.unhaltHub.selector;
     return selectors;
   }
 

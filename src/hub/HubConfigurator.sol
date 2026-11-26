@@ -16,10 +16,22 @@ import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
 abstract contract HubConfigurator is AccessManagedUpgradeable, IHubConfigurator {
   using SafeCast for uint256;
 
+  /// @dev Caps saved by a bulk lever, packed with the bulk levers holding the caps at zero as a `BulkLeversMap`
+  /// bitmap.
+  struct SavedCaps {
+    uint40 addCap;
+    uint40 drawCap;
+    uint8 bulkLevers;
+  }
+
   /// @dev Map of Hub addresses, asset identifiers and Spoke addresses to the bulk levers holding the halted flag,
   /// as a `BulkLeversMap` bitmap.
   mapping(address hub => mapping(uint256 assetId => mapping(address spoke => uint8 bulkLevers)))
     internal _haltedByBulkLevers;
+
+  /// @dev Map of Hub addresses, asset identifiers and Spoke addresses to the caps saved by bulk levers.
+  mapping(address hub => mapping(uint256 assetId => mapping(address spoke => SavedCaps)))
+    internal _savedCaps;
 
   /// @dev To be overridden by the inheriting HubConfigurator instance contract.
   function initialize(address authority) external virtual;
@@ -162,7 +174,41 @@ abstract contract HubConfigurator is AccessManagedUpgradeable, IHubConfigurator 
     uint256 assetId = targetHub.getAssetId(underlying);
     uint256 spokesCount = targetHub.getSpokeCount(assetId);
     for (uint256 i = 0; i < spokesCount; ++i) {
-      _updateSpokeCaps(targetHub, underlying, assetId, targetHub.getSpokeAddress(assetId, i), 0, 0);
+      address spoke = targetHub.getSpokeAddress(assetId, i);
+      delete _savedCaps[hub][assetId][spoke];
+      _updateSpokeCaps(targetHub, underlying, assetId, spoke, 0, 0);
+    }
+  }
+
+  /// @inheritdoc IHubConfigurator
+  function zeroAssetCaps(address hub, address underlying) external restricted {
+    IHub targetHub = IHub(hub);
+    uint256 assetId = targetHub.getAssetId(underlying);
+    uint256 spokesCount = targetHub.getSpokeCount(assetId);
+    for (uint256 i = 0; i < spokesCount; ++i) {
+      _bulkZeroCaps(
+        targetHub,
+        underlying,
+        assetId,
+        targetHub.getSpokeAddress(assetId, i),
+        BulkLeversMap.ASSET_MASK
+      );
+    }
+  }
+
+  /// @inheritdoc IHubConfigurator
+  function restoreAssetCaps(address hub, address underlying) external restricted {
+    IHub targetHub = IHub(hub);
+    uint256 assetId = targetHub.getAssetId(underlying);
+    uint256 spokesCount = targetHub.getSpokeCount(assetId);
+    for (uint256 i = 0; i < spokesCount; ++i) {
+      _bulkRestoreCaps(
+        targetHub,
+        underlying,
+        assetId,
+        targetHub.getSpokeAddress(assetId, i),
+        BulkLeversMap.ASSET_MASK
+      );
     }
   }
 
@@ -268,6 +314,7 @@ abstract contract HubConfigurator is AccessManagedUpgradeable, IHubConfigurator 
   ) external restricted {
     IHub targetHub = IHub(hub);
     uint256 assetId = targetHub.getAssetId(underlying);
+    delete _savedCaps[hub][assetId][spoke];
     IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
     uint256 oldAddCap = config.addCap;
     config.addCap = addCap.toUint40();
@@ -284,6 +331,7 @@ abstract contract HubConfigurator is AccessManagedUpgradeable, IHubConfigurator 
   ) external restricted {
     IHub targetHub = IHub(hub);
     uint256 assetId = targetHub.getAssetId(underlying);
+    delete _savedCaps[hub][assetId][spoke];
     IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
     uint256 oldDrawCap = config.drawCap;
     config.drawCap = drawCap.toUint40();
@@ -323,14 +371,9 @@ abstract contract HubConfigurator is AccessManagedUpgradeable, IHubConfigurator 
     uint256 drawCap
   ) external restricted {
     IHub targetHub = IHub(hub);
-    _updateSpokeCaps(
-      targetHub,
-      underlying,
-      targetHub.getAssetId(underlying),
-      spoke,
-      addCap,
-      drawCap
-    );
+    uint256 assetId = targetHub.getAssetId(underlying);
+    delete _savedCaps[hub][assetId][spoke];
+    _updateSpokeCaps(targetHub, underlying, assetId, spoke, addCap, drawCap);
   }
 
   /// @inheritdoc IHubConfigurator
@@ -379,7 +422,42 @@ abstract contract HubConfigurator is AccessManagedUpgradeable, IHubConfigurator 
     uint256 assetCount = targetHub.getAssetCount();
     for (uint256 assetId = 0; assetId < assetCount; ++assetId) {
       if (targetHub.isSpokeListed(assetId, spoke)) {
+        delete _savedCaps[hub][assetId][spoke];
         _updateSpokeCaps(targetHub, _getUnderlying(targetHub, assetId), assetId, spoke, 0, 0);
+      }
+    }
+  }
+
+  /// @inheritdoc IHubConfigurator
+  function zeroSpokeCaps(address hub, address spoke) external restricted {
+    IHub targetHub = IHub(hub);
+    uint256 assetCount = targetHub.getAssetCount();
+    for (uint256 assetId = 0; assetId < assetCount; ++assetId) {
+      if (targetHub.isSpokeListed(assetId, spoke)) {
+        _bulkZeroCaps(
+          targetHub,
+          _getUnderlying(targetHub, assetId),
+          assetId,
+          spoke,
+          BulkLeversMap.SPOKE_MASK
+        );
+      }
+    }
+  }
+
+  /// @inheritdoc IHubConfigurator
+  function restoreSpokeCaps(address hub, address spoke) external restricted {
+    IHub targetHub = IHub(hub);
+    uint256 assetCount = targetHub.getAssetCount();
+    for (uint256 assetId = 0; assetId < assetCount; ++assetId) {
+      if (targetHub.isSpokeListed(assetId, spoke)) {
+        _bulkRestoreCaps(
+          targetHub,
+          _getUnderlying(targetHub, assetId),
+          assetId,
+          spoke,
+          BulkLeversMap.SPOKE_MASK
+        );
       }
     }
   }
@@ -456,6 +534,21 @@ abstract contract HubConfigurator is AccessManagedUpgradeable, IHubConfigurator 
     );
   }
 
+  /// @inheritdoc IHubConfigurator
+  function getSavedCaps(
+    address hub,
+    address underlying,
+    address spoke
+  ) external view returns (uint256, uint256, bool, bool) {
+    SavedCaps memory saved = _savedCaps[hub][IHub(hub).getAssetId(underlying)][spoke];
+    return (
+      saved.addCap,
+      saved.drawCap,
+      BulkLeversMap.isHeld(saved.bulkLevers, BulkLeversMap.ASSET_MASK),
+      BulkLeversMap.isHeld(saved.bulkLevers, BulkLeversMap.SPOKE_MASK)
+    );
+  }
+
   function _addAsset(
     IHub hub,
     address underlying,
@@ -522,7 +615,27 @@ abstract contract HubConfigurator is AccessManagedUpgradeable, IHubConfigurator 
     uint256 addCap,
     uint256 drawCap
   ) internal {
-    IHub.SpokeConfig memory config = hub.getSpokeConfig(assetId, spoke);
+    _writeSpokeCaps(
+      hub,
+      underlying,
+      assetId,
+      spoke,
+      hub.getSpokeConfig(assetId, spoke),
+      addCap,
+      drawCap
+    );
+  }
+
+  /// @dev `config` must be the Spoke's current config on the Hub.
+  function _writeSpokeCaps(
+    IHub hub,
+    address underlying,
+    uint256 assetId,
+    address spoke,
+    IHub.SpokeConfig memory config,
+    uint256 addCap,
+    uint256 drawCap
+  ) internal {
     uint256 oldAddCap = config.addCap;
     uint256 oldDrawCap = config.drawCap;
     config.addCap = addCap.toUint40();
@@ -604,6 +717,48 @@ abstract contract HubConfigurator is AccessManagedUpgradeable, IHubConfigurator 
       config.halted = false;
       hub.updateSpokeConfig(assetId, spoke, config);
       emit SpokeHaltedUpdated(address(hub), underlying, assetId, spoke, true, false);
+    }
+  }
+
+  /// @dev Saves and zeroes the caps unless both are already zero, and records `mask` as holding them per
+  /// `BulkLeversMap.brake`.
+  function _bulkZeroCaps(
+    IHub hub,
+    address underlying,
+    uint256 assetId,
+    address spoke,
+    uint8 mask
+  ) internal {
+    IHub.SpokeConfig memory config = hub.getSpokeConfig(assetId, spoke);
+    SavedCaps memory saved = _savedCaps[address(hub)][assetId][spoke];
+    bool capsUpdated = config.addCap != 0 || config.drawCap != 0;
+    if (capsUpdated) {
+      saved.addCap = config.addCap;
+      saved.drawCap = config.drawCap;
+      _writeSpokeCaps(hub, underlying, assetId, spoke, config, 0, 0);
+    }
+    saved.bulkLevers = BulkLeversMap.brake(saved.bulkLevers, mask, capsUpdated);
+    _savedCaps[address(hub)][assetId][spoke] = saved;
+  }
+
+  /// @dev Writes the saved caps back once no bulk lever holds them, if both caps are still zero.
+  function _bulkRestoreCaps(
+    IHub hub,
+    address underlying,
+    uint256 assetId,
+    address spoke,
+    uint8 mask
+  ) internal {
+    SavedCaps memory saved = _savedCaps[address(hub)][assetId][spoke];
+    (uint8 bulkLevers, bool released) = BulkLeversMap.release(saved.bulkLevers, mask);
+    if (!released) {
+      _savedCaps[address(hub)][assetId][spoke].bulkLevers = bulkLevers;
+      return;
+    }
+    delete _savedCaps[address(hub)][assetId][spoke];
+    IHub.SpokeConfig memory config = hub.getSpokeConfig(assetId, spoke);
+    if (config.addCap == 0 && config.drawCap == 0) {
+      _writeSpokeCaps(hub, underlying, assetId, spoke, config, saved.addCap, saved.drawCap);
     }
   }
 
