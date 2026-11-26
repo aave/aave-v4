@@ -9,7 +9,12 @@ contract EmergencyStewardTest is SpokeConfiguratorBaseTest {
     assertEq(IAccessManaged(address(emergencySteward)).authority(), address(accessManager));
   }
 
-  function test_constructor_revertsWith_InvalidAddress() public {
+  function test_constructor_revertsWith_InvalidAddress_authority() public {
+    vm.expectRevert(IEmergencySteward.InvalidAddress.selector);
+    new EmergencySteward(address(0), address(spokeConfigurator));
+  }
+
+  function test_constructor_revertsWith_InvalidAddress_spokeConfigurator() public {
     vm.expectRevert(IEmergencySteward.InvalidAddress.selector);
     new EmergencySteward(address(accessManager), address(0));
   }

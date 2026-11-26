@@ -20,6 +20,7 @@ contract EmergencySteward is AccessManaged, IEmergencySteward {
   /// @param authority_ The address of the authority contract which manages permissions.
   /// @param spokeConfigurator_ The address of the SpokeConfigurator.
   constructor(address authority_, address spokeConfigurator_) AccessManaged(authority_) {
+    require(authority_ != address(0), InvalidAddress());
     require(spokeConfigurator_ != address(0), InvalidAddress());
     SPOKE_CONFIGURATOR = spokeConfigurator_;
   }
