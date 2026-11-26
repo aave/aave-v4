@@ -79,6 +79,9 @@ library AaveV4DeployOrchestration {
     // Setup Configurator Roles
     _setupConfiguratorRoles({logger: logger, report: report});
 
+    // Setup EmergencySteward Roles
+    _setupEmergencyStewardRoles({logger: logger, report: report});
+
     // Deploy TreasurySpoke Batch (single instance for all hubs)
     report.treasurySpokeBatchReport = _deployTreasurySpokeBatch({
       logger: logger,
@@ -421,7 +424,7 @@ library AaveV4DeployOrchestration {
     return report;
   }
 
-  /// @dev Setup roles for the hub and spoke configurators and the EmergencySteward.
+  /// @dev Setup roles for the hub and spoke configurators.
   function _setupConfiguratorRoles(
     Logger logger,
     OrchestrationReports.FullDeploymentReport memory report
@@ -437,7 +440,12 @@ library AaveV4DeployOrchestration {
       accessManager: report.authorityBatchReport.accessManager,
       spokeConfigurator: report.configuratorBatchReport.spokeConfigurator
     });
+  }
 
+  function _setupEmergencyStewardRoles(
+    Logger logger,
+    OrchestrationReports.FullDeploymentReport memory report
+  ) internal {
     logger.logHeader1('setting EmergencySteward roles');
     AaveV4EmergencyStewardRolesProcedure.setupEmergencyStewardAllRoles({
       accessManager: report.authorityBatchReport.accessManager,
@@ -525,9 +533,10 @@ library AaveV4DeployOrchestration {
       'granting SpokeConfigurator EmergencySteward role to',
       report.emergencyStewardBatchReport.emergencySteward
     );
-    AaveV4SpokeConfiguratorRolesProcedure.grantSpokeConfiguratorEmergencyStewardRole({
+    AaveV4SpokeConfiguratorRolesProcedure.grantSpokeConfiguratorRole({
       accessManager: accessManager,
-      emergencySteward: report.emergencyStewardBatchReport.emergencySteward
+      role: Roles.SPOKE_CONFIGURATOR_EMERGENCY_STEWARD_ROLE,
+      admin: report.emergencyStewardBatchReport.emergencySteward
     });
 
     logger.logHeader1('granting EmergencySteward Admin roles to', spokeConfiguratorAdmin);

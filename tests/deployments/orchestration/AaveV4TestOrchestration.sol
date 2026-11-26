@@ -125,7 +125,7 @@ library AaveV4TestOrchestration {
     report.configuratorReport.spokeConfigurator = configuratorReport.spokeConfigurator;
 
     // Deploy EmergencySteward Batch with AccessManager as authority
-    report.configuratorReport.emergencySteward = AaveV4DeployBase
+    report.emergencySteward = AaveV4DeployBase
       .deployEmergencyStewardBatch({
         authority: report.accessManager,
         spokeConfigurator: configuratorReport.spokeConfigurator,
@@ -276,9 +276,11 @@ library AaveV4TestOrchestration {
       report.accessManager,
       report.configuratorReport.spokeConfigurator
     );
+
+    // Set EmergencySteward Roles
     AaveV4EmergencyStewardRolesProcedure.setupEmergencyStewardAllRoles(
       report.accessManager,
-      report.configuratorReport.emergencySteward
+      report.emergencySteward
     );
   }
 
@@ -350,9 +352,10 @@ library AaveV4TestOrchestration {
     );
 
     // grant SpokeConfigurator EmergencySteward role (allows EmergencySteward to call SpokeConfigurator functions)
-    AaveV4SpokeConfiguratorRolesProcedure.grantSpokeConfiguratorEmergencyStewardRole(
+    AaveV4SpokeConfiguratorRolesProcedure.grantSpokeConfiguratorRole(
       report.accessManager,
-      report.configuratorReport.emergencySteward
+      Roles.SPOKE_CONFIGURATOR_EMERGENCY_STEWARD_ROLE,
+      report.emergencySteward
     );
 
     // grant EmergencySteward Admin roles (allows admin to call EmergencySteward functions)

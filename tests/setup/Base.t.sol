@@ -190,7 +190,7 @@ abstract contract Base is BaseHelpers, BatchTestProcedures {
 
     vm.label(report.configuratorReport.hubConfigurator, 'hubConfigurator');
     vm.label(report.configuratorReport.spokeConfigurator, 'spokeConfigurator');
-    vm.label(report.configuratorReport.emergencySteward, 'emergencySteward');
+    vm.label(report.emergencySteward, 'emergencySteward');
 
     return report;
   }
@@ -212,7 +212,7 @@ abstract contract Base is BaseHelpers, BatchTestProcedures {
     accessManager = IAccessManager(report.accessManager);
     hubConfigurator = IHubConfigurator(report.configuratorReport.hubConfigurator);
     spokeConfigurator = ISpokeConfigurator(report.configuratorReport.spokeConfigurator);
-    emergencySteward = IEmergencySteward(report.configuratorReport.emergencySteward);
+    emergencySteward = IEmergencySteward(report.emergencySteward);
   }
 
   function _setupFixturesRoles(TestTypes.TestEnvReport memory report) internal virtual {

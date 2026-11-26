@@ -29,15 +29,16 @@ import {IEmergencySteward} from 'src/emergency/interfaces/IEmergencySteward.sol'
 /// HUB_FEE_MINTER_ROLE, HUB_DEFICIT_ELIMINATOR_ROLE each control a distinct set
 /// of selectors).
 ///
-/// HubConfigurator and SpokeConfigurator follow a different approach: initially,
+/// HubConfigurator, SpokeConfigurator and EmergencySteward follow a different approach: initially,
 /// a single Domain Admin role per domain (HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE = 200,
-/// SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE = 400) holds all target selectors.
+/// SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE = 400, EMERGENCY_STEWARD_DOMAIN_ADMIN_ROLE = 500)
+/// holds all target selectors.
 /// As more granular roles are introduced, they are added at the next available ID
-/// (201, 202, ... / 401, 402, ...) and the corresponding selectors are reassigned
+/// (201, 202, ... / 401, 402, ... / 501, 502, ...) and the corresponding selectors are reassigned
 /// from the Domain Admin role to the new granular role:
 ///   - Existing role IDs should never be overwritten or reused for a different purpose.
 ///   - New roles are always appended with an incremented ID.
-///   - The Domain Admin role (200/400) only ever has its selector set shrink over
+///   - The Domain Admin role (200/400/500) only ever has its selector set shrink over
 ///     time as selectors are divided into more granular roles.
 ///   - Addresses holding the Domain Admin role should be granted the new
 ///     granular role to retain their existing access.

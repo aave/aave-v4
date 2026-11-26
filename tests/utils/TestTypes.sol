@@ -48,12 +48,12 @@ library TestTypes {
   struct TestConfiguratorReport {
     address hubConfigurator;
     address spokeConfigurator;
-    address emergencySteward;
   }
 
   struct TestEnvReport {
     address accessManager;
     address treasurySpoke;
+    address emergencySteward;
     TestHubReport[] hubReports;
     TestSpokeReport[] spokeReports;
     TestGatewaysReport gatewaysReport;

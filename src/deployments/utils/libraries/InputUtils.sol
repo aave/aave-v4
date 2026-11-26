@@ -13,7 +13,8 @@ library InputUtils {
   /// @dev treasurySpokeOwner The owner of the TreasurySpoke (Ownable). Required at deploy time (constructor arg).
   ///      When grantRoles is `false`, defaults to the deployer; ownership can be transferred post-deployment.
   /// @dev spokeAdmin The spoke admin. Only used when grantRoles is true.
-  /// @dev spokeConfiguratorAdmin The admin granted all spoke configurator roles. Only used when grantRoles is true.
+  /// @dev spokeConfiguratorAdmin The admin granted all spoke configurator and EmergencySteward roles. Only used when
+  ///      grantRoles is true.
   /// @dev gatewayOwner The owner of the native token and signature gateways.
   /// @dev positionManagerOwner The owner of the position manager contracts (giver/taker/config).
   /// @dev nativeWrapper The address of the native wrapper (required when deployNativeTokenGateway is true).

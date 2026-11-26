@@ -32,7 +32,7 @@ This deploys `LiquidationLogic` via CREATE2 and writes `FOUNDRY_LIBRARIES` to `.
 make deploy-contracts
 ```
 
-This runs `AaveV4DeployOrchestration.deployAaveV4()`, which deploys batches in order: AccessManager → role labeling → Configurators → Configurator role setup → TreasurySpoke → Hubs → Spokes → Gateways → PositionManagers → role grants → DEFAULT_ADMIN transfer.
+This runs `AaveV4DeployOrchestration.deployAaveV4()`, which deploys batches in order: AccessManager → role labeling → Configurators → EmergencySteward → Configurator role setup → EmergencySteward role setup → TreasurySpoke → Hubs → Spokes → Gateways → PositionManagers → role grants → DEFAULT_ADMIN transfer.
 
 ### TokenizationSpoke
 
@@ -65,6 +65,7 @@ src/deployments/
   batches/                    Batch constructors -- deploy related contracts together
     AaveV4AuthorityBatch        AccessManagerEnumerable
     AaveV4ConfiguratorBatch     HubConfiguratorInstance, SpokeConfiguratorInstance (proxy + impl each)
+    AaveV4EmergencyStewardBatch EmergencySteward
     AaveV4TreasurySpokeBatch    TreasurySpoke (single instance, proxy + impl)
     AaveV4HubInstanceBatch      HubInstance (proxy + impl), InterestRateStrategy
     AaveV4SpokeInstanceBatch    SpokeInstance (proxy + impl), AaveOracle
@@ -109,11 +110,11 @@ Hub and spoke labels (provided via `FullDeployInputs.hubLabels` / `spokeLabels`)
 
 Roles are namespaced by contract domain: Hub (100-199), HubConfigurator (200-299), Spoke (300-399), SpokeConfigurator (400-499), EmergencySteward (500-599).
 
-For configurators, initially a single Domain Admin role (HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE = 200, SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE = 400) holds all target selectors. As more granular roles are introduced, they should be added at the next available ID (201, 202, ... / 401, 402, ...) and the corresponding selectors reassigned from the Domain Admin role to the new granular role:
+For configurators and the EmergencySteward, initially a single Domain Admin role (HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE = 200, SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE = 400, EMERGENCY_STEWARD_DOMAIN_ADMIN_ROLE = 500) holds all target selectors. As more granular roles are introduced, they should be added at the next available ID (201, 202, ... / 401, 402, ... / 501, 502, ...) and the corresponding selectors reassigned from the Domain Admin role to the new granular role:
 
 - Existing role IDs should never be overwritten or reused for a different purpose.
 - New roles are always appended with an incremented ID.
-- The Domain Admin role (200/400) only ever has its selector set shrink over time as selectors are divided into more granular roles.
+- The Domain Admin role (200/400/500) only ever has its selector set shrink over time as selectors are divided into more granular roles.
 - Addresses holding the Domain Admin role should be granted the new granular role being added to retain their existing access.
 
 See `Roles.sol` NatSpec for the full role strategy and evolution guidelines. All roles are labeled on the `AccessManagerEnumerable` during deployment via `AaveV4AccessManagerRolesProcedure.labelAllRoles()`. Each role is labeled with its `Roles.sol` constant name (e.g., role 101 is labeled `"HUB_CONFIGURATOR_ROLE"`). Labels are queryable on-chain via `getLabelOfRole()` and `getRoleOfLabel()`.
@@ -212,6 +213,8 @@ AaveV4DeployBatchBase.s.sol                         (Foundry script entry point)
     |     |       AccessManager.setTargetFunctionRole()  (selector -> role mappings for HubConfigurator)
     |     |     AaveV4SpokeConfiguratorRolesProcedure.setupSpokeConfiguratorAllRoles()
     |     |       AccessManager.setTargetFunctionRole()  (selector -> role mappings for SpokeConfigurator, roles 400-401)
+    |     |
+    |     +-- _setupEmergencyStewardRoles()
     |     |     AaveV4EmergencyStewardRolesProcedure.setupEmergencyStewardAllRoles()
     |     |       AccessManager.setTargetFunctionRole()  (selector -> role mappings for EmergencySteward)
     |     |
@@ -267,7 +270,7 @@ AaveV4DeployBatchBase.s.sol                         (Foundry script entry point)
     |     |       AaveV4SpokeRolesProcedure.grantSpokeRole()         SpokeConfigurator gets role 301
     |     |       AaveV4SpokeConfiguratorRolesProcedure.grantSpokeConfiguratorAllRoles()
     |     |                                                          spokeConfiguratorAdmin gets roles 400-401
-    |     |       AaveV4SpokeConfiguratorRolesProcedure.grantSpokeConfiguratorEmergencyStewardRole()
+    |     |       AaveV4SpokeConfiguratorRolesProcedure.grantSpokeConfiguratorRole()
     |     |                                                          EmergencySteward gets role 401
     |     |       AaveV4EmergencyStewardRolesProcedure.grantEmergencyStewardAllRoles()
     |     |                                                          spokeConfiguratorAdmin gets role 500

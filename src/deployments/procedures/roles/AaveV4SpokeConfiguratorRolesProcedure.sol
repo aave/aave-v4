@@ -20,20 +20,6 @@ library AaveV4SpokeConfiguratorRolesProcedure {
     );
   }
 
-  /// @notice Grants the SpokeConfigurator EmergencySteward role (401) to the EmergencySteward contract.
-  /// @param accessManager The address of the AccessManager contract.
-  /// @param emergencySteward The address of the EmergencySteward contract.
-  function grantSpokeConfiguratorEmergencyStewardRole(
-    address accessManager,
-    address emergencySteward
-  ) internal {
-    grantSpokeConfiguratorRole(
-      accessManager,
-      Roles.SPOKE_CONFIGURATOR_EMERGENCY_STEWARD_ROLE,
-      emergencySteward
-    );
-  }
-
   /// @notice Grants a specific SpokeConfigurator role to the given address.
   /// @param accessManager The address of the AccessManager contract.
   /// @param role The role identifier to grant.

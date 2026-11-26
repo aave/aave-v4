@@ -80,40 +80,6 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
     assertTrue(hasRole);
   }
 
-  function test_grantSpokeConfiguratorEmergencyStewardRole() public {
-    address emergencySteward = makeAddr('emergencySteward');
-    _grantAdminToWrapper(address(wrapper));
-    wrapper.grantSpokeConfiguratorEmergencyStewardRole({
-      accessManager: accessManager,
-      emergencySteward: emergencySteward
-    });
-
-    (bool hasRole, ) = IAccessManager(accessManager).hasRole(
-      Roles.SPOKE_CONFIGURATOR_EMERGENCY_STEWARD_ROLE,
-      emergencySteward
-    );
-    assertTrue(hasRole);
-    (hasRole, ) = IAccessManager(accessManager).hasRole(
-      Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE,
-      emergencySteward
-    );
-    assertFalse(hasRole);
-  }
-
-  function test_grantSpokeConfiguratorEmergencyStewardRole_reverts() public {
-    vm.expectRevert('invalid access manager');
-    wrapper.grantSpokeConfiguratorEmergencyStewardRole({
-      accessManager: address(0),
-      emergencySteward: makeAddr('emergencySteward')
-    });
-
-    vm.expectRevert('invalid admin');
-    wrapper.grantSpokeConfiguratorEmergencyStewardRole({
-      accessManager: accessManager,
-      emergencySteward: address(0)
-    });
-  }
-
   function test_setupSpokeConfiguratorRoles() public {
     _grantAdminToWrapper(address(wrapper));
     wrapper.setupSpokeConfiguratorRoles({
