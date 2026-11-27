@@ -3,8 +3,8 @@
   "repayWithSig": "194822",
   "setSelfAsUserPositionManagerWithSig": "75138",
   "setUsingAsCollateralWithSig": "87595",
-  "supplyWithSig": "157694",
+  "supplyWithSig": "157704",
   "updateUserDynamicConfigWithSig": "65318",
-  "updateUserRiskPremiumWithSig": "64200",
+  "updateUserRiskPremiumWithSig": "64212",
   "withdrawWithSig": "136896"
 }

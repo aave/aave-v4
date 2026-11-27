@@ -92,6 +92,12 @@ abstract contract Spoke is
     _;
   }
 
+  /// @notice Modifier that checks if the caller is allowed to liquidate `user`.
+  modifier onlyLiquidator(address user) {
+    require(_isLiquidator({user: user, liquidator: msg.sender}), Unauthorized());
+    _;
+  }
+
   /// @dev Constructor.
   /// @param oracle_ The address of the AaveOracle contract.
   /// @param maxUserReservesLimit_ The maximum number of collateral and borrow reserves a user can have.
@@ -365,10 +371,7 @@ abstract contract Spoke is
     address user,
     uint256 debtToCover,
     bool receiveShares
-  ) external nonReentrant {
-    if (_mandatoryPositionManager != address(0)) {
-      require(_isPositionManager({user: user, manager: msg.sender}), Unauthorized());
-    }
+  ) external nonReentrant onlyLiquidator(user) {
     UserAccountData memory userAccountData = _calculateUserAccountData(user);
     LiquidationLogic.LiquidateUserParams memory params = LiquidationLogic.LiquidateUserParams({
       collateralReserveId: collateralReserveId,
@@ -947,6 +950,14 @@ abstract contract Spoke is
     }
     if (user == manager) return true;
     return config.active && config.approval[user];
+  }
+
+  /// @notice Returns whether `liquidator` is allowed to liquidate `user`.
+  /// @dev Anyone can liquidate, unless a mandatory position manager is set.
+  function _isLiquidator(address user, address liquidator) internal view returns (bool) {
+    return
+      _mandatoryPositionManager == address(0) ||
+      _isPositionManager({user: user, manager: liquidator});
   }
 
   function _validateReserveConfig(ReserveConfig calldata config) internal pure {
