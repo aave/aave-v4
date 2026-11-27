@@ -552,6 +552,39 @@ contract SpokeConfiguratorTest is SpokeConfiguratorBaseTest {
     }
   }
 
+  function test_updateFrozen_revertsWith_AccessManagedUnauthorized() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
+    vm.prank(alice);
+    spokeConfigurator.updateFrozen(spokeAddr, hubAddr, underlying, true);
+  }
+
+  function test_updateFrozen() public {
+    ISpoke.ReserveConfig memory expectedReserveConfig = spoke.getReserveConfig(reserveId);
+    uint32 latestKeyBefore = _latestKey(spoke, reserveId);
+
+    for (uint256 i = 0; i < 2; i += 1) {
+      bool oldFrozen = expectedReserveConfig.frozen;
+      expectedReserveConfig.frozen = (i == 0) ? false : true;
+
+      vm.recordLogs();
+      vm.expectCall(
+        spokeAddr,
+        abi.encodeCall(ISpoke.updateReserveConfig, (reserveId, expectedReserveConfig))
+      );
+      vm.expectEmit(address(spoke));
+      emit ISpoke.UpdateReserveConfig(reserveId, expectedReserveConfig);
+      _expectReserveFrozenUpdated(spoke, reserveId, oldFrozen, expectedReserveConfig.frozen);
+      vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+      spokeConfigurator.updateFrozen(spokeAddr, hubAddr, underlying, expectedReserveConfig.frozen);
+
+      assertEq(_configuratorLogCount(), 1);
+      assertEq(spoke.getReserveConfig(reserveId), expectedReserveConfig);
+      assertEq(_latestKey(spoke, reserveId), latestKeyBefore);
+    }
+  }
+
   function test_updateBorrowable_revertsWith_AccessManagedUnauthorized() public {
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
@@ -1531,6 +1564,19 @@ contract SpokeConfiguratorTest is SpokeConfiguratorBaseTest {
     assertTrue(spoke.getReserveConfig(reserveId).frozen);
   }
 
+  function test_updateFrozen_clearsBulkLeverRecord() public {
+    vm.startPrank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.holdFrozen(spokeAddr, hubAddr, underlying, BulkLeversMap.SPOKE_MASK);
+    _expectReserveFrozenUpdated(spoke, reserveId, true, true);
+    spokeConfigurator.updateFrozen(spokeAddr, hubAddr, underlying, true);
+    _assertFrozenByBulkLevers(spoke, reserveId, false, false);
+
+    // the bulk release no longer holds the reserve, so the direct freeze stays
+    spokeConfigurator.releaseFrozen(spokeAddr, hubAddr, underlying, BulkLeversMap.SPOKE_MASK);
+    vm.stopPrank();
+    assertTrue(spoke.getReserveConfig(reserveId).frozen);
+  }
+
   function test_zeroCollateralFactor_revertsWith_AccessManagedUnauthorized() public {
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
@@ -1625,7 +1671,7 @@ contract SpokeConfiguratorTest is SpokeConfiguratorBaseTest {
       liquidationFee: 5_00
     });
 
-    calls = new bytes[](23);
+    calls = new bytes[](24);
     calls[0] = abi.encodeCall(
       ISpokeConfigurator.updateReservePriceSource,
       (spokeAddr, hubAddr, targetUnderlying, newPriceSource)
@@ -1635,86 +1681,90 @@ contract SpokeConfiguratorTest is SpokeConfiguratorBaseTest {
       (spokeAddr, hubAddr, targetUnderlying, true)
     );
     calls[2] = abi.encodeCall(
+      ISpokeConfigurator.updateFrozen,
+      (spokeAddr, hubAddr, targetUnderlying, true)
+    );
+    calls[3] = abi.encodeCall(
       ISpokeConfigurator.updateBorrowable,
       (spokeAddr, hubAddr, targetUnderlying, false)
     );
-    calls[3] = abi.encodeCall(
+    calls[4] = abi.encodeCall(
       ISpokeConfigurator.updateReceiveSharesEnabled,
       (spokeAddr, hubAddr, targetUnderlying, false)
     );
-    calls[4] = abi.encodeCall(
+    calls[5] = abi.encodeCall(
       ISpokeConfigurator.updateCollateralRisk,
       (spokeAddr, hubAddr, targetUnderlying, 50_00)
     );
-    calls[5] = abi.encodeCall(
+    calls[6] = abi.encodeCall(
       ISpokeConfigurator.addCollateralFactor,
       (spokeAddr, hubAddr, targetUnderlying, 75_00)
     );
-    calls[6] = abi.encodeCall(
+    calls[7] = abi.encodeCall(
       ISpokeConfigurator.updateCollateralFactor,
       (spokeAddr, hubAddr, targetUnderlying, 0, 70_00)
     );
-    calls[7] = abi.encodeCall(
+    calls[8] = abi.encodeCall(
       ISpokeConfigurator.addMaxLiquidationBonus,
       (spokeAddr, hubAddr, targetUnderlying, 115_00)
     );
-    calls[8] = abi.encodeCall(
+    calls[9] = abi.encodeCall(
       ISpokeConfigurator.updateMaxLiquidationBonus,
       (spokeAddr, hubAddr, targetUnderlying, 0, 112_00)
     );
-    calls[9] = abi.encodeCall(
+    calls[10] = abi.encodeCall(
       ISpokeConfigurator.addLiquidationFee,
       (spokeAddr, hubAddr, targetUnderlying, 8_00)
     );
-    calls[10] = abi.encodeCall(
+    calls[11] = abi.encodeCall(
       ISpokeConfigurator.updateLiquidationFee,
       (spokeAddr, hubAddr, targetUnderlying, 0, 6_00)
     );
-    calls[11] = abi.encodeCall(
+    calls[12] = abi.encodeCall(
       ISpokeConfigurator.addDynamicReserveConfig,
       (spokeAddr, hubAddr, targetUnderlying, dynamicConfig)
     );
-    calls[12] = abi.encodeCall(
+    calls[13] = abi.encodeCall(
       ISpokeConfigurator.updateDynamicReserveConfig,
       (spokeAddr, hubAddr, targetUnderlying, 0, dynamicConfig)
     );
-    calls[13] = abi.encodeCall(
+    calls[14] = abi.encodeCall(
       ISpokeConfigurator.pauseReserve,
       (spokeAddr, hubAddr, targetUnderlying)
     );
-    calls[14] = abi.encodeCall(
+    calls[15] = abi.encodeCall(
       ISpokeConfigurator.freezeReserve,
       (spokeAddr, hubAddr, targetUnderlying)
     );
-    calls[15] = abi.encodeCall(
+    calls[16] = abi.encodeCall(
       ISpokeConfigurator.unfreezeReserve,
       (spokeAddr, hubAddr, targetUnderlying)
     );
-    calls[16] = abi.encodeCall(
+    calls[17] = abi.encodeCall(
       ISpokeConfigurator.zeroCollateralFactor,
       (spokeAddr, hubAddr, targetUnderlying)
     );
-    calls[17] = abi.encodeCall(
+    calls[18] = abi.encodeCall(
       ISpokeConfigurator.restoreCollateralFactor,
       (spokeAddr, hubAddr, targetUnderlying)
     );
-    calls[18] = abi.encodeCall(
+    calls[19] = abi.encodeCall(
       ISpokeConfigurator.holdPaused,
       (spokeAddr, hubAddr, targetUnderlying, BulkLeversMap.SPOKE_MASK)
     );
-    calls[19] = abi.encodeCall(
+    calls[20] = abi.encodeCall(
       ISpokeConfigurator.releasePaused,
       (spokeAddr, hubAddr, targetUnderlying, BulkLeversMap.SPOKE_MASK)
     );
-    calls[20] = abi.encodeCall(
+    calls[21] = abi.encodeCall(
       ISpokeConfigurator.holdFrozen,
       (spokeAddr, hubAddr, targetUnderlying, BulkLeversMap.SPOKE_MASK)
     );
-    calls[21] = abi.encodeCall(
+    calls[22] = abi.encodeCall(
       ISpokeConfigurator.releaseFrozen,
       (spokeAddr, hubAddr, targetUnderlying, BulkLeversMap.SPOKE_MASK)
     );
-    calls[22] = abi.encodeCall(
+    calls[23] = abi.encodeCall(
       ISpokeConfigurator.disableBorrowing,
       (spokeAddr, hubAddr, targetUnderlying)
     );

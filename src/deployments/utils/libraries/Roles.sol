@@ -159,7 +159,7 @@ library Roles {
 
   /// @notice Returns the function selectors associated with the SpokeConfigurator Domain Admin role.
   function getSpokeConfiguratorDomainAdminRoleSelectors() internal pure returns (bytes4[] memory) {
-    bytes4[] memory selectors = new bytes4[](23);
+    bytes4[] memory selectors = new bytes4[](24);
     selectors[0] = ISpokeConfigurator.updateReservePriceSource.selector;
     selectors[1] = ISpokeConfigurator.updateLiquidationTargetHealthFactor.selector;
     selectors[2] = ISpokeConfigurator.updateHealthFactorForMaxBonus.selector;
@@ -167,22 +167,23 @@ library Roles {
     selectors[4] = ISpokeConfigurator.updateLiquidationConfig.selector;
     selectors[5] = ISpokeConfigurator.addReserve.selector;
     selectors[6] = ISpokeConfigurator.updatePaused.selector;
-    selectors[7] = ISpokeConfigurator.updateBorrowable.selector;
-    selectors[8] = ISpokeConfigurator.updateReceiveSharesEnabled.selector;
-    selectors[9] = ISpokeConfigurator.updateCollateralRisk.selector;
-    selectors[10] = ISpokeConfigurator.addCollateralFactor.selector;
-    selectors[11] = ISpokeConfigurator.updateCollateralFactor.selector;
-    selectors[12] = ISpokeConfigurator.addMaxLiquidationBonus.selector;
-    selectors[13] = ISpokeConfigurator.updateMaxLiquidationBonus.selector;
-    selectors[14] = ISpokeConfigurator.addLiquidationFee.selector;
-    selectors[15] = ISpokeConfigurator.updateLiquidationFee.selector;
-    selectors[16] = ISpokeConfigurator.addDynamicReserveConfig.selector;
-    selectors[17] = ISpokeConfigurator.updateDynamicReserveConfig.selector;
-    selectors[18] = ISpokeConfigurator.pauseReserve.selector;
-    selectors[19] = ISpokeConfigurator.freezeReserve.selector;
-    selectors[20] = ISpokeConfigurator.unfreezeReserve.selector;
-    selectors[21] = ISpokeConfigurator.zeroCollateralFactor.selector;
-    selectors[22] = ISpokeConfigurator.restoreCollateralFactor.selector;
+    selectors[7] = ISpokeConfigurator.updateFrozen.selector;
+    selectors[8] = ISpokeConfigurator.updateBorrowable.selector;
+    selectors[9] = ISpokeConfigurator.updateReceiveSharesEnabled.selector;
+    selectors[10] = ISpokeConfigurator.updateCollateralRisk.selector;
+    selectors[11] = ISpokeConfigurator.addCollateralFactor.selector;
+    selectors[12] = ISpokeConfigurator.updateCollateralFactor.selector;
+    selectors[13] = ISpokeConfigurator.addMaxLiquidationBonus.selector;
+    selectors[14] = ISpokeConfigurator.updateMaxLiquidationBonus.selector;
+    selectors[15] = ISpokeConfigurator.addLiquidationFee.selector;
+    selectors[16] = ISpokeConfigurator.updateLiquidationFee.selector;
+    selectors[17] = ISpokeConfigurator.addDynamicReserveConfig.selector;
+    selectors[18] = ISpokeConfigurator.updateDynamicReserveConfig.selector;
+    selectors[19] = ISpokeConfigurator.pauseReserve.selector;
+    selectors[20] = ISpokeConfigurator.freezeReserve.selector;
+    selectors[21] = ISpokeConfigurator.unfreezeReserve.selector;
+    selectors[22] = ISpokeConfigurator.zeroCollateralFactor.selector;
+    selectors[23] = ISpokeConfigurator.restoreCollateralFactor.selector;
     return selectors;
   }
 

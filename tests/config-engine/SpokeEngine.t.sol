@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import 'tests/config-engine/BaseConfigEngine.t.sol';
+import {BulkLeversMap} from 'src/libraries/BulkLeversMap.sol';
 
 contract SpokeEngineTest is BaseConfigEngineTest {
   function setUp() public override {
@@ -287,10 +288,16 @@ contract SpokeEngineTest is BaseConfigEngineTest {
     );
   }
 
-  function test_executeSpokeReserveConfigUpdates_frozenEnabled_alreadyFrozen_noCall() public {
+  function test_executeSpokeReserveConfigUpdates_frozenEnabled_alreadyFrozen_takesOverBulkFreeze()
+    public
+  {
     uint256 reserveId = _getReserveId(0, TOKEN_WETH);
-    engine.executeSpokeReserveConfigUpdates(
-      _toReserveConfigUpdateArray(_frozenOnlyUpdate(EngineFlags.ENABLED))
+    vm.prank(ADMIN);
+    spokeConfigurator.holdFrozen(
+      address(spoke1()),
+      address(hub1()),
+      address(weth),
+      BulkLeversMap.ASSET_MASK
     );
     assertTrue(spoke1().getReserveConfig(reserveId).frozen);
     uint32 latestKeyBefore = spoke1().getReserve(reserveId).dynamicConfigKey;
@@ -311,24 +318,48 @@ contract SpokeEngineTest is BaseConfigEngineTest {
     vm.expectCall(
       address(spokeConfigurator),
       abi.encodeCall(
-        ISpokeConfigurator.unfreezeReserve,
-        (address(spoke1()), address(hub1()), address(weth))
+        ISpokeConfigurator.updateFrozen,
+        (address(spoke1()), address(hub1()), address(weth), true)
       ),
-      0
+      1
+    );
+    vm.expectEmit(address(spokeConfigurator));
+    emit ISpokeConfigurator.ReserveFrozenUpdated(
+      address(spoke1()),
+      address(hub1()),
+      address(weth),
+      reserveId,
+      true,
+      true
     );
 
     vm.recordLogs();
     engine.executeSpokeReserveConfigUpdates(
       _toReserveConfigUpdateArray(_frozenOnlyUpdate(EngineFlags.ENABLED))
     );
-    _assertExactEventCount(0);
+    _assertExactEventCount(2);
 
-    assertTrue(spoke1().getReserveConfig(reserveId).frozen);
     assertEq(spoke1().getReserve(reserveId).dynamicConfigKey, latestKeyBefore);
     assertEq(
       spokeConfigurator.getSavedDynamicConfigKey(address(spoke1()), address(hub1()), address(weth)),
       savedKeyBefore
     );
+    (bool frozenByFreezeAsset, bool frozenByFreezeSpoke) = spokeConfigurator.getFrozenByBulkLevers(
+      address(spoke1()),
+      address(hub1()),
+      address(weth)
+    );
+    assertFalse(frozenByFreezeAsset);
+    assertFalse(frozenByFreezeSpoke);
+
+    vm.prank(ADMIN);
+    spokeConfigurator.releaseFrozen(
+      address(spoke1()),
+      address(hub1()),
+      address(weth),
+      BulkLeversMap.ASSET_MASK
+    );
+    assertTrue(spoke1().getReserveConfig(reserveId).frozen);
   }
 
   function test_executeSpokeReserveConfigUpdates_frozenEnabled_alreadyFrozen_zeroesLiftedCollateralFactor()

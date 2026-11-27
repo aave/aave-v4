@@ -648,6 +648,17 @@ contract EmergencyStewardTest is SpokeConfiguratorBaseTest {
     _assertOnlyReserveFrozen(_daiReserveId(spoke));
   }
 
+  function test_unfreezeSpoke_keepsReservesFrozenThroughUpdateFrozen() public {
+    vm.startPrank(SPOKE_CONFIGURATOR_ADMIN);
+    emergencySteward.freezeSpoke(spokeAddr);
+    spokeConfigurator.updateFrozen(spokeAddr, hubAddr, address(tokenList.dai), true);
+    _assertFrozenByBulkLevers(spoke, _daiReserveId(spoke), false, false);
+    emergencySteward.unfreezeSpoke(spokeAddr);
+    vm.stopPrank();
+
+    _assertOnlyReserveFrozen(_daiReserveId(spoke));
+  }
+
   function test_unfreezeSpoke_keepsReservesFrozenThroughFreezeAsset() public {
     address dai = address(tokenList.dai);
     ISpoke[] memory daiSpokes = _grantAssetSpokesRole(daiAssetId);
@@ -941,6 +952,21 @@ contract EmergencyStewardTest is SpokeConfiguratorBaseTest {
     emergencySteward.freezeAsset(hubAddr, dai);
     spokeConfigurator.unfreezeReserve(spokeAddr, hubAddr, dai);
     spokeConfigurator.freezeReserve(spokeAddr, hubAddr, dai);
+    _assertFrozenByBulkLevers(spoke, _daiReserveId(spoke), false, false);
+    emergencySteward.unfreezeAsset(hubAddr, dai);
+    vm.stopPrank();
+
+    for (uint256 i; i < daiSpokes.length; ++i) {
+      assertEq(_isDaiFrozen(daiSpokes[i]), address(daiSpokes[i]) == spokeAddr);
+    }
+  }
+
+  function test_unfreezeAsset_keepsReservesFrozenThroughUpdateFrozen() public {
+    address dai = address(tokenList.dai);
+    ISpoke[] memory daiSpokes = _grantAssetSpokesRole(daiAssetId);
+    vm.startPrank(SPOKE_CONFIGURATOR_ADMIN);
+    emergencySteward.freezeAsset(hubAddr, dai);
+    spokeConfigurator.updateFrozen(spokeAddr, hubAddr, dai, true);
     _assertFrozenByBulkLevers(spoke, _daiReserveId(spoke), false, false);
     emergencySteward.unfreezeAsset(hubAddr, dai);
     vm.stopPrank();

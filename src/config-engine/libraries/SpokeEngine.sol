@@ -208,7 +208,8 @@ library SpokeEngine {
     }
   }
 
-  /// @dev Skips the configurator call when it would revert for having nothing to change.
+  /// @dev `freezeReserve` and `unfreezeReserve` revert when there is nothing to change, so a reserve already frozen
+  /// with a zero collateral factor goes through `updateFrozen` and an unfrozen reserve is skipped.
   function _updateFrozen(IAaveV4ConfigEngine.ReserveConfigUpdate calldata update) private {
     ISpoke spoke = ISpoke(update.spoke);
     uint256 reserveId = _resolveReserveId(update.spoke, update.hub, update.underlying);
@@ -219,6 +220,8 @@ library SpokeEngine {
         .collateralFactor;
       if (!isFrozen || latestCollateralFactor != 0) {
         update.spokeConfigurator.freezeReserve(update.spoke, update.hub, update.underlying);
+      } else {
+        update.spokeConfigurator.updateFrozen(update.spoke, update.hub, update.underlying, true);
       }
     } else if (isFrozen) {
       update.spokeConfigurator.unfreezeReserve(update.spoke, update.hub, update.underlying);

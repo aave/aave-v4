@@ -168,6 +168,22 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
   }
 
   /// @inheritdoc ISpokeConfigurator
+  function updateFrozen(
+    address spoke,
+    address hub,
+    address underlying,
+    bool frozen
+  ) external restricted {
+    ReserveKey memory key = _resolveReserveKey(spoke, hub, underlying);
+    delete _frozenByBulkLevers[spoke][key.reserveId];
+    ISpoke.ReserveConfig memory reserveConfig = key.spoke.getReserveConfig(key.reserveId);
+    bool oldFrozen = reserveConfig.frozen;
+    reserveConfig.frozen = frozen;
+    key.spoke.updateReserveConfig(key.reserveId, reserveConfig);
+    emit ReserveFrozenUpdated(spoke, hub, underlying, key.reserveId, oldFrozen, frozen);
+  }
+
+  /// @inheritdoc ISpokeConfigurator
   function updateBorrowable(
     address spoke,
     address hub,

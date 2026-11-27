@@ -311,6 +311,15 @@ interface ISpokeConfigurator {
   /// @param paused The new paused flag.
   function updatePaused(address spoke, address hub, address underlying, bool paused) external;
 
+  /// @notice Updates the frozen flag of a reserve.
+  /// @dev Leaves the collateral factor unchanged; `freezeReserve` also zeroes it. Clears the bulk lever records of
+  /// the frozen flag.
+  /// @param spoke The address of the Spoke.
+  /// @param hub The address of the Hub.
+  /// @param underlying The address of the underlying asset.
+  /// @param frozen The new frozen flag.
+  function updateFrozen(address spoke, address hub, address underlying, bool frozen) external;
+
   /// @notice Updates the borrowable flag of a reserve.
   /// @param spoke The address of the Spoke.
   /// @param hub The address of the Hub.
