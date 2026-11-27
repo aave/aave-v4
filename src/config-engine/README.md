@@ -28,7 +28,7 @@ The four groups, and the virtual functions in each, are listed below.
 | `hubAssetConfigUpdates()`     | `AssetConfigUpdate`     | Update fee config, IR strategy/data, reinvestment controller                                                                                   |
 | `hubSpokeToAssetsAdditions()` | `SpokeToAssetsAddition` | Register a Spoke for multiple assets                                                                                                           |
 | `hubSpokeConfigUpdates()`     | `SpokeConfigUpdate`     | Update Spoke caps, risk premium threshold, active/halted                                                                                       |
-| `hubAssetHalts()`             | `AssetHalt`             | Halt an asset                                                                                                                                  |
+| `hubAssetHalts()`             | `AssetHalt`             | Halt an asset on all its Spokes; `unhaltAsset`, `unhaltSpoke` and `unhaltHub` do not unhalt them                                               |
 | `hubAssetDeactivations()`     | `AssetDeactivation`     | Deactivate an asset                                                                                                                            |
 | `hubAssetCapsResets()`        | `AssetCapsReset`        | Reset asset caps                                                                                                                               |
 | `hubSpokeDeactivations()`     | `SpokeDeactivation`     | Deactivate a Spoke                                                                                                                             |

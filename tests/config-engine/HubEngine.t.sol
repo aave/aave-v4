@@ -1159,6 +1159,34 @@ contract HubEngineTest is BaseConfigEngineTest {
     assertTrue(hub1().getSpokeConfig(_getAssetId(0, TOKEN_USDX), address(spoke1())).halted);
   }
 
+  function test_executeHubAssetHalts_notUnhaltedByBulkLevers() public {
+    vm.startPrank(ADMIN);
+    hubConfigurator.haltHub(address(hub1()));
+    hubConfigurator.haltSpoke(address(hub1()), address(spoke1()));
+    vm.stopPrank();
+
+    engine.executeHubAssetHalts(
+      _toAssetHaltArray(
+        IAaveV4ConfigEngine.AssetHalt({
+          hubConfigurator: hubConfigurator,
+          hub: address(hub1()),
+          underlying: address(weth)
+        })
+      )
+    );
+
+    vm.startPrank(ADMIN);
+    hubConfigurator.unhaltHub(address(hub1()));
+    hubConfigurator.unhaltSpoke(address(hub1()), address(spoke1()));
+    hubConfigurator.unhaltAsset(address(hub1()), address(weth));
+    vm.stopPrank();
+
+    for (uint256 s; s < NUM_SPOKES; ++s) {
+      assertTrue(hub1().getSpokeConfig(_getAssetId(0, TOKEN_WETH), address(spokes[s])).halted);
+      assertFalse(hub1().getSpokeConfig(_getAssetId(0, TOKEN_USDX), address(spokes[s])).halted);
+    }
+  }
+
   function test_executeHubAssetListings_withTokenization_duplicateUnderlying_revertsBeforeCreate2()
     public
   {

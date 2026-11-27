@@ -157,11 +157,22 @@ library HubEngine {
   }
 
   /// @notice Halts assets on Hubs.
+  /// @dev Halts through `updateSpokeHalted`, so bulk levers do not unhalt these Spokes.
   /// @param halts The asset halts to execute.
   function executeHubAssetHalts(IAaveV4ConfigEngine.AssetHalt[] calldata halts) external {
     uint256 length = halts.length;
     for (uint256 i; i < length; ++i) {
-      halts[i].hubConfigurator.haltAsset(halts[i].hub, halts[i].underlying);
+      IHub hub = IHub(halts[i].hub);
+      uint256 assetId = hub.getAssetId(halts[i].underlying);
+      uint256 spokesCount = hub.getSpokeCount(assetId);
+      for (uint256 j; j < spokesCount; ++j) {
+        halts[i].hubConfigurator.updateSpokeHalted(
+          halts[i].hub,
+          halts[i].underlying,
+          hub.getSpokeAddress(assetId, j),
+          true
+        );
+      }
     }
   }
 
