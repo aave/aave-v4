@@ -330,7 +330,7 @@ interface IHubConfigurator {
   function updateSpokeHalted(address hub, address underlying, address spoke, bool halted) external;
 
   /// @notice Updates the add cap of an asset's spoke on a specified hub.
-  /// @dev Clears the caps saved by bulk levers.
+  /// @dev Clears both caps saved by bulk levers, so a bulk restore no longer restores the draw cap.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
   /// @param spoke The address of the Spoke.
@@ -343,7 +343,7 @@ interface IHubConfigurator {
   ) external;
 
   /// @notice Updates the draw cap of an asset's Spoke on a specified Hub.
-  /// @dev Clears the caps saved by bulk levers.
+  /// @dev Clears both caps saved by bulk levers, so a bulk restore no longer restores the add cap.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
   /// @param spoke The address of the Spoke.
