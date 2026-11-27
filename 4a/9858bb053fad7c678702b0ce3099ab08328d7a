@@ -1,0 +1,110 @@
+src/emergency/EmergencySteward.sol
+  s_43fb39a74ec5ad::t_451cd316d6fbb0 85-97
+  s_43fb39a74ec5ad::t_e345e88a0b1623 84,134-169
+tests/helpers/mocks/BulkLeversMapWrapper.sol
+  s_43fb39a74ec5ad::t_738f23cf7bc27d 19-22
+tests/deployments/procedures/deploy/roles/AaveV4EmergencyStewardRolesProcedure.t.sol
+  s_43fb39a74ec5ad::t_a756f1445128c7 94,99-105
+src/spoke/SpokeConfigurator.sol
+  s_43fb39a74ec5ad::t_9f9821ba1d7a02 186-189
+  s_43fb39a74ec5ad::t_25f24c36fb6ab6 675-718,721-736
+  s_43fb39a74ec5ad::t_225b88ab8283b0 530
+  s_43fb39a74ec5ad::t_b26ec6de5cddf8 280
+  s_43fb39a74ec5ad::t_78c3b89cea94b5 264
+  s_43fb39a74ec5ad::t_cd39cac52b51f8 406
+  s_43fb39a74ec5ad::t_43dc0259d551c3 547-556
+  s_43fb39a74ec5ad::t_bbaae11015d8bf 432-435
+  s_6bec28b5a6b2c9::t_47f706cb997aee 542-544
+  s_43fb39a74ec5ad::t_b20cd40aecb429 572,576-585
+  s_43fb39a74ec5ad::t_ccf77d3cfcef5b 392
+  s_43fb39a74ec5ad::t_2f2f513bd4aecc 612-614
+  s_43fb39a74ec5ad::t_0ddd55352e6df5 27-36
+  s_43fb39a74ec5ad::t_9f9fb56e15b2b2 629,634
+  s_43fb39a74ec5ad::t_f80fecc6adb86e 501-522
+src/deployments/utils/libraries/Roles.sol
+  s_43fb39a74ec5ad::t_5da959d96fe68e 196,202-204
+  s_43fb39a74ec5ad::t_9b96c123e1b105 212,217-223
+tests/contracts/spoke/configurator/SpokeConfigurator.t.sol
+  s_43fb39a74ec5ad::t_79c3f068188cb9 1712,1715,1717
+  s_43fb39a74ec5ad::t_09ac917af02b8d 1695
+  s_43fb39a74ec5ad::t_e38bf22ec01783 538
+  s_43fb39a74ec5ad::t_377d412803b99f 1514-1517
+  s_43fb39a74ec5ad::t_afb13c90352647 114-136,141-144
+  s_43fb39a74ec5ad::t_72f271ab6f64f3 1826-1833
+  s_43fb39a74ec5ad::t_40e56e62b79a6a 1729
+  s_43fb39a74ec5ad::t_d51e19a5c9a918 1478-1503
+tests/contracts/emergency/EmergencySteward.t.sol
+  s_43fb39a74ec5ad::t_3d5ec8f8acf296 46-51,1051-1309,1497-1501,1503-1504
+  s_43fb39a74ec5ad::t_225b88ab8283b0 1502
+  s_43fb39a74ec5ad::t_7c68f3a77279d8 1505
+src/emergency/interfaces/IEmergencySteward.sol
+  s_43fb39a74ec5ad::t_9fda21c516416c 21-22,28,32-37,40-41,48,53-67
+  s_43fb39a74ec5ad::t_7a5e0d6bb12765 68
+tests/contracts/libraries/BulkLeversMap.t.sol
+  s_43fb39a74ec5ad::t_738f23cf7bc27d 11,24
+tests/config-engine/SpokeEngine.t.sol
+  s_43fb39a74ec5ad::t_0a40883f28e35e 349,356-362,364-365
+  s_43fb39a74ec5ad::t_3370edd5209a63 285,301,340,388,404,422,442,488,522-541
+  s_43fb39a74ec5ad::t_202bcf4413c761 542-543
+tests/config-engine/AaveV4Payload.t.sol
+  s_43fb39a74ec5ad::t_82c23417ca39f4 797-802
+tests/contracts/spoke/configurator/SpokeConfigurator.GranularAccessControl.t.sol
+  s_43fb39a74ec5ad::t_40d4f3abb68427 47-48,74-75,241-252,490-526
+  s_43fb39a74ec5ad::t_6ab0b278755f2e 527
+tests/deployments/procedures/deploy/roles/AaveV4SpokeConfiguratorRolesProcedure.t.sol
+  s_43fb39a74ec5ad::t_ae291eb74c34b7 142,148-150
+src/deployments/README.md
+  s_43fb39a74ec5ad::t_9f2c01e0fad439 158
+  s_43fb39a74ec5ad::t_28c5dd84a37493 166
+  s_43fb39a74ec5ad::t_225b88ab8283b0 155-157,164-165
+tests/contracts/spoke/configurator/SpokeConfigurator.Freeze.t.sol
+  s_6bec28b5a6b2c9::t_47f706cb997aee 432-441
+  s_43fb39a74ec5ad::t_9c1a66df506f26 647-650,658,660-662,666,677,967-970,984
+  s_43fb39a74ec5ad::t_1b85a176f50c56 906,911,914
+  s_43fb39a74ec5ad::t_a8812e0d3d5dc3 162,173,177,188-191,205,207,209-212,215-225,228,235,239-241,253,256,306-307,310,313,335,395,421
+  s_43fb39a74ec5ad::t_225b88ab8283b0 229-232
+  s_43fb39a74ec5ad::t_44622648b10eb6 399
+  s_43fb39a74ec5ad::t_a046aabb87b3d6 38,152,233,695-752,755-905,907-910,912-913,915-965,1113-1129
+  s_43fb39a74ec5ad::t_8c98d8ae4380f3 234,966,1130
+src/config-engine/README.md
+  s_43fb39a74ec5ad::t_0fc7947d94fd99 132
+src/libraries/BulkLeversMap.sol
+  s_43fb39a74ec5ad::t_7a8f379f30d804 15-16
+src/spoke/interfaces/ISpokeConfigurator.sol
+  s_43fb39a74ec5ad::t_3f436d41a90c53 199
+  s_6bec28b5a6b2c9::t_47f706cb997aee 239-241
+  s_43fb39a74ec5ad::t_8c926ed34a57fd 452
+  s_43fb39a74ec5ad::t_1f00530a2cb004 539,546-572
+  s_43fb39a74ec5ad::t_ebb60f1e32281e 248
+  s_43fb39a74ec5ad::t_6f52f8691324cf 319,491-492,574-575
+  s_43fb39a74ec5ad::t_762b5533b5d136 467-468
+  s_43fb39a74ec5ad::t_10b60668393904 363
+  s_43fb39a74ec5ad::t_7123f637cdf825 528
+  s_43fb39a74ec5ad::t_ed37f5ef00cbb9 582-584
+  s_43fb39a74ec5ad::t_69a3fb6defffce 601-602,607-610,614
+  s_43fb39a74ec5ad::t_3ecc3909845fb0 378-379
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "4a9858bb053fad7c678702b0ce3099ab08328d7a",
+  "prompts": {},
+  "sessions": {
+    "s_43fb39a74ec5ad": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dc056e77-d1db-418f-b96b-8f9430c2e32a",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "AyushKaul <ayushk.kaul3@gmail.com>"
+    },
+    "s_6bec28b5a6b2c9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "33e9aeab-7ae6-44eb-bd39-b9d5e2fba81d",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "AyushKaul <ayushk.kaul3@gmail.com>"
+    }
+  }
+}
