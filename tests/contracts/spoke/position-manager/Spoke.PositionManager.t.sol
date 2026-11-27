@@ -24,14 +24,14 @@ contract SpokePositionManagerTest is Base {
     address user = vm.randomAddress();
     address positionManager = vm.randomAddress();
 
-    if (!spoke1.isPositionManager(user, positionManager)) {
+    if (!spoke1.isPositionManagerApproved(user, positionManager)) {
       vm.expectEmit(address(spoke1));
       emit ISpoke.SetUserPositionManager(user, positionManager, false);
     }
     vm.prank(positionManager);
     spoke1.renouncePositionManagerRole(user);
 
-    assertFalse(spoke1.isPositionManager(user, positionManager));
+    assertFalse(spoke1.isPositionManagerApproved(user, positionManager));
   }
 
   function test_renouncePositionManagerRole_noop_from_disabled() public {
@@ -46,7 +46,7 @@ contract SpokePositionManagerTest is Base {
     spoke1.renouncePositionManagerRole(user);
 
     assertEq(vm.getRecordedLogs().length, 0);
-    assertFalse(spoke1.isPositionManager(user, POSITION_MANAGER));
+    assertFalse(spoke1.isPositionManagerApproved(user, POSITION_MANAGER));
   }
 
   function test_onlyPositionManager_on_supply() public {

@@ -105,9 +105,13 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @notice Position manager configuration data.
   /// @dev approval The mapping of position manager user approvals.
   /// @dev active True if the position manager is active.
+  /// @dev mandatory True if the position manager is the only allowed caller for user actions on the Spoke.
+  /// @dev exclusive True if the mandatory position manager must not accept calls relayed by other position managers.
   struct PositionManagerConfig {
     mapping(address user => bool) approval;
     bool active;
+    bool mandatory;
+    bool exclusive;
   }
 
   /// @notice User position status data.
@@ -187,6 +191,11 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @param positionManager The address of the position manager.
   /// @param active True if position manager has become active.
   event UpdatePositionManager(address indexed positionManager, bool active);
+
+  /// @notice Emitted on updateMandatoryPositionManager action.
+  /// @param positionManager The address of the new mandatory position manager, zero address if none.
+  /// @param exclusive True if the mandatory position manager is exclusive.
+  event UpdateMandatoryPositionManager(address indexed positionManager, bool exclusive);
 
   /// @notice Emitted on the supply action.
   /// @param reserveId The reserve identifier of the underlying asset.
@@ -366,6 +375,15 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @notice Thrown when an unauthorized caller attempts an action.
   error Unauthorized();
 
+  /// @notice Thrown when the position manager is not active.
+  error PositionManagerNotActive();
+
+  /// @notice Thrown when setting a mandatory position manager while another one is set.
+  error MandatoryPositionManagerAlreadySet();
+
+  /// @notice Thrown when removing the mandatory position manager while it is still active.
+  error MandatoryPositionManagerActive();
+
   /// @notice Thrown if a config key is uninitialized when updating a dynamic reserve config.
   error DynamicConfigKeyUninitialized();
 
@@ -476,6 +494,16 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @param active True if positionManager is to be set as active.
   function updatePositionManager(address positionManager, bool active) external;
 
+  /// @notice Allows an approved caller (admin) to set the mandatory position manager of the Spoke.
+  /// @dev At most one mandatory position manager exists per Spoke. Replacing it requires to first deactivate
+  /// and remove the current one. Setting the current one again updates its exclusive flag.
+  /// @dev While set, it is implicitly approved by all users and is the only allowed caller for user actions and liquidations.
+  /// @dev Deactivating the mandatory position manager blocks all user actions and liquidations.
+  /// @dev The zero address removes the mandatory position manager, which must be inactive.
+  /// @param positionManager The address of the active position manager to set as mandatory.
+  /// @param exclusive True if the mandatory position manager must not accept calls relayed by other position managers.
+  function updateMandatoryPositionManager(address positionManager, bool exclusive) external;
+
   /// @notice Supplies an amount of underlying asset of the specified reserve.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @dev The Spoke pulls the underlying asset from the caller, so prior token approval is required.
@@ -541,6 +569,7 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @notice Liquidates a user position.
   /// @dev It reverts if the reserves associated with any of the given reserve identifiers are not listed.
   /// @dev The Spoke pulls underlying repaid debt assets from caller (Liquidator), hence it needs prior approval.
+  /// @dev If a mandatory position manager is set, caller must be the mandatory position manager.
   /// @param collateralReserveId The reserveId of the underlying asset used as collateral by the liquidated user.
   /// @param debtReserveId The reserveId of the underlying asset borrowed by the liquidated user, to be repaid by Liquidator.
   /// @param user The address of the user to liquidate.
@@ -766,11 +795,30 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @return True if positionManager is currently active.
   function isPositionManagerActive(address positionManager) external view returns (bool);
 
-  /// @notice Returns whether positionManager is active and approved by user.
+  /// @notice Returns whether positionManager is allowed to act on behalf of user.
+  /// @dev If a mandatory position manager is set, only the active mandatory position manager is allowed.
+  /// @param user The address of the user.
+  /// @param positionManager The address of the position manager.
+  /// @return True if positionManager is allowed to act on behalf of user.
+  function isPositionManager(address user, address positionManager) external view returns (bool);
+
+  /// @notice Returns whether positionManager is active and approved by user, regardless of the mandatory position manager.
   /// @param user The address of the user.
   /// @param positionManager The address of the position manager.
   /// @return True if positionManager is active and approved by user.
-  function isPositionManager(address user, address positionManager) external view returns (bool);
+  function isPositionManagerApproved(
+    address user,
+    address positionManager
+  ) external view returns (bool);
+
+  /// @notice Returns the mandatory position manager of the Spoke.
+  /// @return The address of the mandatory position manager, zero address if none.
+  function getMandatoryPositionManager() external view returns (address);
+
+  /// @notice Returns whether positionManager is the mandatory and exclusive position manager of the Spoke.
+  /// @param positionManager The address of the position manager.
+  /// @return True if positionManager is the mandatory and exclusive position manager.
+  function isPositionManagerExclusive(address positionManager) external view returns (bool);
 
   /// @notice Returns the address of the external `LiquidationLogic` library.
   function getLiquidationLogic() external pure returns (address);
