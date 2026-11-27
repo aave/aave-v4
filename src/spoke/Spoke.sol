@@ -92,6 +92,12 @@ abstract contract Spoke is
     _;
   }
 
+  /// @notice Modifier that checks if the caller is allowed to liquidate `user`.
+  modifier onlyLiquidator(address user) {
+    require(_isLiquidator({user: user, liquidator: msg.sender}), Unauthorized());
+    _;
+  }
+
   /// @dev Constructor.
   /// @param oracle_ The address of the AaveOracle contract.
   /// @param maxUserReservesLimit_ The maximum number of collateral and borrow reserves a user can have.
@@ -219,6 +225,21 @@ abstract contract Spoke is
   function updatePositionManager(address positionManager, bool active) external restricted {
     _positionManager[positionManager].active = active;
     emit UpdatePositionManager(positionManager, active);
+  }
+
+  /// @inheritdoc ISpoke
+  function updateMandatoryPositionManager(address positionManager) external restricted {
+    if (positionManager == address(0)) {
+      require(
+        !_positionManager[_mandatoryPositionManager].active,
+        MandatoryPositionManagerActive()
+      );
+    } else {
+      require(_mandatoryPositionManager == address(0), MandatoryPositionManagerAlreadySet());
+      require(_positionManager[positionManager].active, PositionManagerNotActive());
+    }
+    _mandatoryPositionManager = positionManager;
+    emit UpdateMandatoryPositionManager(positionManager);
   }
 
   /// @inheritdoc ISpoke
@@ -350,7 +371,7 @@ abstract contract Spoke is
     address user,
     uint256 debtToCover,
     bool receiveShares
-  ) external nonReentrant {
+  ) external nonReentrant onlyLiquidator(user) {
     UserAccountData memory userAccountData = _calculateUserAccountData(user);
     LiquidationLogic.LiquidateUserParams memory params = LiquidationLogic.LiquidateUserParams({
       collateralReserveId: collateralReserveId,
@@ -664,6 +685,20 @@ abstract contract Spoke is
   }
 
   /// @inheritdoc ISpoke
+  function isPositionManagerApproved(
+    address user,
+    address positionManager
+  ) external view returns (bool) {
+    PositionManagerConfig storage config = _positionManager[positionManager];
+    return config.active && config.approval[user];
+  }
+
+  /// @inheritdoc ISpoke
+  function getMandatoryPositionManager() external view returns (address) {
+    return _mandatoryPositionManager;
+  }
+
+  /// @inheritdoc ISpoke
   function getLiquidationLogic() external pure returns (address) {
     return address(LiquidationLogic);
   }
@@ -905,11 +940,24 @@ abstract contract Spoke is
     return _reserves[reserveId].assetId == assetId && address(_reserves[reserveId].hub) == hub;
   }
 
-  /// @notice Returns whether `manager` is active and approved positionManager for `user`.
+  /// @notice Returns whether `manager` is allowed to act on behalf of `user`.
+  /// @dev If a mandatory position manager is set, only the active mandatory position manager is allowed.
   function _isPositionManager(address user, address manager) internal view returns (bool) {
-    if (user == manager) return true;
     PositionManagerConfig storage config = _positionManager[manager];
+    address mandatoryPositionManager = _mandatoryPositionManager;
+    if (mandatoryPositionManager != address(0)) {
+      return manager == mandatoryPositionManager && config.active;
+    }
+    if (user == manager) return true;
     return config.active && config.approval[user];
+  }
+
+  /// @notice Returns whether `liquidator` is allowed to liquidate `user`.
+  /// @dev Anyone can liquidate, unless a mandatory position manager is set.
+  function _isLiquidator(address user, address liquidator) internal view returns (bool) {
+    return
+      _mandatoryPositionManager == address(0) ||
+      _isPositionManager({user: user, manager: liquidator});
   }
 
   function _validateReserveConfig(ReserveConfig calldata config) internal pure {

@@ -234,7 +234,7 @@ contract SpokeSetUserPositionManagersWithSigTest is Base {
     for (uint256 i; i < updates.length; ++i) {
       address positionManager = params.updates[i].positionManager;
       assertEq(
-        spoke1.isPositionManager(params.onBehalfOf, positionManager),
+        spoke1.isPositionManagerApproved(params.onBehalfOf, positionManager),
         (positionManager == user) || _lookup[positionManager]
       );
     }
