@@ -139,13 +139,15 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
 
   function test_getSpokeConfiguratorEmergencyStewardRoleSelectors() public view {
     bytes4[] memory selectors = wrapper.getSpokeConfiguratorEmergencyStewardRoleSelectors();
-    assertEq(selectors.length, 6);
+    assertEq(selectors.length, 8);
     assertEq(selectors[0], ISpokeConfigurator.disableBorrowing.selector);
     assertEq(selectors[1], ISpokeConfigurator.holdPaused.selector);
     assertEq(selectors[2], ISpokeConfigurator.releasePaused.selector);
     assertEq(selectors[3], ISpokeConfigurator.holdFrozen.selector);
     assertEq(selectors[4], ISpokeConfigurator.releaseFrozen.selector);
-    assertEq(selectors[5], ISpokeConfigurator.updatePositionManager.selector);
+    assertEq(selectors[5], ISpokeConfigurator.holdZeroCollateralFactor.selector);
+    assertEq(selectors[6], ISpokeConfigurator.releaseZeroCollateralFactor.selector);
+    assertEq(selectors[7], ISpokeConfigurator.updatePositionManager.selector);
   }
 
   function test_canCall_spokeConfiguratorAllRoles() public {

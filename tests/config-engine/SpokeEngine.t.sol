@@ -282,10 +282,7 @@ contract SpokeEngineTest is BaseConfigEngineTest {
       })
     );
     _assertDynamicReserveConfig(reserveId, 1, latestDynConfig);
-    assertEq(
-      spokeConfigurator.getSavedDynamicConfigKey(address(spoke1()), address(hub1()), address(weth)),
-      1
-    );
+    _assertSavedCollateralFactor(1, false, false, true);
   }
 
   function test_executeSpokeReserveConfigUpdates_frozenEnabled_alreadyFrozen_takesOverBulkFreeze()
@@ -301,7 +298,7 @@ contract SpokeEngineTest is BaseConfigEngineTest {
     );
     assertTrue(spoke1().getReserveConfig(reserveId).frozen);
     uint32 latestKeyBefore = spoke1().getReserve(reserveId).dynamicConfigKey;
-    uint32 savedKeyBefore = spokeConfigurator.getSavedDynamicConfigKey(
+    (uint32 savedKeyBefore, , , ) = spokeConfigurator.getSavedCollateralFactor(
       address(spoke1()),
       address(hub1()),
       address(weth)
@@ -340,10 +337,7 @@ contract SpokeEngineTest is BaseConfigEngineTest {
     _assertExactEventCount(2);
 
     assertEq(spoke1().getReserve(reserveId).dynamicConfigKey, latestKeyBefore);
-    assertEq(
-      spokeConfigurator.getSavedDynamicConfigKey(address(spoke1()), address(hub1()), address(weth)),
-      savedKeyBefore
-    );
+    _assertSavedCollateralFactor(savedKeyBefore, true, false, true);
     (bool frozenByFreezeAsset, bool frozenByFreezeSpoke) = spokeConfigurator.getFrozenByBulkLevers(
       address(spoke1()),
       address(hub1()),
@@ -352,14 +346,23 @@ contract SpokeEngineTest is BaseConfigEngineTest {
     assertFalse(frozenByFreezeAsset);
     assertFalse(frozenByFreezeSpoke);
 
-    vm.prank(ADMIN);
+    vm.startPrank(ADMIN);
     spokeConfigurator.releaseFrozen(
       address(spoke1()),
       address(hub1()),
       address(weth),
       BulkLeversMap.ASSET_MASK
     );
+    spokeConfigurator.releaseZeroCollateralFactor(
+      address(spoke1()),
+      address(hub1()),
+      address(weth),
+      BulkLeversMap.ASSET_MASK
+    );
+    vm.stopPrank();
     assertTrue(spoke1().getReserveConfig(reserveId).frozen);
+    assertEq(spoke1().getReserve(reserveId).dynamicConfigKey, latestKeyBefore);
+    _assertSavedCollateralFactor(savedKeyBefore, false, false, true);
   }
 
   function test_executeSpokeReserveConfigUpdates_frozenEnabled_alreadyFrozen_zeroesLiftedCollateralFactor()
@@ -382,12 +385,7 @@ contract SpokeEngineTest is BaseConfigEngineTest {
     uint32 liftedKey = spoke1().getReserve(reserveId).dynamicConfigKey;
     assertTrue(spoke1().getReserveConfig(reserveId).frozen);
     assertEq(spoke1().getDynamicReserveConfig(reserveId, liftedKey).collateralFactor, 70_00);
-    uint32 savedKeyBefore = spokeConfigurator.getSavedDynamicConfigKey(
-      address(spoke1()),
-      address(hub1()),
-      address(weth)
-    );
-    assertEq(spoke1().getDynamicReserveConfig(reserveId, savedKeyBefore).collateralFactor, 80_00);
+    _assertSavedCollateralFactor(0, false, false, false);
 
     vm.expectCall(
       address(spokeConfigurator),
@@ -403,7 +401,7 @@ contract SpokeEngineTest is BaseConfigEngineTest {
       address(hub1()),
       address(weth),
       reserveId,
-      savedKeyBefore,
+      0,
       liftedKey
     );
     engine.executeSpokeReserveConfigUpdates(
@@ -421,10 +419,7 @@ contract SpokeEngineTest is BaseConfigEngineTest {
         liquidationFee: 5_00
       })
     );
-    assertEq(
-      spokeConfigurator.getSavedDynamicConfigKey(address(spoke1()), address(hub1()), address(weth)),
-      liftedKey
-    );
+    _assertSavedCollateralFactor(liftedKey, false, false, true);
   }
 
   function test_executeSpokeReserveConfigUpdates_frozenDisabled_unfreezesOnly() public {
@@ -444,10 +439,7 @@ contract SpokeEngineTest is BaseConfigEngineTest {
     );
     assertTrue(spoke1().getReserveConfig(reserveId).frozen);
     assertEq(spoke1().getReserve(reserveId).dynamicConfigKey, 2);
-    assertEq(
-      spokeConfigurator.getSavedDynamicConfigKey(address(spoke1()), address(hub1()), address(weth)),
-      1
-    );
+    _assertSavedCollateralFactor(1, false, false, true);
 
     vm.expectCall(
       address(spokeConfigurator),
@@ -493,10 +485,7 @@ contract SpokeEngineTest is BaseConfigEngineTest {
         liquidationFee: 5_00
       })
     );
-    assertEq(
-      spokeConfigurator.getSavedDynamicConfigKey(address(spoke1()), address(hub1()), address(weth)),
-      1
-    );
+    _assertSavedCollateralFactor(1, false, false, true);
   }
 
   function test_executeSpokeReserveConfigUpdates_frozenDisabled_notFrozen_noCall() public {
@@ -528,6 +517,28 @@ contract SpokeEngineTest is BaseConfigEngineTest {
 
     assertFalse(spoke1().getReserveConfig(reserveId).frozen);
     assertEq(spoke1().getReserve(reserveId).dynamicConfigKey, 0);
+  }
+
+  function _assertSavedCollateralFactor(
+    uint32 savedKey,
+    bool byAsset,
+    bool bySpoke,
+    bool byReserve
+  ) internal view {
+    (
+      uint32 actualSavedKey,
+      bool actualByAsset,
+      bool actualBySpoke,
+      bool actualByReserve
+    ) = spokeConfigurator.getSavedCollateralFactor(
+        address(spoke1()),
+        address(hub1()),
+        address(weth)
+      );
+    assertEq(actualSavedKey, savedKey, 'savedKey');
+    assertEq(actualByAsset, byAsset, 'byAsset');
+    assertEq(actualBySpoke, bySpoke, 'bySpoke');
+    assertEq(actualByReserve, byReserve, 'byReserve');
   }
 
   function _frozenOnlyUpdate(

@@ -152,18 +152,18 @@ Domain admin role holds all selectors initially. Granular roles (201+) are carve
 
 #### `SpokeConfigurator` Roles (on SpokeConfigurator contract)
 
-| ID  | Name                                      | Granted To                                        | Functions                                                                                     |
-| --- | ----------------------------------------- | ------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| 400 | SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE      | spokeConfiguratorAdmin                            | The remaining 24 SpokeConfigurator selectors (see Roles.sol)                                  |
-| 401 | SPOKE_CONFIGURATOR_EMERGENCY_STEWARD_ROLE | spokeConfiguratorAdmin, EmergencySteward contract | disableBorrowing, holdPaused, releasePaused, holdFrozen, releaseFrozen, updatePositionManager |
+| ID  | Name                                      | Granted To                                        | Functions                                                                                                                                            |
+| --- | ----------------------------------------- | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 400 | SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE      | spokeConfiguratorAdmin                            | The remaining 24 SpokeConfigurator selectors (see Roles.sol)                                                                                         |
+| 401 | SPOKE_CONFIGURATOR_EMERGENCY_STEWARD_ROLE | spokeConfiguratorAdmin, EmergencySteward contract | disableBorrowing, holdPaused, releasePaused, holdFrozen, releaseFrozen, holdZeroCollateralFactor, releaseZeroCollateralFactor, updatePositionManager |
 
 Domain admin role holds all selectors initially. Granular roles (401+) are carved out as needed.
 
 #### `EmergencySteward` Roles (on EmergencySteward contract)
 
-| ID  | Name                                | Granted To             | Functions                                                                                                                                      |
-| --- | ----------------------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| 500 | EMERGENCY_STEWARD_DOMAIN_ADMIN_ROLE | spokeConfiguratorAdmin | pauseAllReserves, unpauseAllReserves, freezeSpoke, unfreezeSpoke, freezeAsset, unfreezeAsset, disableAssetBorrowing, deactivatePositionManager |
+| ID  | Name                                | Granted To             | Functions                                                                                                                                                                                                                             |
+| --- | ----------------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 500 | EMERGENCY_STEWARD_DOMAIN_ADMIN_ROLE | spokeConfiguratorAdmin | pauseAllReserves, unpauseAllReserves, freezeSpoke, unfreezeSpoke, restoreSpokeCollateralFactor, freezeAsset, unfreezeAsset, zeroAssetCollateralFactor, restoreAssetCollateralFactor, disableAssetBorrowing, deactivatePositionManager |
 
 Domain admin role holds all selectors initially. Granular roles (501+) are carved out as needed.
 

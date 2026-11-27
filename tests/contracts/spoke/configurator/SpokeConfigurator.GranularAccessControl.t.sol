@@ -44,8 +44,8 @@ contract SpokeConfiguratorGranularAccessControlTest is Base {
     manager.grantRole(LIQUIDATION_CONFIG_MANAGER_ROLE, LIQUIDATION_CONFIG_MANAGER, 0);
     manager.grantRole(POSITION_MANAGER_ADMIN_ROLE, POSITION_MANAGER_ADMIN, 0);
 
-    // Set up RESERVE_MANAGER_ROLE permissions (25 functions)
-    bytes4[] memory reserveSelectors = new bytes4[](25);
+    // Set up RESERVE_MANAGER_ROLE permissions (27 functions)
+    bytes4[] memory reserveSelectors = new bytes4[](27);
     reserveSelectors[0] = ISpokeConfigurator.updateReservePriceSource.selector;
     reserveSelectors[1] = ISpokeConfigurator.addReserve.selector;
     reserveSelectors[2] = ISpokeConfigurator.updatePaused.selector;
@@ -71,6 +71,8 @@ contract SpokeConfiguratorGranularAccessControlTest is Base {
     reserveSelectors[22] = ISpokeConfigurator.releaseFrozen.selector;
     reserveSelectors[23] = ISpokeConfigurator.zeroCollateralFactor.selector;
     reserveSelectors[24] = ISpokeConfigurator.restoreCollateralFactor.selector;
+    reserveSelectors[25] = ISpokeConfigurator.holdZeroCollateralFactor.selector;
+    reserveSelectors[26] = ISpokeConfigurator.releaseZeroCollateralFactor.selector;
     manager.setTargetFunctionRole(
       address(spokeConfigurator),
       reserveSelectors,
@@ -235,6 +237,18 @@ contract SpokeConfiguratorGranularAccessControlTest is Base {
     );
     reserveManagerCalldata.push(
       abi.encodeCall(ISpokeConfigurator.restoreCollateralFactor, (spokeAddr, hubAddr, underlying))
+    );
+    reserveManagerCalldata.push(
+      abi.encodeCall(
+        ISpokeConfigurator.holdZeroCollateralFactor,
+        (spokeAddr, hubAddr, underlying, BulkLeversMap.ASSET_MASK)
+      )
+    );
+    reserveManagerCalldata.push(
+      abi.encodeCall(
+        ISpokeConfigurator.releaseZeroCollateralFactor,
+        (spokeAddr, hubAddr, underlying, BulkLeversMap.ASSET_MASK)
+      )
     );
   }
 
@@ -471,6 +485,44 @@ contract SpokeConfiguratorGranularAccessControlTest is Base {
     vm.stopPrank();
 
     assertFalse(spoke.getReserveConfig(reserveId).frozen);
+  }
+
+  function test_reserveManager_canCall_holdZeroCollateralFactor() public {
+    vm.prank(RESERVE_MANAGER);
+    spokeConfigurator.holdZeroCollateralFactor(
+      spokeAddr,
+      hubAddr,
+      underlying,
+      BulkLeversMap.ASSET_MASK
+    );
+
+    assertEq(_getLatestDynamicReserveConfig(spoke, reserveId).collateralFactor, 0);
+    (, bool byAsset, , ) = spokeConfigurator.getSavedCollateralFactor(
+      spokeAddr,
+      hubAddr,
+      underlying
+    );
+    assertTrue(byAsset);
+  }
+
+  function test_reserveManager_canCall_releaseZeroCollateralFactor() public {
+    uint256 collateralFactor = _getLatestDynamicReserveConfig(spoke, reserveId).collateralFactor;
+    vm.startPrank(RESERVE_MANAGER);
+    spokeConfigurator.holdZeroCollateralFactor(
+      spokeAddr,
+      hubAddr,
+      underlying,
+      BulkLeversMap.ASSET_MASK
+    );
+    spokeConfigurator.releaseZeroCollateralFactor(
+      spokeAddr,
+      hubAddr,
+      underlying,
+      BulkLeversMap.ASSET_MASK
+    );
+    vm.stopPrank();
+
+    assertEq(_getLatestDynamicReserveConfig(spoke, reserveId).collateralFactor, collateralFactor);
   }
 
   function test_reserveManager_canCall_holdPaused() public {

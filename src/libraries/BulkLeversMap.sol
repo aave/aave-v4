@@ -12,6 +12,8 @@ library BulkLeversMap {
   uint8 internal constant SPOKE_MASK = 0x02;
   /// @dev Mask for the Hub-wide bulk levers.
   uint8 internal constant HUB_MASK = 0x04;
+  /// @dev Mask for the single-reserve levers.
+  uint8 internal constant RESERVE_MASK = 0x08;
 
   /// @notice Returns the bulk levers holding a flag after a bulk brake.
   /// @dev A brake that sets the flag replaces the bitmap with its mask. A brake that finds the flag already set

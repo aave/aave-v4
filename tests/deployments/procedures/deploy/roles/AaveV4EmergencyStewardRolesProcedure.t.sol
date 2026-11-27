@@ -91,15 +91,18 @@ contract AaveV4EmergencyStewardRolesProcedureTest is ProceduresBase {
 
   function test_getEmergencyStewardDomainAdminRoleSelectors() public view {
     bytes4[] memory selectors = wrapper.getEmergencyStewardDomainAdminRoleSelectors();
-    assertEq(selectors.length, 8);
+    assertEq(selectors.length, 11);
     assertEq(selectors[0], IEmergencySteward.pauseAllReserves.selector);
     assertEq(selectors[1], IEmergencySteward.unpauseAllReserves.selector);
     assertEq(selectors[2], IEmergencySteward.freezeSpoke.selector);
     assertEq(selectors[3], IEmergencySteward.unfreezeSpoke.selector);
-    assertEq(selectors[4], IEmergencySteward.freezeAsset.selector);
-    assertEq(selectors[5], IEmergencySteward.unfreezeAsset.selector);
-    assertEq(selectors[6], IEmergencySteward.disableAssetBorrowing.selector);
-    assertEq(selectors[7], IEmergencySteward.deactivatePositionManager.selector);
+    assertEq(selectors[4], IEmergencySteward.restoreSpokeCollateralFactor.selector);
+    assertEq(selectors[5], IEmergencySteward.freezeAsset.selector);
+    assertEq(selectors[6], IEmergencySteward.unfreezeAsset.selector);
+    assertEq(selectors[7], IEmergencySteward.zeroAssetCollateralFactor.selector);
+    assertEq(selectors[8], IEmergencySteward.restoreAssetCollateralFactor.selector);
+    assertEq(selectors[9], IEmergencySteward.disableAssetBorrowing.selector);
+    assertEq(selectors[10], IEmergencySteward.deactivatePositionManager.selector);
   }
 
   function test_canCall_emergencyStewardAllRoles() public {

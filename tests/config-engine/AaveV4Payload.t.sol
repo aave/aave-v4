@@ -794,14 +794,12 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
       spoke1().getDynamicReserveConfig(reserveId, latestKey).collateralFactor,
       additions[0].dynamicConfig.collateralFactor
     );
-    assertEq(
-      spokeConfigurator.getSavedDynamicConfigKey(
-        address(spoke1()),
-        additions[0].hub,
-        additions[0].underlying
-      ),
-      keyBefore
-    );
+    (uint32 savedKey, bool byAsset, bool bySpoke, bool byReserve) = spokeConfigurator
+      .getSavedCollateralFactor(address(spoke1()), additions[0].hub, additions[0].underlying);
+    assertEq(savedKey, 0);
+    assertFalse(byAsset);
+    assertFalse(bySpoke);
+    assertFalse(byReserve);
   }
 
   function test_execute_spokeDynamicReserveConfigUpdates() public {

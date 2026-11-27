@@ -24,9 +24,16 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
     uint256 reserveId;
   }
 
-  /// @dev Map of Spoke addresses and reserve identifiers to the dynamic config key re-added on restore.
-  mapping(address spoke => mapping(uint256 reserveId => uint32 dynamicConfigKey))
-    internal _savedDynamicConfigKey;
+  /// @dev Dynamic config key saved by a lever that zeroes the collateral factor, packed with the levers holding the
+  /// collateral factor at zero as a `BulkLeversMap` bitmap.
+  struct SavedCollateralFactor {
+    uint32 dynamicConfigKey;
+    uint8 levers;
+  }
+
+  /// @dev Map of Spoke addresses and reserve identifiers to the collateral factor saved by a lever.
+  mapping(address spoke => mapping(uint256 reserveId => SavedCollateralFactor))
+    internal _savedCollateralFactor;
 
   /// @dev Map of Spoke addresses and reserve identifiers to the bulk levers holding the frozen flag, as a
   /// `BulkLeversMap` bitmap.
@@ -176,6 +183,10 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
   ) external restricted {
     ReserveKey memory key = _resolveReserveKey(spoke, hub, underlying);
     delete _frozenByBulkLevers[spoke][key.reserveId];
+    if (frozen) {
+      SavedCollateralFactor storage saved = _savedCollateralFactor[spoke][key.reserveId];
+      saved.levers = BulkLeversMap.brake(saved.levers, BulkLeversMap.RESERVE_MASK, false);
+    }
     ISpoke.ReserveConfig memory reserveConfig = key.spoke.getReserveConfig(key.reserveId);
     bool oldFrozen = reserveConfig.frozen;
     reserveConfig.frozen = frozen;
@@ -250,6 +261,7 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
     uint16 collateralFactor
   ) external restricted returns (uint32) {
     ReserveKey memory key = _resolveReserveKey(spoke, hub, underlying);
+    delete _savedCollateralFactor[spoke][key.reserveId];
     (uint32 oldKey, ISpoke.DynamicReserveConfig memory oldConfig) = _getLatestDynamicConfig(key);
     ISpoke.DynamicReserveConfig memory newConfig = _copy(oldConfig);
     newConfig.collateralFactor = collateralFactor;
@@ -265,6 +277,7 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
     uint16 collateralFactor
   ) external restricted {
     ReserveKey memory key = _resolveReserveKey(spoke, hub, underlying);
+    _clearSavedCollateralFactorIfLatest(key, dynamicConfigKey);
     ISpoke.DynamicReserveConfig memory dynamicConfig = key.spoke.getDynamicReserveConfig(
       key.reserveId,
       dynamicConfigKey
@@ -376,6 +389,7 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
     ISpoke.DynamicReserveConfig calldata dynamicConfig
   ) external restricted returns (uint32) {
     ReserveKey memory key = _resolveReserveKey(spoke, hub, underlying);
+    delete _savedCollateralFactor[spoke][key.reserveId];
     (uint32 oldKey, ISpoke.DynamicReserveConfig memory oldConfig) = _getLatestDynamicConfig(key);
     return _addDynamicReserveConfig(key, oldKey, oldConfig, dynamicConfig);
   }
@@ -389,6 +403,7 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
     ISpoke.DynamicReserveConfig calldata dynamicConfig
   ) external restricted {
     ReserveKey memory key = _resolveReserveKey(spoke, hub, underlying);
+    _clearSavedCollateralFactorIfLatest(key, dynamicConfigKey);
     ISpoke.DynamicReserveConfig memory oldConfig = key.spoke.getDynamicReserveConfig(
       key.reserveId,
       dynamicConfigKey
@@ -414,7 +429,10 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
   function freezeReserve(address spoke, address hub, address underlying) external restricted {
     ReserveKey memory key = _resolveReserveKey(spoke, hub, underlying);
     delete _frozenByBulkLevers[spoke][key.reserveId];
-    (bool frozenUpdated, bool collateralFactorZeroed) = _freezeReserve(key);
+    (bool frozenUpdated, bool collateralFactorZeroed) = _freezeReserve(
+      key,
+      BulkLeversMap.RESERVE_MASK
+    );
     require(frozenUpdated || collateralFactorZeroed, ReserveAlreadyFrozen());
   }
 
@@ -481,13 +499,35 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
   }
 
   /// @inheritdoc ISpokeConfigurator
+  function holdZeroCollateralFactor(
+    address spoke,
+    address hub,
+    address underlying,
+    uint8 mask
+  ) external restricted {
+    require(mask != 0, InvalidBulkLeverMask());
+    _zeroCollateralFactor(_resolveReserveKey(spoke, hub, underlying), mask);
+  }
+
+  /// @inheritdoc ISpokeConfigurator
+  function releaseZeroCollateralFactor(
+    address spoke,
+    address hub,
+    address underlying,
+    uint8 mask
+  ) external restricted {
+    require(mask != 0, InvalidBulkLeverMask());
+    _releaseZeroCollateralFactor(_resolveReserveKey(spoke, hub, underlying), mask);
+  }
+
+  /// @inheritdoc ISpokeConfigurator
   function zeroCollateralFactor(
     address spoke,
     address hub,
     address underlying
   ) external restricted {
     require(
-      _zeroCollateralFactor(_resolveReserveKey(spoke, hub, underlying)),
+      _zeroCollateralFactor(_resolveReserveKey(spoke, hub, underlying), BulkLeversMap.RESERVE_MASK),
       CollateralFactorAlreadyZero()
     );
   }
@@ -499,15 +539,21 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
     address underlying
   ) external restricted returns (uint32) {
     ReserveKey memory key = _resolveReserveKey(spoke, hub, underlying);
-    require(!key.spoke.getReserveConfig(key.reserveId).frozen, CannotRestoreFrozenReserve());
+    ISpoke.ReserveConfig memory reserveConfig = key.spoke.getReserveConfig(key.reserveId);
+    require(!reserveConfig.frozen, CannotRestoreFrozenReserve());
+    require(!reserveConfig.paused, CannotRestorePausedReserve());
     (uint32 oldKey, ISpoke.DynamicReserveConfig memory oldConfig) = _getLatestDynamicConfig(key);
     require(oldConfig.collateralFactor == 0, CollateralFactorNotZero());
-    ISpoke.DynamicReserveConfig memory savedConfig = key.spoke.getDynamicReserveConfig(
-      key.reserveId,
-      _savedDynamicConfigKey[spoke][key.reserveId]
-    );
-    require(savedConfig.collateralFactor != 0, InvalidSavedCollateralFactor());
-    return _addDynamicReserveConfig(key, oldKey, oldConfig, savedConfig);
+    SavedCollateralFactor memory saved = _savedCollateralFactor[spoke][key.reserveId];
+    require(saved.levers != 0, InvalidSavedCollateralFactor());
+    delete _savedCollateralFactor[spoke][key.reserveId];
+    return
+      _addDynamicReserveConfig(
+        key,
+        oldKey,
+        oldConfig,
+        key.spoke.getDynamicReserveConfig(key.reserveId, saved.dynamicConfigKey)
+      );
   }
 
   /// @inheritdoc ISpokeConfigurator
@@ -523,12 +569,20 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
   }
 
   /// @inheritdoc ISpokeConfigurator
-  function getSavedDynamicConfigKey(
+  function getSavedCollateralFactor(
     address spoke,
     address hub,
     address underlying
-  ) external view returns (uint32) {
-    return _savedDynamicConfigKey[spoke][_resolveReserveKey(spoke, hub, underlying).reserveId];
+  ) external view returns (uint32, bool, bool, bool) {
+    SavedCollateralFactor memory saved = _savedCollateralFactor[spoke][
+      _resolveReserveKey(spoke, hub, underlying).reserveId
+    ];
+    return (
+      saved.dynamicConfigKey,
+      BulkLeversMap.isHeld(saved.levers, BulkLeversMap.ASSET_MASK),
+      BulkLeversMap.isHeld(saved.levers, BulkLeversMap.SPOKE_MASK),
+      BulkLeversMap.isHeld(saved.levers, BulkLeversMap.RESERVE_MASK)
+    );
   }
 
   /// @inheritdoc ISpokeConfigurator
@@ -555,8 +609,9 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
     return BulkLeversMap.isHeld(_pausedByBulkLevers[spoke][reserveId], BulkLeversMap.SPOKE_MASK);
   }
 
-  /// @dev Returns whether the frozen flag changed and whether the collateral factor was zeroed.
-  function _freezeReserve(ReserveKey memory key) internal returns (bool, bool) {
+  /// @dev Returns whether the frozen flag changed and whether the collateral factor was zeroed. Records `mask` as
+  /// holding the collateral factor at zero per `_zeroCollateralFactor`.
+  function _freezeReserve(ReserveKey memory key, uint8 mask) internal returns (bool, bool) {
     ISpoke.ReserveConfig memory reserveConfig = key.spoke.getReserveConfig(key.reserveId);
     bool frozenUpdated = !reserveConfig.frozen;
     if (frozenUpdated) {
@@ -571,12 +626,12 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
         true
       );
     }
-    return (frozenUpdated, _zeroCollateralFactor(key));
+    return (frozenUpdated, _zeroCollateralFactor(key, mask));
   }
 
   /// @dev Freezes a reserve and records `mask` as holding the frozen flag per `BulkLeversMap.brake`.
   function _holdFrozen(ReserveKey memory key, uint8 mask) internal {
-    (bool frozenUpdated, ) = _freezeReserve(key);
+    (bool frozenUpdated, ) = _freezeReserve(key, mask);
     address spoke = address(key.spoke);
     _frozenByBulkLevers[spoke][key.reserveId] = BulkLeversMap.brake(
       _frozenByBulkLevers[spoke][key.reserveId],
@@ -617,19 +672,71 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
     return true;
   }
 
-  /// @dev Returns false if the latest collateral factor is already zero.
-  function _zeroCollateralFactor(ReserveKey memory key) internal returns (bool) {
+  /// @dev Saves the latest key and zeroes the collateral factor unless it is already zero, and records `mask` as
+  /// holding it at zero per `BulkLeversMap.brake`. Returns false if the collateral factor was already zero.
+  function _zeroCollateralFactor(ReserveKey memory key, uint8 mask) internal returns (bool) {
+    address spoke = address(key.spoke);
+    SavedCollateralFactor memory saved = _savedCollateralFactor[spoke][key.reserveId];
     (uint32 oldKey, ISpoke.DynamicReserveConfig memory oldConfig) = _getLatestDynamicConfig(key);
-    if (oldConfig.collateralFactor == 0) {
-      return false;
+    bool collateralFactorZeroed = oldConfig.collateralFactor != 0;
+    if (collateralFactorZeroed) {
+      ISpoke.DynamicReserveConfig memory newConfig = _copy(oldConfig);
+      newConfig.collateralFactor = 0;
+      _addDynamicReserveConfig(key, oldKey, oldConfig, newConfig);
+      emit SavedDynamicConfigKeyUpdated(
+        spoke,
+        key.hub,
+        key.underlying,
+        key.reserveId,
+        saved.dynamicConfigKey,
+        oldKey
+      );
+      saved.dynamicConfigKey = oldKey;
     }
-    ISpoke.DynamicReserveConfig memory newConfig = _copy(oldConfig);
-    newConfig.collateralFactor = 0;
-    _addDynamicReserveConfig(key, oldKey, oldConfig, newConfig);
-    return true;
+    saved.levers = BulkLeversMap.brake(saved.levers, mask, collateralFactorZeroed);
+    _savedCollateralFactor[spoke][key.reserveId] = saved;
+    return collateralFactorZeroed;
   }
 
-  /// @dev Saves `oldKey` as the restore target when the collateral factor goes from non-zero to zero.
+  /// @dev Re-adds the saved config once no lever holds the collateral factor at zero, if it is still zero. Does
+  /// nothing while the reserve is paused or a bulk lever holds it frozen.
+  function _releaseZeroCollateralFactor(ReserveKey memory key, uint8 mask) internal {
+    address spoke = address(key.spoke);
+    SavedCollateralFactor memory saved = _savedCollateralFactor[spoke][key.reserveId];
+    if (
+      !BulkLeversMap.isHeld(saved.levers, mask) ||
+      _frozenByBulkLevers[spoke][key.reserveId] != 0 ||
+      key.spoke.getReserveConfig(key.reserveId).paused
+    ) {
+      return;
+    }
+    (uint8 levers, bool released) = BulkLeversMap.release(saved.levers, mask);
+    if (!released) {
+      _savedCollateralFactor[spoke][key.reserveId].levers = levers;
+      return;
+    }
+    delete _savedCollateralFactor[spoke][key.reserveId];
+    (uint32 oldKey, ISpoke.DynamicReserveConfig memory oldConfig) = _getLatestDynamicConfig(key);
+    if (oldConfig.collateralFactor == 0) {
+      _addDynamicReserveConfig(
+        key,
+        oldKey,
+        oldConfig,
+        key.spoke.getDynamicReserveConfig(key.reserveId, saved.dynamicConfigKey)
+      );
+    }
+  }
+
+  /// @dev Clears the saved collateral factor if `dynamicConfigKey` is the latest key of the reserve.
+  function _clearSavedCollateralFactorIfLatest(
+    ReserveKey memory key,
+    uint32 dynamicConfigKey
+  ) internal {
+    if (dynamicConfigKey == key.spoke.getReserve(key.reserveId).dynamicConfigKey) {
+      delete _savedCollateralFactor[address(key.spoke)][key.reserveId];
+    }
+  }
+
   function _addDynamicReserveConfig(
     ReserveKey memory key,
     uint32 oldKey,
@@ -638,18 +745,6 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
   ) internal returns (uint32) {
     uint32 newKey = key.spoke.addDynamicReserveConfig(key.reserveId, newConfig);
     _emitDynamicReserveConfigUpdated(key, oldKey, newKey, oldConfig, newConfig);
-    if (oldConfig.collateralFactor != 0 && newConfig.collateralFactor == 0) {
-      uint32 oldSavedKey = _savedDynamicConfigKey[address(key.spoke)][key.reserveId];
-      _savedDynamicConfigKey[address(key.spoke)][key.reserveId] = oldKey;
-      emit SavedDynamicConfigKeyUpdated(
-        address(key.spoke),
-        key.hub,
-        key.underlying,
-        key.reserveId,
-        oldSavedKey,
-        oldKey
-      );
-    }
     return newKey;
   }
 

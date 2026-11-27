@@ -18,30 +18,53 @@ interface IEmergencySteward {
   function unpauseAllReserves(address spoke) external;
 
   /// @notice Freezes all reserves of a Spoke and zeroes their collateral factors.
-  /// @dev Records the reserves it freezes so `unfreezeSpoke` unfreezes only those.
+  /// @dev Records the reserves it freezes so `unfreezeSpoke` unfreezes only those, and the collateral factors it
+  /// zeroes so `restoreSpokeCollateralFactor` restores only those.
   /// @param spoke The address of the Spoke.
   function freezeSpoke(address spoke) external;
 
   /// @notice Unfreezes the reserves that `freezeSpoke` froze on a Spoke.
   /// @dev Reserves also frozen by `freezeAsset` stay frozen. Does not restore collateral factors; see
-  /// `SpokeConfigurator.restoreCollateralFactor`.
+  /// `restoreSpokeCollateralFactor`.
   /// @param spoke The address of the Spoke.
   function unfreezeSpoke(address spoke) external;
 
+  /// @notice Restores the collateral factors that `freezeSpoke` zeroed on a Spoke.
+  /// @dev Collateral factors also zeroed by another lever stay at zero. Skips reserves that are paused or still
+  /// frozen by a bulk lever; call again once they are released.
+  /// @param spoke The address of the Spoke.
+  function restoreSpokeCollateralFactor(address spoke) external;
+
   /// @notice Freezes the reserve of an asset and zeroes its collateral factor on every Spoke registered for that
   /// asset on a specified Hub.
-  /// @dev Records the reserves it freezes so `unfreezeAsset` unfreezes only those. Skips Spokes without a reserve
-  /// for the asset.
+  /// @dev Records the reserves it freezes so `unfreezeAsset` unfreezes only those, and the collateral factors it
+  /// zeroes so `restoreAssetCollateralFactor` restores only those. Skips Spokes without a reserve for the asset.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
   function freezeAsset(address hub, address underlying) external;
 
   /// @notice Unfreezes the reserves that `freezeAsset` froze for an asset on a specified Hub.
   /// @dev Reserves also frozen by `freezeSpoke` stay frozen. Does not restore collateral factors; see
-  /// `SpokeConfigurator.restoreCollateralFactor`.
+  /// `restoreAssetCollateralFactor`.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
   function unfreezeAsset(address hub, address underlying) external;
+
+  /// @notice Zeroes the collateral factor of an asset on every Spoke registered for that asset on a specified Hub,
+  /// without freezing it.
+  /// @dev Records the collateral factors it zeroes so `restoreAssetCollateralFactor` restores only those. Skips
+  /// Spokes without a reserve for the asset.
+  /// @param hub The address of the Hub.
+  /// @param underlying The address of the underlying asset.
+  function zeroAssetCollateralFactor(address hub, address underlying) external;
+
+  /// @notice Restores the collateral factors that `zeroAssetCollateralFactor` or `freezeAsset` zeroed for an asset
+  /// on a specified Hub.
+  /// @dev Collateral factors also zeroed by another lever stay at zero. Skips reserves that are paused or still
+  /// frozen by a bulk lever; call again once they are released.
+  /// @param hub The address of the Hub.
+  /// @param underlying The address of the underlying asset.
+  function restoreAssetCollateralFactor(address hub, address underlying) external;
 
   /// @notice Disables borrowing of an asset on every Spoke registered for that asset on a specified Hub.
   /// @dev Skips Spokes without a reserve for the asset. Re-enabling is done through

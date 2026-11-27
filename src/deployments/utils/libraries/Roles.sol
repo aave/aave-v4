@@ -193,13 +193,15 @@ library Roles {
     pure
     returns (bytes4[] memory)
   {
-    bytes4[] memory selectors = new bytes4[](6);
+    bytes4[] memory selectors = new bytes4[](8);
     selectors[0] = ISpokeConfigurator.disableBorrowing.selector;
     selectors[1] = ISpokeConfigurator.holdPaused.selector;
     selectors[2] = ISpokeConfigurator.releasePaused.selector;
     selectors[3] = ISpokeConfigurator.holdFrozen.selector;
     selectors[4] = ISpokeConfigurator.releaseFrozen.selector;
-    selectors[5] = ISpokeConfigurator.updatePositionManager.selector;
+    selectors[5] = ISpokeConfigurator.holdZeroCollateralFactor.selector;
+    selectors[6] = ISpokeConfigurator.releaseZeroCollateralFactor.selector;
+    selectors[7] = ISpokeConfigurator.updatePositionManager.selector;
     return selectors;
   }
 
@@ -207,15 +209,18 @@ library Roles {
 
   /// @notice Returns the function selectors associated with the EmergencySteward Domain Admin role.
   function getEmergencyStewardDomainAdminRoleSelectors() internal pure returns (bytes4[] memory) {
-    bytes4[] memory selectors = new bytes4[](8);
+    bytes4[] memory selectors = new bytes4[](11);
     selectors[0] = IEmergencySteward.pauseAllReserves.selector;
     selectors[1] = IEmergencySteward.unpauseAllReserves.selector;
     selectors[2] = IEmergencySteward.freezeSpoke.selector;
     selectors[3] = IEmergencySteward.unfreezeSpoke.selector;
-    selectors[4] = IEmergencySteward.freezeAsset.selector;
-    selectors[5] = IEmergencySteward.unfreezeAsset.selector;
-    selectors[6] = IEmergencySteward.disableAssetBorrowing.selector;
-    selectors[7] = IEmergencySteward.deactivatePositionManager.selector;
+    selectors[4] = IEmergencySteward.restoreSpokeCollateralFactor.selector;
+    selectors[5] = IEmergencySteward.freezeAsset.selector;
+    selectors[6] = IEmergencySteward.unfreezeAsset.selector;
+    selectors[7] = IEmergencySteward.zeroAssetCollateralFactor.selector;
+    selectors[8] = IEmergencySteward.restoreAssetCollateralFactor.selector;
+    selectors[9] = IEmergencySteward.disableAssetBorrowing.selector;
+    selectors[10] = IEmergencySteward.deactivatePositionManager.selector;
     return selectors;
   }
 }

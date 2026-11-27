@@ -8,6 +8,7 @@ contract BulkLeversMapTest is Test {
   uint8 internal constant ASSET_MASK = 0x01;
   uint8 internal constant SPOKE_MASK = 0x02;
   uint8 internal constant HUB_MASK = 0x04;
+  uint8 internal constant RESERVE_MASK = 0x08;
   uint8 internal constant ALL_MASKS = ASSET_MASK | SPOKE_MASK | HUB_MASK;
 
   BulkLeversMapWrapper internal w;
@@ -20,6 +21,7 @@ contract BulkLeversMapTest is Test {
     assertEq(w.ASSET_MASK(), ASSET_MASK);
     assertEq(w.SPOKE_MASK(), SPOKE_MASK);
     assertEq(w.HUB_MASK(), HUB_MASK);
+    assertEq(w.RESERVE_MASK(), RESERVE_MASK);
   }
 
   function test_fuzz_brake_flagUpdated_replacesBulkLevers(

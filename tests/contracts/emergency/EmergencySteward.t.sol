@@ -43,6 +43,12 @@ contract EmergencyStewardTest is SpokeConfiguratorBaseTest {
     emergencySteward.unfreezeAsset(hubAddr, underlying);
     vm.expectRevert(expectedRevert);
     emergencySteward.disableAssetBorrowing(hubAddr, underlying);
+    vm.expectRevert(expectedRevert);
+    emergencySteward.zeroAssetCollateralFactor(hubAddr, underlying);
+    vm.expectRevert(expectedRevert);
+    emergencySteward.restoreAssetCollateralFactor(hubAddr, underlying);
+    vm.expectRevert(expectedRevert);
+    emergencySteward.restoreSpokeCollateralFactor(spokeAddr);
     vm.stopPrank();
   }
 
@@ -1042,6 +1048,265 @@ contract EmergencyStewardTest is SpokeConfiguratorBaseTest {
     assertTrue(spoke.getReserveConfig(_wethReserveId(spoke)).frozen);
   }
 
+  function test_restoreSpokeCollateralFactor_revertsWith_AccessManagedUnauthorized() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
+    vm.prank(alice);
+    emergencySteward.restoreSpokeCollateralFactor(spokeAddr);
+  }
+
+  function test_restoreSpokeCollateralFactor() public {
+    uint256 reserveCount = spoke.getReserveCount();
+    ISpoke.DynamicReserveConfig[] memory oldConfigs = new ISpoke.DynamicReserveConfig[](
+      reserveCount
+    );
+    for (uint256 id; id < reserveCount; ++id) {
+      oldConfigs[id] = _getLatestDynamicReserveConfig(spoke, id);
+    }
+
+    vm.startPrank(SPOKE_CONFIGURATOR_ADMIN);
+    emergencySteward.freezeSpoke(spokeAddr);
+    emergencySteward.unfreezeSpoke(spokeAddr);
+    emergencySteward.restoreSpokeCollateralFactor(spokeAddr);
+    vm.stopPrank();
+
+    for (uint256 id; id < reserveCount; ++id) {
+      assertFalse(spoke.getReserveConfig(id).frozen);
+      assertEq(_getLatestDynamicReserveConfig(spoke, id), oldConfigs[id]);
+      _assertSavedCollateralFactor(spoke, id, 0, false, false, false);
+    }
+  }
+
+  function test_restoreSpokeCollateralFactor_skipsReservesStillFrozenByFreezeSpoke() public {
+    uint256 daiId = _daiReserveId(spoke);
+    ISpoke.DynamicReserveConfig memory oldConfig = _getLatestDynamicReserveConfig(spoke, daiId);
+    vm.startPrank(SPOKE_CONFIGURATOR_ADMIN);
+    emergencySteward.freezeSpoke(spokeAddr);
+    emergencySteward.restoreSpokeCollateralFactor(spokeAddr);
+    vm.stopPrank();
+
+    assertEq(_getLatestDynamicReserveConfig(spoke, daiId).collateralFactor, 0);
+
+    vm.startPrank(SPOKE_CONFIGURATOR_ADMIN);
+    emergencySteward.unfreezeSpoke(spokeAddr);
+    emergencySteward.restoreSpokeCollateralFactor(spokeAddr);
+    vm.stopPrank();
+
+    assertEq(_getLatestDynamicReserveConfig(spoke, daiId), oldConfig);
+  }
+
+  function test_restoreSpokeCollateralFactor_skipsPausedReserves() public {
+    address dai = address(tokenList.dai);
+    uint256 daiId = _daiReserveId(spoke);
+    uint256 wethId = _wethReserveId(spoke);
+    ISpoke.DynamicReserveConfig memory oldDaiConfig = _getLatestDynamicReserveConfig(spoke, daiId);
+    ISpoke.DynamicReserveConfig memory oldWethConfig = _getLatestDynamicReserveConfig(
+      spoke,
+      wethId
+    );
+    vm.startPrank(SPOKE_CONFIGURATOR_ADMIN);
+    emergencySteward.freezeSpoke(spokeAddr);
+    emergencySteward.unfreezeSpoke(spokeAddr);
+    spokeConfigurator.pauseReserve(spokeAddr, hubAddr, dai);
+    emergencySteward.restoreSpokeCollateralFactor(spokeAddr);
+    vm.stopPrank();
+
+    assertEq(_getLatestDynamicReserveConfig(spoke, daiId).collateralFactor, 0);
+    assertEq(_getLatestDynamicReserveConfig(spoke, wethId), oldWethConfig);
+
+    vm.startPrank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.updatePaused(spokeAddr, hubAddr, dai, false);
+    emergencySteward.restoreSpokeCollateralFactor(spokeAddr);
+    vm.stopPrank();
+
+    assertEq(_getLatestDynamicReserveConfig(spoke, daiId), oldDaiConfig);
+  }
+
+  function test_zeroAssetCollateralFactor_revertsWith_AccessManagedUnauthorized() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
+    vm.prank(alice);
+    emergencySteward.zeroAssetCollateralFactor(hubAddr, underlying);
+  }
+
+  /// @dev DAI on hub1 is also registered for the TreasurySpoke, which has no reserves and must be skipped.
+  function test_zeroAssetCollateralFactor() public {
+    address dai = address(tokenList.dai);
+    ISpoke[] memory daiSpokes = _grantAssetSpokesRole(daiAssetId);
+    uint32[] memory oldKeys = new uint32[](daiSpokes.length);
+    for (uint256 i; i < daiSpokes.length; ++i) {
+      uint256 id = _daiReserveId(daiSpokes[i]);
+      oldKeys[i] = _latestKey(daiSpokes[i], id);
+      assertGt(_getLatestDynamicReserveConfig(daiSpokes[i], id).collateralFactor, 0);
+    }
+
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    emergencySteward.zeroAssetCollateralFactor(hubAddr, dai);
+
+    for (uint256 i; i < daiSpokes.length; ++i) {
+      uint256 id = _daiReserveId(daiSpokes[i]);
+      assertFalse(daiSpokes[i].getReserveConfig(id).frozen);
+      assertEq(_getLatestDynamicReserveConfig(daiSpokes[i], id).collateralFactor, 0);
+      _assertSavedCollateralFactor(daiSpokes[i], id, oldKeys[i], true, false, false);
+    }
+  }
+
+  function test_zeroAssetCollateralFactor_doesNotRecordReservesAlreadyZero() public {
+    address dai = address(tokenList.dai);
+    ISpoke[] memory daiSpokes = _grantAssetSpokesRole(daiAssetId);
+    vm.startPrank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.addCollateralFactor(spokeAddr, hubAddr, dai, 0);
+    emergencySteward.zeroAssetCollateralFactor(hubAddr, dai);
+    vm.stopPrank();
+
+    for (uint256 i; i < daiSpokes.length; ++i) {
+      (, bool byAsset, , ) = spokeConfigurator.getSavedCollateralFactor(
+        address(daiSpokes[i]),
+        hubAddr,
+        dai
+      );
+      assertEq(byAsset, address(daiSpokes[i]) != spokeAddr);
+    }
+  }
+
+  function test_zeroAssetCollateralFactor_skipsSpokeWithReserveNotListed() public {
+    address dai = address(tokenList.dai);
+    ISpoke[] memory daiSpokes = _grantAssetSpokesRole(daiAssetId);
+    ISpoke unlistedSpoke = daiSpokes[0];
+    uint32 unlistedKey = _latestKey(unlistedSpoke, _daiReserveId(unlistedSpoke));
+    vm.mockCallRevert(
+      address(unlistedSpoke),
+      abi.encodeCall(ISpoke.getReserveId, (hubAddr, daiAssetId)),
+      abi.encodeWithSelector(ISpoke.ReserveNotListed.selector)
+    );
+
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    emergencySteward.zeroAssetCollateralFactor(hubAddr, dai);
+    vm.clearMockedCalls();
+
+    for (uint256 i; i < daiSpokes.length; ++i) {
+      uint256 id = _daiReserveId(daiSpokes[i]);
+      assertEq(
+        _getLatestDynamicReserveConfig(daiSpokes[i], id).collateralFactor == 0,
+        daiSpokes[i] != unlistedSpoke
+      );
+    }
+    assertEq(_latestKey(unlistedSpoke, _daiReserveId(unlistedSpoke)), unlistedKey);
+  }
+
+  function test_restoreAssetCollateralFactor_revertsWith_AccessManagedUnauthorized() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
+    vm.prank(alice);
+    emergencySteward.restoreAssetCollateralFactor(hubAddr, underlying);
+  }
+
+  function test_restoreAssetCollateralFactor() public {
+    address dai = address(tokenList.dai);
+    ISpoke[] memory daiSpokes = _grantAssetSpokesRole(daiAssetId);
+    ISpoke.DynamicReserveConfig[] memory oldConfigs = _daiConfigs(daiSpokes);
+
+    vm.startPrank(SPOKE_CONFIGURATOR_ADMIN);
+    emergencySteward.zeroAssetCollateralFactor(hubAddr, dai);
+    emergencySteward.restoreAssetCollateralFactor(hubAddr, dai);
+    vm.stopPrank();
+
+    for (uint256 i; i < daiSpokes.length; ++i) {
+      uint256 id = _daiReserveId(daiSpokes[i]);
+      assertEq(_getLatestDynamicReserveConfig(daiSpokes[i], id), oldConfigs[i]);
+      _assertSavedCollateralFactor(daiSpokes[i], id, 0, false, false, false);
+    }
+  }
+
+  function test_restoreAssetCollateralFactor_afterFreezeAsset() public {
+    address dai = address(tokenList.dai);
+    ISpoke[] memory daiSpokes = _grantAssetSpokesRole(daiAssetId);
+    ISpoke.DynamicReserveConfig[] memory oldConfigs = _daiConfigs(daiSpokes);
+
+    vm.startPrank(SPOKE_CONFIGURATOR_ADMIN);
+    emergencySteward.freezeAsset(hubAddr, dai);
+    emergencySteward.unfreezeAsset(hubAddr, dai);
+    emergencySteward.restoreAssetCollateralFactor(hubAddr, dai);
+    vm.stopPrank();
+
+    for (uint256 i; i < daiSpokes.length; ++i) {
+      uint256 id = _daiReserveId(daiSpokes[i]);
+      assertFalse(daiSpokes[i].getReserveConfig(id).frozen);
+      assertEq(_getLatestDynamicReserveConfig(daiSpokes[i], id), oldConfigs[i]);
+    }
+  }
+
+  function test_restoreAssetCollateralFactor_skipsReservesStillFrozenByFreezeAsset() public {
+    address dai = address(tokenList.dai);
+    ISpoke[] memory daiSpokes = _grantAssetSpokesRole(daiAssetId);
+    ISpoke.DynamicReserveConfig[] memory oldConfigs = _daiConfigs(daiSpokes);
+
+    vm.startPrank(SPOKE_CONFIGURATOR_ADMIN);
+    emergencySteward.freezeAsset(hubAddr, dai);
+    emergencySteward.restoreAssetCollateralFactor(hubAddr, dai);
+    vm.stopPrank();
+
+    for (uint256 i; i < daiSpokes.length; ++i) {
+      uint256 id = _daiReserveId(daiSpokes[i]);
+      assertEq(_getLatestDynamicReserveConfig(daiSpokes[i], id).collateralFactor, 0);
+    }
+
+    vm.startPrank(SPOKE_CONFIGURATOR_ADMIN);
+    emergencySteward.unfreezeAsset(hubAddr, dai);
+    emergencySteward.restoreAssetCollateralFactor(hubAddr, dai);
+    vm.stopPrank();
+
+    for (uint256 i; i < daiSpokes.length; ++i) {
+      uint256 id = _daiReserveId(daiSpokes[i]);
+      assertEq(_getLatestDynamicReserveConfig(daiSpokes[i], id), oldConfigs[i]);
+    }
+  }
+
+  function test_restoreAssetCollateralFactor_keepsCollateralFactorZeroedByDao() public {
+    address dai = address(tokenList.dai);
+    ISpoke[] memory daiSpokes = _grantAssetSpokesRole(daiAssetId);
+    ISpoke.DynamicReserveConfig[] memory oldConfigs = _daiConfigs(daiSpokes);
+
+    vm.startPrank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.addCollateralFactor(spokeAddr, hubAddr, dai, 0);
+    emergencySteward.zeroAssetCollateralFactor(hubAddr, dai);
+    emergencySteward.restoreAssetCollateralFactor(hubAddr, dai);
+    vm.stopPrank();
+
+    for (uint256 i; i < daiSpokes.length; ++i) {
+      uint256 id = _daiReserveId(daiSpokes[i]);
+      if (address(daiSpokes[i]) == spokeAddr) {
+        assertEq(_getLatestDynamicReserveConfig(daiSpokes[i], id).collateralFactor, 0);
+      } else {
+        assertEq(_getLatestDynamicReserveConfig(daiSpokes[i], id), oldConfigs[i]);
+      }
+    }
+  }
+
+  function test_restoreAssetCollateralFactor_keepsCollateralFactorZeroedByFreezeSpoke() public {
+    address dai = address(tokenList.dai);
+    uint256 daiId = _daiReserveId(spoke);
+    ISpoke.DynamicReserveConfig memory oldConfig = _getLatestDynamicReserveConfig(spoke, daiId);
+    _grantAssetSpokesRole(daiAssetId);
+
+    vm.startPrank(SPOKE_CONFIGURATOR_ADMIN);
+    emergencySteward.freezeSpoke(spokeAddr);
+    emergencySteward.zeroAssetCollateralFactor(hubAddr, dai);
+    emergencySteward.unfreezeSpoke(spokeAddr);
+    emergencySteward.restoreAssetCollateralFactor(hubAddr, dai);
+    vm.stopPrank();
+
+    assertEq(_getLatestDynamicReserveConfig(spoke, daiId).collateralFactor, 0);
+    _assertSavedCollateralFactor(spoke, daiId, _savedKey(spoke, daiId), false, true, false);
+
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    emergencySteward.restoreSpokeCollateralFactor(spokeAddr);
+    assertEq(_getLatestDynamicReserveConfig(spoke, daiId), oldConfig);
+  }
+
   function test_disableAssetBorrowing_revertsWith_AccessManagedUnauthorized() public {
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
@@ -1226,6 +1491,15 @@ contract EmergencyStewardTest is SpokeConfiguratorBaseTest {
     }
     assembly ('memory-safe') {
       mstore(spokes, count)
+    }
+  }
+
+  function _daiConfigs(
+    ISpoke[] memory targetSpokes
+  ) internal view returns (ISpoke.DynamicReserveConfig[] memory configs) {
+    configs = new ISpoke.DynamicReserveConfig[](targetSpokes.length);
+    for (uint256 i; i < targetSpokes.length; ++i) {
+      configs[i] = _getLatestDynamicReserveConfig(targetSpokes[i], _daiReserveId(targetSpokes[i]));
     }
   }
 

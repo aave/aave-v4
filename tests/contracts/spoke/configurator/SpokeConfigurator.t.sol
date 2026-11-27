@@ -111,12 +111,37 @@ abstract contract SpokeConfiguratorBaseTest is Base {
 
   function _savedKey(ISpoke targetSpoke, uint256 targetReserveId) internal view returns (uint32) {
     ISpoke.Reserve memory reserve = targetSpoke.getReserve(targetReserveId);
-    return
-      spokeConfigurator.getSavedDynamicConfigKey(
+    (uint32 savedKey, , , ) = spokeConfigurator.getSavedCollateralFactor(
+      address(targetSpoke),
+      address(reserve.hub),
+      reserve.underlying
+    );
+    return savedKey;
+  }
+
+  function _assertSavedCollateralFactor(
+    ISpoke targetSpoke,
+    uint256 targetReserveId,
+    uint32 savedKey,
+    bool byAsset,
+    bool bySpoke,
+    bool byReserve
+  ) internal view {
+    ISpoke.Reserve memory reserve = targetSpoke.getReserve(targetReserveId);
+    (
+      uint32 actualSavedKey,
+      bool actualByAsset,
+      bool actualBySpoke,
+      bool actualByReserve
+    ) = spokeConfigurator.getSavedCollateralFactor(
         address(targetSpoke),
         address(reserve.hub),
         reserve.underlying
       );
+    assertEq(actualSavedKey, savedKey, 'savedKey');
+    assertEq(actualByAsset, byAsset, 'byAsset');
+    assertEq(actualBySpoke, bySpoke, 'bySpoke');
+    assertEq(actualByReserve, byReserve, 'byReserve');
   }
 
   function _latestKey(ISpoke targetSpoke, uint256 targetReserveId) internal view returns (uint32) {
@@ -510,7 +535,7 @@ contract SpokeConfiguratorTest is SpokeConfiguratorBaseTest {
     assertEq(_configuratorLogCount(), 9);
     assertEq(actualReserveId, expectedReserveId);
     assertEq(spoke.getReserveId(hubAddr, usdzAssetId), expectedReserveId);
-    assertEq(spokeConfigurator.getSavedDynamicConfigKey(spokeAddr, hubAddr, usdz), 0);
+    _assertSavedCollateralFactor(spoke, expectedReserveId, 0, false, false, false);
   }
 
   function test_updatePaused_revertsWith_AccessManagedUnauthorized() public {
@@ -1450,6 +1475,32 @@ contract SpokeConfiguratorTest is SpokeConfiguratorBaseTest {
     spokeConfigurator.releaseFrozen(spokeAddr, hubAddr, underlying, BulkLeversMap.SPOKE_MASK);
   }
 
+  function test_holdZeroCollateralFactor_revertsWith_AccessManagedUnauthorized() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
+    vm.prank(alice);
+    spokeConfigurator.holdZeroCollateralFactor(
+      spokeAddr,
+      hubAddr,
+      underlying,
+      BulkLeversMap.ASSET_MASK
+    );
+  }
+
+  function test_releaseZeroCollateralFactor_revertsWith_AccessManagedUnauthorized() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
+    vm.prank(alice);
+    spokeConfigurator.releaseZeroCollateralFactor(
+      spokeAddr,
+      hubAddr,
+      underlying,
+      BulkLeversMap.ASSET_MASK
+    );
+  }
+
   function test_bulkLeverRecordFunctions_revertsWith_InvalidBulkLeverMask() public {
     vm.startPrank(SPOKE_CONFIGURATOR_ADMIN);
     vm.expectRevert(ISpokeConfigurator.InvalidBulkLeverMask.selector);
@@ -1460,6 +1511,10 @@ contract SpokeConfiguratorTest is SpokeConfiguratorBaseTest {
     spokeConfigurator.holdFrozen(spokeAddr, hubAddr, underlying, 0);
     vm.expectRevert(ISpokeConfigurator.InvalidBulkLeverMask.selector);
     spokeConfigurator.releaseFrozen(spokeAddr, hubAddr, underlying, 0);
+    vm.expectRevert(ISpokeConfigurator.InvalidBulkLeverMask.selector);
+    spokeConfigurator.holdZeroCollateralFactor(spokeAddr, hubAddr, underlying, 0);
+    vm.expectRevert(ISpokeConfigurator.InvalidBulkLeverMask.selector);
+    spokeConfigurator.releaseZeroCollateralFactor(spokeAddr, hubAddr, underlying, 0);
     vm.stopPrank();
   }
 
@@ -1637,7 +1692,7 @@ contract SpokeConfiguratorTest is SpokeConfiguratorBaseTest {
     }
 
     vm.expectRevert(IHub.AssetNotListed.selector, hubAddr);
-    spokeConfigurator.getSavedDynamicConfigKey(spokeAddr, hubAddr, unlistedUnderlying);
+    spokeConfigurator.getSavedCollateralFactor(spokeAddr, hubAddr, unlistedUnderlying);
   }
 
   function test_reserveFunctions_revertsWith_ReserveNotListed() public {
@@ -1654,12 +1709,12 @@ contract SpokeConfiguratorTest is SpokeConfiguratorBaseTest {
     }
 
     vm.expectRevert(ISpoke.ReserveNotListed.selector, spokeAddr);
-    spokeConfigurator.getSavedDynamicConfigKey(spokeAddr, hubAddr, usdz);
+    spokeConfigurator.getSavedCollateralFactor(spokeAddr, hubAddr, usdz);
   }
 
-  function test_getSavedDynamicConfigKey_defaultsToZero() public view {
+  function test_getSavedCollateralFactor_defaultsToZero() public view {
     for (uint256 id; id < spoke.getReserveCount(); ++id) {
-      assertEq(_savedKey(spoke, id), 0);
+      _assertSavedCollateralFactor(spoke, id, 0, false, false, false);
     }
   }
 
@@ -1671,7 +1726,7 @@ contract SpokeConfiguratorTest is SpokeConfiguratorBaseTest {
       liquidationFee: 5_00
     });
 
-    calls = new bytes[](24);
+    calls = new bytes[](26);
     calls[0] = abi.encodeCall(
       ISpokeConfigurator.updateReservePriceSource,
       (spokeAddr, hubAddr, targetUnderlying, newPriceSource)
@@ -1767,6 +1822,14 @@ contract SpokeConfiguratorTest is SpokeConfiguratorBaseTest {
     calls[23] = abi.encodeCall(
       ISpokeConfigurator.disableBorrowing,
       (spokeAddr, hubAddr, targetUnderlying)
+    );
+    calls[24] = abi.encodeCall(
+      ISpokeConfigurator.holdZeroCollateralFactor,
+      (spokeAddr, hubAddr, targetUnderlying, BulkLeversMap.ASSET_MASK)
+    );
+    calls[25] = abi.encodeCall(
+      ISpokeConfigurator.releaseZeroCollateralFactor,
+      (spokeAddr, hubAddr, targetUnderlying, BulkLeversMap.ASSET_MASK)
     );
   }
 }

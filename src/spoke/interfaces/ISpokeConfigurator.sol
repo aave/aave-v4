@@ -196,7 +196,7 @@ interface ISpokeConfigurator {
     uint256 newLiquidationFee
   );
 
-  /// @notice Emitted when the saved dynamic config key of a reserve is updated.
+  /// @notice Emitted when a lever saves the dynamic config key of a reserve.
   /// @param spoke The address of the Spoke.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
@@ -236,13 +236,16 @@ interface ISpokeConfigurator {
   /// @notice Thrown when restoring the collateral factor of a frozen reserve.
   error CannotRestoreFrozenReserve();
 
+  /// @notice Thrown when restoring the collateral factor of a paused reserve.
+  error CannotRestorePausedReserve();
+
   /// @notice Thrown when zeroing the collateral factor of a reserve whose latest collateral factor is already zero.
   error CollateralFactorAlreadyZero();
 
   /// @notice Thrown when restoring the collateral factor of a reserve whose latest collateral factor is not zero.
   error CollateralFactorNotZero();
 
-  /// @notice Thrown when the dynamic config at the saved key has a zero collateral factor.
+  /// @notice Thrown when restoring a collateral factor that no lever holds at zero.
   error InvalidSavedCollateralFactor();
 
   /// @notice Thrown when the bulk lever mask is zero.
@@ -313,7 +316,7 @@ interface ISpokeConfigurator {
 
   /// @notice Updates the frozen flag of a reserve.
   /// @dev Leaves the collateral factor unchanged; `freezeReserve` also zeroes it. Clears the bulk lever records of
-  /// the frozen flag.
+  /// the frozen flag. Freezing also keeps bulk releases from restoring the collateral factor.
   /// @param spoke The address of the Spoke.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
@@ -357,7 +360,7 @@ interface ISpokeConfigurator {
   ) external;
 
   /// @notice Adds a dynamic config to a reserve, identical to the latest one but with the specified collateral factor.
-  /// @dev Zeroing the collateral factor saves the previous config for `restoreCollateralFactor`. A non-zero
+  /// @dev Clears the collateral factor saved by a lever, so a zero set here can't be restored. A non-zero
   /// collateral factor applies even while the reserve is frozen.
   /// @param spoke The address of the Spoke.
   /// @param hub The address of the Hub.
@@ -372,8 +375,8 @@ interface ISpokeConfigurator {
   ) external returns (uint32);
 
   /// @notice Updates an existing collateral factor of a reserve at the specified key.
-  /// @dev Applies even while the reserve is frozen. On the saved key, it also changes what
-  /// `restoreCollateralFactor` re-adds.
+  /// @dev Applies even while the reserve is frozen. On the latest key, clears the collateral factor saved by a
+  /// lever. On the saved key, it also changes what `restoreCollateralFactor` re-adds.
   /// @param spoke The address of the Spoke.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
@@ -446,7 +449,7 @@ interface ISpokeConfigurator {
   ) external;
 
   /// @notice Adds a dynamic config to a reserve.
-  /// @dev Zeroing the collateral factor saves the previous config for `restoreCollateralFactor`. A non-zero
+  /// @dev Clears the collateral factor saved by a lever, so a zero set here can't be restored. A non-zero
   /// collateral factor applies even while the reserve is frozen.
   /// @param spoke The address of the Spoke.
   /// @param hub The address of the Hub.
@@ -461,8 +464,8 @@ interface ISpokeConfigurator {
   ) external returns (uint32);
 
   /// @notice Updates the dynamic config of a reserve at the specified key.
-  /// @dev Applies even while the reserve is frozen. On the saved key, it also changes what
-  /// `restoreCollateralFactor` re-adds.
+  /// @dev Applies even while the reserve is frozen. On the latest key, clears the collateral factor saved by a
+  /// lever. On the saved key, it also changes what `restoreCollateralFactor` re-adds.
   /// @param spoke The address of the Spoke.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
@@ -485,7 +488,8 @@ interface ISpokeConfigurator {
 
   /// @notice Freezes a reserve and zeroes its collateral factor.
   /// @dev Existing positions keep their collateral factor until refreshed, such as through
-  /// `updateUserDynamicConfig`. Clears the bulk lever records of the frozen flag.
+  /// `updateUserDynamicConfig`. Clears the bulk lever records of the frozen flag. Bulk releases leave the
+  /// collateral factor at zero; `restoreCollateralFactor` restores it.
   /// @param spoke The address of the Spoke.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
@@ -521,7 +525,7 @@ interface ISpokeConfigurator {
   /// @param mask The `BulkLeversMap` mask of the bulk lever.
   function releasePaused(address spoke, address hub, address underlying, uint8 mask) external;
 
-  /// @notice Freezes a reserve, zeroes its collateral factor and records `mask` as holding the frozen flag, per
+  /// @notice Freezes a reserve, zeroes its collateral factor and records `mask` as holding both, per
   /// `BulkLeversMap.brake`.
   /// @dev Unlike `freezeReserve`, does not revert if the reserve is already frozen with a zero collateral factor.
   /// @param spoke The address of the Spoke.
@@ -532,25 +536,52 @@ interface ISpokeConfigurator {
 
   /// @notice Releases the hold of `mask` on the frozen flag of a reserve, and unfreezes the reserve once no bulk
   /// lever holds it.
-  /// @dev Does not restore the collateral factor; see `restoreCollateralFactor`.
+  /// @dev Does not restore the collateral factor; see `releaseZeroCollateralFactor`.
   /// @param spoke The address of the Spoke.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
   /// @param mask The `BulkLeversMap` mask of the bulk lever.
   function releaseFrozen(address spoke, address hub, address underlying, uint8 mask) external;
 
+  /// @notice Zeroes the collateral factor of a reserve, saving the previous config, and records `mask` as holding
+  /// it at zero, per `BulkLeversMap.brake`.
+  /// @param spoke The address of the Spoke.
+  /// @param hub The address of the Hub.
+  /// @param underlying The address of the underlying asset.
+  /// @param mask The `BulkLeversMap` mask of the bulk lever.
+  function holdZeroCollateralFactor(
+    address spoke,
+    address hub,
+    address underlying,
+    uint8 mask
+  ) external;
+
+  /// @notice Releases the hold of `mask` on the zero collateral factor of a reserve, and re-adds the saved config
+  /// once no lever holds it, if the collateral factor is still zero.
+  /// @dev Does nothing while the reserve is paused or a bulk lever holds it frozen, so a later call can restore it.
+  /// @param spoke The address of the Spoke.
+  /// @param hub The address of the Hub.
+  /// @param underlying The address of the underlying asset.
+  /// @param mask The `BulkLeversMap` mask of the bulk lever.
+  function releaseZeroCollateralFactor(
+    address spoke,
+    address hub,
+    address underlying,
+    uint8 mask
+  ) external;
+
   /// @notice Zeroes the collateral factor of a reserve without freezing it.
-  /// @dev Saves the previous config for `restoreCollateralFactor`. Existing positions keep their collateral factor
-  /// until refreshed.
+  /// @dev Saves the previous config for `restoreCollateralFactor`. Bulk releases leave it at zero. Existing
+  /// positions keep their collateral factor until refreshed.
   /// @param spoke The address of the Spoke.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
   function zeroCollateralFactor(address spoke, address hub, address underlying) external;
 
   /// @notice Restores the collateral factor of a reserve by re-adding the full dynamic config at the saved key.
-  /// @dev Max liquidation bonus and liquidation fee changes made after the saved key are not carried over. The
-  /// reserve must be unfrozen first. The saved key is only set when the collateral factor is zeroed through this
-  /// configurator.
+  /// @dev Reverts unless a lever zeroed the collateral factor and no collateral factor setter changed it since. The
+  /// reserve must be unfrozen and unpaused first. Max liquidation bonus and liquidation fee changes made after the
+  /// saved key are not carried over. Also clears the holds of bulk levers.
   /// @param spoke The address of the Spoke.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
@@ -567,16 +598,20 @@ interface ISpokeConfigurator {
   /// @param active The new active flag.
   function updatePositionManager(address spoke, address positionManager, bool active) external;
 
-  /// @notice Returns the saved dynamic config key of a reserve, re-added by `restoreCollateralFactor`.
+  /// @notice Returns the dynamic config key saved when a lever zeroed the collateral factor of a reserve, and which
+  /// levers hold it at zero.
   /// @param spoke The address of the Spoke.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
   /// @return The saved dynamic config key.
-  function getSavedDynamicConfigKey(
+  /// @return True if the asset-wide bulk lever holds the collateral factor at zero.
+  /// @return True if the Spoke-wide bulk lever holds the collateral factor at zero.
+  /// @return True if a single-reserve lever holds the collateral factor at zero.
+  function getSavedCollateralFactor(
     address spoke,
     address hub,
     address underlying
-  ) external view returns (uint32);
+  ) external view returns (uint32, bool, bool, bool);
 
   /// @notice Returns which bulk levers hold the frozen flag of a reserve.
   /// @param spoke The address of the Spoke.

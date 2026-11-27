@@ -82,6 +82,20 @@ contract EmergencySteward is AccessManaged, IEmergencySteward {
   }
 
   /// @inheritdoc IEmergencySteward
+  function restoreSpokeCollateralFactor(address spoke) external restricted {
+    uint256 reserveCount = ISpoke(spoke).getReserveCount();
+    for (uint256 reserveId = 0; reserveId < reserveCount; ++reserveId) {
+      (address hub, address underlying) = _getReserveAddresses(ISpoke(spoke), reserveId);
+      ISpokeConfigurator(SPOKE_CONFIGURATOR).releaseZeroCollateralFactor(
+        spoke,
+        hub,
+        underlying,
+        BulkLeversMap.SPOKE_MASK
+      );
+    }
+  }
+
+  /// @inheritdoc IEmergencySteward
   function freezeAsset(address hub, address underlying) external restricted {
     IHub targetHub = IHub(hub);
     uint256 assetId = targetHub.getAssetId(underlying);
@@ -108,6 +122,42 @@ contract EmergencySteward is AccessManaged, IEmergencySteward {
       address spoke = targetHub.getSpokeAddress(assetId, i);
       if (_isReserveListed(ISpoke(spoke), hub, assetId)) {
         ISpokeConfigurator(SPOKE_CONFIGURATOR).releaseFrozen(
+          spoke,
+          hub,
+          underlying,
+          BulkLeversMap.ASSET_MASK
+        );
+      }
+    }
+  }
+
+  /// @inheritdoc IEmergencySteward
+  function zeroAssetCollateralFactor(address hub, address underlying) external restricted {
+    IHub targetHub = IHub(hub);
+    uint256 assetId = targetHub.getAssetId(underlying);
+    uint256 spokeCount = targetHub.getSpokeCount(assetId);
+    for (uint256 i = 0; i < spokeCount; ++i) {
+      address spoke = targetHub.getSpokeAddress(assetId, i);
+      if (_isReserveListed(ISpoke(spoke), hub, assetId)) {
+        ISpokeConfigurator(SPOKE_CONFIGURATOR).holdZeroCollateralFactor(
+          spoke,
+          hub,
+          underlying,
+          BulkLeversMap.ASSET_MASK
+        );
+      }
+    }
+  }
+
+  /// @inheritdoc IEmergencySteward
+  function restoreAssetCollateralFactor(address hub, address underlying) external restricted {
+    IHub targetHub = IHub(hub);
+    uint256 assetId = targetHub.getAssetId(underlying);
+    uint256 spokeCount = targetHub.getSpokeCount(assetId);
+    for (uint256 i = 0; i < spokeCount; ++i) {
+      address spoke = targetHub.getSpokeAddress(assetId, i);
+      if (_isReserveListed(ISpoke(spoke), hub, assetId)) {
+        ISpokeConfigurator(SPOKE_CONFIGURATOR).releaseZeroCollateralFactor(
           spoke,
           hub,
           underlying,
