@@ -7,7 +7,7 @@
   "setCanUpdateUserDynamicConfigPermission": "50171",
   "setCanUpdateUserRiskPremiumPermission": "50171",
   "setGlobalPermission": "50123",
-  "setUsingAsCollateralOnBehalfOf": "77174",
-  "updateUserDynamicConfigOnBehalfOf": "54530",
-  "updateUserRiskPremiumOnBehalfOf": "142323"
+  "setUsingAsCollateralOnBehalfOf": "77201",
+  "updateUserDynamicConfigOnBehalfOf": "54547",
+  "updateUserRiskPremiumOnBehalfOf": "142406"
 }

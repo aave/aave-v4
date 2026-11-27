@@ -7,8 +7,7 @@ import {PermissionedPositionManager} from 'src/position-manager/PermissionedPosi
 /// @title ExtendedPermissionedPositionManager
 /// @author Aave Labs
 /// @notice Permissioned position manager which also accepts calls relayed by other position managers on behalf of users.
-/// @dev A relaying position manager must be active and approved by the user on the Spoke, and this contract must not be
-/// set as exclusive on the Spoke.
+/// @dev A relaying position manager must be active and approved by the user on the Spoke.
 /// @dev Permissioned actions are checked against the position owner.
 contract ExtendedPermissionedPositionManager is PermissionedPositionManager {
   /// @dev Constructor.
@@ -17,11 +16,7 @@ contract ExtendedPermissionedPositionManager is PermissionedPositionManager {
 
   function _validateCaller(address onBehalfOf, Action action) internal view override {
     if (msg.sender != onBehalfOf) {
-      require(
-        !ISpoke(SPOKE).isPositionManagerExclusive(address(this)) &&
-          ISpoke(SPOKE).isPositionManagerApproved(onBehalfOf, msg.sender),
-        Unauthorized()
-      );
+      require(ISpoke(SPOKE).isPositionManagerApproved(onBehalfOf, msg.sender), Unauthorized());
     }
     _validatePermission(onBehalfOf, action);
   }

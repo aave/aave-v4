@@ -222,33 +222,18 @@ abstract contract Spoke is
   }
 
   /// @inheritdoc ISpoke
-  function updateMandatoryPositionManager(
-    address positionManager,
-    bool exclusive
-  ) external restricted {
-    address currentMandatoryPositionManager = _mandatoryPositionManager;
+  function updateMandatoryPositionManager(address positionManager) external restricted {
     if (positionManager == address(0)) {
-      if (currentMandatoryPositionManager != address(0)) {
-        PositionManagerConfig storage currentConfig = _positionManager[
-          currentMandatoryPositionManager
-        ];
-        require(!currentConfig.active, MandatoryPositionManagerActive());
-        currentConfig.mandatory = false;
-        currentConfig.exclusive = false;
-      }
-    } else {
       require(
-        currentMandatoryPositionManager == address(0) ||
-          currentMandatoryPositionManager == positionManager,
-        MandatoryPositionManagerAlreadySet()
+        !_positionManager[_mandatoryPositionManager].active,
+        MandatoryPositionManagerActive()
       );
-      PositionManagerConfig storage config = _positionManager[positionManager];
-      require(config.active, PositionManagerNotActive());
-      config.mandatory = true;
-      config.exclusive = exclusive;
+    } else {
+      require(_mandatoryPositionManager == address(0), MandatoryPositionManagerAlreadySet());
+      require(_positionManager[positionManager].active, PositionManagerNotActive());
     }
     _mandatoryPositionManager = positionManager;
-    emit UpdateMandatoryPositionManager(positionManager, exclusive);
+    emit UpdateMandatoryPositionManager(positionManager);
   }
 
   /// @inheritdoc ISpoke
@@ -711,11 +696,6 @@ abstract contract Spoke is
   }
 
   /// @inheritdoc ISpoke
-  function isPositionManagerExclusive(address positionManager) external view returns (bool) {
-    return _positionManager[positionManager].exclusive;
-  }
-
-  /// @inheritdoc ISpoke
   function getLiquidationLogic() external pure returns (address) {
     return address(LiquidationLogic);
   }
@@ -961,8 +941,9 @@ abstract contract Spoke is
   /// @dev If a mandatory position manager is set, only the active mandatory position manager is allowed.
   function _isPositionManager(address user, address manager) internal view returns (bool) {
     PositionManagerConfig storage config = _positionManager[manager];
-    if (_mandatoryPositionManager != address(0)) {
-      return config.mandatory && config.active;
+    address mandatoryPositionManager = _mandatoryPositionManager;
+    if (mandatoryPositionManager != address(0)) {
+      return manager == mandatoryPositionManager && config.active;
     }
     if (user == manager) return true;
     return config.active && config.approval[user];

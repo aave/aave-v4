@@ -31,7 +31,7 @@ contract PermissionedPositionManagerBaseTest is Base {
     vm.prank(SPOKE_ADMIN);
     spoke1.updatePositionManager(address(positionManager), true);
     vm.prank(ADMIN);
-    spoke1.updateMandatoryPositionManager(address(positionManager), false);
+    spoke1.updateMandatoryPositionManager(address(positionManager));
 
     vm.startPrank(alice);
     tokenList.dai.approve(address(positionManager), UINT256_MAX);

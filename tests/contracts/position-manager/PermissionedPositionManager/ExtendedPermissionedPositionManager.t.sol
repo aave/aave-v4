@@ -95,24 +95,6 @@ contract ExtendedPermissionedPositionManagerTest is PermissionedPositionManagerT
     _callAction(_boundUserAction(actionSeed), relayer, alice);
   }
 
-  function test_relayed_revertsWith_Unauthorized_exclusive_fuzz(uint256 actionSeed) public {
-    vm.prank(ADMIN);
-    spoke1.updateMandatoryPositionManager(address(positionManager), true);
-
-    vm.expectRevert(IPermissionedPositionManager.Unauthorized.selector);
-    _callAction(_boundUserAction(actionSeed), relayer, alice);
-  }
-
-  function test_exclusive_allows_direct_calls() public {
-    vm.prank(ADMIN);
-    spoke1.updateMandatoryPositionManager(address(positionManager), true);
-
-    vm.prank(alice);
-    positionManager.supply(daiReserveId, 1e18, alice);
-
-    assertEq(spoke1.getUserSuppliedAssets(daiReserveId, alice), 1e18);
-  }
-
   function test_relayed_permission_checked_against_position_owner() public {
     _setPermissioned(IPermissionedPositionManager.Action.SetUsingAsCollateral);
     _approveCaller(relayer);
