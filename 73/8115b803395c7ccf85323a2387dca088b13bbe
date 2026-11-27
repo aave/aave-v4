@@ -1,0 +1,23 @@
+src/config-engine/libraries/HubEngine.sol
+  s_9e33bd28f0650d::t_9e928b86f1450a 160,165-175
+src/config-engine/README.md
+  s_9e33bd28f0650d::t_5d23a6a5cd4e70 31
+tests/config-engine/HubEngine.t.sol
+  s_9e33bd28f0650d::t_c41d250e96f66d 1162-1189
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "738115b803395c7ccf85323a2387dca088b13bbe",
+  "prompts": {},
+  "sessions": {
+    "s_9e33bd28f0650d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "225f057e-d05b-4f34-bd46-535c56789dbb",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "AyushKaul <ayushk.kaul3@gmail.com>"
+    }
+  }
+}
